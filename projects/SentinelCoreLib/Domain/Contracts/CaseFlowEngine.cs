@@ -168,10 +168,10 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
         SafetyContext safetyContext = new()
         {
-            CaseId = caseId.Value,
-            Message = new(ChatRole.User, message),
-            RegisteredToolNames = null, //TODO: _toolRegistry.GetRegisteredToolNames(),
-            MutatingToolNames = new HashSet<string>()
+                CaseId = caseId.Value,
+                Message = new(ChatRole.User, message),
+                RegisteredToolNames = null, //TODO: _toolRegistry.GetRegisteredToolNames(),
+                MutatingToolNames = new HashSet<string>()
         };
 
         SafetyVerdict verdict = _safety.Evaluate(safetyContext);

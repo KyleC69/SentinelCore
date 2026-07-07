@@ -6,6 +6,9 @@
 
 
 
+using System.Text;
+using System.Text.Json;
+
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Agents.AI.Workflows.Specialized.Magentic;
@@ -17,9 +20,6 @@ using SentinelCoreLib.Agents.Manager;
 using SentinelCoreLib.Application;
 using SentinelCoreLib.Application.Abstractions;
 using SentinelCoreLib.Contracts;
-
-using System.Text;
-using System.Text.Json;
 
 
 

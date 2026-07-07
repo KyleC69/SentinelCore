@@ -67,7 +67,7 @@ public sealed class DcomReadTool : AITool
             }
 
             string keyPath = $"SOFTWARE\\Classes\\AppID\\{appId}";
-            using RegistryKey? key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(keyPath, writable: false);
+            using RegistryKey? key = Registry.LocalMachine.OpenSubKey(keyPath, writable: false);
             if (key is null)
             {
                 return Task.FromResult(ToolResult.FailureResult($"AppID registry key not found: {keyPath}"));

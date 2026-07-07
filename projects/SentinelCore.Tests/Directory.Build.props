@@ -1,7 +1,7 @@
-<Project>   
+<Project>
 
-<PropertyGroup>
-<ArtifactsPath>..\..\..\Output\$(MSBuildProjectName)</ArtifactsPath>
-</PropertyGroup>
+	<PropertyGroup>
+		<ArtifactsPath>..\..\..\Output\$(MSBuildProjectName)</ArtifactsPath>
+	</PropertyGroup>
 
- </Project>
+</Project>

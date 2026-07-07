@@ -75,7 +75,7 @@ public sealed class ProxyReadTool : AITool
                     CreateNoWindow = true
             };
 
-            using Process? process = System.Diagnostics.Process.Start(startInfo);
+            using Process? process = Process.Start(startInfo);
             if (process is null)
             {
                 return Task.FromResult(ToolResult.FailureResult("Failed to start netsh."));

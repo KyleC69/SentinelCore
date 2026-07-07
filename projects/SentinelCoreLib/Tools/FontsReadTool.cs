@@ -71,13 +71,13 @@ public sealed class FontsReadTool : AITool
 
             StringBuilder sb = new();
             sb.AppendLine($"Name={family.Name}");
-            sb.AppendLine($"IsStyleAvailable(Regular)={family.IsStyleAvailable(System.Drawing.FontStyle.Regular)}");
-            sb.AppendLine($"IsStyleAvailable(Bold)={family.IsStyleAvailable(System.Drawing.FontStyle.Bold)}");
-            sb.AppendLine($"IsStyleAvailable(Italic)={family.IsStyleAvailable(System.Drawing.FontStyle.Italic)}");
-            sb.AppendLine($"IsStyleAvailable(Underline)={family.IsStyleAvailable(System.Drawing.FontStyle.Underline)}");
-            sb.AppendLine($"IsStyleAvailable(Strikeout)={family.IsStyleAvailable(System.Drawing.FontStyle.Strikeout)}");
-            sb.AppendLine($"LineSpacing={family.GetLineSpacing(System.Drawing.FontStyle.Regular)}");
-            sb.AppendLine($"EmHeight={family.GetEmHeight(System.Drawing.FontStyle.Regular)}");
+            sb.AppendLine($"IsStyleAvailable(Regular)={family.IsStyleAvailable(FontStyle.Regular)}");
+            sb.AppendLine($"IsStyleAvailable(Bold)={family.IsStyleAvailable(FontStyle.Bold)}");
+            sb.AppendLine($"IsStyleAvailable(Italic)={family.IsStyleAvailable(FontStyle.Italic)}");
+            sb.AppendLine($"IsStyleAvailable(Underline)={family.IsStyleAvailable(FontStyle.Underline)}");
+            sb.AppendLine($"IsStyleAvailable(Strikeout)={family.IsStyleAvailable(FontStyle.Strikeout)}");
+            sb.AppendLine($"LineSpacing={family.GetLineSpacing(FontStyle.Regular)}");
+            sb.AppendLine($"EmHeight={family.GetEmHeight(FontStyle.Regular)}");
 
             return Task.FromResult(ToolResult.SuccessResult(sb.ToString()));
         }

@@ -34,7 +34,7 @@ public sealed class EnvironmentVariablesReadTool : AITool
         {
             IDictionary variables = Environment.GetEnvironmentVariables(target);
             StringBuilder sb = new();
-            foreach (System.Collections.DictionaryEntry entry in variables) sb.AppendLine($"{entry.Key}={entry.Value}");
+            foreach (DictionaryEntry entry in variables) sb.AppendLine($"{entry.Key}={entry.Value}");
 
             return Task.FromResult(ToolResult.SuccessResult(sb.ToString()));
         }

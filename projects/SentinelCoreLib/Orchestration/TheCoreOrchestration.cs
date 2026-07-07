@@ -6,6 +6,8 @@
 
 
 
+using System.Text.Json;
+
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
@@ -16,8 +18,6 @@ using SentinelCore.Contracts;
 using SentinelCoreLib.Agents.Core;
 using SentinelCoreLib.Application.Abstractions;
 using SentinelCoreLib.Contracts;
-
-using System.Text.Json;
 
 using CaseStatus = SentinelCoreLib.Application.Abstractions.Persistence.CaseStatus;
 

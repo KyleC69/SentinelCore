@@ -126,12 +126,12 @@ public sealed class CaseRepository : ICaseRepository
     private static CaseEntity MapToEntity(CaseRecord record) =>
             new()
             {
-                CaseId = record.CaseId,
-                Title = record.Title,
-                Status = record.Status.ToString(),
-                CreatedAt = record.CreatedAt,
-                UpdatedAt = record.UpdatedAt,
-                StateJson = record.StateJson
+                    CaseId = record.CaseId,
+                    Title = record.Title,
+                    Status = record.Status.ToString(),
+                    CreatedAt = record.CreatedAt,
+                    UpdatedAt = record.UpdatedAt,
+                    StateJson = record.StateJson
             };
 
 

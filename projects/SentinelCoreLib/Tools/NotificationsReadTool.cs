@@ -6,12 +6,12 @@
 
 
 
-using Microsoft.Extensions.AI;
-using Microsoft.Win32;
-
 using System.ComponentModel;
 using System.Text;
 using System.Text.Json;
+
+using Microsoft.Extensions.AI;
+using Microsoft.Win32;
 
 
 
@@ -57,11 +57,11 @@ public sealed class NotificationsReadTool : AITool
 
                         results.Add(new()
                         {
-                            ["App"] = appKeyName,
-                            ["Enabled"] = appKey.GetValue("Enabled"),
-                            ["ShowBanner"] = appKey.GetValue("ShowBannerAndSound"),
-                            ["ShowNotificationActions"] = appKey.GetValue("ShowNotificationActions"),
-                            ["LastModified"] = appKey.GetValue("LastNotificationAdded")
+                                ["App"] = appKeyName,
+                                ["Enabled"] = appKey.GetValue("Enabled"),
+                                ["ShowBanner"] = appKey.GetValue("ShowBannerAndSound"),
+                                ["ShowNotificationActions"] = appKey.GetValue("ShowNotificationActions"),
+                                ["LastModified"] = appKey.GetValue("LastNotificationAdded")
                         });
                     }
                     catch

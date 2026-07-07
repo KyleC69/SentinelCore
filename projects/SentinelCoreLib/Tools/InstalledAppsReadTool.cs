@@ -6,12 +6,12 @@
 
 
 
-using Microsoft.Extensions.AI;
-using Microsoft.Win32;
-
 using System.ComponentModel;
 using System.Management;
 using System.Text.Json;
+
+using Microsoft.Extensions.AI;
+using Microsoft.Win32;
 
 
 
@@ -68,12 +68,12 @@ public sealed class InstalledAppsReadTool : AITool
 
                 results.Add(new()
                 {
-                    ["DisplayName"] = displayName,
-                    ["Publisher"] = subKey.GetValue("Publisher")?.ToString(),
-                    ["Version"] = subKey.GetValue("DisplayVersion")?.ToString(),
-                    ["InstallDate"] = subKey.GetValue("InstallDate")?.ToString(),
-                    ["UninstallString"] = subKey.GetValue("UninstallString")?.ToString(),
-                    ["RegistryPath"] = $"{hive}\\{keyPath}\\{subKeyName}"
+                        ["DisplayName"] = displayName,
+                        ["Publisher"] = subKey.GetValue("Publisher")?.ToString(),
+                        ["Version"] = subKey.GetValue("DisplayVersion")?.ToString(),
+                        ["InstallDate"] = subKey.GetValue("InstallDate")?.ToString(),
+                        ["UninstallString"] = subKey.GetValue("UninstallString")?.ToString(),
+                        ["RegistryPath"] = $"{hive}\\{keyPath}\\{subKeyName}"
                 });
             }
             catch
@@ -132,11 +132,11 @@ public sealed class InstalledAppsReadTool : AITool
 
                 results.Add(new
                 {
-                    Name = name,
-                    Version = product["Version"]?.ToString(),
-                    Vendor = product["Vendor"]?.ToString(),
-                    InstallDate = product["InstallDate"]?.ToString(),
-                    IdentifyingNumber = product["IdentifyingNumber"]?.ToString()
+                        Name = name,
+                        Version = product["Version"]?.ToString(),
+                        Vendor = product["Vendor"]?.ToString(),
+                        InstallDate = product["InstallDate"]?.ToString(),
+                        IdentifyingNumber = product["IdentifyingNumber"]?.ToString()
                 });
             }
 
