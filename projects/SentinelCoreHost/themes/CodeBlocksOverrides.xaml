@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:MarkdownViewer.Wpf.Controls;assembly=MarkdownViewer.Wpf">
+
+    <!--
+      Each implicit style below references the explicitly keyed base-theme style via BasedOn.
+      Because the named keys (e.g. CodeBlockBorderStyle) are defined only in the base theme
+      dictionary and never duplicated here, there is no possibility of circular style
+      resolution across merged-dictionary boundaries.
+    -->
+
+    <Style TargetType="controls:CodeBlockBorder"
+           BasedOn="{StaticResource CodeBlockBorderStyle}">
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <Style TargetType="controls:CodeBlockHeaderBorder"
+           BasedOn="{StaticResource CodeBlockHeaderBorderStyle}">
+        <Setter Property="CornerRadius" Value="13,13,0,0" />
+    </Style>
+
+    <Style TargetType="controls:CodeBlockHeaderTextBlock"
+           BasedOn="{StaticResource CodeBlockHeaderTextBlockStyle}">
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+    </Style>
+
+    <Style TargetType="controls:CodeBlockCopyButton"
+           BasedOn="{StaticResource CodeBlockCopyButtonStyle}">
+        <Setter Property="MinWidth" Value="72" />
+        <Setter Property="Padding" Value="12,5" />
+    </Style>
+
+    <Style TargetType="controls:CodeBlockTextBlock"
+           BasedOn="{StaticResource CodeBlockTextBlockStyle}">
+        <Setter Property="Padding" Value="14" />
+    </Style>
+
+</ResourceDictionary>

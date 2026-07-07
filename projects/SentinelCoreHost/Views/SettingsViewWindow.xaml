@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Window
+    x:Class="SentinelCoreHost.Views.SettingsViewWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="Settings"
+    Height="760"
+    Width="480"
+    MinHeight="520"
+    MinWidth="360"
+    Background="{StaticResource AppBackground}"
+    FontFamily="Segoe UI"
+    mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="14,12">
+        <StackPanel>
+            <TextBlock Text="Runtime Controls"
+                       Foreground="{StaticResource AppTextPrimary}"
+                       FontWeight="SemiBold"
+                       FontSize="14" />
+
+            <Border Background="{StaticResource AppSurface2}" CornerRadius="8" Padding="10" Margin="0,10,0,0">
+                <StackPanel>
+                    <TextBlock Text="Read-only investigation mode"
+                               Foreground="{StaticResource AppAccent}"
+                               FontWeight="SemiBold"
+                               FontSize="12" />
+                    <TextBlock Text="All registered tools are exploratory only."
+                               Foreground="{StaticResource AppTextMuted}"
+                               FontSize="12"
+                               Margin="0,4,0,0"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Ollama Endpoint"
+                       Margin="0,14,0,4"
+                       Foreground="{StaticResource AppTextPrimary}"
+                       FontWeight="SemiBold" />
+            <TextBox Text="{Binding EndpointUrl, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,0,0,10" />
+
+            <TextBlock Text="Core Agent"
+                       Margin="0,4,0,4"
+                       Foreground="{StaticResource AppTextPrimary}"
+                       FontWeight="SemiBold" />
+            <TextBlock Text="Model ID" Foreground="{StaticResource AppTextMuted}" FontSize="11" Margin="0,0,0,2" />
+            <TextBox Text="{Binding CoreModelName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+            <TextBlock Text="Temperature (0.0 – 1.0)" Foreground="{StaticResource AppTextMuted}" FontSize="11"
+                       Margin="0,0,0,2" />
+            <TextBox Text="{Binding CoreTemperature, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+            <TextBlock Text="Context Length" Foreground="{StaticResource AppTextMuted}" FontSize="11" Margin="0,0,0,2" />
+            <TextBox Text="{Binding CoreContextLength, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
+
+            <TextBlock Text="Manager Agent"
+                       Margin="0,4,0,4"
+                       Foreground="{StaticResource AppTextPrimary}"
+                       FontWeight="SemiBold" />
+            <TextBlock Text="Model ID" Foreground="{StaticResource AppTextMuted}" FontSize="11" Margin="0,0,0,2" />
+            <TextBox Text="{Binding ManagerModelName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+            <TextBlock Text="Temperature (0.0 – 1.0)" Foreground="{StaticResource AppTextMuted}" FontSize="11"
+                       Margin="0,0,0,2" />
+            <TextBox Text="{Binding ManagerTemperature, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+            <TextBlock Text="Context Length" Foreground="{StaticResource AppTextMuted}" FontSize="11" Margin="0,0,0,2" />
+            <TextBox Text="{Binding ManagerContextLength, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
+
+            <TextBlock Text="Domain &amp; Dynamic Agents"
+                       Margin="0,4,0,4"
+                       Foreground="{StaticResource AppTextPrimary}"
+                       FontWeight="SemiBold" />
+            <TextBlock Text="Model ID" Foreground="{StaticResource AppTextMuted}" FontSize="11" Margin="0,0,0,2" />
+            <TextBox Text="{Binding DomainModelName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+            <TextBlock Text="Temperature (0.0 – 1.0)" Foreground="{StaticResource AppTextMuted}" FontSize="11"
+                       Margin="0,0,0,2" />
+            <TextBox Text="{Binding DomainTemperature, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+            <TextBlock Text="Context Length" Foreground="{StaticResource AppTextMuted}" FontSize="11" Margin="0,0,0,2" />
+            <TextBox Text="{Binding DomainContextLength, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
+
+            <TextBlock Text="Persistence"
+                       Margin="0,4,0,4"
+                       Foreground="{StaticResource AppTextPrimary}"
+                       FontWeight="SemiBold" />
+            <TextBlock Text="SQL Connection String" Foreground="{StaticResource AppTextMuted}" FontSize="11"
+                       Margin="0,0,0,2" />
+            <TextBox Text="{Binding SqlConnectionString, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,0,0,10" />
+
+            <TextBlock Text="Confidence Freeze Threshold (0.0 – 1.0)"
+                       Margin="0,4,0,4"
+                       Foreground="{StaticResource AppTextPrimary}"
+                       FontWeight="SemiBold" />
+            <TextBox Text="{Binding FreezeThreshold, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
+
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <Button Content="Save Settings"
+                        Command="{Binding SaveSettingsCommand}"
+                        Margin="0,0,8,0"
+                        Padding="10,4" />
+                <Button Content="Reload"
+                        Command="{Binding ReloadSettingsCommand}"
+                        Padding="10,4" />
+            </StackPanel>
+            <TextBlock Text="{Binding SettingsStatus}"
+                       Foreground="{StaticResource AppTextMuted}"
+                       TextWrapping="Wrap"
+                       FontSize="12"
+                       Margin="0,0,0,12" />
+        </StackPanel>
+    </ScrollViewer>
+</Window>
