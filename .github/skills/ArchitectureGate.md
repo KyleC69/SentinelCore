@@ -2,6 +2,7 @@
 name: Architecture Gate
 skill: Architecture Gate
 description: Forces the agent to complete the Universal Architectural Priority Mandate before writing or modifying any code. Invoke before every coding task.
+
 ---
 
 # Architecture Gate
@@ -31,6 +32,8 @@ Complete this gate in chat before touching any code file.
 ## Stop Conditions
 
 Stop and ask the user if:
+
+- Users task is not fully understood and presents opportunities to guess
 - A needed type appears missing.
 - The framework source contradicts the intended approach.
 - The design doc is ambiguous.

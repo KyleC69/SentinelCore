@@ -1,7 +1,0 @@
-<Solution>
-  <Folder Name="/projects/">
-    <Project Path="projects/SentinelCore.Tests/SentinelCore.Tests.csproj" />
-    <Project Path="projects/SentinelCoreHost/SentinelCoreHost.csproj" />
-    <Project Path="projects/SentinelCoreLib/SentinelCoreLib.csproj" />
-  </Folder>
-</Solution>

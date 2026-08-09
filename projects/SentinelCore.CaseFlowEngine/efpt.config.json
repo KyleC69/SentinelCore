@@ -1,0 +1,78 @@
+﻿{
+   "CodeGenerationMode": 6,
+   "ContextClassName": "SentinelCoreDBContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": true,
+   "IrregularWords": null,
+   "MinimumProductVersion": "2.6.1604",
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Persistence",
+   "PluralRules": null,
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "SentinelCore.CaseFlowEngine",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "SingularRules": null,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "[dbo].[CaseEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[EvidenceEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[InvestigationPlanEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[InvestigationPlanStepsEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PatternMemoryEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ResolutionEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[SignalEntity]",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": true,
+   "UseDatabaseNames": false,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": false,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseInternalAccessModifiersForSprocsAndFunctions": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": true,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false,
+   "UseTypedTvpParameters": true
+}

@@ -1,3 +1,10 @@
+---
+title: "Project Terminology"
+status: Active
+component: Glossary
+last_updated: 2026-07-10
+---
+
 ### SentinelCore technical flow (integrated with canonical terminology)
 
 ---

@@ -1,12 +1,13 @@
-// Solution: SentinelCoreLib
+// Solution: SentinelCore
 // Project:   SentinelCoreHost
 // File:         AssemblyInfo.cs
 // Author: Kyle L. Crowder
-// Build Date: 2026/07/07
+// Build Num:  080801
 
 
 
 using System.Windows;
+
 
 
 

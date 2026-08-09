@@ -1,0 +1,245 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="687pt" height="666pt"
+     viewBox="0.00 0.00 687.20 666.40">
+	<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 662.4)">
+		<title>Workflow</title>
+		<polygon fill="white" stroke="none" points="-4,4 -4,-662.4 683.2,-662.4 683.2,4 -4,4" />
+		<g id="clust1" class="cluster">
+			<title>cluster_0D879038</title>
+			<polygon fill="none" stroke="black" stroke-dasharray="5,2"
+			         points="289.2,-496 289.2,-650.4 671.2,-650.4 671.2,-496 289.2,-496" />
+			<text text-anchor="middle" x="480.2" y="-633.8" font-family="Times,serif" font-size="14.00">sub-workflow: EvidenceCollection</text>
+		</g>
+		<!-- SafetyExecutor -->
+		<g id="node1" class="node">
+			<title>SafetyExecutor</title>
+			<polygon fill="lightgreen" stroke="black" points="281.35,-617.6 179.06,-617.6 179.06,-576 281.35,-576 281.35,-617.6" />
+			<text text-anchor="middle" x="230.2" y="-601" font-family="Times,serif" font-size="14.00">SafetyExecutor</text>
+			<text text-anchor="middle" x="230.2" y="-584.2" font-family="Times,serif" font-size="14.00">(Start)</text>
+		</g>
+		<!-- patterncheck -->
+		<g id="node2" class="node">
+			<title>patterncheck</title>
+			<polygon fill="lightblue" stroke="black" points="273.96,-540 186.45,-540 186.45,-504 273.96,-504 273.96,-540" />
+			<text text-anchor="middle" x="230.2" y="-517.8" font-family="Times,serif" font-size="14.00">patterncheck</text>
+		</g>
+		<!-- SafetyExecutor&#45;&gt;patterncheck -->
+		<g id="edge1" class="edge">
+			<title>SafetyExecutor-&gt;patterncheck</title>
+			<path fill="none" stroke="black" d="M230.2,-575.52C230.2,-568.06 230.2,-559.46 230.2,-551.42" />
+			<polygon fill="black" stroke="black"
+			         points="230.2,-541.43 234.7,-551.43 230.2,-545.21 230.2,-551.43 230.2,-551.43 230.2,-551.43 230.2,-545.21 225.7,-551.43 230.2,-541.43" />
+		</g>
+		<!-- whitelist -->
+		<g id="node3" class="node">
+			<title>whitelist</title>
+			<polygon fill="lightblue" stroke="black" points="262.31,-468 198.09,-468 198.09,-432 262.31,-432 262.31,-468" />
+			<text text-anchor="middle" x="230.2" y="-445.8" font-family="Times,serif" font-size="14.00">whitelist</text>
+		</g>
+		<!-- patterncheck&#45;&gt;whitelist -->
+		<g id="edge2" class="edge">
+			<title>patterncheck-&gt;whitelist</title>
+			<path fill="none" stroke="black" d="M230.2,-503.7C230.2,-496.32 230.2,-487.52 230.2,-479.25" />
+			<polygon fill="black" stroke="black"
+			         points="230.2,-469.32 234.7,-479.32 230.2,-473.1 230.2,-479.32 230.2,-479.32 230.2,-479.32 230.2,-473.1 225.7,-479.32 230.2,-469.32" />
+		</g>
+		<!-- Classifier_Classifier -->
+		<g id="node4" class="node">
+			<title>Classifier_Classifier</title>
+			<polygon fill="lightblue" stroke="black" points="295.36,-396 165.05,-396 165.05,-360 295.36,-360 295.36,-396" />
+			<text text-anchor="middle" x="230.2" y="-373.8" font-family="Times,serif" font-size="14.00">Classifier_Classifier</text>
+		</g>
+		<!-- whitelist&#45;&gt;Classifier_Classifier -->
+		<g id="edge3" class="edge">
+			<title>whitelist-&gt;Classifier_Classifier</title>
+			<path fill="none" stroke="black" d="M230.2,-431.7C230.2,-424.32 230.2,-415.52 230.2,-407.25" />
+			<polygon fill="black" stroke="black"
+			         points="230.2,-397.32 234.7,-407.32 230.2,-401.1 230.2,-407.32 230.2,-407.32 230.2,-407.32 230.2,-401.1 225.7,-407.32 230.2,-397.32" />
+		</g>
+		<!-- NewCaseExecutor -->
+		<g id="node5" class="node">
+			<title>NewCaseExecutor</title>
+			<polygon fill="lightblue" stroke="black" points="168.29,-324 48.11,-324 48.11,-288 168.29,-288 168.29,-324" />
+			<text text-anchor="middle" x="108.2" y="-301.8" font-family="Times,serif" font-size="14.00">NewCaseExecutor</text>
+		</g>
+		<!-- Classifier_Classifier&#45;&gt;NewCaseExecutor -->
+		<g id="edge4" class="edge">
+			<title>Classifier_Classifier-&gt;NewCaseExecutor</title>
+			<path fill="none" stroke="black" d="M199.73,-359.52C184.04,-350.51 164.71,-339.42 147.87,-329.76" />
+			<polygon fill="black" stroke="black"
+			         points="139.34,-324.87 150.26,-325.94 142.62,-326.75 148.02,-329.84 148.02,-329.84 148.02,-329.84 142.62,-326.75 145.78,-333.75 139.34,-324.87" />
+		</g>
+		<!-- CriticalError -->
+		<g id="node6" class="node">
+			<title>CriticalError</title>
+			<polygon fill="lightblue" stroke="black" points="273.97,-324 186.44,-324 186.44,-288 273.97,-288 273.97,-324" />
+			<text text-anchor="middle" x="230.2" y="-301.8" font-family="Times,serif" font-size="14.00">CriticalError</text>
+		</g>
+		<!-- Classifier_Classifier&#45;&gt;CriticalError -->
+		<g id="edge5" class="edge">
+			<title>Classifier_Classifier-&gt;CriticalError</title>
+			<path fill="none" stroke="black" d="M230.2,-359.7C230.2,-352.32 230.2,-343.52 230.2,-335.25" />
+			<polygon fill="black" stroke="black"
+			         points="230.2,-325.32 234.7,-335.32 230.2,-329.1 230.2,-335.32 230.2,-335.32 230.2,-335.32 230.2,-329.1 225.7,-335.32 230.2,-325.32" />
+		</g>
+		<!-- MoreInformationStep -->
+		<g id="node7" class="node">
+			<title>MoreInformationStep</title>
+			<polygon fill="lightblue" stroke="black" points="430.25,-324 292.16,-324 292.16,-288 430.25,-288 430.25,-324" />
+			<text text-anchor="middle" x="361.2" y="-301.8" font-family="Times,serif" font-size="14.00">MoreInformationStep</text>
+		</g>
+		<!-- Classifier_Classifier&#45;&gt;MoreInformationStep -->
+		<g id="edge6" class="edge">
+			<title>Classifier_Classifier-&gt;MoreInformationStep</title>
+			<path fill="none" stroke="black" d="M262.92,-359.52C279.93,-350.43 300.91,-339.22 319.12,-329.49" />
+			<polygon fill="black" stroke="black"
+			         points="327.83,-324.83 321.13,-333.52 324.49,-326.62 319.01,-329.55 319.01,-329.55 319.01,-329.55 324.49,-326.62 316.89,-325.58 327.83,-324.83" />
+		</g>
+		<!-- TheCore_TheCore -->
+		<g id="node9" class="node">
+			<title>TheCore_TheCore</title>
+			<polygon fill="lightblue" stroke="black" points="168.68,-252 47.72,-252 47.72,-216 168.68,-216 168.68,-252" />
+			<text text-anchor="middle" x="108.2" y="-229.8" font-family="Times,serif" font-size="14.00">TheCore_TheCore</text>
+		</g>
+		<!-- NewCaseExecutor&#45;&gt;TheCore_TheCore -->
+		<g id="edge9" class="edge">
+			<title>NewCaseExecutor-&gt;TheCore_TheCore</title>
+			<path fill="none" stroke="black" d="M108.2,-287.7C108.2,-280.32 108.2,-271.52 108.2,-263.25" />
+			<polygon fill="black" stroke="black"
+			         points="108.2,-253.32 112.7,-263.32 108.2,-257.1 108.2,-263.32 108.2,-263.32 108.2,-263.32 108.2,-257.1 103.7,-263.32 108.2,-253.32" />
+		</g>
+		<!-- humanoperator -->
+		<g id="node8" class="node">
+			<title>humanoperator</title>
+			<polygon fill="lightblue" stroke="black" points="349.58,-252 248.83,-252 248.83,-216 349.58,-216 349.58,-252" />
+			<text text-anchor="middle" x="299.2" y="-229.8" font-family="Times,serif" font-size="14.00">humanoperator</text>
+		</g>
+		<!-- CriticalError&#45;&gt;humanoperator -->
+		<g id="edge7" class="edge">
+			<title>CriticalError-&gt;humanoperator</title>
+			<path fill="none" stroke="black" d="M247.26,-287.7C255.53,-279.3 265.62,-269.07 274.7,-259.86" />
+			<polygon fill="black" stroke="black"
+			         points="281.49,-252.97 277.67,-263.25 278.83,-255.67 274.47,-260.09 274.47,-260.09 274.47,-260.09 278.83,-255.67 271.26,-256.93 281.49,-252.97" />
+		</g>
+		<!-- MoreInformationStep&#45;&gt;humanoperator -->
+		<g id="edge8" class="edge">
+			<title>MoreInformationStep-&gt;humanoperator</title>
+			<path fill="none" stroke="black" d="M345.88,-287.7C338.59,-279.47 329.75,-269.48 321.72,-260.42" />
+			<polygon fill="black" stroke="black"
+			         points="315.16,-253.02 325.16,-257.52 317.67,-255.85 321.79,-260.5 321.79,-260.5 321.79,-260.5 317.67,-255.85 318.42,-263.49 315.16,-253.02" />
+		</g>
+		<!-- EvidenceCollection -->
+		<g id="node10" class="node">
+			<title>EvidenceCollection</title>
+			<polygon fill="lightblue" stroke="black" points="126.41,-180 0,-180 0,-144 126.41,-144 126.41,-180" />
+			<text text-anchor="middle" x="63.2" y="-157.8" font-family="Times,serif" font-size="14.00">EvidenceCollection</text>
+		</g>
+		<!-- TheCore_TheCore&#45;&gt;EvidenceCollection -->
+		<g id="edge10" class="edge">
+			<title>TheCore_TheCore-&gt;EvidenceCollection</title>
+			<path fill="none" stroke="black" d="M97.08,-215.7C91.96,-207.73 85.77,-198.1 80.09,-189.26" />
+			<polygon fill="black" stroke="black"
+			         points="74.86,-181.13 84.05,-187.11 76.9,-184.31 80.27,-189.54 80.27,-189.54 80.27,-189.54 76.9,-184.31 76.48,-191.97 74.86,-181.13" />
+		</g>
+		<!-- Aggregator -->
+		<g id="node11" class="node">
+			<title>Aggregator</title>
+			<polygon fill="lightblue" stroke="black" points="115.08,-108 35.33,-108 35.33,-72 115.08,-72 115.08,-108" />
+			<text text-anchor="middle" x="75.2" y="-85.8" font-family="Times,serif" font-size="14.00">Aggregator</text>
+		</g>
+		<!-- EvidenceCollection&#45;&gt;Aggregator -->
+		<g id="edge11" class="edge">
+			<title>EvidenceCollection-&gt;Aggregator</title>
+			<path fill="none" stroke="black" d="M66.17,-143.7C67.45,-136.24 68.98,-127.32 70.41,-118.97" />
+			<polygon fill="black" stroke="black"
+			         points="72.07,-109.31 74.81,-119.92 71.43,-113.03 70.38,-119.16 70.38,-119.16 70.38,-119.16 71.43,-113.03 65.94,-118.4 72.07,-109.31" />
+		</g>
+		<!-- VerifyEvidence -->
+		<g id="node12" class="node">
+			<title>VerifyEvidence</title>
+			<polygon fill="lightblue" stroke="black" points="161.51,-36 56.89,-36 56.89,0 161.51,0 161.51,-36" />
+			<text text-anchor="middle" x="109.2" y="-13.8" font-family="Times,serif" font-size="14.00">VerifyEvidence</text>
+		</g>
+		<!-- Aggregator&#45;&gt;VerifyEvidence -->
+		<g id="edge12" class="edge">
+			<title>Aggregator-&gt;VerifyEvidence</title>
+			<path fill="none" stroke="black" d="M83.61,-71.7C87.35,-63.98 91.86,-54.71 96.03,-46.11" />
+			<polygon fill="black" stroke="black"
+			         points="100.36,-37.2 100.04,-48.16 98.71,-40.6 95.99,-46.2 95.99,-46.2 95.99,-46.2 98.71,-40.6 91.95,-44.23 100.36,-37.2" />
+		</g>
+		<!-- VerifyEvidence&#45;&gt;TheCore_TheCore -->
+		<g id="edge13" class="edge">
+			<title>VerifyEvidence-&gt;TheCore_TheCore</title>
+			<path fill="none" stroke="black"
+			      d="M116.36,-36.09C127.78,-65.67 147.63,-128.24 135.2,-180 133.07,-188.9 129.18,-197.98 125,-206.06" />
+			<polygon fill="black" stroke="black"
+			         points="120.26,-214.6 121.18,-203.67 122.1,-211.3 125.11,-205.86 125.11,-205.86 125.11,-205.86 122.1,-211.3 129.05,-208.04 120.26,-214.6" />
+		</g>
+		<!-- EvidenceCollection/MagenticOrchestrator -->
+		<g id="node13" class="node">
+			<title>EvidenceCollection/MagenticOrchestrator</title>
+			<polygon fill="lightgreen" stroke="black" points="549.62,-617.6 410.79,-617.6 410.79,-576 549.62,-576 549.62,-617.6" />
+			<text text-anchor="middle" x="480.2" y="-601" font-family="Times,serif" font-size="14.00">MagenticOrchestrator</text>
+			<text text-anchor="middle" x="480.2" y="-584.2" font-family="Times,serif" font-size="14.00">(Start)</text>
+		</g>
+		<!-- EvidenceCollection/Utility1_Utility1 -->
+		<g id="node14" class="node">
+			<title>EvidenceCollection/Utility1_Utility1</title>
+			<polygon fill="lightblue" stroke="black" points="407.26,-540 297.15,-540 297.15,-504 407.26,-504 407.26,-540" />
+			<text text-anchor="middle" x="352.2" y="-517.8" font-family="Times,serif" font-size="14.00">Utility1_Utility1</text>
+		</g>
+		<!-- EvidenceCollection/MagenticOrchestrator&#45;&gt;EvidenceCollection/Utility1_Utility1 -->
+		<g id="edge17" class="edge">
+			<title>EvidenceCollection/MagenticOrchestrator-&gt;EvidenceCollection/Utility1_Utility1</title>
+			<path fill="none" stroke="black" d="M438.43,-575.52C421.62,-566.39 402.52,-555.57 386.53,-546.13" />
+			<polygon fill="black" stroke="black"
+			         points="378.08,-541.08 388.97,-542.34 381.32,-543.02 386.66,-546.2 386.66,-546.2 386.66,-546.2 381.32,-543.02 384.36,-550.07 378.08,-541.08" />
+		</g>
+		<!-- EvidenceCollection/Utility2_Utility2 -->
+		<g id="node15" class="node">
+			<title>EvidenceCollection/Utility2_Utility2</title>
+			<polygon fill="lightblue" stroke="black" points="535.26,-540 425.15,-540 425.15,-504 535.26,-504 535.26,-540" />
+			<text text-anchor="middle" x="480.2" y="-517.8" font-family="Times,serif" font-size="14.00">Utility2_Utility2</text>
+		</g>
+		<!-- EvidenceCollection/MagenticOrchestrator&#45;&gt;EvidenceCollection/Utility2_Utility2 -->
+		<g id="edge18" class="edge">
+			<title>EvidenceCollection/MagenticOrchestrator-&gt;EvidenceCollection/Utility2_Utility2</title>
+			<path fill="none" stroke="black" d="M474.08,-575.52C473.45,-567.97 473.3,-559.26 473.61,-551.13" />
+			<polygon fill="black" stroke="black"
+			         points="474.28,-541.43 478.08,-551.72 474.02,-545.2 473.59,-551.4 473.59,-551.4 473.59,-551.4 474.02,-545.2 469.1,-551.09 474.28,-541.43" />
+		</g>
+		<!-- EvidenceCollection/Utility3_Utility3 -->
+		<g id="node16" class="node">
+			<title>EvidenceCollection/Utility3_Utility3</title>
+			<polygon fill="lightblue" stroke="black" points="663.26,-540 553.15,-540 553.15,-504 663.26,-504 663.26,-540" />
+			<text text-anchor="middle" x="608.2" y="-517.8" font-family="Times,serif" font-size="14.00">Utility3_Utility3</text>
+		</g>
+		<!-- EvidenceCollection/MagenticOrchestrator&#45;&gt;EvidenceCollection/Utility3_Utility3 -->
+		<g id="edge19" class="edge">
+			<title>EvidenceCollection/MagenticOrchestrator-&gt;EvidenceCollection/Utility3_Utility3</title>
+			<path fill="none" stroke="black" d="M509.74,-575.52C525.32,-566.22 544.7,-555.16 562.18,-545.59" />
+			<polygon fill="black" stroke="black"
+			         points="570.58,-541.03 563.94,-549.76 567.26,-542.84 561.79,-545.8 561.79,-545.8 561.79,-545.8 567.26,-542.84 559.65,-541.85 570.58,-541.03" />
+		</g>
+		<!-- EvidenceCollection/Utility1_Utility1&#45;&gt;EvidenceCollection/MagenticOrchestrator -->
+		<g id="edge14" class="edge">
+			<title>EvidenceCollection/Utility1_Utility1-&gt;EvidenceCollection/MagenticOrchestrator</title>
+			<path fill="none" stroke="black" d="M388.75,-540.45C405.17,-549.27 424.5,-560.15 441.19,-569.92" />
+			<polygon fill="black" stroke="black"
+			         points="449.62,-574.9 438.72,-573.69 446.37,-572.98 441.01,-569.81 441.01,-569.81 441.01,-569.81 446.37,-572.98 443.3,-565.94 449.62,-574.9" />
+		</g>
+		<!-- EvidenceCollection/Utility2_Utility2&#45;&gt;EvidenceCollection/MagenticOrchestrator -->
+		<g id="edge15" class="edge">
+			<title>EvidenceCollection/Utility2_Utility2-&gt;EvidenceCollection/MagenticOrchestrator</title>
+			<path fill="none" stroke="black" d="M486.04,-540.21C486.81,-547.49 487.09,-556.2 486.89,-564.54" />
+			<polygon fill="black" stroke="black"
+			         points="486.39,-574.3 482.41,-564.09 486.58,-570.53 486.91,-564.32 486.91,-564.32 486.91,-564.32 486.58,-570.53 491.4,-564.55 486.39,-574.3" />
+		</g>
+		<!-- EvidenceCollection/Utility3_Utility3&#45;&gt;EvidenceCollection/MagenticOrchestrator -->
+		<g id="edge16" class="edge">
+			<title>EvidenceCollection/Utility3_Utility3-&gt;EvidenceCollection/MagenticOrchestrator</title>
+			<path fill="none" stroke="black" d="M583.38,-540.45C568.65,-549.36 549.51,-560.35 531.7,-570.19" />
+			<polygon fill="black" stroke="black"
+			         points="523.05,-574.94 529.66,-566.18 526.37,-573.12 531.82,-570.13 531.82,-570.13 531.82,-570.13 526.37,-573.12 533.98,-574.08 523.05,-574.94" />
+		</g>
+	</g>
+</svg>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.1.0">
+	<Header>
+	  <Title>Sentinel Executor</Title>
+	  <Author>Kyle L. Crowder</Author>
+	  <Description>Creates a SentinelCore workflow executor class with the standard pattern: partial class, primary constructor, Executor&lt;TIn,TOut&gt; base, and HandleAsync override.</Description>
+	  <Shortcut>sentinel_executor</Shortcut>
+	  <SnippetTypes>
+		<SnippetType>Expansion</SnippetType>
+	  </SnippetTypes>
+	</Header>
+	<Snippet>
+	  <Declarations>
+		<Literal>
+		  <ID>ClassName</ID>
+		  <ToolTip>Name of the executor class (without the "Executor" suffix if you prefer to include it manually)</ToolTip>
+		  <Default>MoreInformationExecutor</Default>
+		</Literal>
+		<Literal>
+		  <ID>StepName</ID>
+		  <ToolTip>The step name string passed to the Executor base constructor</ToolTip>
+		  <Default>MoreInformationStep</Default>
+		</Literal>
+		<Literal>
+		  <ID>InputType</ID>
+		  <ToolTip>The input type parameter for the Executor generic base</ToolTip>
+		  <Default>string</Default>
+		</Literal>
+		<Literal>
+		  <ID>OutputType</ID>
+		  <ToolTip>The output type parameter for the Executor generic base</ToolTip>
+		  <Default>string</Default>
+		</Literal>
+		<Literal>
+		  <ID>ParamName</ID>
+		  <ToolTip>The parameter name for the incoming message in HandleAsync</ToolTip>
+		  <Default>message</Default>
+		</Literal>
+		<Literal>
+		  <ID>FileName</ID>
+		  <ToolTip>The file name (used in the header comment)</ToolTip>
+		  <Default>MoreInformationExecutor.cs</Default>
+		</Literal>
+		<Literal>
+		  <ID>BuildNum</ID>
+		  <ToolTip>Build number for the header comment</ToolTip>
+		  <Default>072720</Default>
+		</Literal>
+	  </Declarations>
+	  <Code Language="csharp"><![CDATA[// Solution: SentinelCore
+// Project:   SentinelCore.Orchestrations
+// File:         $FileName$
+// Author: Kyle L. Crowder
+// Build Num:  $BuildNum$
+
+
+
+namespace SentinelCore.Workflows.Executors;
+
+
+
+
+
+public partial class $ClassName$() : Executor<$InputType$, $OutputType$>("$StepName$")
+{
+
+
+
+
+
+	
+	public override ValueTask<$OutputType$> HandleAsync(
+			$InputType$ $ParamName$,
+			IWorkflowContext context,
+			CancellationToken cancellationToken = new())
+	{
+		$end$
+		return default;
+	}
+}]]></Code>
+	</Snippet>
+  </CodeSnippet>
+</CodeSnippets>

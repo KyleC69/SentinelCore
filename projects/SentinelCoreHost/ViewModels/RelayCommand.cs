@@ -1,8 +1,8 @@
-// Solution: SentinelCoreLib
+// Solution: SentinelCore
 // Project:   SentinelCoreHost
 // File:         RelayCommand.cs
 // Author: Kyle L. Crowder
-// Build Date: 2026/07/07
+// Build Num:  080801
 
 
 
@@ -45,14 +45,41 @@ public sealed class RelayCommand : ICommand
 
 
 
-    public bool CanExecute(object? parameter) => _canExecute();
+    public bool CanExecute(object? parameter)
+    {
+        return _canExecute();
+    }
+
+
+
+
+
+
 
 
     public event EventHandler? CanExecuteChanged;
 
 
-    public void Execute(object? parameter) => _execute();
 
 
-    public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+
+
+
+
+    public void Execute(object? parameter)
+    {
+        _execute();
+    }
+
+
+
+
+
+
+
+
+    public void RaiseCanExecuteChanged()
+    {
+        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
 }

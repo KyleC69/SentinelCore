@@ -1,19 +1,24 @@
-// Solution: SentinelCoreLib
+// Solution: SentinelCore
 // Project:   SentinelCoreHost
 // File:         MainWindowViewModel.cs
 // Author: Kyle L. Crowder
-// Build Date: 2026/07/07
+// Build Num:  080801
 
 
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Data;
 using System.Windows.Input;
 
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 
-using SentinelCoreLib.Application;
+using SentinelCore.Abstractions;
+using SentinelCore.CaseEngine;
+using SentinelCore.CaseFlow;
+using SentinelCore.Events;
 
 
 
@@ -29,12 +34,23 @@ namespace SentinelCoreHost.ViewModels;
 /// </summary>
 public sealed class MainWindowViewModel : INotifyPropertyChanged
 {
+    private int _alertedCount;
+    private int _blockedCount;
+    private readonly ICaseFlowEngine _caseFlowEngine;
+    private int _escalatedCount;
+    private readonly ISentinelCoreEvents _events;
 
     private string _inputText = string.Empty;
-
-    private readonly InvestigationControl _investigationControl;
+    private int _investigationCount;
     private bool _isBusy;
 
+    private readonly ILogger<MainWindowViewModel> _logger;
+
+    private int _openCount;
+    private readonly IOrchestrationControl _orchestrationControl;
+    // Initialise to avoid CS8618 warning.
+    private string _statusMessage = string.Empty;
+    private readonly object _syncRoot = new();
 
 
 
@@ -42,14 +58,30 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
 
 
-    public MainWindowViewModel(InvestigationControl investigationControl)
+
+    public MainWindowViewModel(IOrchestrationControl orchestrationControl, ISentinelCoreEvents events, ICaseFlowEngine caseFlowEngine, ILogger<MainWindowViewModel> logger)
     {
-        _investigationControl = investigationControl;
+        BindingOperations.EnableCollectionSynchronization(Messages, _syncRoot);
+        _orchestrationControl = orchestrationControl ?? throw new ArgumentNullException(nameof(orchestrationControl));
+        _events = events ?? throw new ArgumentNullException(nameof(events));
+        _caseFlowEngine = caseFlowEngine ?? throw new ArgumentNullException(nameof(caseFlowEngine));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger.LogInformation("MainWindowViewModel initialized.");
 
-        SendCommand = new AsyncRelayCommand(ExecuteInvestigationAsync, () => CanSend, ex => Messages.Add(new ChatMessage(ChatRole.System, content: ex.Message)));
+        _events.SentinelOutputEvent += OnSentinelOutput;
+        _events.ErrorOccurred += OnErrorOccurred;
+
+
+
+        SendCommand = new AsyncRelayCommand(SendSignalAsync, () => CanSend, ex => Messages.Add(new ChatMessage(ChatRole.System, ex.Message)));
         CancelCommand = new RelayCommand(Cancel, () => CanCancel);
+        TestCommand = new AsyncRelayCommand(ExecuteTestCall, () => true);
 
         AddWelcomeMessage();
+        _logger.LogTrace("Terminal Trace Window initialized. Should be ready for user input.");
+
+        // Fire-and-forget initial case count load
+        _ = RefreshCaseCountsAsync();
     }
 
 
@@ -58,17 +90,35 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
 
 
+
+    public int AlertedCount
+    {
+        get => _alertedCount;
+        set => SetProperty(ref _alertedCount, value);
+    }
+
+    public int BlockedCount
+    {
+        get => _blockedCount;
+        set => SetProperty(ref _blockedCount, value);
+    }
 
     private bool CanCancel
     {
         get => IsBusy;
     }
 
-    public ICommand CancelCommand { get; }
-
     private bool CanSend
     {
         get => !IsBusy && !string.IsNullOrWhiteSpace(InputText);
+    }
+
+    public ICommand CancelCommand { get; }
+
+    public int EscalatedCount
+    {
+        get => _escalatedCount;
+        set => SetProperty(ref _escalatedCount, value);
     }
 
     public string InputText
@@ -82,6 +132,12 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
                 ((RelayCommand)CancelCommand).RaiseCanExecuteChanged();
             }
         }
+    }
+
+    public int InvestigationCount
+    {
+        get => _investigationCount;
+        set => SetProperty(ref _investigationCount, value);
     }
 
     public bool IsBusy
@@ -99,9 +155,46 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
     public ObservableCollection<ChatMessage> Messages { get; } = new();
 
+    public int OpenCount
+    {
+        get => _openCount;
+        set => SetProperty(ref _openCount, value);
+    }
+
     public ICommand SendCommand { get; }
 
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set
+        {
+            _statusMessage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ICommand TestCommand { get; }
+
     public event PropertyChangedEventHandler? PropertyChanged;
+
+
+
+
+
+
+
+
+    private void AddToMessages(ChatMessage args)
+    {
+        if (App.Current.Dispatcher.CheckAccess())
+        {
+            Messages.Add(args);
+        }
+        else
+        {
+            App.Current.Dispatcher.Invoke(() => Messages.Add(args));
+        }
+    }
 
 
 
@@ -117,7 +210,6 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private void AddWelcomeMessage()
     {
         Messages.Add(new ChatMessage(ChatRole.Assistant, "# SentinelCore 🛡️\n\nForensic investigation platform — ready.\n\nDescribe a signal or security event and I will open an investigation case.\n\n- Press **Enter** to send\n- Press **Shift+Enter** for a new line"));
-
     }
 
 
@@ -139,42 +231,79 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
 
 
-    /// <summary>
-    ///     Executes an investigation asynchronously based on the current input text.
-    ///     Agent activity and reasoning are exposed to UI using Event system and the UI needs to subscribe the events for
-    ///     interaction flow.
-    ///     This method currently manages the busy state of the view-model, may be removed in future versions, currently
-    ///     instituted for debugging agent management.
-    /// </summary>
-    /// <param name="token">
-    ///     A <see cref="CancellationToken" /> to observe while waiting for the task to complete.
-    /// </param>
-    /// <returns>
-    ///     A <see cref="Task" /> that represents the asynchronous operation.
-    /// </returns>
-    /// <remarks>
-    ///     This method adds the user's input as a message to the conversation, initiates the case orchestration
-    ///     process, and clears the input text upon completion. The <see cref="IsBusy" /> property is used to indicate
-    ///     the operation's progress.
-    /// </remarks>
-    private async Task ExecuteInvestigationAsync(CancellationToken token)
+    private async Task ExecuteTestCall(CancellationToken token)
     {
-        IsBusy = true;
+        if (token.IsCancellationRequested)
+        {
+            return;
+        }
+
+        InvestigationPlanStep step1 = new() { OperationId = "Op002", Surface = "Registry", Instruction = "Retrieve the value of the 'Computer\\HKEY_LOCAL_MACHINE\\SOFTWARE\\Khronos\\Vulkan\\Drivers' registry key." };
+        InvestigationPlanStep step = new() { OperationId = "Op001", Surface = "Registry", Instruction = "Retrieve the value of the 'HKEY_CURRENT_USER\\Environment\\SENTINEL_CORE' registry key." };
+    }
+
+
+
+
+
+
+
+
+    private void OnErrorOccurred(string arg1, Exception arg2)
+    {
+        // Add message to the statusbaritem textblock StatusLbl to surface in UI.
+
+        StatusMessage = arg1;
+    }
+
+
+
+
+
+
+
+
+    private void OnPropertyChanged([CallerMemberName] string propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+
+
+
+
+
+
+
+    private void OnSentinelOutput(SentinelOutputEventArgs args)
+    {
+        StatusMessage = $"Agent: {args.AgentName} {args.Message}";
+
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Refreshes all case status counts from the database.
+    /// </summary>
+    private async Task RefreshCaseCountsAsync()
+    {
         try
         {
-            ChatMessage msg = new(ChatRole.User, _inputText);
-            Messages.Add(msg);
-
-            InputText = string.Empty;
-
-
-            await _investigationControl.StartCaseOrchestration(msg);
-
-
+            OpenCount = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Open).ConfigureAwait(false);
+            InvestigationCount = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Investigation).ConfigureAwait(false);
+            EscalatedCount = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Escalated).ConfigureAwait(false);
+            AlertedCount = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Alerted).ConfigureAwait(false);
+            BlockedCount = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Blocked).ConfigureAwait(false);
         }
-        finally
+        catch (Exception ex)
         {
-            IsBusy = false;
+            _logger.LogWarning(ex, "Failed to refresh case status counts.");
         }
     }
 
@@ -185,8 +314,37 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 
 
 
-    private void OnPropertyChanged([CallerMemberName] string propertyName = "") =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    /// <summary>
+    ///     Sends a signal asynchronously based on the current input text.
+    /// </summary>
+    /// <param name="token">
+    ///     A <see cref="CancellationToken" /> to observe while waiting for the task to complete.
+    /// </param>
+    /// <returns>
+    ///     A <see cref="Task" /> that represents the asynchronous operation.
+    /// </returns>
+    /// <remarks>
+    ///     This method adds the user's input as a message to the conversation, initiates the orchestration process,
+    ///     and clears the input text upon completion. The <see cref="IsBusy" /> property is used to indicate the
+    ///     operation's progress. It interacts with the orchestration control to manage workflows.
+    /// </remarks>
+    private async Task SendSignalAsync(CancellationToken token)
+    {
+        IsBusy = true;
+        try
+        {
+            ChatMessage msg = new(ChatRole.User, _inputText);
+            Messages.Add(msg);
+            OnPropertyChanged(nameof(Messages));
+            InputText = string.Empty;
+
+            await _orchestrationControl.InitializeOrchestrationAsync(msg, token);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
 
 
 

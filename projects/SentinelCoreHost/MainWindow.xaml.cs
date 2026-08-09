@@ -1,8 +1,8 @@
-// Solution: SentinelCoreLib
+// Solution: SentinelCore
 // Project:   SentinelCoreHost
 // File:         MainWindow.xaml.cs
 // Author: Kyle L. Crowder
-// Build Date: 2026/07/07
+// Build Num:  080801
 
 
 
@@ -11,7 +11,6 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Threading;
 
 using Microsoft.Extensions.AI;
 
@@ -55,6 +54,9 @@ public partial class MainWindow : Window
 
         // Apply dark chrome after the Win32 window handle is available.
         SourceInitialized += (_, _) => EnableDarkTitleBar(this);
+
+        InputBox.Text = "CASEGEN: Search Event logs for warnings and errors and create a case for each";
+
     }
 
 
@@ -116,10 +118,7 @@ public partial class MainWindow : Window
         if (e.Key is Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
         {
             e.Handled = true;
-            if (_viewModel.SendCommand.CanExecute(null))
-            {
-                _viewModel.SendCommand.Execute(null);
-            }
+            if (_viewModel.SendCommand.CanExecute(null)) _viewModel.SendCommand.Execute(null);
         }
     }
 
@@ -132,10 +131,7 @@ public partial class MainWindow : Window
 
     private void Message_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ChatMessage.Text))
-        {
-            ScrollToBottom();
-        }
+        if (e.PropertyName is nameof(ChatMessage.Text)) ScrollToBottom();
     }
 
 
@@ -160,11 +156,16 @@ public partial class MainWindow : Window
     /// </summary>
     private void ScrollToBottom()
     {
-        if (MessagesListBox.Items.Count == 0)
+        if (!MessagesListBox.Dispatcher.CheckAccess())
         {
+            MessagesListBox.Dispatcher.Invoke(ScrollToBottom);
             return;
         }
 
-        Dispatcher.InvokeAsync(() => MessagesListBox.ScrollIntoView(MessagesListBox.Items[^1]), DispatcherPriority.Background);
+        if (MessagesListBox.Items.Count == 0)
+            return;
+
+        MessagesListBox.ScrollIntoView(MessagesListBox.Items[^1]);
+
     }
 }

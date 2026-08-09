@@ -1,0 +1,22 @@
+<Window x:Class="SentinelCoreHost.TraceLogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Agent Trace Terminal"
+        Height="700" Width="800"
+        MinHeight="200" MinWidth="300"
+        WindowStartupLocation="CenterScreen"
+
+        Background="#0D1117"
+        ShowInTaskbar="True"
+        Topmost="False">
+    <Grid>
+        <RichTextBox x:Name="LogRichTextBox"
+                     IsReadOnly="false"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"
+                     FontFamily="Consolas"
+                     Background="Black"
+                     Foreground="White"
+                     IsUndoEnabled="False" AutoWordSelection="True" />
+    </Grid>
+</Window>

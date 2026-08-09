@@ -1,0 +1,50 @@
+{
+  "signal": {
+    "id": "string",
+    "type": "system_issue | security | performance",
+    "source": "string",
+    "timestamp": "ISO-8601",
+    "severity": "low | medium | high | critical",
+    "description": "string"
+  },
+  "initial_hypothesis": {
+    "id": "string",
+    "summary": "string",
+    "category": "configuration | resource | security | network | application | unknown",
+    "core_confidence": 0.0
+  },
+  "evidence": [
+    {
+      "id": "string",
+      "source_type": "logs | metrics | traces | config | security_events | worker_report",
+      "source_name": "string",
+      "timestamp_range": {
+        "start": "ISO-8601",
+        "end": "ISO-8601"
+      },
+      "content_summary": "string",
+      "raw_reference": "string or URI",
+      "strength_score": 0.0,
+      "relevance_score": 0.0,
+      "supports_hypothesis": true,
+      "contradicts_hypothesis": false
+    }
+  ],
+  "workers": [
+    {
+      "id": "string",
+      "role": "log_analyzer | metric_analyzer | security_scanner | config_diff | custom",
+      "summary": "string",
+      "self_confidence": 0.0,
+      "findings": [
+        {
+          "id": "string",
+          "description": "string",
+          "supports_hypothesis": true,
+          "contradicts_hypothesis": false,
+          "local_confidence": 0.0
+        }
+      ]
+    }
+  ]
+}

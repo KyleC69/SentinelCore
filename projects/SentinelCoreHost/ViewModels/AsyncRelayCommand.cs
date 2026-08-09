@@ -1,8 +1,8 @@
-// Solution: SentinelCoreLib
+// Solution: SentinelCore
 // Project:   SentinelCoreHost
 // File:         AsyncRelayCommand.cs
 // Author: Kyle L. Crowder
-// Build Date: 2026/07/07
+// Build Num:  080801
 
 
 
@@ -51,7 +51,22 @@ public sealed class AsyncRelayCommand : ICommand
     public bool IsRunning { get; private set; }
 
 
-    public bool CanExecute(object? parameter) => !IsRunning && _canExecute();
+
+
+
+
+
+
+    public bool CanExecute(object? parameter)
+    {
+        return !IsRunning && _canExecute();
+    }
+
+
+
+
+
+
 
 
     public event EventHandler? CanExecuteChanged;
@@ -115,5 +130,8 @@ public sealed class AsyncRelayCommand : ICommand
 
 
 
-    public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    public void RaiseCanExecuteChanged()
+    {
+        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
 }

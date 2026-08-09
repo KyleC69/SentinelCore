@@ -1,0 +1,48 @@
+digraph Workflow {
+  rankdir=TD;
+  node [shape=box, style=filled, fillcolor=lightblue];
+  edge [color=black, arrowhead=vee];
+
+  "patterncheck" [fillcolor=lightgreen, label="patterncheck\n(Start)"];
+  "Whitelist" [label="Whitelist"];
+  "CaseGen" [label="CaseGen"];
+  "ClassifierExec" [label="ClassifierExec"];
+  "NewCase" [label="NewCase"];
+  "CriticalError" [label="CriticalError"];
+  "MoreInformationStep" [label="MoreInformationStep"];
+  "humanoperator" [label="humanoperator"];
+  "DirectAnswer" [label="DirectAnswer"];
+  "TheCoreExec" [label="TheCoreExec"];
+  "EvidenceCollection" [label="EvidenceCollection"];
+  "Aggregator" [label="Aggregator"];
+  "VerifyEvidence" [label="VerifyEvidence"];
+  "patterncheck" -> "Whitelist";
+  "Whitelist" -> "CaseGen" [style=dashed, label="conditional"];
+  "Whitelist" -> "ClassifierExec" [style=dashed, label="conditional"];
+  "ClassifierExec" -> "NewCase";
+  "ClassifierExec" -> "CriticalError";
+  "ClassifierExec" -> "MoreInformationStep";
+  "ClassifierExec" -> "humanoperator";
+  "ClassifierExec" -> "DirectAnswer";
+  "CriticalError" -> "humanoperator";
+  "MoreInformationStep" -> "humanoperator";
+  "NewCase" -> "TheCoreExec";
+  "TheCoreExec" -> "EvidenceCollection";
+  "EvidenceCollection" -> "Aggregator";
+  "Aggregator" -> "VerifyEvidence";
+  "VerifyEvidence" -> "TheCoreExec";
+  subgraph cluster_0D879038 {
+    label="sub-workflow: EvidenceCollection";
+    style=dashed;
+    "EvidenceCollection/MagenticOrchestrator" [fillcolor=lightgreen, label="MagenticOrchestrator\n(Start)"];
+    "EvidenceCollection/Worker1_Worker1" [label="Worker1_Worker1"];
+    "EvidenceCollection/worker2_worker2" [label="worker2_worker2"];
+    "EvidenceCollection/worker3_worker3" [label="worker3_worker3"];
+    "EvidenceCollection/Worker1_Worker1" -> "EvidenceCollection/MagenticOrchestrator";
+    "EvidenceCollection/worker2_worker2" -> "EvidenceCollection/MagenticOrchestrator";
+    "EvidenceCollection/worker3_worker3" -> "EvidenceCollection/MagenticOrchestrator";
+    "EvidenceCollection/MagenticOrchestrator" -> "EvidenceCollection/Worker1_Worker1";
+    "EvidenceCollection/MagenticOrchestrator" -> "EvidenceCollection/worker2_worker2";
+    "EvidenceCollection/MagenticOrchestrator" -> "EvidenceCollection/worker3_worker3";
+  }
+}

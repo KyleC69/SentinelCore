@@ -1,3 +1,10 @@
+---
+title: "Domain Tool Chart"
+status: Active
+component: Tools
+last_updated: 2026-07-10
+---
+
 | **Domain**     | **Recommended Safe API / System Interface**                              |
 | -------------- | ------------------------------------------------------------------------ |
 | registry       | Win32 Registry API (RegOpenKeyEx, RegQueryValueEx)                       |

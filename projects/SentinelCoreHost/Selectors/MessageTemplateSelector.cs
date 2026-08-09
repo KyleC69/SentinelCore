@@ -1,8 +1,8 @@
-// Solution: SentinelCoreLib
+// Solution: SentinelCore
 // Project:   SentinelCoreHost
 // File:         MessageTemplateSelector.cs
 // Author: Kyle L. Crowder
-// Build Date: 2026/07/07
+// Build Num:  080801
 
 
 
@@ -26,9 +26,20 @@ namespace SentinelCoreHost.Selectors;
 public sealed class MessageTemplateSelector : DataTemplateSelector
 {
 
+    public DataTemplate? AssistantTemplate { get; set; }
+    public DataTemplate? ErrorTemplate { get; set; }
+    public DataTemplate? UserTemplate { get; set; }
+
+
+
+
+
+
+
+
     public override DataTemplate? SelectTemplate(object item, DependencyObject container)
     {
-        ChatMessage? msg = item as ChatMessage;
+        ChatMessage msg = item as ChatMessage ?? throw new ArgumentException("Item must be a ChatMessage.", nameof(item));
 
         switch (msg.Role.Value)
         {
@@ -40,19 +51,5 @@ public sealed class MessageTemplateSelector : DataTemplateSelector
             default:
                 return UserTemplate;
         }
-
-
-
     }
-
-
-
-
-
-
-
-
-    public DataTemplate? AssistantTemplate { get; set; }
-    public DataTemplate? ErrorTemplate { get; set; }
-    public DataTemplate? UserTemplate { get; set; }
 }

@@ -1,0 +1,44 @@
+{
+  "diagnosis": {
+    "id": "string",
+    "summary": "string",
+    "root_cause_category": "configuration | resource | security | network | application | unknown",
+    "final_confidence": 0.0
+  },
+
+  "remediation_steps": [
+    {
+      "id": "string",
+      "description": "string",
+      "category": "configuration_change | restart | access_control_change | data_operation | monitoring_change | other",
+      "risk_level": "low | medium | high",
+      "potential_impact": [
+        "service_outage",
+        "data_loss",
+        "data_exposure",
+        "performance_degradation",
+        "none"
+      ],
+      "required_confidence_threshold": 0.0,
+      "current_confidence": 0.0,
+      "safety_status": "auto_allowed | require_operator_confirmation | blocked",
+      "preconditions": [
+        "string"
+      ],
+      "rollback_plan": "string",
+      "notes_for_operator": "string"
+    }
+  ],
+
+  "safety_summary": {
+    "overall_safe_to_proceed": true,
+    "blocked_steps": [
+      "step_id"
+    ],
+    "steps_requiring_confirmation": [
+      "step_id"
+    ],
+    "recommendation_mode": "advisory_only | mixed | auto_for_low_risk",
+    "escalation_required": false
+  }
+}

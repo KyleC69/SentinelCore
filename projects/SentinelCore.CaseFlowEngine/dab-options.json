@@ -1,0 +1,38 @@
+﻿{
+   "ConnectionStringName": "dab-connection-string",
+   "Dacpac": null,
+   "DatabaseType": 3,
+   "MergeDacpacs": false,
+   "Optional": false,
+   "ProjectPath": "F:\\Solutions\\SentinelCore\\SentinelCore\\projects\\SentinelCore.CaseFlowEngine",
+   "Tables": [
+      {
+         "Name": "[dbo].[CaseEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[EvidenceEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[InvestigationPlanEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[InvestigationPlanStepsEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[PatternMemoryEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[ResolutionEntity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[SignalEntity]",
+         "ObjectType": 0
+      }
+   ]
+}

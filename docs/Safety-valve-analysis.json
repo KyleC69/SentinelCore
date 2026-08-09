@@ -1,0 +1,43 @@
+{
+  "signal_id": "string",
+  "hypothesis_id": "string",
+
+  "evidence_analysis": {
+    "overall_strength": 0.0,
+    "overall_relevance": 0.0,
+    "supporting_count": 0,
+    "contradicting_count": 0,
+    "inconclusive_count": 0,
+    "missing_critical_data": [
+      "string"
+    ]
+  },
+
+  "consistency_analysis": {
+    "worker_agreement_score": 0.0,
+    "cross_source_consistency_score": 0.0,
+    "noted_conflicts": [
+      "string"
+    ]
+  },
+
+  "risk_context": {
+    "domain": "system_issue | security | performance",
+    "potential_impact": "service_outage | data_loss | data_exposure | performance_degradation | unknown",
+    "impact_severity": "low | medium | high | critical"
+  },
+
+  "diagnosis_confidence": {
+    "computed_confidence": 0.0,
+    "confidence_breakdown": {
+      "evidence_strength_weight": 0.0,
+      "consistency_weight": 0.0,
+      "workers_reliability_weight": 0.0,
+      "initial_hypothesis_weight": 0.0
+    },
+    "uncertainty_factors": [
+      "string"
+    ],
+    "safe_to_accept_diagnosis": true
+  }
+}

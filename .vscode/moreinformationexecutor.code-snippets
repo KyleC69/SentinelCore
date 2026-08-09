@@ -1,0 +1,34 @@
+{
+  "MoreInformationExecutor": {
+    "prefix": "exec",
+    "body": [
+      "// Solution: SentinelCore",
+      "// Project:   SentinelCore.Orchestrations",
+      "// File:         MoreInformationExecutor.cs",
+      "// Author: Kyle L. Crowder",
+      "// Build Num:  072719",
+      "",
+      "",
+      "namespace SentinelCore.Workflows.Executors;",
+      "",
+      "",
+      "",
+      "public partial class ${MoreInformationExecutor}() : Executor<string, string>(\"${MoreInformationStep}\")",
+      "{",
+      "",
+      "",
+      "",
+      "",
+      "    /// <inheritdoc />",
+      "    public override ValueTask<string> HandleAsync(",
+      "            string message,",
+      "            IWorkflowContext context,",
+      "            CancellationToken cancellationToken = new())",
+      "    {",
+      "        return default;",
+      "    }",
+      "}"
+    ],
+    "description": "Creates the MoreInformationExecutor workflow executor class with the standard SentinelCore pattern."
+  }
+}
