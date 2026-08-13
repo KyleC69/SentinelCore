@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfileBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -125,6 +125,7 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
         {
             profile.Instructions = taskInstructions;
         }
+
         return profile;
     }
 

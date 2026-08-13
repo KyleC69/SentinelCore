@@ -10,6 +10,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="SentinelCore.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\SentinelCore.CaseFlowEngine\SentinelCore.CaseFlowEngine.csproj" />
 		<ProjectReference Include="..\SentinelCore.Contracts\SentinelCore.Contracts.csproj" />
 		<PackageReference Include="Microsoft.Agents.AI" />
@@ -41,7 +45,9 @@
 		<PackageReference Include="System.Management.Automation" />
 		<PackageReference Include="System.ServiceProcess.ServiceController" />
 		<PackageReference Include="TaskScheduler" />
-	</ItemGroup>
 
+
+<None Include="SentinelCore-MCP.exe" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
 
 </Project>

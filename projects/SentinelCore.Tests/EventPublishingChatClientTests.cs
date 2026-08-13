@@ -2,11 +2,11 @@
 // Project:   SentinelCore.Tests
 // File:         EventPublishingChatClientTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
-using SentinelCore.Events;
+using SentinelCore.Agents.Middleware;
 using SentinelCore.Tests.TestInfrastructure;
 
 
@@ -32,7 +32,7 @@ public sealed class EventPublishingChatClientTests
     {
         EventCapture events = new EventCapture();
         FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
-        Assert.Throws<ArgumentNullException>(() => new EventPublishingChatClient(inner, events, null!, NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>()));
+        Assert.ThrowsException<ArgumentNullException>(() => new EventPublishingChatClient(inner, events, null!, NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>()));
     }
 
 
@@ -46,7 +46,7 @@ public sealed class EventPublishingChatClientTests
     public void Constructor_NullEvents_Throws()
     {
         FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
-        Assert.Throws<ArgumentNullException>(() => new EventPublishingChatClient(inner, null!, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>()));
+        Assert.ThrowsException<ArgumentNullException>(() => new EventPublishingChatClient(inner, null!, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>()));
     }
 
 
@@ -75,7 +75,7 @@ public sealed class EventPublishingChatClientTests
         FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
         EventPublishingChatClient client = new(inner, events, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>());
 
-        client.PublishTextOutput("investigation hypothesis", ActivityType.Core);
+        client.PublishTextOutput("investigation hypothesis");
 
         Assert.AreEqual(1, events.SentinelOutputEvents.Count);
         Assert.AreEqual("TheCore", events.SentinelOutputEvents[0].AgentName);
@@ -93,8 +93,8 @@ public sealed class EventPublishingChatClientTests
     [TestMethod]
     public void PublishTextOutput_DefaultActivityType_IsCore()
     {
-        EventCapture events = new EventCapture();
-        FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
+        EventCapture events = new();
+        FakeChatClient inner = new(CreateTextResponse("x"));
         EventPublishingChatClient client = new(inner, events, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>());
 
         client.PublishTextOutput("default activity");
@@ -113,11 +113,11 @@ public sealed class EventPublishingChatClientTests
     [TestMethod]
     public void PublishTextOutput_EmptyText_DoesNotRaiseSentinelOutputEvent()
     {
-        EventCapture events = new EventCapture();
-        FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
+        EventCapture events = new();
+        FakeChatClient inner = new(CreateTextResponse("x"));
         EventPublishingChatClient client = new(inner, events, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>());
 
-        client.PublishTextOutput("", ActivityType.Core);
+        client.PublishTextOutput("");
 
         Assert.AreEqual(0, events.SentinelOutputEvents.Count, "Empty text should not raise SentinelOutputEvent.");
     }
@@ -132,8 +132,8 @@ public sealed class EventPublishingChatClientTests
     [TestMethod]
     public void PublishTextOutput_ManagerActivity_RaisesSentinelOutputEvent()
     {
-        EventCapture events = new EventCapture();
-        FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
+        EventCapture events = new();
+        FakeChatClient inner = new(CreateTextResponse("x"));
         EventPublishingChatClient client = new(inner, events, "WorkflowManager", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>());
 
         client.PublishTextOutput("executing plan", ActivityType.Manager);
@@ -153,8 +153,8 @@ public sealed class EventPublishingChatClientTests
     [TestMethod]
     public void PublishTextOutput_ParticipantActivity_RaisesSentinelOutputEvent()
     {
-        EventCapture events = new EventCapture();
-        FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
+        EventCapture events = new();
+        FakeChatClient inner = new(CreateTextResponse("x"));
         EventPublishingChatClient client = new(inner, events, "registry_agent", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>());
 
         client.PublishTextOutput("registry scan complete", ActivityType.Participant);
@@ -174,8 +174,8 @@ public sealed class EventPublishingChatClientTests
     [TestMethod]
     public void PublishTextOutput_ReasoningActivity_RaisesSentinelOutputEvent()
     {
-        EventCapture events = new EventCapture();
-        FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
+        EventCapture events = new();
+        FakeChatClient inner = new(CreateTextResponse("x"));
         EventPublishingChatClient client = new(inner, events, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>());
 
         client.PublishTextOutput("thinking step", ActivityType.Reasoning);
@@ -194,8 +194,8 @@ public sealed class EventPublishingChatClientTests
     [TestMethod]
     public void PublishTextOutput_ToolingActivity_RaisesSentinelOutputEvent()
     {
-        EventCapture events = new EventCapture();
-        FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
+        EventCapture events = new();
+        FakeChatClient inner = new(CreateTextResponse("x"));
         EventPublishingChatClient client = new(inner, events, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>());
 
         client.PublishTextOutput("tool result", ActivityType.Tooling);
@@ -214,11 +214,11 @@ public sealed class EventPublishingChatClientTests
     [TestMethod]
     public void PublishTextOutput_WhitespaceText_DoesNotRaiseSentinelOutputEvent()
     {
-        EventCapture events = new EventCapture();
-        FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
+        EventCapture events = new();
+        FakeChatClient inner = new(CreateTextResponse("x"));
         EventPublishingChatClient client = new(inner, events, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>());
 
-        client.PublishTextOutput("   ", ActivityType.Core);
+        client.PublishTextOutput("   ");
 
         Assert.AreEqual(0, events.SentinelOutputEvents.Count, "Whitespace text should not raise SentinelOutputEvent.");
     }

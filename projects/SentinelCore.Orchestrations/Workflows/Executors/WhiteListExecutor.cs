@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WhiteListExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -87,6 +87,7 @@ public sealed partial class WhiteListExecutor : Executor
 public class SuppressionDecision
 {
     public CommandValue Command { get; set; }
+
     // Initialise to avoid CS8618.
     public string Prompt { get; set; } = string.Empty;
     public bool Suppress { get; set; }

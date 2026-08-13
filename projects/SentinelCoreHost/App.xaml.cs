@@ -2,9 +2,13 @@
 // Project:   SentinelCoreHost
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
+
+using System.IO;
+using System.Windows;
+using System.Windows.Threading;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,10 +23,6 @@ using SentinelCore.Infrastructure.DependencyInjection;
 
 using SentinelCoreHost.ViewModels;
 
-using System.IO;
-using System.Windows;
-using System.Windows.Threading;
-
 
 
 
@@ -35,7 +35,8 @@ namespace SentinelCoreHost;
 /// <summary>
 ///     This class is intended to be minimal and should only contain the necessary code to bootstrap the application and
 ///     handle startup and shutdown events.
-///     The library
+///     The library is repsonsible for the bulk of the application logic and orchestration, while this class serves as the
+///     entry point for the WPF application.
 /// </summary>
 public sealed partial class App : Application
 {
@@ -68,12 +69,12 @@ public sealed partial class App : Application
         // Setting obj is passed into AddSentinelCore() to configure the core library.
         _settings = new SentinelCoreSettings
         {
-            SqlConnectionString = "server=DESKTOP-NC01091;Database=SentinelCore;Integrated Security=true; TrustServerCertificate=true",
-            TraceEnabled = true,
-            TraceLogLevel = LogLevel.Trace,
-            OrchestrationType = OrchestrationType.CustomGroup,
-            DefaultModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", .2f, 15000, 1, .2f),
-            DefaultUtilityModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", 0.1f, 12000, 1, 0.3f)
+                SqlConnectionString = "server=DESKTOP-NC01091;Database=SentinelCore;Integrated Security=true; TrustServerCertificate=true",
+                TraceEnabled = true,
+                TraceLogLevel = LogLevel.Trace,
+                OrchestrationType = OrchestrationType.CustomGroup,
+                DefaultModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", .2f, 15000, 1, .2f),
+                DefaultUtilityModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", 0.1f, 12000, 1, 0.3f)
         };
 
 
@@ -272,7 +273,7 @@ public sealed partial class App : Application
         services.AddLogging(op =>
         {
             op.AddConsole();
-            op.AddJsonConsole();
+            //op.AddJsonConsole();
             op.SetMinimumLevel(LogLevel.Trace);
         });
 

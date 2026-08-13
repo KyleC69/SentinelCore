@@ -2,12 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         EventCapture.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
-
-
-
-using SentinelCore.Events;
-
+// Build Num:  081312
 
 
 

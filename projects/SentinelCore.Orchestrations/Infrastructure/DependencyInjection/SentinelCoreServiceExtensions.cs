@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
+
+using System.Text.Json;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -21,8 +23,6 @@ using SentinelCore.Events;
 using SentinelCore.Infrastructure.Persistence;
 using SentinelCore.Workflows;
 using SentinelCore.Workflows.Executors;
-
-using System.Text.Json;
 
 
 
@@ -112,7 +112,7 @@ public static class SentinelCoreServiceExtensions
         services.AddTransient<IDbContextFactory<SentinelCoreDBContext>, PooledDbContextFactory<SentinelCoreDBContext>>();
 
 
-       // services.AddHostedService<DatabaseInitializer>();
+        // services.AddHostedService<DatabaseInitializer>();
 
         // -- Always-on core services --
         // Safety middleware defaults to pass-through; host can override with real rules
@@ -165,24 +165,22 @@ public static class SentinelCoreServiceExtensions
 
         JsonLoggerOptions jsonOptions = new()
         {
-            MinimumLevel = LogLevel.Trace,
-            Indented = true,
-            Output = JsonLoggerOutput.File,
-            FilePath = "SentinelCore.log"
+                MinimumLevel = LogLevel.Trace, Indented = true, Output = JsonLoggerOutput.File, FilePath = "SentinelCore.log"
 
-            // Or:
-            // Output = JsonLoggerOutput.File,
-            // FilePath = "logs/sentinelcore.json"
+                // Or:
+                // Output = JsonLoggerOutput.File,
+                // FilePath = "logs/sentinelcore.json"
         };
 
 
 
         services.AddLogging(op =>
         {
-            op.AddJsonConsole(jops);
+            //   op.AddJsonConsole(jops);
             op.AddConsole();
             op.AddProvider(new JsonLoggerProvider(jsonOptions));
             op.SetMinimumLevel(LogLevel.Trace);
+            op.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
 
 
         });

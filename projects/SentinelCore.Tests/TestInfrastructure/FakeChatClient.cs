@@ -2,13 +2,11 @@
 // Project:   SentinelCore.Tests
 // File:         FakeChatClient.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
 using System.Runtime.CompilerServices;
-
-using Microsoft.Extensions.AI;
 
 
 

@@ -2,13 +2,15 @@
 // Project:   SentinelCore.Tests
 // File:         EvidenceStoreTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
-using SentinelCore.CaseFlow;
+using Microsoft.EntityFrameworkCore;
+
+using SentinelCore.Abstractions;
+using SentinelCore.CaseEngine;
 using SentinelCore.CaseFlowEngine.Persistence;
-using SentinelCore.Infrastructure.Persistence;
 
 
 
@@ -43,7 +45,7 @@ public sealed class EvidenceStoreTests
         CaseEntity caseEntity = new()
         {
                 CaseId = caseGuid,
-                Status = CaseStatus.Open,
+                Status = (int)CaseStatus.Open,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 InitiatingSignal = 0
@@ -157,7 +159,7 @@ public sealed class EvidenceStoreTests
         CaseEntity caseEntity = new()
         {
                 CaseId = caseGuid,
-                Status = CaseStatus.Open,
+                Status = (int)CaseStatus.Open,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 InitiatingSignal = 0

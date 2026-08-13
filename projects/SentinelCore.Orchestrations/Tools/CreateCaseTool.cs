@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CreateCaseTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -30,6 +30,8 @@ public class CreateCaseTool : AITool
 
 
 
+
+
     public CreateCaseTool(ICaseFlowEngine engine)
     {
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
@@ -51,16 +53,19 @@ public class CreateCaseTool : AITool
 
 
 
+
+
     [Description("This is an AI tool for creating new investigative cases for the Sentinel Core platform.")]
     public async Task<ToolResult> ExecuteAsync([Description("The description of the signal in natural language.")] string signal)
     {
         Signal rawSignal = new(signal, "CaseGen");
 
-        var caseId = await _engine.CreateCaseAsync(rawSignal);
-        if(caseId == Guid.Empty)
+        Guid caseId = await _engine.CreateCaseAsync(rawSignal);
+        if (caseId == Guid.Empty)
         {
             return ToolResult.Fail("Failed to create case. The case ID returned was empty.");
         }
+
         return ToolResult.Ok(caseId.ToString());
     }
 }

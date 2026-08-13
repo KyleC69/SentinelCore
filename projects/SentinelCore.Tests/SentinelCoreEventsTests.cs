@@ -2,11 +2,10 @@
 // Project:   SentinelCore.Tests
 // File:         SentinelCoreEventsTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
-using SentinelCore.Events;
 using SentinelCore.Tests.TestInfrastructure;
 
 

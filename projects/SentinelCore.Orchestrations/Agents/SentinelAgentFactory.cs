@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -30,7 +30,7 @@ namespace SentinelCore.Agents;
 
 public interface ISentinelAgentFactory
 {
-    AIAgent BuildFromProfile([System.Diagnostics.CodeAnalysis.NotNull] AgentProfile profile, AgentRole? overrideRole = null);
+    Task<AIAgent> BuildFromProfileAsync([System.Diagnostics.CodeAnalysis.NotNull] AgentProfile profile, AgentRole? overrideRole = null);
 }
 
 
@@ -115,7 +115,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     ///     It also creates and wraps the necessary chat client, applies middleware, and configures the agent
     ///     with the appropriate options.
     /// </remarks>
-    public AIAgent BuildFromProfile([System.Diagnostics.CodeAnalysis.NotNull] AgentProfile profile, AgentRole? overrideRole = null)
+    public async Task<AIAgent> BuildFromProfileAsync([System.Diagnostics.CodeAnalysis.NotNull] AgentProfile profile, AgentRole? overrideRole = null)
     {
         Throw.IfNull(profile);
 
@@ -128,6 +128,10 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         profile.AgentName = uniqueName;
 
 
+
+
+        // Synchronously wait for the async method to complete
+
         // 1. Create the chat client from the profile's model configuration.
         IChatClient chatClient = SentinelChatClientFactory.CreateChatClient(profile.Model);
         IChatClient eventClient = WrapEventPublishing(chatClient, profile); //client
@@ -136,7 +140,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         ChatClientAgentOptions agentOptions = BuildAgentOptions(profile);
         // The factory always creates ChatOptions before this line, so null-forgiving is safe.
-        agentOptions.ChatOptions!.Tools = profile.Tools;
+
+        //   agentOptions.ChatOptions!.Tools = [..mcpTools, ..profile.Tools]; // Combine MCP tools with profile tools
         ChatClientAgent agent = new(loggingClient, agentOptions);
 
 
@@ -207,31 +212,31 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         ChatOptions chatOptions = new()
         {
-            ConversationId = Guid.NewGuid().ToString("N"),
-            Instructions = profile.Instructions,
-            Temperature = profile.Model.Temperature,
-            MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
-            TopP = profile.Model.TopP,
-            TopK = profile.Model.TopK,
-            ModelId = profile.Model.ModelId,
-            Tools = profile.Tools,
-            ResponseFormat = profile.ResponseFormat
+                ConversationId = Guid.NewGuid().ToString("N"),
+                Instructions = profile.Instructions,
+                Temperature = profile.Model.Temperature,
+                MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
+                TopP = profile.Model.TopP,
+                TopK = profile.Model.TopK,
+                ModelId = profile.Model.ModelId,
+                Tools = profile.Tools,
+                ResponseFormat = profile.ResponseFormat
         };
 
         return new ChatClientAgentOptions
         {
-            Id = profile.AgentId,
-            Name = profile.AgentName,
-            Description = "An AI Agent",
-            ChatOptions = chatOptions,
-            UseProvidedChatClientAsIs = false,
-            ClearOnChatHistoryProviderConflict = false,
-            WarnOnChatHistoryProviderConflict = false,
-            ThrowOnChatHistoryProviderConflict = false,
-            RequirePerServiceCallChatHistoryPersistence = false,
-            EnableMessageInjection = false,
-            DisableApprovalNotRequiredFunctionBypassing = false,
-            DisableApprovalResponseBinding = false
+                Id = profile.AgentId,
+                Name = profile.AgentName,
+                Description = "An AI Agent",
+                ChatOptions = chatOptions,
+                UseProvidedChatClientAsIs = false,
+                ClearOnChatHistoryProviderConflict = false,
+                WarnOnChatHistoryProviderConflict = false,
+                ThrowOnChatHistoryProviderConflict = false,
+                RequirePerServiceCallChatHistoryPersistence = false,
+                EnableMessageInjection = false,
+                DisableApprovalNotRequiredFunctionBypassing = false,
+                DisableApprovalResponseBinding = false
         };
     }
 

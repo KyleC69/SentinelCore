@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
+
+using System.Text.Json;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,8 +19,6 @@ using SentinelCore.Events;
 using SentinelCore.SafetyEngine;
 using SentinelCore.Workflows.Executors;
 
-using System.Text.Json;
-
 
 
 
@@ -29,32 +29,32 @@ namespace SentinelCore.Workflows;
 
 
 /// <summary>
-/// Represents a multi-agent and non-agent workflow designed to classify incoming signals
-/// and route them to the appropriate executor based on the classification result.
+///     Represents a multi-agent and non-agent workflow designed to classify incoming signals
+///     and route them to the appropriate executor based on the classification result.
 /// </summary>
 /// <remarks>
-/// This workflow is responsible for building the workflow graph and delegating execution
-/// to the appropriate components. It leverages the MAF runtime for routing and execution.
-/// <para>
-/// Key features of this workflow include:
-/// </para>
-/// <list type="number">
-/// <item>Classifies signals and produces routing decisions.</item>
-/// <item>Routes signals to the appropriate executor using a switch mechanism.</item>
-/// <item>
-/// Handles various scenarios such as:
-/// <list type="bullet">
-/// <item>Investigation workflows using <see cref="InvestigationExecutor" />.</item>
-/// <item>Safety-related workflows using <see cref="SafetyExecutor" />.</item>
-/// <item>
-/// Direct answers, pattern matching, noise handling, and more using
-/// <see cref="DirectAnswerExecutor" />.
-/// </item>
-/// </list>
-/// </item>
-/// </list>
-/// The shared message object, <see cref="SignalHypothesis" />, flows between steps
-/// to ensure seamless communication and processing.
+///     This workflow is responsible for building the workflow graph and delegating execution
+///     to the appropriate components. It leverages the MAF runtime for routing and execution.
+///     <para>
+///         Key features of this workflow include:
+///     </para>
+///     <list type="number">
+///         <item>Classifies signals and produces routing decisions.</item>
+///         <item>Routes signals to the appropriate executor using a switch mechanism.</item>
+///         <item>
+///             Handles various scenarios such as:
+///             <list type="bullet">
+///                 <item>Investigation workflows using <see cref="InvestigationExecutor" />.</item>
+///                 <item>Safety-related workflows using <see cref="SafetyExecutor" />.</item>
+///                 <item>
+///                     Direct answers, pattern matching, noise handling, and more using
+///                     <see cref="DirectAnswerExecutor" />.
+///                 </item>
+///             </list>
+///         </item>
+///     </list>
+///     The shared message object, <see cref="SignalHypothesis" />, flows between steps
+///     to ensure seamless communication and processing.
 /// </remarks>
 public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 {
@@ -109,24 +109,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -234,10 +216,10 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // Customizable models, preset personas, Response format and system prompt config during creation.
         // The core client is wrapped with loggers, event publishing agent, safetyware and middleware.
 
-        AIAgent safetyAgent = _agentFactory.BuildFromProfile(_agentSpecBuilder.BuildAgentSpec("SafetyAgent", AgentRole.Utility));
-        AIAgent SafeAI = BuildAgent();
-        AIAgent theCore = _agentFactory.BuildFromProfile(coreprofile);
-        AIAgent classifier = _agentFactory.BuildFromProfile(classiferprofile);
+        AIAgent safetyAgent = await _agentFactory.BuildFromProfileAsync(_agentSpecBuilder.BuildAgentSpec("SafetyAgent", AgentRole.Utility)).ConfigureAwait(false);
+        AIAgent SafeAI = await BuildAgentAsync().ConfigureAwait(false);
+        AIAgent theCore = await _agentFactory.BuildFromProfileAsync(coreprofile).ConfigureAwait(false);
+        AIAgent classifier = await _agentFactory.BuildFromProfileAsync(classiferprofile).ConfigureAwait(false);
 
         // TEMPORARILY CREATED HERE UNTIL BETTER PLACEMENT IS ESTABLISHED - goal is to tie session app life-cycle
         AgentSession session = await theCore.CreateSessionAsync().ConfigureAwait(false);
@@ -278,7 +260,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         //Wrapped executors --------------
 
-        Workflow evidence = BuildSubWorkflow();
+        Workflow evidence = await BuildSubWorkflowAsync();
         ExecutorBinding evidenceBinding = evidence.BindAsExecutor("EvidenceCollection");
 
         //Agent safety valve
@@ -386,27 +368,27 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
 
-    private AIAgent BuildAgent()
+    private async Task<AIAgent> BuildAgentAsync()
     {
         AgentProfile agentProfile = new()
         {
-            AgentId = "SafetyAgent",
-            AgentName = "SafetyAgent",
-            Model = new ModelProfile
-            {
-                Endpoint = "http://localhost:11111",
-                Provider = ModelProfile.ModelProvider.Ollama,
-                MaxOutputTokens = 16000,
-                ModelId = "gemma4",
-                Temperature = 0.3f
-            },
-            Instructions = "You are a helpful agent."
+                AgentId = "SafetyAgent",
+                AgentName = "SafetyAgent",
+                Model = new ModelProfile
+                {
+                        Endpoint = "http://localhost:11111",
+                        Provider = ModelProfile.ModelProvider.Ollama,
+                        MaxOutputTokens = 16000,
+                        ModelId = "gemma4",
+                        Temperature = 0.3f
+                },
+                Instructions = "You are a helpful agent."
         };
         SafetyEngineOptions opt = new();
 
 
         List<ISafetyRule> rules = SentinelAgentFactory.CreateSafetyRules();
-        AIAgent agent = _agentFactory.BuildFromProfile(agentProfile);
+        AIAgent agent = await _agentFactory.BuildFromProfileAsync(agentProfile);
         agent.AsBuilder().UseSafetyEngine(rules, _Factory.CreateLogger<SafetyEngineAgent>(), opt).Build();
 
         return agent;
@@ -430,7 +412,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     </para>
     /// </summary>
     /// <returns>The composed investigation <see cref="Workflow" />.</returns>
-    private Workflow BuildSubWorkflow()
+    private async Task<Workflow> BuildSubWorkflowAsync()
     {
         // ── Build agents for the Magentic sub-workflow ──────────────────────────────
         // AIAgent manager = _agentFactory.BuildFromProfile(
@@ -496,7 +478,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
                                   """;
         managerpro.ResponseFormat = ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema(typeof(InvestigationStep)));
-        AIAgent manager = _agentFactory.BuildFromProfile(managerpro);
+        AIAgent manager = await _agentFactory.BuildFromProfileAsync(managerpro);
 
         //Generate a baseline profile with guided defaults
         AgentProfile prof = _agentSpecBuilder.BuildAgentSpec("Worker1", AgentRole.Utility);
@@ -549,20 +531,20 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
                             """;
 
         prof.Tools = ToolRegistry.GetAllTools();
-        AIAgent utility1 = _agentFactory.BuildFromProfile(prof);
+        AIAgent utility1 = await _agentFactory.BuildFromProfileAsync(prof);
 
 
         //Copy profile to new copy and modify
         AgentProfile prof2 = prof;
         prof2.AgentId = "worker2";
         prof2.AgentName = "Worker2";
-        AIAgent utility2 = _agentFactory.BuildFromProfile(prof2);
+        AIAgent utility2 = await _agentFactory.BuildFromProfileAsync(prof2);
 
 
         AgentProfile prof3 = prof2;
         prof3.AgentId = "worker3";
         prof3.AgentName = "Worker3";
-        AIAgent utility3 = _agentFactory.BuildFromProfile(prof3);
+        AIAgent utility3 = await _agentFactory.BuildFromProfileAsync(prof3);
 
 
         //  AIAgent aggregator = _agentFactory.BuildFromProfile(_agentSpecBuilder.BuildAgentSpec("Aggregator", AgentRole.Utility));

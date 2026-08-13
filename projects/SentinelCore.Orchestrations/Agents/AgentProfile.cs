@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -22,7 +22,7 @@ namespace SentinelCore.Agents;
 /// <summary>
 ///     Represents the immutable specification for constructing an <see cref="AIAgent" />.
 ///     This record is utilized by agent factories to produce an <see cref="AgentProfile" /> and delegate
-///     the construction process to <see cref="SentinelAgentFactory.BuildFromProfile" />.
+///     the construction process to <see cref="SentinelAgentFactory.BuildFromProfileAsync" />.
 ///     <para>
 ///         This system supports a flexible investigation platform using a core workflow and a set of agents known as
 ///         'TheCore'.

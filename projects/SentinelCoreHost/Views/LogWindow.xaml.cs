@@ -2,7 +2,7 @@
 // Project:   SentinelCoreHost
 // File:         LogWindow.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 

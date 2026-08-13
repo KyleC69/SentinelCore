@@ -2,16 +2,16 @@
 // Project:   SentinelCore.Tests
 // File:         GlobalUsings.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
-namespace SentinelCoreHost;
+global using Microsoft.Agents.AI;
+global using Microsoft.Extensions.AI;
 
-
-
-
-
-internal class GlobalUsings
-{
-}
+global using SentinelCore.Agents;
+global using SentinelCore.CaseFlow;
+global using SentinelCore.Contracts;
+global using SentinelCore.Events;
+global using SentinelCore.Personas;
+global using SentinelCore.Tools;

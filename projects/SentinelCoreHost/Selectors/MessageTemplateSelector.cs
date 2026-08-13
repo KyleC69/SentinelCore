@@ -2,7 +2,7 @@
 // Project:   SentinelCoreHost
 // File:         MessageTemplateSelector.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 

@@ -2,13 +2,11 @@
 // Project:   SentinelCore.Tests
 // File:         ToolsTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
 using System.Reflection;
-
-using SentinelCore.Tools;
 
 using DescriptionAttribute = System.ComponentModel.DescriptionAttribute;
 

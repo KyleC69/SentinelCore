@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ToolResult.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -21,17 +21,12 @@ namespace SentinelCore.Tools;
 public class ToolResult
 {
 
-
-
-
-
-
-
-
     /// <summary>
     ///     Indicates the reason for the failure of the tool operation, if any.
     /// </summary>
     public string? ErrorDetails { get; set; }
+
+    public string? Message { get; set; }
 
     /// <summary>
     ///     Indicates the results of the tool operation. This is a free-form string that can be used to store any information
@@ -42,22 +37,10 @@ public class ToolResult
     /// <summary>
     ///     Indicates whether the tool operation was successful.
     /// </summary>
-    public bool Success { get; set;}
+    public bool Success { get; set; }
 
 
-public string? Message { get; set; }
-
-
-
-
-
-    public static ToolResult Fail(string errorDetails, string message = "Fail")
-       => new ToolResult
-       {
-           Success = false,
-           ErrorDetails = errorDetails,
-           Results = null
-       };
+    public static ToolResult Fail(string errorDetails, string message = "Fail") => new ToolResult { Success = false, ErrorDetails = errorDetails, Results = null };
 
 
 
@@ -66,14 +49,8 @@ public string? Message { get; set; }
 
 
 
-    public static ToolResult Ok(string results , string message = "Ok")
+    public static ToolResult Ok(string results, string message = "Ok")
     {
-        return new ToolResult
-        {
-            Success = true,
-            ErrorDetails = null,
-            Results = results,
-            Message = message
-        };
+        return new ToolResult { Success = true, ErrorDetails = null, Results = results, Message = message };
     }
 }

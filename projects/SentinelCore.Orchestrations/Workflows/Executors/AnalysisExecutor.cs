@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AnalysisExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -38,11 +38,6 @@ public partial class AnalysisExecutor : Executor
         _events = events;
         _reporter = reporter;
     }
-
-
-
-
-
 
 
 

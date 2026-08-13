@@ -2,7 +2,7 @@
 // Project:   SentinelCoreHost
 // File:         MainWindowViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -47,7 +47,9 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private readonly ILogger<MainWindowViewModel> _logger;
 
     private int _openCount;
+
     private readonly IOrchestrationControl _orchestrationControl;
+
     // Initialise to avoid CS8618 warning.
     private string _statusMessage = string.Empty;
     private readonly object _syncRoot = new();

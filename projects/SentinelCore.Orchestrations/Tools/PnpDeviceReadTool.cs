@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PnpDeviceReadTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -86,12 +86,12 @@ public sealed class PnpDeviceReadTool : AITool
     {
         ProcessStartInfo startInfo = new()
         {
-            FileName = "pnputil.exe",
-            Arguments = string.Join(" ", arguments.Select(EscapeArgument)),
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
+                FileName = "pnputil.exe",
+                Arguments = string.Join(" ", arguments.Select(EscapeArgument)),
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
         };
 
         using Process? process = Process.Start(startInfo);

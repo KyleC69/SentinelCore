@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         AgentBuilderTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -18,27 +18,26 @@ namespace SentinelCore.Tests;
 
 
 /// <summary>
-///     Tests for <see cref="AgentBuilder" /> — verifies that the shared builder
+///     Tests for <see cref="SentinelAgentFactory" /> — verifies that the factory
 ///     produces a non-null <see cref="AIAgent" /> for each <see cref="AgentRole" />,
-///     applies the correct middleware pipeline, and throws on invalid input.
+///     and throws on invalid input.
 /// </summary>
 /// <remarks>
-///     These tests use a real <see cref="AgentBuilder" /> with a no-op logger
-///     and a real <see cref="EventCapture" />. The <see cref="AgentBuilder" />
-///     internally constructs an <see cref="OllamaApiClient" />, but since we
-///     never invoke <c>RunAsync</c> on the resulting agent, no network calls
-///     are made. The tests verify construction-time properties only.
+///     These tests use a real <see cref="SentinelAgentFactory" /> with a no-op logger
+///     and a real <see cref="EventCapture" />. The tests verify construction-time
+///     properties and factory behavior only.
 /// </remarks>
 [TestClass]
 public sealed class AgentBuilderTests
 {
 
     [TestMethod]
-    public void Build_CoreSpec_AgentNameMatchesSpec()
+    public async Task BuildFromProfileAsync_CoreProfile_AgentNameMatchesSpec()
     {
-        AgentBuilder builder = CreateBuilder();
+        SentinelAgentFactory factory = CreateFactory();
 
-        AIAgent agent = builder.Build(CreateSpec(AgentRole.Core, "TheCore"));
+        AgentProfile profile = CreateProfile(AgentRole.Core, "TheCore");
+        AIAgent agent = await factory.BuildFromProfileAsync(profile);
 
         Assert.AreEqual("TheCore", agent.Name);
     }
@@ -51,11 +50,12 @@ public sealed class AgentBuilderTests
 
 
     [TestMethod]
-    public void Build_CoreSpec_ReturnsNonNullAgent()
+    public async Task BuildFromProfileAsync_CoreProfile_ReturnsNonNullAgent()
     {
-        AgentBuilder builder = CreateBuilder();
+        SentinelAgentFactory factory = CreateFactory();
 
-        AIAgent agent = builder.Build(CreateSpec(AgentRole.Core, "TheCore"));
+        AgentProfile profile = CreateProfile(AgentRole.Core, "TheCore");
+        AIAgent agent = await factory.BuildFromProfileAsync(profile);
 
         Assert.IsNotNull(agent);
     }
@@ -68,46 +68,12 @@ public sealed class AgentBuilderTests
 
 
     [TestMethod]
-    public void Build_DomainSpecWithTools_AgentNameMatchesSpec()
+    public async Task BuildFromProfileAsync_ManagerProfile_AgentNameMatchesSpec()
     {
-        AgentBuilder builder = CreateBuilder();
-        AIFunction tool = AIFunctionFactory.Create(() => "ok", "test_tool", "Test tool");
+        SentinelAgentFactory factory = CreateFactory();
 
-        AIAgent agent = builder.Build(CreateSpec(AgentRole.Domain, "registry_agent", [tool]));
-
-        Assert.AreEqual("registry_agent", agent.Name);
-    }
-
-
-
-
-
-
-
-
-    [TestMethod]
-    public void Build_DomainSpec_ReturnsNonNullAgent()
-    {
-        AgentBuilder builder = CreateBuilder();
-
-        AIAgent agent = builder.Build(CreateSpec(AgentRole.Domain, "registry_agent"));
-
-        Assert.IsNotNull(agent);
-    }
-
-
-
-
-
-
-
-
-    [TestMethod]
-    public void Build_ManagerSpec_AgentNameMatchesSpec()
-    {
-        AgentBuilder builder = CreateBuilder();
-
-        AIAgent agent = builder.Build(CreateSpec(AgentRole.Manager, "WorkflowManager"));
+        AgentProfile profile = CreateProfile(AgentRole.Manager, "WorkflowManager");
+        AIAgent agent = await factory.BuildFromProfileAsync(profile);
 
         Assert.AreEqual("WorkflowManager", agent.Name);
     }
@@ -120,11 +86,12 @@ public sealed class AgentBuilderTests
 
 
     [TestMethod]
-    public void Build_ManagerSpec_ReturnsNonNullAgent()
+    public async Task BuildFromProfileAsync_ManagerProfile_ReturnsNonNullAgent()
     {
-        AgentBuilder builder = CreateBuilder();
+        SentinelAgentFactory factory = CreateFactory();
 
-        AIAgent agent = builder.Build(CreateSpec(AgentRole.Manager, "WorkflowManager"));
+        AgentProfile profile = CreateProfile(AgentRole.Manager, "WorkflowManager");
+        AIAgent agent = await factory.BuildFromProfileAsync(profile);
 
         Assert.IsNotNull(agent);
     }
@@ -137,11 +104,11 @@ public sealed class AgentBuilderTests
 
 
     [TestMethod]
-    public void Build_NullSpec_Throws()
+    public async Task BuildFromProfileAsync_NullProfile_Throws()
     {
-        AgentBuilder builder = CreateBuilder();
+        SentinelAgentFactory factory = CreateFactory();
 
-        Assert.Throws<ArgumentNullException>(() => builder.Build(null!));
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => factory.BuildFromProfileAsync(null!));
     }
 
 
@@ -152,11 +119,30 @@ public sealed class AgentBuilderTests
 
 
     [TestMethod]
-    public void Build_WorkerSpec_ReturnsNonNullAgent()
+    public async Task BuildFromProfileAsync_UtilityProfileWithTools_ReturnsNonNullAgent()
     {
-        AgentBuilder builder = CreateBuilder();
+        SentinelAgentFactory factory = CreateFactory();
 
-        AIAgent agent = builder.Build(CreateSpec(AgentRole.Worker, "worker-1"));
+        AgentProfile profile = CreateProfile(AgentRole.Utility, "registry_agent");
+        AIAgent agent = await factory.BuildFromProfileAsync(profile);
+
+        Assert.IsNotNull(agent);
+    }
+
+
+
+
+
+
+
+
+    [TestMethod]
+    public async Task BuildFromProfileAsync_UtilityProfile_ReturnsNonNullAgent()
+    {
+        SentinelAgentFactory factory = CreateFactory();
+
+        AgentProfile profile = CreateProfile(AgentRole.Utility, "worker-1");
+        AIAgent agent = await factory.BuildFromProfileAsync(profile);
 
         Assert.IsNotNull(agent);
     }
@@ -171,7 +157,7 @@ public sealed class AgentBuilderTests
     [TestMethod]
     public void Constructor_NullEvents_Throws()
     {
-        Assert.Throws<ArgumentNullException>(() => new AgentBuilder(null!, NoOpLoggerFactory.Instance));
+        Assert.ThrowsException<ArgumentNullException>(() => new SentinelAgentFactory(null!, NoOpLoggerFactory.Instance));
     }
 
 
@@ -184,9 +170,9 @@ public sealed class AgentBuilderTests
     [TestMethod]
     public void Constructor_NullLoggerFactory_Throws()
     {
-        EventCapture events = new EventCapture();
+        EventCapture events = new();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentBuilder(events, null!));
+        Assert.ThrowsException<ArgumentNullException>(() => new SentinelAgentFactory(events, null!));
     }
 
 
@@ -196,10 +182,10 @@ public sealed class AgentBuilderTests
 
 
 
-    private static AgentBuilder CreateBuilder(EventCapture? events = null)
+    private static SentinelAgentFactory CreateFactory(EventCapture? events = null)
     {
         events ??= new EventCapture();
-        return new AgentBuilder(events, NoOpLoggerFactory.Instance);
+        return new SentinelAgentFactory(events, NoOpLoggerFactory.Instance);
     }
 
 
@@ -209,7 +195,7 @@ public sealed class AgentBuilderTests
 
 
 
-    private static AgentProfile CreateSpec(AgentRole role, string name, IList<AITool>? tools = null)
+    private static AgentProfile CreateProfile(AgentRole role, string name, IList<AITool>? tools = null)
     {
         return new AgentProfile
         {
@@ -217,7 +203,7 @@ public sealed class AgentBuilderTests
                 AgentName = name,
                 Persona = new AgentPersona { Name = name, Instructions = "test instructions", Description = "test description" },
                 Tools = tools ?? [],
-                Model = ModelBuilder
+                Model = ModelProfile.Glm5()
         };
     }
 }

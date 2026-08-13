@@ -2,12 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         TestOptions.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
-
-
-
-using SentinelCore.Contracts;
-
+// Build Num:  081312
 
 
 

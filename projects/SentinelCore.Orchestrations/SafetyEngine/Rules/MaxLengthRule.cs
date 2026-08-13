@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MaxLengthRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 

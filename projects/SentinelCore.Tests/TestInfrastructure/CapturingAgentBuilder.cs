@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         CapturingAgentBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  080801
+// Build Num:  081312
 
 
 
@@ -13,12 +13,12 @@ namespace SentinelCore.Tests.TestInfrastructure;
 
 
 /// <summary>
-///     A test double for <see cref="IAgentBuilder" /> that records every
-///     <see cref="AgentProfile" /> passed to <see cref="Build" /> and returns a
+///     A test double for <see cref="ISentinelAgentFactory" /> that records every
+///     <see cref="AgentProfile" /> passed to <see cref="BuildFromProfileAsync" /> and returns a
 ///     simple stub <see cref="AIAgent" />. Used to verify factories produce
 ///     the correct specs without requiring a real LLM endpoint.
 /// </summary>
-public sealed class CapturingAgentBuilder : IAgentBuilder
+public sealed class CapturingAgentBuilder : ISentinelAgentFactory
 {
     private readonly AIAgent _stubAgent;
 
@@ -44,11 +44,25 @@ public sealed class CapturingAgentBuilder : IAgentBuilder
     public List<AgentProfile> CapturedSpecs { get; } = [];
 
     /// <summary>
-    ///     Returns the last spec passed to <see cref="Build" />, or throws if none.
+    ///     Returns the last spec passed to <see cref="BuildFromProfileAsync" />, or throws if none.
     /// </summary>
     public AgentProfile LastSpec
     {
         get => CapturedSpecs.Count > 0 ? CapturedSpecs[^1] : throw new InvalidOperationException("No AgentProfile has been captured yet.");
+    }
+
+
+
+
+
+
+
+
+    public Task<AIAgent> BuildFromProfileAsync(AgentProfile profile, AgentRole? overrideRole = null)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        CapturedSpecs.Add(profile);
+        return Task.FromResult(_stubAgent);
     }
 
 
@@ -65,34 +79,6 @@ public sealed class CapturingAgentBuilder : IAgentBuilder
     {
         Assert.AreEqual(1, CapturedSpecs.Count, "Expected exactly one AgentProfile to be built.");
         return CapturedSpecs[0];
-    }
-
-
-
-
-
-
-
-
-    public AIAgent Build(AgentProfile spec)
-    {
-        ArgumentNullException.ThrowIfNull(spec);
-        CapturedSpecs.Add(spec);
-        return _stubAgent;
-    }
-
-
-
-
-
-
-
-
-    public ChatClientAgent BuildChatClientAgent(AgentProfile spec)
-    {
-        ArgumentNullException.ThrowIfNull(spec);
-        CapturedSpecs.Add(spec);
-        throw new NotImplementedException("BuildChatClientAgent is not implemented in the test double.");
     }
 
 
