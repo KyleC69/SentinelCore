@@ -10,7 +10,7 @@ global using Microsoft.Agents.AI;
 global using Microsoft.Extensions.AI;
 
 global using SentinelCore.Agents;
-global using SentinelCore.CaseFlow;
+global using SentinelCore.Cfe;
 global using SentinelCore.Contracts;
 global using SentinelCore.Events;
 global using SentinelCore.Personas;

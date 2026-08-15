@@ -6,7 +6,7 @@
 
 
 
-namespace SentinelCore.CaseFlow;
+namespace SentinelCore.Cfe;
 
 
 

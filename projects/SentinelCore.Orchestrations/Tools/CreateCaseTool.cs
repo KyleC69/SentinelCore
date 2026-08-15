@@ -6,10 +6,11 @@
 
 
 
-using System.ComponentModel;
+using SentinelCore.Cfe;
+using SentinelCore.Cfe.Persistence;
+using SentinelCore.Infrastructure.Persistence;
 
-using SentinelCore.CaseEngine;
-using SentinelCore.CaseFlow;
+using System.ComponentModel;
 
 
 
@@ -20,7 +21,7 @@ namespace SentinelCore.Tools;
 
 
 
-public class CreateCaseTool : AITool
+public class CaseTool : AITool
 {
 
     private readonly ICaseFlowEngine _engine;
@@ -32,12 +33,12 @@ public class CreateCaseTool : AITool
 
 
 
-    public CreateCaseTool(ICaseFlowEngine engine)
+
+    public CaseTool()
     {
-        _engine = engine ?? throw new ArgumentNullException(nameof(engine));
+        // Parameterless constructor for testing purposes.
+        _engine = new CaseFlowEngine(new EvidenceStore(new SentinelCoreDBContext()), new SentinelCoreDBContext());
     }
-
-
 
 
 
@@ -46,7 +47,7 @@ public class CreateCaseTool : AITool
 
     public override string Description { get; } = "A tool for creating a new case in the Sentinel Core platform from the provided signal. " + "The signal should be a string that describes the issue or anomaly that needs to be investigated.";
 
-    public override string Name { get; } = "Create_Case";
+    public override string Name { get; } = "CreateCaseTool";
 
 
 
@@ -55,17 +56,27 @@ public class CreateCaseTool : AITool
 
 
 
-    [Description("This is an AI tool for creating new investigative cases for the Sentinel Core platform.")]
-    public async Task<ToolResult> ExecuteAsync([Description("The description of the signal in natural language.")] string signal)
+    [Description("This is an AITool for creating new investigative cases for the Sentinel Core platform.")]
+    public ToolResult CreateCaseTool([Description("The description of the signal in natural language.")] string signal)
     {
         Signal rawSignal = new(signal, "CaseGen");
 
-        Guid caseId = await _engine.CreateCaseAsync(rawSignal);
-        if (caseId == Guid.Empty)
+        try
         {
-            return ToolResult.Fail("Failed to create case. The case ID returned was empty.");
+            Guid caseId = _engine.CreateCase(rawSignal);
+            if (caseId == Guid.Empty)
+            {
+                return ToolResult.Fail("Failed to create case. The case ID returned was empty.");
+            }
+
+            return ToolResult.Ok(caseId.ToString());
+        }
+        catch (Exception e)
+        {
+            return ToolResult.Fail($"Failed to create case. Exception: {e.Message}");
         }
 
-        return ToolResult.Ok(caseId.ToString());
+
     }
+
 }

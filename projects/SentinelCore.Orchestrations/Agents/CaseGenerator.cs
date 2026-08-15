@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
 
 using SentinelCore.Abstractions;
-using SentinelCore.CaseEngine;
+using SentinelCore.Cfe;
 using SentinelCore.Tools;
 
 
@@ -26,23 +26,8 @@ namespace SentinelCore.Agents;
 
 public interface ICaseGenerator
 {
-    [Obsolete("Use BuildAgentAsync instead to avoid sync-over-async deadlocks.")]
-    AIAgent BuildAgent();
-
-
-
-
-
-
-
 
     Task<AIAgent> BuildAgentAsync();
-
-
-    Task<AIAgent> GetAIAgentAsync();
-
-
-    Task<string> GetAgentResponse(string prompt);
 }
 
 
@@ -53,7 +38,7 @@ public interface ICaseGenerator
 ///     Provides bulk case generation by AI for both baseline start and identify pre-existing problems in environment
 ///     Encapsulates the specialty agent for case generation based on system scans.
 /// </summary>
-public class CaseGenerator : ICaseGenerator
+public class CaseGenerator : ICaseGenerator, IDisposable
 {
 
     public string GeneratorInstructions = """
@@ -73,9 +58,10 @@ public class CaseGenerator : ICaseGenerator
     private readonly IAgentProfileBuilder _profileBuilder;
 
     private readonly ISystemReporter _reporter;
+    private McpClient _client = null!;
 
-
-
+    private AIAgent? _agent;
+    private AgentSession? _session;
 
 
 
@@ -89,6 +75,9 @@ public class CaseGenerator : ICaseGenerator
         _options = settings;
         _engine = engine;
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+
+
+
     }
 
 
@@ -96,18 +85,6 @@ public class CaseGenerator : ICaseGenerator
 
 
 
-
-
-    /// <summary>
-    ///     Synchronous wrapper for <see cref="BuildAgentAsync" />.
-    ///     Kept for backward compatibility with <see cref="ICaseGenerator" />.
-    /// </summary>
-    /// <returns>An <see cref="AIAgent" /> configured to generate cases.</returns>
-    [Obsolete("Use BuildAgentAsync instead to avoid sync-over-async deadlocks.")]
-    public AIAgent BuildAgent()
-    {
-        return BuildAgentAsync().GetAwaiter().GetResult();
-    }
 
 
 
@@ -125,22 +102,32 @@ public class CaseGenerator : ICaseGenerator
     /// </returns>
     public async Task<AIAgent> BuildAgentAsync()
     {
+
+        _client = await McpClient.CreateAsync(new StdioClientTransport(new()
+        {
+            //Should be running from the output directory
+            Name = "SentinelCore-MCP",
+            Command = "SentinelCore-MCP.exe",
+            WorkingDirectory = AppContext.BaseDirectory,
+            Arguments = ["--stdio"]
+        }, _factory))
+                .ConfigureAwait(false);
+
+
+
+
         // Build a profile for the CaseGenerator agent.
-        //_profileBuilder.BuildAgentSpec("CaseGenerator", AgentRole.Utility, GeneratorInstructions);
         AgentProfile profile = _profileBuilder.BuildAgentSpec("CaseGenerator");
         var mcpTools = await GetMcpToolsAsync().ConfigureAwait(false);
 
-        List<AITool> tools = new();
 
-        tools.Add(new CreateCaseTool(_engine));
         profile.Instructions = GeneratorInstructions;
         profile.Model = _options.Value?.DefaultModel!;
-        profile.Tools = [.. tools, .. mcpTools];
+        profile.Tools = [new CaseTool(), .. mcpTools];
 
         // Build the agent using the factory.
-        AIAgent agent = await _agentFactory.BuildFromProfileAsync(profile).ConfigureAwait(false);
-
-        return agent;
+        _agent = await _agentFactory.BuildFromProfileAsync(profile).ConfigureAwait(false);
+        return _agent!;
     }
 
 
@@ -150,30 +137,21 @@ public class CaseGenerator : ICaseGenerator
 
 
 
-    public Task<AIAgent> GetAIAgentAsync()
-    {
-        return BuildAgentAsync();
-    }
 
 
 
 
-
-
-
-
-    public async Task<string> GetAgentResponse(string prompt)
+    public async Task<string> GetAgentResponseold(string prompt)
     {
         AgentResponse response = null!;
         try
         {
             ChatMessage msg = new(ChatRole.User, prompt);
 
-            AIAgent agent = BuildAgent();
-            //AgentSession session  await agent.CreateSessionAsync();
 
 
-            response = await agent.RunAsync(msg);
+
+            response = await _agent!.RunAsync(msg);
 
             string result = response.Text;
             return result;
@@ -207,20 +185,36 @@ public class CaseGenerator : ICaseGenerator
     {
         try
         {
-            await using McpClient mcpClient = await McpClient.CreateAsync(new StdioClientTransport(new()
-                    {
-                            //Should be running from the output directory
-                            Name = "SentinelCore-MCP", Command = "SentinelCore-MCP.exe", WorkingDirectory = AppContext.BaseDirectory, Arguments = ["--stdio"]
-                    }, _factory))
-                    .ConfigureAwait(false);
 
-            IList<McpClientTool> mcpTools = await mcpClient.ListToolsAsync().ConfigureAwait(false);
+
+            IList<McpClientTool> mcpTools = await _client.ListToolsAsync().ConfigureAwait(false);
             return mcpTools.Cast<AITool>().ToList();
         }
         catch (Exception ex)
         {
             _reporter.ReportWarning("MCP server (SentinelCore-MCP.exe) is not available. Proceeding without MCP tools.", ex);
-            return [];
+            return new List<AITool>();
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+    public void Dispose()
+    {
+        _factory.Dispose();
+        if (_client is IDisposable clientDisposable)
+        {
+            clientDisposable.Dispose();
+        }
+        else
+        {
+            _ = _client.DisposeAsync().AsTask();
         }
     }
 }

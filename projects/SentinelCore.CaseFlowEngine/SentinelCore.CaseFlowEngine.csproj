@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <Folder Include="Abstractions\" />
+    <Folder Include="Cfe\" />
   </ItemGroup>
 
   </Project>

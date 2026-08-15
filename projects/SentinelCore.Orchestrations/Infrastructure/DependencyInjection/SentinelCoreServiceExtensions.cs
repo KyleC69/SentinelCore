@@ -6,8 +6,6 @@
 
 
 
-using System.Text.Json;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,12 +15,14 @@ using Microsoft.Extensions.Logging.Console;
 using SentinelCore.Abstractions;
 using SentinelCore.Agents;
 using SentinelCore.Application;
-using SentinelCore.CaseEngine;
-using SentinelCore.CaseFlowEngine.Persistence;
+using SentinelCore.Cfe;
+using SentinelCore.Cfe.Persistence;
 using SentinelCore.Events;
 using SentinelCore.Infrastructure.Persistence;
 using SentinelCore.Workflows;
 using SentinelCore.Workflows.Executors;
+
+using System.Text.Json;
 
 
 
@@ -120,7 +120,7 @@ public static class SentinelCoreServiceExtensions
         // Case Flow Engine — owns the entire case lifecycle; registers its own internal repository.
         // Transient so it does not capture scoped/transient persistence services (DbContext, IEvidenceStore)
         // and can be resolved safely from any scope.
-        services.AddTransient<ICaseFlowEngine, CaseEngine.CaseFlowEngine>();
+        services.AddTransient<ICaseFlowEngine, CaseFlowEngine>();
         services.AddTransient<IEvidenceStore, EvidenceStore>();
         services.AddTransient<IPatternMemoryStore, PatternMemoryStore>();
         services.AddTransient<CaseGenExec>();
@@ -165,11 +165,14 @@ public static class SentinelCoreServiceExtensions
 
         JsonLoggerOptions jsonOptions = new()
         {
-                MinimumLevel = LogLevel.Trace, Indented = true, Output = JsonLoggerOutput.File, FilePath = "SentinelCore.log"
+            MinimumLevel = LogLevel.Trace,
+            Indented = true,
+            Output = JsonLoggerOutput.File,
+            FilePath = "SentinelCore.log"
 
-                // Or:
-                // Output = JsonLoggerOutput.File,
-                // FilePath = "logs/sentinelcore.json"
+            // Or:
+            // Output = JsonLoggerOutput.File,
+            // FilePath = "logs/sentinelcore.json"
         };
 
 

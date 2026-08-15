@@ -1,6 +1,6 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.CaseFlowEngine
-// File:         CaseFlowEngine.cs
+// Project:   SentinelCore.Cfe
+// File:         Cfe.cs
 // Author: Kyle L. Crowder
 // Build Num:  081312
 
@@ -9,13 +9,13 @@
 using Microsoft.EntityFrameworkCore;
 
 using SentinelCore.Abstractions;
-using SentinelCore.CaseFlow;
-using SentinelCore.CaseFlowEngine.Persistence;
+using SentinelCore.Cfe.Persistence;
+using SentinelCore.Contracts;
 
 
 
 
-namespace SentinelCore.CaseEngine;
+namespace SentinelCore.Cfe;
 
 
 
@@ -31,6 +31,7 @@ public interface ICaseFlowEngine
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task AdvanceCaseAsync(Guid caseId, CaseStatus status, CancellationToken cancellationToken = default);
+    Guid CreateCase(Signal rawSignal, CancellationToken cancellationToken = default);
 
 
 
@@ -88,17 +89,17 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     private static readonly Dictionary<CaseStatus, HashSet<CaseStatus>> AllowedTransitions = new()
     {
-            [CaseStatus.Open] = [CaseStatus.Analysis, CaseStatus.Cancelled],
-            [CaseStatus.Analysis] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Cancelled],
-            [CaseStatus.Investigation] = [CaseStatus.Review, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
-            [CaseStatus.Review] = [CaseStatus.Complete, CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Cancelled],
-            [CaseStatus.AwaitingInput] = [CaseStatus.Investigation, CaseStatus.Escalated, CaseStatus.Cancelled],
-            [CaseStatus.Escalated] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Alerted, CaseStatus.Cancelled],
-            [CaseStatus.Alerted] = [CaseStatus.Escalated, CaseStatus.Blocked, CaseStatus.Cancelled],
-            [CaseStatus.Blocked] = [CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
-            [CaseStatus.Complete] = [CaseStatus.Closed],
-            [CaseStatus.Cancelled] = [CaseStatus.Closed],
-            [CaseStatus.Closed] = []
+        [CaseStatus.Open] = [CaseStatus.Analysis, CaseStatus.Cancelled],
+        [CaseStatus.Analysis] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Cancelled],
+        [CaseStatus.Investigation] = [CaseStatus.Review, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
+        [CaseStatus.Review] = [CaseStatus.Complete, CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Cancelled],
+        [CaseStatus.AwaitingInput] = [CaseStatus.Investigation, CaseStatus.Escalated, CaseStatus.Cancelled],
+        [CaseStatus.Escalated] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Alerted, CaseStatus.Cancelled],
+        [CaseStatus.Alerted] = [CaseStatus.Escalated, CaseStatus.Blocked, CaseStatus.Cancelled],
+        [CaseStatus.Blocked] = [CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
+        [CaseStatus.Complete] = [CaseStatus.Closed],
+        [CaseStatus.Cancelled] = [CaseStatus.Closed],
+        [CaseStatus.Closed] = []
     };
 
 
@@ -111,12 +112,19 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// <summary>
     ///     Initializes a new instance of the <see cref="CaseFlowEngine" /> class.
     /// </summary>
-    /// <param name="caseRepository">The case persistence repository.</param>
-    /// <param name="evidenceStore">The evidence store for linking evidence to cases.</param>
-    /// <param name="safetyMiddleware">The safety middleware that gates state transitions.</param>
+    /// <param name="evidenceStore">
+    ///     The evidence store used for managing and linking evidence to cases.
+    /// </param>
+    /// <param name="dbContext">
+    ///     The database context for accessing and persisting case-related data.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="evidenceStore" /> or <paramref name="dbContext" /> is <c>null</c>.
+    /// </exception>
     public CaseFlowEngine(IEvidenceStore evidenceStore, SentinelCoreDBContext dbContext)
     {
         _evidenceStore = evidenceStore ?? throw new ArgumentNullException(nameof(evidenceStore));
+
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     }
 
@@ -321,5 +329,24 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
         {
             throw new InvalidOperationException($"Transition from '{from}' to '{to}' is not allowed. " + $"Allowed transitions from '{from}': [{string.Join(", ", allowed)}].");
         }
+    }
+
+    public Guid CreateCase(Signal rawSignal, CancellationToken cancellationToken = default)
+    {
+        //Save the signal first so we can grab this records identifier and use it in the case.
+        SignalEntity ent = rawSignal.ToEntity();
+        _dbContext.SignalEntities.Add(ent);
+        _dbContext.SaveChanges();
+
+        //Now the case.
+        CaseEntity caseent = new CaseEntity
+        {
+            InitiatingSignal = ent.SignalId,
+            CaseId = Guid.NewGuid(),
+            Status = (int)CaseStatus.Open
+        };
+        _dbContext.CaseEntities.Add(caseent);
+        _dbContext.SaveChanges();
+        return caseent.CaseId;
     }
 }

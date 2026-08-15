@@ -11,7 +11,7 @@
    "OutputPath": "Persistence",
    "PluralRules": null,
    "PreserveCasingWithRegex": true,
-   "ProjectRootNamespace": "SentinelCore.CaseFlowEngine",
+   "ProjectRootNamespace": "SentinelCore.Cfe",
    "Schemas": null,
    "SelectedHandlebarsLanguage": 2,
    "SelectedToBeGenerated": 0,

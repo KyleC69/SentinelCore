@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace SentinelCore.CaseFlowEngine.Persistence;
+namespace SentinelCore.Cfe.Persistence;
 
 public partial class SentinelCoreDBContext : DbContext
 {

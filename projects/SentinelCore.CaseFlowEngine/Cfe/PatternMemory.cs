@@ -1,5 +1,5 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.CaseFlowEngine
+// Project:   SentinelCore.Cfe
 // File:         PatternMemory.cs
 // Author: Kyle L. Crowder
 // Build Num:  081312
@@ -8,10 +8,12 @@
 
 using Microsoft.Data.SqlTypes;
 
+using SentinelCore.Contracts;
 
 
 
-namespace SentinelCore.CaseFlow;
+
+namespace SentinelCore.Cfe;
 
 
 

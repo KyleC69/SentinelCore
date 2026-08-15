@@ -8,7 +8,7 @@
 
 using SentinelCore.Abstractions;
 using SentinelCore.Agents;
-using SentinelCore.CaseEngine;
+using SentinelCore.Cfe;
 
 
 
@@ -39,7 +39,7 @@ internal class CaseGenExec(ICaseGenerator generator, ISystemReporter reporter, I
 
 
 
-            AIAgent agent = await generator.GetAIAgentAsync().ConfigureAwait(false);
+            AIAgent agent = await generator.BuildAgentAsync().ConfigureAwait(false);
             AgentSession _session = await agent.CreateSessionAsync(cancellationToken);
 
 

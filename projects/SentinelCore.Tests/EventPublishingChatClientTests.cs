@@ -9,6 +9,8 @@
 using SentinelCore.Agents.Middleware;
 using SentinelCore.Tests.TestInfrastructure;
 
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+
 
 
 
@@ -32,7 +34,7 @@ public sealed class EventPublishingChatClientTests
     {
         EventCapture events = new EventCapture();
         FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
-        Assert.ThrowsException<ArgumentNullException>(() => new EventPublishingChatClient(inner, events, null!, NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>()));
+        Assert.Throws<ArgumentNullException>(() => new EventPublishingChatClient(inner, events, null!, NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>()));
     }
 
 
@@ -46,7 +48,7 @@ public sealed class EventPublishingChatClientTests
     public void Constructor_NullEvents_Throws()
     {
         FakeChatClient inner = new FakeChatClient(CreateTextResponse("x"));
-        Assert.ThrowsException<ArgumentNullException>(() => new EventPublishingChatClient(inner, null!, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>()));
+        Assert.Throws<ArgumentNullException>(() => new EventPublishingChatClient(inner, null!, "TheCore", NoOpLoggerFactory.CreateLogger<EventPublishingChatClient>()));
     }
 
 

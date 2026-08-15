@@ -115,6 +115,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
         }
 
         _theCore = await _generator.BuildAgentAsync().ConfigureAwait(false);
+        _session = await _theCore.CreateSessionAsync().ConfigureAwait(false);
         _agentInitialized = true;
     }
 
@@ -127,7 +128,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
     public async Task<AgentResponse> GetAgentResponse(string prompt)
     {
-        await EnsureAgentInitializedAsync().ConfigureAwait(false);
+       await EnsureAgentInitializedAsync().ConfigureAwait(false);
 
         AgentResponse response = await _theCore!.RunAsync(new ChatMessage(ChatRole.User, prompt), _session!);
 

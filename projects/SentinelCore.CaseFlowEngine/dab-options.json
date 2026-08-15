@@ -4,7 +4,7 @@
    "DatabaseType": 3,
    "MergeDacpacs": false,
    "Optional": false,
-   "ProjectPath": "F:\\Solutions\\SentinelCore\\SentinelCore\\projects\\SentinelCore.CaseFlowEngine",
+   "ProjectPath": "F:\\Solutions\\SentinelCore\\SentinelCore\\projects\\SentinelCore.Cfe",
    "Tables": [
       {
          "Name": "[dbo].[CaseEntity]",

@@ -1,5 +1,5 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.CaseFlowEngine
+// Project:   SentinelCore.Cfe
 // File:         DesignTimeSentinelCoreDBContextFactory.cs
 // Author: Kyle L. Crowder
 // Build Num:  081312
@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Design;
 
 
 
-namespace SentinelCore.CaseFlowEngine.Persistence;
+namespace SentinelCore.Cfe.Persistence;
 
 
 

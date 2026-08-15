@@ -1,17 +1,17 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.CaseFlowEngine
+// Project:   SentinelCore.Cfe
 // File:         EvidenceMappingExtensions.cs
 // Author: Kyle L. Crowder
 // Build Num:  081312
 
 
 
-using SentinelCore.CaseFlow;
+using SentinelCore.Cfe;
 
 
 
 
-namespace SentinelCore.CaseFlowEngine.Persistence;
+namespace SentinelCore.Cfe.Persistence;
 
 
 

@@ -18,6 +18,7 @@
 		<ProjectReference Include="..\SentinelCore.Contracts\SentinelCore.Contracts.csproj" />
 		<PackageReference Include="Microsoft.Agents.AI" />
 		<PackageReference Include="Microsoft.Agents.AI.Abstractions" />
+		<PackageReference Include="ModelContextProtocol" />
 		<PackageReference Include="Microsoft.Agents.AI.Mcp" />
 		<PackageReference Include="Microsoft.Agents.AI.Workflows" />
 		<PackageReference Include="Microsoft.Agents.AI.Workflows.Generators">

@@ -6,6 +6,8 @@
 
 
 
+using Microsoft.Extensions.Options;
+
 namespace SentinelCore.Tests.TestInfrastructure;
 
 
@@ -22,7 +24,11 @@ public static class TestOptions
     /// </summary>
     public static IOptions<SentinelCoreSettings> Create(SentinelCoreSettings? settings = null)
     {
-        //   settings ??= new SentinelCoreSettings { CoreModel = new ModelSettings("http://localhost:11434", "test-core"), DomainModel = new ModelSettings("http://localhost:11434", "test-domain"), ManagerModel = new ModelSettings("http://localhost:11434", "test-manager") };
+        settings ??= new SentinelCoreSettings
+        {
+            DefaultModel = ModelProfile.Glm5(),
+            DefaultUtilityModel = ModelProfile.Gpt20(),
+        };
         return Options.Create(settings);
     }
 }

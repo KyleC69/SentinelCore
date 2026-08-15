@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.Data.SqlTypes;
 using Microsoft.EntityFrameworkCore;
 
-namespace SentinelCore.CaseFlowEngine.Persistence;
+namespace SentinelCore.Cfe.Persistence;
 
 [Table("PatternMemoryEntity")]
 public partial class PatternMemoryEntity

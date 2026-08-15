@@ -8,6 +8,8 @@
 
 using SentinelCore.Tests.TestInfrastructure;
 
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+
 
 
 
@@ -108,7 +110,7 @@ public sealed class AgentBuilderTests
     {
         SentinelAgentFactory factory = CreateFactory();
 
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => factory.BuildFromProfileAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => factory.BuildFromProfileAsync(null!));
     }
 
 
@@ -157,7 +159,7 @@ public sealed class AgentBuilderTests
     [TestMethod]
     public void Constructor_NullEvents_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new SentinelAgentFactory(null!, NoOpLoggerFactory.Instance));
+        Assert.Throws<ArgumentNullException>(() => new SentinelAgentFactory(null!, NoOpLoggerFactory.Instance));
     }
 
 
@@ -172,7 +174,7 @@ public sealed class AgentBuilderTests
     {
         EventCapture events = new();
 
-        Assert.ThrowsException<ArgumentNullException>(() => new SentinelAgentFactory(events, null!));
+        Assert.Throws<ArgumentNullException>(() => new SentinelAgentFactory(events, null!));
     }
 
 
@@ -199,11 +201,11 @@ public sealed class AgentBuilderTests
     {
         return new AgentProfile
         {
-                Role = role,
-                AgentName = name,
-                Persona = new AgentPersona { Name = name, Instructions = "test instructions", Description = "test description" },
-                Tools = tools ?? [],
-                Model = ModelProfile.Glm5()
+            Role = role,
+            AgentName = name,
+            Persona = new AgentPersona { Name = name, Instructions = "test instructions", Description = "test description" },
+            Tools = tools ?? [],
+            Model = ModelProfile.Glm5()
         };
     }
 }

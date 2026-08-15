@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 using SentinelCore.Agents;
 using SentinelCore.Application;
-using SentinelCore.CaseFlow;
+using SentinelCore.Cfe;
 using SentinelCore.Events;
 
 

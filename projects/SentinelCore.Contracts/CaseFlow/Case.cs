@@ -6,12 +6,12 @@
 
 
 
-using SentinelCore.CaseEngine;
+using SentinelCore.Cfe;
 
 
 
 
-namespace SentinelCore.CaseFlow;
+namespace SentinelCore.Contracts;
 
 
 

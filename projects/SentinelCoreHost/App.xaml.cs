@@ -6,22 +6,22 @@
 
 
 
-using System.IO;
-using System.Windows;
-using System.Windows.Threading;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Abstractions;
-using SentinelCore.CaseEngine;
+using SentinelCore.Cfe;
 using SentinelCore.Contracts;
 using SentinelCore.Events;
 using SentinelCore.Infrastructure.DependencyInjection;
 
 using SentinelCoreHost.ViewModels;
+
+using System.IO;
+using System.Windows;
+using System.Windows.Threading;
 
 
 
@@ -69,12 +69,12 @@ public sealed partial class App : Application
         // Setting obj is passed into AddSentinelCore() to configure the core library.
         _settings = new SentinelCoreSettings
         {
-                SqlConnectionString = "server=DESKTOP-NC01091;Database=SentinelCore;Integrated Security=true; TrustServerCertificate=true",
-                TraceEnabled = true,
-                TraceLogLevel = LogLevel.Trace,
-                OrchestrationType = OrchestrationType.CustomGroup,
-                DefaultModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", .2f, 15000, 1, .2f),
-                DefaultUtilityModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", 0.1f, 12000, 1, 0.3f)
+            SqlConnectionString = "server=DESKTOP-NC01091;Database=SentinelCore;Integrated Security=true; TrustServerCertificate=true",
+            TraceEnabled = true,
+            TraceLogLevel = LogLevel.Trace,
+            OrchestrationType = OrchestrationType.TheCore,  // <--- Set the orchestration type to TheCore for normal operation. This is the default and should be used for production.
+            DefaultModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", .2f, 15000, 1, .2f),
+            DefaultUtilityModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", 0.1f, 12000, 1, 0.3f)
         };
 
 

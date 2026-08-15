@@ -7,8 +7,7 @@
 
 
 using SentinelCore.Abstractions;
-using SentinelCore.CaseEngine;
-using SentinelCore.CaseFlow;
+using SentinelCore.Cfe;
 using SentinelCore.Exceptions;
 
 

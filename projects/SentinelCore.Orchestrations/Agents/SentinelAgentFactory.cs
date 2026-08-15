@@ -141,7 +141,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         ChatClientAgentOptions agentOptions = BuildAgentOptions(profile);
         // The factory always creates ChatOptions before this line, so null-forgiving is safe.
 
-        //   agentOptions.ChatOptions!.Tools = [..mcpTools, ..profile.Tools]; // Combine MCP tools with profile tools
+         agentOptions.ChatOptions!.Tools = [..profile.Tools]; // Combine MCP tools with profile tools
         ChatClientAgent agent = new(loggingClient, agentOptions);
 
 

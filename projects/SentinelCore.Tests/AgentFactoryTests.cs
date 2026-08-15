@@ -8,6 +8,8 @@
 
 using SentinelCore.Tests.TestInfrastructure;
 
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+
 
 
 
@@ -28,7 +30,7 @@ public sealed class AgentFactoryTests
     [TestMethod]
     public void Constructor_NullOptions_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new AgentProfileBuilder(null!));
+        Assert.Throws<ArgumentNullException>(() => new AgentProfileBuilder(null!));
     }
 
 
@@ -144,7 +146,7 @@ public sealed class AgentFactoryTests
     public void SpecBuilder_UnsupportedRole_Throws()
     {
         AgentProfileBuilder specBuilder = new(TestOptions.Create());
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => specBuilder.BuildAgentSpec("BadAgent", (AgentRole)999));
+        Assert.Throws<ArgumentOutOfRangeException>(() => specBuilder.BuildAgentSpec("BadAgent", (AgentRole)999));
     }
 
 

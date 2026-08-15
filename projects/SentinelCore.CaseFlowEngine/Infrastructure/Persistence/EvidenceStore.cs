@@ -1,5 +1,5 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.CaseFlowEngine
+// Project:   SentinelCore.Cfe
 // File:         EvidenceStore.cs
 // Author: Kyle L. Crowder
 // Build Num:  081312
@@ -9,8 +9,8 @@
 using Microsoft.EntityFrameworkCore;
 
 using SentinelCore.Abstractions;
-using SentinelCore.CaseFlow;
-using SentinelCore.CaseFlowEngine.Persistence;
+using SentinelCore.Cfe;
+using SentinelCore.Cfe.Persistence;
 
 
 

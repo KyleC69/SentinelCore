@@ -6,19 +6,18 @@
 
 
 
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
+
+using SentinelCore.Abstractions;
+using SentinelCore.Cfe;
+using SentinelCore.Events;
+
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Data;
 using System.Windows.Input;
-
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
-
-using SentinelCore.Abstractions;
-using SentinelCore.CaseEngine;
-using SentinelCore.CaseFlow;
-using SentinelCore.Events;
 
 
 

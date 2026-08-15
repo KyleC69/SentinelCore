@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace SentinelCore.CaseFlowEngine.Persistence;
+namespace SentinelCore.Cfe.Persistence;
 
 [Table("InvestigationPlanEntity")]
 [Index("PlanId", Name = "AK_InvestigationPlan_InvestigationPlanId", IsUnique = true)]

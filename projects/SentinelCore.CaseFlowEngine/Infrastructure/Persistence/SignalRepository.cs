@@ -1,5 +1,5 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.CaseFlowEngine
+// Project:   SentinelCore.Cfe
 // File:         SignalRepository.cs
 // Author: Kyle L. Crowder
 // Build Num:  081312
@@ -7,8 +7,8 @@
 
 
 using SentinelCore.Abstractions;
-using SentinelCore.CaseFlow;
-using SentinelCore.CaseFlowEngine.Persistence;
+using SentinelCore.Cfe;
+using SentinelCore.Cfe.Persistence;
 
 
 

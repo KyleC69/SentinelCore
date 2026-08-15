@@ -1,5 +1,5 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.CaseFlowEngine
+// Project:   SentinelCore.Cfe
 // File:         DatabaseInitializer.cs
 // Author: Kyle L. Crowder
 // Build Num:  081312
@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.CaseFlowEngine.Persistence;
+using SentinelCore.Cfe.Persistence;
 
 
 

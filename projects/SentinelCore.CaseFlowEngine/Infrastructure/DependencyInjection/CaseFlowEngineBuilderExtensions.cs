@@ -1,5 +1,5 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.CaseFlowEngine
+// Project:   SentinelCore.Cfe
 // File:         CaseFlowEngineBuilderExtensions.cs
 // Author: Kyle L. Crowder
 // Build Num:  081312

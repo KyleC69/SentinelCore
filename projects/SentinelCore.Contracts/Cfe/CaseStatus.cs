@@ -8,7 +8,7 @@
 
 
 
-namespace SentinelCore.CaseEngine;
+namespace SentinelCore.Cfe;
 
 
 
