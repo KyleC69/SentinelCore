@@ -6,16 +6,22 @@
 
 SentinelCore is a multi-agent AI investigation platform that learns from every case and interaction to accelerate future resolutions. It takes a signal — a prompt, an event log error, an anomaly alert — and orchestrates a team of AI agents to investigate, gather evidence, and deliver a diagnosis with remediation steps.
 
-Built on the Microsoft Agent Framework with .NET 10, SentinelCore combines deterministic case lifecycle management, safety-gated state transitions, pattern memory, and 35+ agent personas to deliver accurate, auditable investigations on Windows systems.
+Built on the Microsoft Agent Framework (MAF) with .NET 10, SentinelCore combines deterministic case lifecycle management, safety-gated state transitions, pattern memory, and 35+ agent personas to deliver accurate, auditable investigations on Windows systems. Explore the power of MAF and versatility with this application using multi-agents, RAG, context enriching, workflows, executors, multi-provider
 
+NOTE: MAF and the projects in this repo are under active development, expect changes and check back for updates.
+
+BUGS: Please report any bugs to the issues section of this repo. Some features may not be fully implemented yet.
 ---
 
 ## Key Features
 
-- **Signal-driven investigations** — Submit a natural-language prompt, event log error, or anomaly alert and let the AI investigate
-- **Multi-agent orchestration** — TheCore agent generates hypotheses; the Manager dispatches Domain Agents to gather evidence; an Analysis group validates findings
-- **Deterministic case lifecycle** — 11-state state machine with safety gating ensures no case transitions without validation
+- **Multi-agent orchestration** — TheCore agent handles main reasoning and long term context memory. Several supportive agents are used for short term workload and pure decision gating. Nested workflows and executors keeps logic modular and easy to debug. Isolated core keeps main context clean and reduces model latency and increases over all reasoning accuracy. Design breaks up workload to allow for smaller local models to perform targeted tasks and not prone to stall.
+
+- **Versatile Design** - Pluggable RAG knowledge base allows system to shift focus to any domain, medical, fabrication, manufacturing etc. RAG features vector indexing summaries of remote resources and pulling remote data only when needed and relevant to task.
+
 - **Pattern memory** — Vectorized case history enables instant resolution when a similar signal has been seen before
+- **Signal-driven investigations** — Submit a natural-language prompt, event log error, or automated anomaly alert and let the AI investigate
+- **Deterministic case lifecycle** — 11-state state machine with safety gating ensures no case transitions without validation
 - **Safety engine** — `ISafetyMiddleware` gates every state transition; hosts can inject custom rules to block, allow, or modify actions
 - **35+ agent personas** — Slightly different perspectives produce richer debate and more accurate results
 - **40+ Windows diagnostic tools** — Registry, WMI, Event Log, Defender, Hyper-V, Firewall, and more
@@ -23,11 +29,13 @@ Built on the Microsoft Agent Framework with .NET 10, SentinelCore combines deter
 - **Model flexibility** — Ollama (local), OpenAI, Azure OpenAI, GitHub Models, Anthropic, ONNX, or Foundry endpoints
 - **Minimal host integration** — One extension method, one settings class, event handlers — you're running
 
+- **NEW** Tools moved to MCP Local server project for easier management and system flexibility - server can be deployed to other targets
+
 ---
 
 ## Architecture
 
-```
+
 ┌──────────────────────────────────────────────────────────────────────┐
 │                        SentinelCoreHost (WPF)                        │
 │  Calls AddSentinelCore(), subscribes to ISentinelCoreEvents         │
@@ -47,12 +55,12 @@ Built on the Microsoft Agent Framework with .NET 10, SentinelCore combines deter
 │  Signal · Case · Evidence · SentinelCoreSettings · ModelProfile      │
 │  ISentinelCoreEvents · ActivityType · OrchestrationType              │
 └──────────────────────────────────────────────────────────────────────┘
-```
+
 
 ### Dependency Rules (Immutable)
 
 | Rule | Description |
-|------|-------------|
+| ------ | ------------- |
 | **Contracts is zero-dependency** | Only NuGet packages — no project references |
 | **CaseFlowEngine depends on Contracts only** | Never references Orchestrations |
 | **Orchestrations depends on Contracts + CaseFlowEngine** | Wires everything together via DI |
@@ -203,7 +211,7 @@ services.AddSentinelCore(settings);
 This registers **all** SentinelCore services unconditionally:
 
 | Service | Lifetime | Description |
-|---------|----------|-------------|
+| --------- | ---------- | ------------- |
 | `ICaseFlowEngine` | Transient | Case lifecycle state machine |
 | `ICaseRepository` | Transient | Case persistence (internal to CFE) |
 | `IEvidenceStore` | Transient | Evidence storage |
@@ -348,7 +356,7 @@ projects/
 ### Contracts (`SentinelCore.Contracts`)
 
 | Type | Description |
-|------|-------------|
+| ------ | ------------- |
 | `ICaseFlowEngine` | Owns the case lifecycle. Create cases and advance status. |
 | `ICaseRepository` | Internal persistence for case records. Use `ICaseFlowEngine` instead. |
 | `IEvidenceStore` | Append and retrieve evidence items for a case. |
@@ -365,7 +373,7 @@ projects/
 ### Case Flow (`SentinelCore.CaseFlowEngine`)
 
 | Type | Description |
-|------|-------------|
+| ------ | ------------- |
 | `CaseFlowEngine` | Default `ICaseFlowEngine` implementation. Validates transitions, gates with safety. |
 | `CaseRepository` | EF Core implementation of `ICaseRepository`. |
 | `EvidenceStore` | EF Core implementation of `IEvidenceStore`. |
@@ -377,7 +385,7 @@ projects/
 ### Safety Engine (`SentinelCore.SafetyEngine`)  -- stubs/hooks only, design TBD
 
 | Type | Description |
-|------|-------------|
+| ------ | ------------- |
 | `ISafetyMiddleware` | Evaluate a `SafetyContext` and return a `SafetyVerdict`. |
 | `SafetyContext` | Carries `CaseId`, `FunctionCall`, `FunctionResult`, `Message`, `MutatingToolNames`, `RegisteredToolNames`. |
 | `SafetyVerdict` | `Allowed`, `Blocked`, or `Modified`. |
@@ -389,16 +397,16 @@ The platform is built around selectable varying patterns for many use cases.
 ** Extra patterns have been removed from the Forensics Edition
 
 | Type | Description |
-|------|-------------|
+| ------ | ------------- |
 | `TheCoreWorkflow` | Main investigation workflow with signal classification and routing. |
-| `MagneticOrchestration` | Multi-agent orchestration: Manager dispatches Domain Agents. |  -- reduced to mag workflow
+| `MagneticOrchestration` | Multi-agent orchestration: Manager dispatches Domain Agents. | -- reduced to mag workflow
 | `OrchestrationControl` | `IOrchestrationControl` implementation — starts an orchestration. |
-| `OrchestrationFactory` | Creates `IOrchestration` instances by `OrchestrationType`. |  -- Expansion to add orchestrations
+| `OrchestrationFactory` | Creates `IOrchestration` instances by `OrchestrationType`. | -- Expansion to add orchestrations
 | `SentinelAgentFactory` | Builds `AIAgent` from `AgentProfile` with full middleware pipeline. |
 | `AgentBuilder` | Constructs agents with logging, events, safety, and pattern memory. |
 | `AgentProfile` | Immutable specification for agent construction (model, tools, persona, role). |
-| `AgentRole` | `Core`, `Manager`, or `Utility`. |  -- Phasing out in favor of profile
-| `AgentMiddlewarePipeline` | Predefined middleware stacks: Core, Default, Domain, Manager, Minimal. |  -- RAG/KB indexing/specialty knowledge
+| `AgentRole` | `Core`, `Manager`, or `Utility`. | -- Phasing out in favor of profile
+| `AgentMiddlewarePipeline` | Predefined middleware stacks: Core, Default, Domain, Manager, Minimal. | -- RAG/KB indexing/specialty knowledge
 | `ToolRegistry` | Maps 40+ Windows diagnostic tools to domain categories. | --- Read-only system interrogaters
 
 ---
@@ -408,7 +416,7 @@ The platform is built around selectable varying patterns for many use cases.
 SentinelCore supports multiple model providers via `ModelProfile`:
 
 | Provider | Endpoint Example | Notes |
-|----------|-----------------|-------|
+| ---------- | ----------------- | ------- |
 | `Ollama` | `http://127.0.0.1:11434` | Local/cloud inference, air-gapped capable |
 | `OpenAI` | `https://api.openai.com/v1` | Requires `ApiKey` |
 | `AzureOpenAI` | `https://<resource>.openai.azure.com` | Requires `ApiKey` |
@@ -427,7 +435,7 @@ This eliminates stale group debates, encourages variations in thinking patterns,
 separation of ideas and an actual group discussion that can produced inventive and powerful variations with the same model accross the board.
 
 | Category | Personas |
-|----------|----------|
+| ---------- | ---------- |
 | Leadership | TheArchitect, TheLeader, TheManager, TheStrategist, TheVisionary |
 | Analysis | TheAnalyst, TheResearcher, TheEvaluator, TheCritic |
 | Building | TheEngineer, TheDesigner, TheInnovator, TheImplementer |
@@ -445,7 +453,7 @@ to fix what it found. Tools are exploratory only, operator applies fixes.
 40+ read-only AITools organized by domain:
 
 | Domain | Tools |
-|--------|-------|
+| -------- | ------- |
 | System | Registry, WMI, Environment Variables, Processes, Services, Drivers, Boot Config |
 | Security | Defender, Firewall, AppLocker, BitLocker, UAC, Credentials, Certificates, Auditing |
 | Network | Network, VPN, Wireless, Proxy, RDP |
@@ -483,7 +491,7 @@ public interface ISentinelCoreEvents
 ## Exceptions
 
 | Exception | Purpose |
-|-----------|---------|
+| ----------- | --------- |
 | `SentinelCaseEngineException` | Errors in case lifecycle operations |
 | `SentinelCoreModelException` | Errors directly attributable to the AI model |
 | `SentinelCorePlatformException` | Fatal platform errors requiring immediate attention |
@@ -499,7 +507,6 @@ Remote KB Indexing - Fast search and only "retrieves" when needed. Local db only
 You only store locally your vectors and where the page/doc lives in the wild if you need it. No need to ingest entire websites or document stores
 Pattern match middleware - vector indexes are created from resovled cases and are searched first to speed up repeat cases. This builds up over time and is specific to your environment.
 A preset knowledge base of case histories can be installed to get the ball rolling. Or you can just give it directions like "examine the system to identify problems." Sentinel Core dispatches the workers to examine the system.
-
 
 SentinelCore uses **EF Core with SQL Server** for persistence. The database is initialized automatically via `DatabaseInitializer` (an `IHostedService` that runs migrations on startup).
 

@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace SentinelCore.Cfe.Persistence;
+namespace SentinelCore.Persistence;
 
 [Table("InvestigationPlanEntity")]
 [Index("PlanId", Name = "AK_InvestigationPlan_InvestigationPlanId", IsUnique = true)]
@@ -19,6 +19,4 @@ public partial class InvestigationPlanEntity
 
     [Precision(2)]
     public DateTime CreatedAt { get; set; }
-
-    public string Notes { get; set; }
 }

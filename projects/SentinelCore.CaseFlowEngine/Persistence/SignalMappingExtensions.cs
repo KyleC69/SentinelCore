@@ -1,8 +1,8 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Cfe
+// Project:   SentinelCore.CaseFlowEngine
 // File:         SignalMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -11,7 +11,7 @@ using SentinelCore.Cfe;
 
 
 
-namespace SentinelCore.Cfe.Persistence;
+namespace SentinelCore.Persistence;
 
 
 
@@ -34,11 +34,11 @@ public static class SignalMappingExtensions
 
         return new SignalEntity
         {
-                Id = signal.Id,
-                SignalId = signal.SignalId,
-                SignalText = signal.SignalText,
-                Source = signal.Source,
-                Timestamp = signal.Timestamp
+            Id = signal.Id,
+            SignalId = signal.SignalId,
+            SignalText = signal.SignalText,
+            Source = signal.Source,
+            Timestamp = signal.Timestamp
         };
     }
 }

@@ -1,8 +1,8 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Cfe
+// Project:   SentinelCore.CaseFlowEngine
 // File:         CaseMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -34,14 +34,14 @@ public static class CaseMappingExtensions
 
         return new CaseEntity
         {
-            Id = @case.Id,
-            CaseId = @case.CaseId,
-            Status = (int)@case.Status,
-            InitiatingSignal = @case.InitiatingSignal,
-            CreatedAt = @case.CreatedAt,
-            UpdatedAt = @case.UpdatedAt,
-            PlanId = @case.PlanId,
-            PatternMemoryId = @case.PatternMemoryId
+                Id = @case.Id,
+                CaseId = @case.CaseId,
+                Status = (int)@case.Status,
+                InitiatingSignal = @case.InitiatingSignal,
+                CreatedAt = @case.CreatedAt,
+                UpdatedAt = @case.UpdatedAt,
+                PlanId = @case.PlanId,
+                PatternMemoryId = @case.PatternMemoryId
         };
     }
 }

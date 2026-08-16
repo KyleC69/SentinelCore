@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -141,7 +141,6 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         ChatClientAgentOptions agentOptions = BuildAgentOptions(profile);
         // The factory always creates ChatOptions before this line, so null-forgiving is safe.
 
-         agentOptions.ChatOptions!.Tools = [..profile.Tools]; // Combine MCP tools with profile tools
         ChatClientAgent agent = new(loggingClient, agentOptions);
 
 
@@ -188,7 +187,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         return agent.AsBuilder()
                 .UseAIContextProviders(new PatternMemoryInjector())
-                //   .UseSafetyEngine(safetyRules, _loggerFactory.CreateLogger<SafetyEngineAgent>())
+                //.UseSafetyEngine(safetyRules, _loggerFactory.CreateLogger<SafetyEngineAgent>())
                 .Build();
 
     }

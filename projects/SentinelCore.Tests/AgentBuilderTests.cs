@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         AgentBuilderTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -201,11 +201,11 @@ public sealed class AgentBuilderTests
     {
         return new AgentProfile
         {
-            Role = role,
-            AgentName = name,
-            Persona = new AgentPersona { Name = name, Instructions = "test instructions", Description = "test description" },
-            Tools = tools ?? [],
-            Model = ModelProfile.Glm5()
+                Role = role,
+                AgentName = name,
+                Persona = new AgentPersona { Name = name, Instructions = "test instructions", Description = "test description" },
+                Tools = tools ?? [],
+                Model = ModelProfile.Glm5()
         };
     }
 }

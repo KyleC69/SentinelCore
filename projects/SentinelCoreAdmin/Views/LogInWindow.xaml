@@ -1,0 +1,63 @@
+﻿<controls:MetroWindow
+    x:Class="SentinelCoreAdmin.Views.LogInWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:properties="clr-namespace:SentinelCoreAdmin.Properties"
+    xmlns:helpers="clr-namespace:SentinelCoreAdmin.Core.Helpers;assembly=SentinelCoreAdmin.Core"
+    xmlns:converters="clr-namespace:SentinelCoreAdmin.Converters"
+    xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
+    Style="{StaticResource CustomMetroWindow}"
+    mc:Ignorable="d"
+    MinWidth="500"
+    MinHeight="350"
+    d:DesignHeight="450" d:DesignWidth="800">
+    <controls:MetroWindow.Resources>
+        <converters:EnumToBooleanConverter x:Key="AccountTypeConverter" EnumType="{x:Type helpers:AccountType}" />
+    </controls:MetroWindow.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock
+            Style="{StaticResource PageTitleStyle}"
+            Text="{x:Static properties:Resources.LogInPageTitle}" />
+        <StackPanel Grid.Row="1" Margin="{StaticResource MediumLeftTopRightMargin}">
+            <TextBlock
+                Style="{StaticResource BodyTextStyle}"
+                Margin="0,0,0,8"
+                Text="{x:Static properties:Resources.LogInAccountTypeHeader}" />
+            <RadioButton
+                Content="{x:Static properties:Resources.LogInAccountTypeAadAndPersonal}"
+                IsChecked="{Binding SelectedAccountType, Converter={StaticResource AccountTypeConverter}, ConverterParameter=AadAndPersonalMsAccounts}"
+                Margin="0,4,0,0" />
+            <RadioButton
+                Content="{x:Static properties:Resources.LogInAccountTypePersonalMs}"
+                IsChecked="{Binding SelectedAccountType, Converter={StaticResource AccountTypeConverter}, ConverterParameter=PersonalMsAccounts}"
+                Margin="0,4,0,0" />
+            <RadioButton
+                Content="{x:Static properties:Resources.LogInAccountTypeAadMultipleOrgs}"
+                IsChecked="{Binding SelectedAccountType, Converter={StaticResource AccountTypeConverter}, ConverterParameter=AadMultipleOrgs}"
+                Margin="0,4,0,0" />
+            <RadioButton
+                Content="{x:Static properties:Resources.LogInAccountTypeAadSingleOrg}"
+                IsChecked="{Binding SelectedAccountType, Converter={StaticResource AccountTypeConverter}, ConverterParameter=AadSingleOrg}"
+                Margin="0,4,0,0" />
+        </StackPanel>
+        <Button
+            Grid.Row="2"
+            Content="{x:Static properties:Resources.LogInButton}"
+            AutomationProperties.Name="{x:Static properties:Resources.LogInButton}"
+            Margin="{StaticResource MediumLeftTopRightMargin}"
+            Command="{Binding LoginCommand}" />
+        <TextBlock
+            Grid.Row="3"
+            Margin="{StaticResource MediumLeftTopRightMargin}"
+            Text="{Binding StatusMessage}"
+            Style="{StaticResource BodyTextStyle}" />
+    </Grid>
+</controls:MetroWindow>

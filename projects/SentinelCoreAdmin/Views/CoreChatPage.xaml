@@ -1,0 +1,496 @@
+﻿<Page
+    x:Class="SentinelCoreAdmin.Views.CoreChatPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mdv="clr-namespace:MarkdownViewer.Wpf;assembly=MarkdownViewer.Wpf"
+    xmlns:mdvctrl="clr-namespace:MarkdownViewer.Wpf.Controls;assembly=MarkdownViewer.Wpf"
+    xmlns:converters="clr-namespace:SentinelCoreAdmin.Converters"
+    xmlns:models="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
+    mc:Ignorable="d"
+    d:DesignHeight="700" d:DesignWidth="900"
+    Background="{DynamicResource ChatBackground}"
+    FontFamily="Segoe UI">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+            <converters:PercentageWidthConverter x:Key="PercentageWidthConverter" />
+
+            <!-- Base MarkdownView style -->
+            <Style TargetType="{x:Type mdv:MarkdownView}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Focusable" Value="False" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+            </Style>
+
+            <Style TargetType="mdvctrl:CodeBlockTextBlock">
+                <Setter Property="Background" Value="DarkGray" />
+                <Setter Property="Foreground" Value="Black" />
+            </Style>
+            <Style TargetType="mdvctrl:CodeBlockHeaderBorder">
+                <Setter Property="Background" Value="Silver" />
+            </Style>
+
+            <!-- Message DataTemplate -->
+            <DataTemplate DataType="{x:Type models:ChatMessage}">
+                <Border Name="ChatBubble"
+                        Margin="0,5"
+                        Padding="14,10"
+                        HorizontalAlignment="Stretch"
+                        Background="{DynamicResource ChatSurface2}"
+                        BorderBrush="{DynamicResource ChatBorder}"
+                        BorderThickness="1"
+                        CornerRadius="12,12,12,12">
+                    <Border.MaxWidth>
+                        <Binding Path="ActualWidth"
+                                 RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBoxItem}, AncestorLevel=1}"
+                                 Converter="{StaticResource PercentageWidthConverter}"
+                                 ConverterParameter="0.8" />
+                    </Border.MaxWidth>
+                    <Border.Style>
+                        <Style TargetType="{x:Type Border}">
+                            <Setter Property="HorizontalAlignment" Value="Left" />
+                            <Setter Property="Background" Value="{DynamicResource ChatSurface2}" />
+                            <Setter Property="BorderBrush" Value="{DynamicResource ChatBorder}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Role.User}" Value="True">
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Background" Value="{DynamicResource ChatUserBubble}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ChatUserBubble}" />
+                                    <Setter Property="CornerRadius" Value="12,12,2,12" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Role.Assistant}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource ChatSurface}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ChatAccent}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Role.System}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource ChatSurface2}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ChatDanger}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ChatTextMuted}"
+                                   FontSize="11"
+                                   Text="{Binding Role}" />
+                        <mdv:MarkdownView x:Name="MessageMarkdown"
+                                          Margin="0,6,0,0"
+                                          Foreground="{DynamicResource ChatTextPrimary}"
+                                          Markdown="{Binding Text}"
+                                          IsHitTestVisible="True"
+                                          IsEnabled="True"
+                                          IsManipulationEnabled="True"
+                                          HorizontalAlignment="Stretch"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Auto"
+                                          WordWrap="True" />
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <!-- Send button style -->
+            <Style x:Key="SendButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="{DynamicResource ChatAccent}" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Padding" Value="22,0" />
+                <Setter Property="Height" Value="40" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="SendBorder"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="8"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="SendBorder" Property="Background"
+                                            Value="{DynamicResource ChatAccentHover}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="SendBorder" Property="Background"
+                                            Value="{DynamicResource ChatAccentPressed}" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="SendBorder" Property="Background"
+                                            Value="{DynamicResource ChatDisabled}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Cancel button style -->
+            <Style x:Key="CancelButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource ChatDanger}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ChatDanger}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Padding" Value="16,0" />
+                <Setter Property="Height" Value="40" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="CancelBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CancelBorder" Property="Background"
+                                            Value="{DynamicResource ChatDangerHover}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="CancelBorder" Property="Background"
+                                            Value="{DynamicResource ChatDangerPressed}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Chat input TextBox style -->
+            <Style x:Key="ChatInputStyle" TargetType="TextBox">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource ChatTextPrimary}" />
+                <Setter Property="CaretBrush" Value="{DynamicResource ChatAccent}" />
+                <Setter Property="SelectionBrush" Value="{DynamicResource ChatAccent}" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Language" Value="en-US" />
+                <Setter Property="AcceptsReturn" Value="True" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+                <Setter Property="MaxLines" Value="6" />
+                <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Background="Transparent"
+                                          Padding="{TemplateBinding Padding}"
+                                          VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          Focusable="False" />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <!-- ═══ Layout: Header | Messages | Input | Telemetry ═══ -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="52" />    <!-- Header bar        -->
+            <RowDefinition Height="*" />      <!-- Message feed      -->
+            <RowDefinition Height="Auto" />   <!-- Input / actions   -->
+            <RowDefinition Height="Auto" />   <!-- Telemetry panel   -->
+        </Grid.RowDefinitions>
+
+        <!-- ── Header ──────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Grid.ColumnSpan="2"
+                Background="{DynamicResource ChatSurface}"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource ChatBorder}">
+            <Grid Margin="20,0">
+                <!-- App name + status dot -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="9" Height="9"
+                             Fill="{DynamicResource ChatAccent}"
+                             Margin="0,0,10,0" />
+                    <TextBlock Text="SentinelCore"
+                               Foreground="{DynamicResource ChatTextPrimary}"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Busy indicator in header -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding IsBusy,
+                                         Converter={StaticResource BoolToVisibility}}">
+                    <Ellipse Width="7" Height="7" Fill="{DynamicResource ChatAccent}" Margin="0,0,6,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Style.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 From="1" To="0.2" Duration="0:0:0.8" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+                    <TextBlock Text="Generating…"
+                               Foreground="{DynamicResource ChatTextMuted}"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── Message Feed ───────────────────────────────────────────── -->
+        <ListBox x:Name="MessagesListBox"
+                 Grid.Row="1"
+                 Margin="15,0"
+                 BorderThickness="0"
+                 Background="{DynamicResource ChatBackground}"
+                 ItemsSource="{Binding Messages}"
+                 HorizontalContentAlignment="Stretch"
+                 ScrollViewer.CanContentScroll="False"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+
+        <!-- ── Input Area ─────────────────────────────────────────────── -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource ChatSurface}"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource ChatBorder}"
+                Padding="14,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- TextBox wrapper -->
+                <Border Grid.Row="0"
+                        Grid.Column="0"
+                        Background="{DynamicResource ChatSurface2}"
+                        CornerRadius="8"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource ChatBorder}"
+                        Margin="0,0,8,0">
+                    <Grid>
+                        <TextBox x:Name="InputBox"
+                                 Style="{StaticResource ChatInputStyle}"
+                                 Text="{Binding InputText,
+                                        UpdateSourceTrigger=PropertyChanged}"
+                                 PreviewKeyDown="InputBox_KeyDown"
+                                 MinHeight="40"
+                                 MaxHeight="130"
+                                 VerticalContentAlignment="Top" />
+
+                        <!-- Placeholder overlay -->
+                        <TextBlock Text="Type a message…  (Enter to send · Shift+Enter for new line)"
+                                   Foreground="{DynamicResource ChatTextMuted}"
+                                   FontSize="14"
+                                   Margin="12,9,12,9"
+                                   IsHitTestVisible="False"
+                                   VerticalAlignment="Top">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding InputText}" Value="">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Border>
+
+                <!-- Cancel button -->
+                <Button Grid.Row="0"
+                        Grid.Column="1"
+                        Content="Cancel"
+                        Style="{StaticResource CancelButtonStyle}"
+                        Command="{Binding CancelCommand}"
+                        IsCancel="True"
+                        Margin="0,0,8,0" />
+
+                <!-- Send button -->
+                <Button Grid.Row="0"
+                        Grid.Column="2"
+                        Content="Send  →"
+                        Style="{StaticResource SendButtonStyle}"
+                        Command="{Binding SendCommand}" />
+
+                <!-- Busy progress bar -->
+                <ProgressBar Grid.Row="1"
+                             Grid.Column="0"
+                             Grid.ColumnSpan="3"
+                             Margin="0,8,0,0"
+                             Height="3"
+                             HorizontalAlignment="Stretch"
+                             IsIndeterminate="True"
+                             Foreground="{DynamicResource ChatAccent}"
+                             Background="Transparent">
+                    <ProgressBar.Style>
+                        <Style TargetType="{x:Type ProgressBar}" BasedOn="{StaticResource {x:Type ProgressBar}}">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsBusy}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ProgressBar.Style>
+                </ProgressBar>
+            </Grid>
+        </Border>
+
+        <!-- ── Telemetry Panel: Case Status ───────────────────────────── -->
+        <Border Grid.Row="3"
+                Background="{DynamicResource ChatSurface2}"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource ChatBorder}"
+                Padding="16,10">
+            <StackPanel>
+                <!-- Case Status Counts -->
+                <TextBlock Text="Case Status"
+                           Foreground="{DynamicResource ChatTextPrimary}"
+                           FontWeight="SemiBold"
+                           FontSize="13"
+                           Margin="0,0,0,6" />
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Open -->
+                    <Border Grid.Column="0"
+                            Background="{DynamicResource ChatSurface}"
+                            CornerRadius="6"
+                            Margin="0,0,4,0"
+                            Padding="8,6">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Open"
+                                       Foreground="{DynamicResource ChatTextMuted}"
+                                       FontSize="11"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding OpenCount}"
+                                       Foreground="{DynamicResource ChatAccent}"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Investigation -->
+                    <Border Grid.Column="1"
+                            Background="{DynamicResource ChatSurface}"
+                            CornerRadius="6"
+                            Margin="4,0,4,0"
+                            Padding="8,6">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Investigation"
+                                       Foreground="{DynamicResource ChatTextMuted}"
+                                       FontSize="11"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding InvestigationCount}"
+                                       Foreground="#3B82F6"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Escalated -->
+                    <Border Grid.Column="2"
+                            Background="{DynamicResource ChatSurface}"
+                            CornerRadius="6"
+                            Margin="4,0,4,0"
+                            Padding="8,6">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Escalated"
+                                       Foreground="{DynamicResource ChatTextMuted}"
+                                       FontSize="11"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding EscalatedCount}"
+                                       Foreground="#F59E0B"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Alerted -->
+                    <Border Grid.Column="3"
+                            Background="{DynamicResource ChatSurface}"
+                            CornerRadius="6"
+                            Margin="4,0,4,0"
+                            Padding="8,6">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Alerted"
+                                       Foreground="{DynamicResource ChatTextMuted}"
+                                       FontSize="11"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding AlertedCount}"
+                                       Foreground="#EF4444"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Blocked -->
+                    <Border Grid.Column="4"
+                            Background="{DynamicResource ChatSurface}"
+                            CornerRadius="6"
+                            Margin="4,0,0,0"
+                            Padding="8,6">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Blocked"
+                                       Foreground="{DynamicResource ChatTextMuted}"
+                                       FontSize="11"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding BlockedCount}"
+                                       Foreground="{DynamicResource ChatDanger}"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Status message -->
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="{DynamicResource ChatTextMuted}"
+                           FontSize="11"
+                           TextTrimming="CharacterEllipsis"
+                           Margin="0,0,0,4" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>

@@ -1,3 +1,5 @@
+## SentinelCoreHost.csproj is being phased out
+The `SentinelCoreHost.csproj` project is being phased out in favor of the `SentinelCoreAdmin.csproj` project. The `SentinelCoreAdmin.csproj` project is a more modern and flexible approach to building and managing the Sentinel Core application. It provides better support for dependency injection, configuration management, and testing. This project is also the full admin UI application, which is a more complete solution for managing the Sentinel Core platform.
 
 ## Key Conventions
 

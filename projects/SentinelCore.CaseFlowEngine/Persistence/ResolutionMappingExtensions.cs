@@ -1,13 +1,8 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Cfe
+// Project:   SentinelCore.CaseFlowEngine
 // File:         ResolutionMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
-
-
-
-using SentinelCore.Cfe;
-
+// Build Num:  081602
 
 
 
@@ -32,13 +27,6 @@ public static class ResolutionMappingExtensions
     {
         ArgumentNullException.ThrowIfNull(resolution);
 
-        return new ResolutionEntity
-        {
-                Id = resolution.Id,
-                CaseRecordId = resolution.CaseRecordId,
-                RawJsonContent = resolution.RawJsonContent,
-                Notes = resolution.Notes,
-                Verified = resolution.Verified
-        };
+        return new ResolutionEntity { Id = resolution.Id, RawJsonContent = resolution.RawJsonContent, Notes = resolution.Notes, Verified = resolution.Verified };
     }
 }

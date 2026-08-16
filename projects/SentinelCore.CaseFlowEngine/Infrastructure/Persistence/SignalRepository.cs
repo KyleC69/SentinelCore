@@ -1,14 +1,15 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Cfe
+// Project:   SentinelCore.CaseFlowEngine
 // File:         SignalRepository.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
 using SentinelCore.Abstractions;
 using SentinelCore.Cfe;
 using SentinelCore.Cfe.Persistence;
+using SentinelCore.Persistence;
 
 
 
@@ -52,7 +53,7 @@ public sealed class SignalRepository : ISignalRepository
     {
         ArgumentNullException.ThrowIfNull(signal);
 
-        SignalEntity entity = new() { SignalId = signal.SignalId, SignalText = signal.SignalText, Source = signal.Source, Timestamp = signal.Timestamp };
+        SignalEntity entity = signal.ToEntity();
 
         _context.SignalEntities.Add(entity);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -107,12 +107,13 @@ public static class SentinelCoreServiceExtensions
             throw new InvalidOperationException("SqlConnectionString is not configured. Provide a valid connection string in SentinelCoreSettings.");
         }
 
+
         services.AddDbContext<SentinelCoreDBContext>(dbOptions => dbOptions.UseSqlServer(connectionString), ServiceLifetime.Transient, ServiceLifetime.Transient);
 
         services.AddTransient<IDbContextFactory<SentinelCoreDBContext>, PooledDbContextFactory<SentinelCoreDBContext>>();
 
 
-        // services.AddHostedService<DatabaseInitializer>();
+        services.AddHostedService<DatabaseInitializer>();
 
         // -- Always-on core services --
         // Safety middleware defaults to pass-through; host can override with real rules

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         Case.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -22,7 +22,7 @@ public sealed class Case
 
     public Guid CaseId { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     /// <summary>
     ///     Gets or sets the collection of evidence items associated with the case.
@@ -46,7 +46,7 @@ public sealed class Case
     ///     The ID of the pattern memory (vector tracker) that was generated for this case.
     /// </summary>
     /// One-To-One
-    public int PatternMemoryId { get; set; }
+    public int? PatternMemoryId { get; set; }
 
     /// <summary>
     ///     The ID of the plan that was used to investigate this case. This is used to determine which plan to use when
@@ -54,7 +54,7 @@ public sealed class Case
     ///     case from the same signal.
     /// </summary>
     /// One-To-One
-    public int PlanId { get; set; }
+    public int? PlanId { get; set; }
 
     /// <summary>
     ///     Additional signals that are INDICATORS or symptoms or side effects caused by this case's root cause.
@@ -64,5 +64,5 @@ public sealed class Case
 
     public CaseStatus Status { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

@@ -6,11 +6,10 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace SentinelCore.Cfe.Persistence;
+namespace SentinelCore.Persistence;
 
 [Table("InvestigationPlanStepsEntity")]
 [Index("StepId", Name = "AK_InvestigationPlanSteps_InvestigationPlanStepId", IsUnique = true)]
-[Index("PlanId", Name = "IX_InvestigationPlanStepsEntity_PlanId")]
 public partial class InvestigationPlanStepsEntity
 {
     [Key]
@@ -43,6 +42,4 @@ public partial class InvestigationPlanStepsEntity
     /// If the target of the task is not found this bit must be flipped
     /// </summary>
     public bool IsTargetPropertyMissing { get; set; }
-
-    public string Notes { get; set; }
 }

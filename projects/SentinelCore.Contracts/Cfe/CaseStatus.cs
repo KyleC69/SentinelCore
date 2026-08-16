@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         CaseStatus.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 //AGENTS - DO NOT MODIFY THIS FILE - SOURCE OF TRUTH: THERE ARE NO VALID STATUS BEYOND THIS FILE.
 

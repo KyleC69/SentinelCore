@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         OrchestrationControl.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -74,7 +74,7 @@ public sealed class OrchestrationControl : IOrchestrationControl
     /// <exception cref="InvalidOperationException">
     ///     Thrown when no orchestration instance is available.
     /// </exception>
-    public async Task InitializeOrchestrationAsync(ChatMessage promptSignal, CancellationToken token)
+    public async Task<WorkflowExecutionResult?> InitializeOrchestrationAsync(ChatMessage promptSignal, CancellationToken token)
     {
         if (_orchestration is null)
         {
@@ -84,6 +84,6 @@ public sealed class OrchestrationControl : IOrchestrationControl
         // Raising an event to notify that the orchestration process is starting. This can be useful for logging, monitoring, or triggering other actions in response to the start of the orchestration.
         _sentinelCoreEvents.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(_orchestration.Name, "Starting orchestration", ActivityType.Orchestration));
 
-        await _orchestration.ExecuteAsync(promptSignal, token).ConfigureAwait(false);
+        return await _orchestration.ExecuteAsync(promptSignal, token).ConfigureAwait(false);
     }
 }

@@ -1,18 +1,8 @@
 # AGENTS.md
 
-Instructions for AI coding agents working in the .NET codebase.
+Instructions for AI coding agents working in the Sentinel Core Platform Repository
 
-## Build, Test, and Lint Commands
-
-See `./.github/skills/build-and-test/SKILL.md` for detailed instructions on building, testing, and linting projects.
-
-## Project Structure
-
-See `./.github/skills/project-structure/SKILL.md` for an overview of the project structure.
-
-## Pull Requests
-
-See `./.github/skills/pull-requests/SKILL.md` for guidance on writing PR descriptions and handling/resolving PR review comments.
+## Sentinel Core is rooted in MAF and the types contained in
 
 ### Core types
 
@@ -26,17 +16,15 @@ See `./.github/skills/pull-requests/SKILL.md` for guidance on writing PR descrip
 - `ChatMessage`: Represents a message in a conversation.
 - `AIContent`: Represents content in a message, which can be text, a function call, tool output and more.
 
-### External Dependencies
-
-The framework integrates with `Microsoft.Extensions.AI` and `Microsoft.Extensions.AI.Abstractions` (external NuGet packages)
-using types like `IChatClient`, `FunctionInvokingChatClient`, `AITool`, `AIFunction`, `ChatMessage`, and `AIContent`.
+- If conflict is detected or type missing, check MAF API's source before creating ad-hoc version.
+- MAF is still under developement expect changes.
 
 ## Key Conventions
 
-- **Command output capture**: When running `dotnet build`, `dotnet test`, `dotnet format`, or similar commands, redirect output to a temp file first (e.g., `dotnet build --tl:off 2>&1 | Out-File $env:TEMP\build.log`), then analyze the file as needed. This avoids re-running expensive commands when the initial analysis misses something.
+- **Command output capture**: When running large commands(eg. commands producing large results) or expensive commands, redirect output to a temp file first (e.g., `dotnet build --tl:off 2>&1 | Out-File $env:TEMP\build.log`), then analyze the file as needed. This avoids re-running expensive commands when the initial analysis misses something.
 - **Encoding**: All new files must be saved with UTF-8 encoding with BOM (Byte Order Mark). This is required for `dotnet format` to work correctly. When using PowerShell `Set-Content`, always pass `-Encoding UTF8BOM` to preserve the BOM (e.g., `Set-Content $file $content -NoNewline -Encoding UTF8BOM`).
-- **Copyright header**: `// Copyright (c) Microsoft. All rights reserved.` at top of all `.cs` files
-- **XML docs**: Required for all public methods and classes
+- **Copyright header**: 'Supplied by Resharper, do not touch existing blocks'
+- **XML docs**: Required for all methods and classes. Do not use //inherit>
 - **Async**: Use `Async` suffix for methods returning `Task`/`ValueTask`
 - **Private classes**: Should be `sealed` unless subclassed
 - **Config**: Read from environment variables with `UPPER_SNAKE_CASE` naming
@@ -50,22 +38,3 @@ When developing or reviewing code, verify adherence to these key design principl
 - **Single Responsibility**: Each class should have one clear responsibility.
 - **Encapsulation**: Keep implementation details private and expose only necessary public APIs.
 - **Strong Typing**: Use strong typing to ensure that code is self-documenting and to catch errors at compile time.
-
-## Sample Structure
-
-Samples (in `./samples/` folder) should follow this structure:
-
-1. Copyright header: `// Copyright (c) Microsoft. All rights reserved.`
-2. Description comment explaining what the sample demonstrates
-3. Using statements
-4. Main code logic
-5. Helper methods at bottom
-
-Configuration via environment variables (never hardcode secrets). Keep samples simple and focused.
-
-When adding a new sample:
-
-- Create a standalone project in `samples/` with matching directory and project names
-- Include a README.md explaining what the sample does and how to run it
-- Add the project to the solution file
-- Reference the sample in the parent directory's README.md

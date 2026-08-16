@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         NewCaseExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -29,7 +29,6 @@ public sealed class NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter rep
 {
 
     // This field is currently unused; make it nullable to silence the warning.
-    private IWorkflowContext? _context;
     private const string SharedState = "SharedState";
 
 
@@ -45,7 +44,7 @@ public sealed class NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter rep
         {
             reporter.DebugMsg("New case starting now.");
             string? prmpt = await context.ReadStateAsync<string>(WorkFlowStateKeys.PROMPT, "SharedState", token).ConfigureAwait(false);
-            Guid caseId = await caseEng.CreateCaseAsync(new Signal(message.Hypothesis, "User"), token).ConfigureAwait(false);
+            Guid caseId = await caseEng.CreateCaseAsync(new Signal(message.Hypothesis ?? "No Hypothesis Entered", "User"), token).ConfigureAwait(false);
 
             //Starts new case, saves caseid to context,
             //Log action and publish to UI

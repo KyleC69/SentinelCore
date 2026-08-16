@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -335,7 +335,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// <remarks>
     ///     This method builds the workflow, executes it in a streaming manner, and processes events emitted during execution.
     /// </remarks>
-    public async Task ExecuteAsync(ChatMessage message, CancellationToken token)
+    public async Task<WorkflowExecutionResult?> ExecuteAsync(ChatMessage message, CancellationToken token)
     {
         Throw.IfNull(message);
 
@@ -344,12 +344,19 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         Workflow workflow = await BuildWorkflow().ConfigureAwait(false);
 
         Run result = await InProcessExecution.RunAsync(workflow, message, cancellationToken: token).ConfigureAwait(false);
-        foreach (WorkflowEvent evt in result.NewEvents)
-            if (evt is WorkflowOutputEvent outputEvt)
-            {
-                this.ProcessEvent(outputEvt);
 
+        List<ChatMessage>? outputMessages = null;
+        foreach (WorkflowEvent evt in result.NewEvents)
+        {
+            this.ProcessEvent(evt);
+
+            if (evt is WorkflowOutputEvent outputEvt && outputEvt.Is<List<ChatMessage>>())
+            {
+                outputMessages = outputEvt.As<List<ChatMessage>>();
             }
+        }
+
+        return outputMessages is not null ? new WorkflowExecutionResult(outputMessages, eventLog: []) : null;
     }
 
 

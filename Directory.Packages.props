@@ -1,62 +1,72 @@
 <Project>
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-  </PropertyGroup>
-  <!-- Microsoft.Agents packages -->
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.Agents.AI" Version="1.17.0" />
-    <PackageVersion Include="Microsoft.Agents.AI.Abstractions" Version="1.17.0" />
-    <PackageVersion Include="Microsoft.Agents.AI.Harness" Version="1.17.0" />
-    <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="1.17.0-alpha.260804.1" />
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.17.0" />
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows.Generators" Version="1.17.0" />
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.0-preview2.26190.5" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Management.Infrastructure" Version="3.0.0" />
-    <PackageVersion Include="Microsoft.Windows.Compatibility" Version="10.0.0-preview.4.25258.110" />
-    <PackageVersion Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.3233" />
-    <PackageVersion Include="System.DirectoryServices.AccountManagement" Version="10.0.0-preview.4.25258.110" />
-    <PackageVersion Include="System.Management.Automation" Version="7.6.4" />
-    <PackageVersion Include="TaskScheduler" Version="2.11.0" />
-    <PackageVersion Include="ModelContextProtocol" Version="2.2.0" />
-  </ItemGroup>
-  <!-- Microsoft.Extensions packages -->
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.8.3" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.10" />
-  </ItemGroup>
-  <!-- UI / MVVM -->
-  <ItemGroup>
-    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageVersion Include="MarkdownViewer.Wpf" Version="2.0.4368" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer.Vector" Version="10.0.10" />
-  </ItemGroup>
-  <!-- Test packages -->
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
-    <PackageVersion Include="MSTest.TestAdapter" Version="4.2.3" />
-    <PackageVersion Include="MSTest.TestFramework" Version="4.2.3" />
-    <PackageVersion Include="MSTest" Version="4.2.3" />
-  </ItemGroup>
-  <!-- Other packages -->
-  <ItemGroup>
-    <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
-    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.8.3" />
-    <PackageVersion Include="OllamaSharp" Version="5.4.30" />
-    <PackageVersion Include="Jetbrains.Annotations" Version="2026.2.0" />
-    <PackageVersion Include="OpenAI" Version="2.12.0" />
-    <PackageVersion Include="System.Management" Version="10.0.10" />
-    <PackageVersion Include="System.ServiceProcess.ServiceController" Version="10.0.0-preview.4.25258.110" />
-    <PackageVersion Include="ColorJsonProvider" Version="1.0.0" />
-  </ItemGroup>
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+	</PropertyGroup>
+	<!-- Microsoft.Agents packages -->
+	<ItemGroup>
+		<PackageVersion Include="Microsoft.Agents.AI" Version="1.17.0" />
+		<PackageVersion Include="Microsoft.Agents.AI.Abstractions" Version="1.17.0" />
+		<PackageVersion Include="Microsoft.Agents.AI.Harness" Version="1.17.0" />
+		<PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="1.17.0-alpha.260804.1" />
+		<PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.17.0" />
+		<PackageVersion Include="Microsoft.Agents.AI.Workflows.Generators" Version="1.17.0" />
+		<PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.0-preview2.26190.5" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Identity.Client" Version="4.87.0" />
+		<PackageVersion Include="Microsoft.Identity.Client.Broker" Version="4.87.0" />
+		<PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.87.0" />
+		<PackageVersion Include="Microsoft.Management.Infrastructure" Version="3.0.0" />
+		<PackageVersion Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
+		<PackageVersion Include="Microsoft.Windows.Compatibility" Version="10.0.0-preview.4.25258.110" />
+		<PackageVersion Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.3233" />
+		<PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageVersion Include="System.DirectoryServices.AccountManagement" Version="10.0.0-preview.4.25258.110" />
+		<PackageVersion Include="System.Management.Automation" Version="7.6.4" />
+		<PackageVersion Include="TaskScheduler" Version="2.11.0" />
+		<PackageVersion Include="ModelContextProtocol" Version="2.2.0" />
+	</ItemGroup>
+	<!-- Microsoft.Extensions packages -->
+	<ItemGroup>
+		<PackageVersion Include="Microsoft.Extensions.AI" Version="10.8.3" />
+		<PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
+	</ItemGroup>
+	<!-- UI / MVVM -->
+	<ItemGroup>
+		<PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+		<PackageVersion Include="MahApps.Metro" Version="2.4.11" />
+		<PackageVersion Include="MarkdownViewer.Wpf" Version="2.0.4368" />
+		<PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer.Vector" Version="10.0.11" />
+		<PackageVersion Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
+	</ItemGroup>
+	<!-- Test packages -->
+	<ItemGroup>
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
+		<PackageVersion Include="MSTest.TestAdapter" Version="4.2.3" />
+		<PackageVersion Include="MSTest.TestFramework" Version="4.2.3" />
+		<PackageVersion Include="MSTest" Version="4.2.3" />
+	</ItemGroup>
+	<!-- Other packages -->
+	<ItemGroup>
+		<PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
+		<PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.8.3" />
+		<PackageVersion Include="OllamaSharp" Version="5.4.30" />
+		<PackageVersion Include="Jetbrains.Annotations" Version="2026.2.0" />
+		<PackageVersion Include="OpenAI" Version="2.12.0" />
+		<PackageVersion Include="System.Management" Version="10.0.10" />
+		<PackageVersion Include="System.ServiceProcess.ServiceController" Version="10.0.0-preview.4.25258.110" />
+		<PackageVersion Include="ColorJsonProvider" Version="1.0.0" />
+	</ItemGroup>
 </Project>

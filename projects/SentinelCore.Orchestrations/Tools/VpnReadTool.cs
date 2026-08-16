@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         VpnReadTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 

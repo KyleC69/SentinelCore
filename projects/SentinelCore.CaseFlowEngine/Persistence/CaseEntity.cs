@@ -24,12 +24,13 @@ public partial class CaseEntity
     public int InitiatingSignal { get; set; }
 
     [Precision(2)]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public DateTime CreatedAt { get; set; }
 
     [Precision(2)]
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
-    public int PlanId { get; set; }
+    public int? PlanId { get; set; }
 
     public int? AdditionalSignals { get; set; }
 
@@ -38,5 +39,5 @@ public partial class CaseEntity
     [StringLength(10)]
     public string Remediation { get; set; }
 
-    public int PatternMemoryId { get; set; }
+    public int? PatternMemoryId { get; set; }
 }

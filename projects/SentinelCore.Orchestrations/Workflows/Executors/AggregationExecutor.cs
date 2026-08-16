@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AggregationExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 

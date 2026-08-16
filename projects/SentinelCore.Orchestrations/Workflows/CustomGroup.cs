@@ -2,12 +2,13 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CustomGroup.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
 using SentinelCore.Abstractions;
 using SentinelCore.Agents;
+using SentinelCore.Application;
 
 
 
@@ -76,12 +77,14 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public async Task ExecuteAsync(ChatMessage promptSignal, CancellationToken token)
+    public async Task<WorkflowExecutionResult?> ExecuteAsync(ChatMessage promptSignal, CancellationToken token)
     {
 
         AgentResponse response = await GetAgentResponse(promptSignal.Text);
 
         Console.WriteLine(response.Text);
+
+        return new WorkflowExecutionResult([new ChatMessage(ChatRole.Assistant, response.Text)], eventLog: []);
     }
 
 
@@ -128,7 +131,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
     public async Task<AgentResponse> GetAgentResponse(string prompt)
     {
-       await EnsureAgentInitializedAsync().ConfigureAwait(false);
+        await EnsureAgentInitializedAsync().ConfigureAwait(false);
 
         AgentResponse response = await _theCore!.RunAsync(new ChatMessage(ChatRole.User, prompt), _session!);
 

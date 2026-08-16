@@ -1,13 +1,8 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Cfe
+// Project:   SentinelCore.CaseFlowEngine
 // File:         PatternMemoryMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
-
-
-
-using SentinelCore.Cfe;
-
+// Build Num:  081602
 
 
 

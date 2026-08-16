@@ -1,8 +1,8 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Cfe
-// File:         Cfe.cs
+// Project:   SentinelCore.CaseFlowEngine
+// File:         CaseFlowEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using SentinelCore.Abstractions;
 using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts;
+using SentinelCore.Persistence;
 
 
 
@@ -31,6 +32,14 @@ public interface ICaseFlowEngine
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task AdvanceCaseAsync(Guid caseId, CaseStatus status, CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
+
     Guid CreateCase(Signal rawSignal, CancellationToken cancellationToken = default);
 
 
@@ -181,6 +190,27 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
 
+    public Guid CreateCase(Signal rawSignal, CancellationToken cancellationToken = default)
+    {
+        //Save the signal first so we can grab this records identifier and use it in the case.
+        SignalEntity ent = rawSignal.ToEntity();
+        _dbContext.SignalEntities.Add(ent);
+        _dbContext.SaveChanges();
+
+        //Now the case.
+        CaseEntity caseent = new CaseEntity { InitiatingSignal = ent.SignalId, CaseId = Guid.NewGuid(), Status = (int)CaseStatus.Open };
+        _dbContext.CaseEntities.Add(caseent);
+        _dbContext.SaveChanges();
+        return caseent.CaseId;
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Creates a new case and associates it with the provided <see cref="Signal" />.
     /// </summary>
@@ -267,6 +297,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
         //Save the signal first so we can grab this records identifier and use it in the case.
         SignalEntity ent = signal.ToEntity();
+        //   ent.SignalId = (next value for)  // <----- need to trigger next value
         _dbContext.SignalEntities.Add(ent);
         await _dbContext.SaveChangesAsync();
 
@@ -329,24 +360,5 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
         {
             throw new InvalidOperationException($"Transition from '{from}' to '{to}' is not allowed. " + $"Allowed transitions from '{from}': [{string.Join(", ", allowed)}].");
         }
-    }
-
-    public Guid CreateCase(Signal rawSignal, CancellationToken cancellationToken = default)
-    {
-        //Save the signal first so we can grab this records identifier and use it in the case.
-        SignalEntity ent = rawSignal.ToEntity();
-        _dbContext.SignalEntities.Add(ent);
-        _dbContext.SaveChanges();
-
-        //Now the case.
-        CaseEntity caseent = new CaseEntity
-        {
-            InitiatingSignal = ent.SignalId,
-            CaseId = Guid.NewGuid(),
-            Status = (int)CaseStatus.Open
-        };
-        _dbContext.CaseEntities.Add(caseent);
-        _dbContext.SaveChanges();
-        return caseent.CaseId;
     }
 }

@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace SentinelCore.Cfe.Persistence;
+namespace SentinelCore.Persistence;
 
 [Table("SignalEntity")]
 [Index("SignalId", Name = "AK_Signals_SignalId", IsUnique = true)]
@@ -15,6 +15,7 @@ public partial class SignalEntity
     [Key]
     public int Id { get; set; }
 
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int SignalId { get; set; }
 
     [Required]
@@ -23,7 +24,7 @@ public partial class SignalEntity
     [Required]
     public string Source { get; set; }
 
-    public DateTime Timestamp { get; set; }
+    public DateTimeOffset Timestamp { get; set; }
 
     public string Notes { get; set; }
 }

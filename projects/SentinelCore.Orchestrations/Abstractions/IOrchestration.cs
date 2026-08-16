@@ -2,7 +2,12 @@
 // Project:   SentinelCore.Orchestrations
 // File:         IOrchestration.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
+
+
+
+using SentinelCore.Application;
+
 
 
 
@@ -31,5 +36,5 @@ public interface IOrchestration
         */
 
 
-    Task ExecuteAsync(ChatMessage promptSignal, CancellationToken token);
+    Task<WorkflowExecutionResult?> ExecuteAsync(ChatMessage promptSignal, CancellationToken token);
 }

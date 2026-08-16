@@ -4,16 +4,15 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
+using SentinelCore.Persistence;
+
+
+
+
 namespace SentinelCore.Cfe.Persistence;
 
 public partial class SentinelCoreDBContext : DbContext
 {
-    
-    
-    
-    
-    
-    
     public SentinelCoreDBContext()
     {
     }
@@ -23,12 +22,6 @@ public partial class SentinelCoreDBContext : DbContext
     {
     }
 
-    public virtual DbSet<CaseEntity> CaseEntities { get; set; }
-
-    public virtual DbSet<EvidenceEntity> EvidenceEntities { get; set; }
-
-    public virtual DbSet<InvestigationPlanEntity> InvestigationPlanEntities { get; set; }
-
     public virtual DbSet<InvestigationPlanStepsEntity> InvestigationPlanStepsEntities { get; set; }
 
     public virtual DbSet<PatternMemoryEntity> PatternMemoryEntities { get; set; }
@@ -37,74 +30,59 @@ public partial class SentinelCoreDBContext : DbContext
 
     public virtual DbSet<SignalEntity> SignalEntities { get; set; }
 
+    public virtual DbSet<CaseEntity> CaseEntities { get; set; }
+
+    public virtual DbSet<EvidenceEntity> EvidenceEntities { get; set; }         
+
+
+
+
+
+
+
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        // When the context is created by DI, the connection string is already supplied
-        // via DbContextOptions and must not be overridden here. Only configure a fallback
-        // when no options have been set (e.g., design-time tooling).
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlServer();
-        }
-    }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=Desktop-NC01091;Initial Catalog=SentinelCore;Integrated Security=True;Encrypt=False");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<CaseEntity>(entity =>
-        {
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())", "DF_CaseEntities_CreatedAt");
-            entity.Property(e => e.Remediation).IsFixedLength();
-        });
-
-        modelBuilder.Entity<EvidenceEntity>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_EvidenceRecords");
-
-            entity.Property(e => e.EvidenceId).HasDefaultValueSql("(NEXT VALUE FOR [EvidenceRecordIdSeq])", "DF__EvidenceE__Evide__6477ECF3");
-        });
-
-        modelBuilder.Entity<InvestigationPlanEntity>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_InvestigationPlan");
-
-            entity.Property(e => e.PlanId).HasDefaultValueSql("(NEXT VALUE FOR [InvestigationPlanIdSeq])", "DF__Investiga__Inves__6E01572D");
-        });
-
         modelBuilder.Entity<InvestigationPlanStepsEntity>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_InvestigationPlanSteps");
 
-            entity.Property(e => e.IsTargetPropertyMissing).HasComment("If the target of the task is not found this bit must be flipped");
-            entity.Property(e => e.StepId)
-                .HasComment("Links this step the plan it was created in")
-                .HasDefaultValueSql("(NEXT VALUE FOR [InvestigationPlanStepIdSeq])", "DF__Investiga__Inves__7C4F7684");
+            entity.Property(e => e.CompletedSuccessfully).HasDefaultValue(false, "DF_InvestigationPlanStepsEntities_CompletedSuccessfully");
+            entity.Property(e => e.IsTargetPropertyMissing)
+                .HasComment("If the target of the task is not found this bit must be flipped")
+                .HasDefaultValue(false, "DF_InvestigationPlanStepsEntities_IsTargetPropertyMissing");
+            entity.Property(e => e.StepId).HasComment("Links this step the plan it was created in");
             entity.Property(e => e.Surface).HasComment("Domain or Surface that the task applies to");
+            entity.Property(e => e.TaskBlocked).HasDefaultValue(false, "DF_InvestigationPlanStepsEntities_TaskBlocked");
         });
 
         modelBuilder.Entity<PatternMemoryEntity>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_PatternMemory");
-
-            entity.Property(e => e.PatternId).HasDefaultValueSql("(NEXT VALUE FOR [PatternMemoryIdSeq])", "DF__PatternMe__Patte__72C60C4A");
         });
 
         modelBuilder.Entity<ResolutionEntity>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_ResolutionSteps");
+
+            entity.Property(e => e.Verified).HasDefaultValue(false, "DF_ResolutionSteps_Verified");
         });
 
         modelBuilder.Entity<SignalEntity>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_Signals");
-
-            entity.Property(e => e.SignalId).HasDefaultValueSql("(NEXT VALUE FOR [SignalIdSeq])");
         });
-        modelBuilder.HasSequence<int>("CaseRecordIdSeq");
-        modelBuilder.HasSequence<int>("EvidenceRecordIdSeq");
-        modelBuilder.HasSequence<int>("InvestigationPlanIdSeq");
-        modelBuilder.HasSequence<int>("InvestigationPlanStepIdSeq");
-        modelBuilder.HasSequence<int>("PatternMemoryIdSeq");
-        modelBuilder.HasSequence<int>("SignalIdSeq");
+        modelBuilder.Entity<SignalEntity>().Property(e=>e.SignalId).ValueGeneratedOnAdd()
+                .HasDefaultValueSql("NEXT VALUE FOR [dbo].[Signal_ID_seq]");
+
+        modelBuilder.Entity<CaseEntity>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }

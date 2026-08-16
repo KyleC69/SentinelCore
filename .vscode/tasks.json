@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/projects/SentinelCoreHost/SentinelCoreHost.csproj",
+                "${workspaceFolder}/projects/SentinelCoreAdmin/SentinelCoreAdmin.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/projects/SentinelCoreHost/SentinelCoreHost.csproj",
+                "${workspaceFolder}/projects/SentinelCoreAdmin/SentinelCoreAdmin.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/projects/SentinelCoreHost/SentinelCoreHost.csproj"
+                "${workspaceFolder}/projects/SentinelCoreAdmin/SentinelCoreAdmin.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

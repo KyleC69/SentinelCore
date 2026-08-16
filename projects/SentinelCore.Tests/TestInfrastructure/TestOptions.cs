@@ -2,11 +2,14 @@
 // Project:   SentinelCore.Tests
 // File:         TestOptions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
 using Microsoft.Extensions.Options;
+
+
+
 
 namespace SentinelCore.Tests.TestInfrastructure;
 
@@ -24,11 +27,7 @@ public static class TestOptions
     /// </summary>
     public static IOptions<SentinelCoreSettings> Create(SentinelCoreSettings? settings = null)
     {
-        settings ??= new SentinelCoreSettings
-        {
-            DefaultModel = ModelProfile.Glm5(),
-            DefaultUtilityModel = ModelProfile.Gpt20(),
-        };
+        settings ??= new SentinelCoreSettings { DefaultModel = ModelProfile.Glm5(), DefaultUtilityModel = ModelProfile.Gpt20() };
         return Options.Create(settings);
     }
 }

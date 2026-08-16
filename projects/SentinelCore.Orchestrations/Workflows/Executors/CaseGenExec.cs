@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CaseGenExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -22,7 +22,7 @@ namespace SentinelCore.Workflows.Executors;
 /// <summary>
 ///     Quick case generation based on current environment
 /// </summary>
-internal class CaseGenExec(ICaseGenerator generator, ISystemReporter reporter, ICaseFlowEngine flowEngine) : Executor<SuppressionDecision, string>("CaseGen")
+internal sealed class CaseGenExec(ICaseGenerator generator, ISystemReporter reporter, ICaseFlowEngine flowEngine) : Executor<SuppressionDecision, string>("CaseGen")
 {
 
     public override async ValueTask<string> HandleAsync(SuppressionDecision message, IWorkflowContext context, CancellationToken cancellationToken = default)

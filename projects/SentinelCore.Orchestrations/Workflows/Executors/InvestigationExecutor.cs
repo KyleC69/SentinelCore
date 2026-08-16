@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         InvestigationExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  081312
+// Build Num:  081602
 
 
 
@@ -64,6 +64,7 @@ public sealed partial class InvestigationExecutor() : Executor("InvestigationExe
     [MessageHandler]
     public async ValueTask<string> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken)
     {
+
         _events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(nameof(InvestigationExecutor), "InvestigationExecutor: Starting Magentic investigation…", ActivityType.System));
 
         // _investigationWorkflow is injected and guaranteed non-null by the container; use null-forgiving to satisfy the compiler.
@@ -94,6 +95,8 @@ public sealed partial class InvestigationExecutor() : Executor("InvestigationExe
         _events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(nameof(InvestigationExecutor), "InvestigationExecutor: Magentic investigation completed.", ActivityType.System));
 
         return resultBuilder.ToString();
+
+
     }
 
 
