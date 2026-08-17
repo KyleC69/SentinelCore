@@ -192,6 +192,14 @@ public static class ServiceCollectionRegistrationExtensions
         services.AddTransient<TraceLogViewModel>();
         services.AddTransient<TraceLogPage>();
 
+        // Case management pages
+        services.AddTransient<CaseListViewModel>();
+        services.AddTransient<CaseListPage>();
+        services.AddTransient<CreateCaseViewModel>();
+        services.AddTransient<CreateCasePage>();
+        services.AddTransient<CaseDetailViewModel>();
+        services.AddTransient<CaseDetailPage>();
+
         // Settings page
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<SettingsPage>();

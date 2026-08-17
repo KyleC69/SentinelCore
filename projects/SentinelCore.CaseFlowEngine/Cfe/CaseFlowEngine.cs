@@ -71,6 +71,14 @@ public interface ICaseFlowEngine
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The count of cases matching the given status.</returns>
     Task<int> GetCaseCountByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Returns all cases currently in the specified <paramref name="status" />.
+    /// </summary>
+    /// <param name="status">The case status to filter by.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A read-only list of cases matching the given status.</returns>
+    Task<IReadOnlyList<Case>> GetCasesByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default);
 }
 
 
@@ -260,6 +268,22 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
         // Query the database and return the count
         return await _dbContext.CaseEntities.Where(d => d.Status == (int)status).CountAsync(cancellationToken);
+    }
+
+
+
+
+
+    /// <summary>
+    ///     Returns all cases currently in the specified <paramref name="status" />.
+    /// </summary>
+    public async Task<IReadOnlyList<Case>> GetCasesByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default)
+    {
+        List<CaseEntity> entities = await _dbContext.CaseEntities
+            .Where(c => c.Status == (int)status)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(e => e.ToCase()).ToList();
     }
 
 

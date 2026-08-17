@@ -2,6 +2,7 @@
     x:Class="SentinelCoreAdmin.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:SentinelCoreAdmin.Converters"
     Startup="OnStartup"
     Exit="OnExit"
     SessionEnding="OnSessionEnding"
@@ -29,6 +30,8 @@
                 <!-- Chat-themed brush resources (dark palette) -->
                 <ResourceDictionary Source="/Styles/ChatBrushes.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <converters:InvertBoolToVisibilityConverter x:Key="InvertBoolToVisibility" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -42,6 +42,9 @@ public class PageService : IPageService
         _serviceProvider = serviceProvider;
         Configure<CoreChatViewModel, CoreChatPage>();
         Configure<TraceLogViewModel, TraceLogPage>();
+        Configure<CaseListViewModel, CaseListPage>();
+        Configure<CreateCaseViewModel, CreateCasePage>();
+        Configure<CaseDetailViewModel, CaseDetailPage>();
         Configure<SettingsViewModel, SettingsPage>();
     }
 

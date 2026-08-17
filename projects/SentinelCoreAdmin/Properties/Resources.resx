@@ -76,9 +76,39 @@
     <data name="SettingsPageRadioButtonWindowsDefaultTheme" xml:space="preserve">
         <value>Default</value>
     </data>
-    <data name="ShellMenuItemViewsTraceLogPageHeader" xml:space="preserve">
-		    <value>TraceLog</value>
-    </data>
+	<data name="ShellMenuItemViewsTraceLogPageHeader" xml:space="preserve">
+			<value>TraceLog</value>
+		</data>
+	<data name="TraceLogPageTitle" xml:space="preserve">
+		<value>Trace Log</value>
+	</data>
+	<data name="TraceLogPageFilePathLabel" xml:space="preserve">
+		<value>Log file:</value>
+	</data>
+	<data name="TraceLogPageOpenFolderTooltip" xml:space="preserve">
+		<value>Open log folder</value>
+	</data>
+	<data name="ShellMenuCaseManagementHeader" xml:space="preserve">
+		<value>_Case Management</value>
+	</data>
+	<data name="ShellMenuItemCaseListPageHeader" xml:space="preserve">
+		<value>Case List</value>
+	</data>
+	<data name="ShellMenuItemCreateCasePageHeader" xml:space="preserve">
+		<value>Create Case</value>
+	</data>
+	<data name="ShellMenuItemCaseDetailPageHeader" xml:space="preserve">
+		<value>Case Detail</value>
+	</data>
+	<data name="CaseListPageTitle" xml:space="preserve">
+		<value>Case List</value>
+	</data>
+	<data name="CreateCasePageTitle" xml:space="preserve">
+		<value>Create Case</value>
+	</data>
+	<data name="CaseDetailPageTitle" xml:space="preserve">
+		<value>Case Detail</value>
+	</data>
     <data name="TraceLogPageBackButtonTooltip" xml:space="preserve">
         <value>Back (Alt + Left)</value>
     </data>

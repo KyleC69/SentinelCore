@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="SentinelCoreAdmin.Views.TraceLogPage"
     Style="{DynamicResource MahApps.Styles.Page}"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -6,86 +6,117 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:properties="clr-namespace:SentinelCoreAdmin.Properties"
-    xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+    xmlns:viewModels="clr-namespace:SentinelCoreAdmin.ViewModels"
     mc:Ignorable="d"
-    d:DesignHeight="450" d:DesignWidth="800">
+    d:DesignHeight="600" d:DesignWidth="900">
     <Page.InputBindings>
-        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
-        <KeyBinding Modifiers="Alt" Key="Left" Command="{Binding BrowserBackCommand}" />
-        <KeyBinding Modifiers="Alt" Key="Right" Command="{Binding BrowserForwardCommand}" />
-        <KeyBinding Modifiers="Ctrl" Key="T" Command="{Binding OpenInBrowserCommand}" />
+        <KeyBinding Key="F5" Command="{Binding RefreshLogAsyncCommand}" />
     </Page.InputBindings>
-    <Grid>
+    <Grid Margin="{StaticResource MediumLeftTopRightBottomMargin}">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <wv2:WebView2
-            x:Name="webView"
-            Source="{Binding Source}"
-            NavigationCompleted="OnNavigationCompleted" />
-        <Grid
-            VerticalAlignment="Bottom"
-            Grid.Row="1"
-            Background="{DynamicResource MahApps.Brushes.Gray10}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <Button
-                    Command="{Binding BrowserBackCommand}"
-                    Style="{StaticResource WebViewButtonStyle}"
-                    ToolTip="{x:Static properties:Resources.TraceLogPageBackButtonTooltip}">
-                    <TextBlock
-                        Style="{StaticResource SmallIconStyle}"
-                        Text="&#xE72B;" />
-                </Button>
-                <Button
-                    Command="{Binding BrowserForwardCommand}"
-                    Style="{StaticResource WebViewButtonStyle}"
-                    ToolTip="{x:Static properties:Resources.TraceLogPageForwardButtonTooltip}">
-                    <TextBlock
-                        Style="{StaticResource SmallIconStyle}"
-                        Text="&#xE72A;" />
-                </Button>
-            </StackPanel>
 
+        <!-- Page Title -->
+        <TextBlock
+            Grid.Row="0"
+            Style="{StaticResource PageTitleStyle}"
+            Text="{x:Static properties:Resources.TraceLogPageTitle}" />
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="{StaticResource SmallTopBottomMargin}">
+            <Button
+                Command="{Binding RefreshLogAsyncCommand}"
+                Style="{StaticResource MahApps.Styles.Button}"
+                Margin="0,0,8,0"
+                Padding="12,4"
+                Content="{x:Static properties:Resources.TraceLogPageRefreshButtonTooltip}"
+                ToolTip="Refresh (F5)" />
+            <Button
+                Command="{Binding OpenLogFolderCommand}"
+                Style="{StaticResource MahApps.Styles.Button}"
+                Margin="0,0,8,0"
+                Padding="12,4"
+                Content="{x:Static properties:Resources.TraceLogPageOpenFolderTooltip}" />
             <TextBlock
-                Grid.Column="1"
                 VerticalAlignment="Center"
                 Style="{StaticResource BodyTextStyle}"
-                Margin="{StaticResource SmallLeftMargin}"
-                Visibility="{Binding IsLoadingVisibility}"
-                Text="{x:Static properties:Resources.TraceLogPageLoadingText}" />
+                Margin="8,0,0,0">
+                <Run Text="{x:Static properties:Resources.TraceLogPageFilePathLabel}" />
+                <Run Text="{Binding LogFilePath, Mode=OneWay}" />
+            </TextBlock>
+        </StackPanel>
+
+        <!-- Log Content -->
+        <Grid Grid.Row="2" Margin="0,4,0,0">
+            <!-- Loading indicator -->
             <TextBlock
-                Grid.Column="1"
-                VerticalAlignment="Center"
                 Style="{StaticResource BodyTextStyle}"
-                Margin="{StaticResource SmallLeftMargin}"
-                Visibility="{Binding FailedMesageVisibility}"
-                Text="{x:Static properties:Resources.TraceLogPageFaildedMessage}" />
-            <StackPanel Grid.Column="2" Orientation="Horizontal">
-                <Button
-                    Command="{Binding RefreshCommand}"
-                    Style="{StaticResource WebViewButtonStyle}"
-                    ToolTip="{x:Static properties:Resources.TraceLogPageRefreshButtonTooltip}"
-                    AutomationProperties.Name="{x:Static properties:Resources.TraceLogPageRefreshButtonTooltip}">
-                    <TextBlock
-                        Style="{StaticResource SmallIconStyle}"
-                        Text="&#xE72C;" />
-                </Button>
-                <Button
-                    Command="{Binding OpenInBrowserCommand}"
-                    Style="{StaticResource WebViewButtonStyle}"
-                    ToolTip="{x:Static properties:Resources.TraceLogPageOpenInBrowserButtonTooltip}"
-                    AutomationProperties.Name="{x:Static properties:Resources.TraceLogPageOpenInBrowserButtonTooltip}">
-                    <TextBlock
-                        Style="{StaticResource SmallIconStyle}"
-                        Text="&#xE774;" />
-                </Button>
-            </StackPanel>
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Text="{x:Static properties:Resources.TraceLogPageLoadingText}"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}" />
+
+            <!-- Failed message -->
+            <TextBlock
+                Style="{StaticResource BodyTextStyle}"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Foreground="Red"
+                Text="{x:Static properties:Resources.TraceLogPageFaildedMessage}"
+                Visibility="{Binding FailedMessageVisibility}" />
+
+            <!-- Log entries list -->
+            <DataGrid
+                x:Name="LogDataGrid"
+                ItemsSource="{Binding LogEntries}"
+                SelectedItem="{Binding SelectedLogEntry}"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                CanUserSortColumns="True"
+                CanUserResizeColumns="True"
+                GridLinesVisibility="Horizontal"
+                HeadersVisibility="Column"
+                BorderBrush="{DynamicResource MahApps.Brushes.Controls.Border}"
+                BorderThickness="1"
+                Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVisibility}}">
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridRow" BasedOn="{StaticResource MahApps.Styles.DataGridRow}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Level}" Value="Error">
+                                <Setter Property="Background" Value="#33FF4444" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                <Setter Property="Background" Value="#33FFAA00" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Level}" Value="Trace">
+                                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray10}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.Resources>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Time" Binding="{Binding Timestamp, StringFormat='HH:mm:ss.fff'}" Width="90" />
+                    <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="70" />
+                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="250" />
+                    <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
         </Grid>
+
+        <!-- Detail panel for selected entry -->
+        <Expander Grid.Row="3" Header="Detail" Margin="0,8,0,0" IsExpanded="False">
+            <TextBox
+                IsReadOnly="True"
+                Text="{Binding SelectedLogEntry.Message, Mode=OneWay}"
+                TextWrapping="Wrap"
+                MinHeight="60"
+                MaxHeight="150"
+                VerticalScrollBarVisibility="Auto"
+                BorderBrush="{DynamicResource MahApps.Brushes.Controls.Border}" />
+        </Expander>
     </Grid>
 </Page>

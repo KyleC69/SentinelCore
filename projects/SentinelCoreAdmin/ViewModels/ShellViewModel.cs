@@ -118,6 +118,24 @@ public partial class ShellViewModel : ObservableObject
 
 
 
+    [RelayCommand]
+    private void MenuCaseManagementCaseList() => _navigationService.NavigateTo(typeof(CaseListViewModel).FullName, null, true);
+
+
+
+
+    [RelayCommand]
+    private void MenuCaseManagementCreateCase() => _navigationService.NavigateTo(typeof(CreateCaseViewModel).FullName, null, true);
+
+
+
+
+    [RelayCommand]
+    private void MenuCaseManagementCaseDetail() => _navigationService.NavigateTo(typeof(CaseDetailViewModel).FullName, null, true);
+
+
+
+
 
 
 

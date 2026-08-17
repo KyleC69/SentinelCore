@@ -420,5 +420,95 @@ namespace SentinelCoreAdmin.Properties {
                 return ResourceManager.GetString("SettingsPageLogOutButtonText", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Trace Log.
+        /// </summary>
+        public static string TraceLogPageTitle {
+            get {
+                return ResourceManager.GetString("TraceLogPageTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Log file:.
+        /// </summary>
+        public static string TraceLogPageFilePathLabel {
+            get {
+                return ResourceManager.GetString("TraceLogPageFilePathLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Open log folder.
+        /// </summary>
+        public static string TraceLogPageOpenFolderTooltip {
+            get {
+                return ResourceManager.GetString("TraceLogPageOpenFolderTooltip", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to _Case Management.
+        /// </summary>
+        public static string ShellMenuCaseManagementHeader {
+            get {
+                return ResourceManager.GetString("ShellMenuCaseManagementHeader", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Case List.
+        /// </summary>
+        public static string ShellMenuItemCaseListPageHeader {
+            get {
+                return ResourceManager.GetString("ShellMenuItemCaseListPageHeader", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Create Case.
+        /// </summary>
+        public static string ShellMenuItemCreateCasePageHeader {
+            get {
+                return ResourceManager.GetString("ShellMenuItemCreateCasePageHeader", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Case Detail.
+        /// </summary>
+        public static string ShellMenuItemCaseDetailPageHeader {
+            get {
+                return ResourceManager.GetString("ShellMenuItemCaseDetailPageHeader", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Case List.
+        /// </summary>
+        public static string CaseListPageTitle {
+            get {
+                return ResourceManager.GetString("CaseListPageTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Create Case.
+        /// </summary>
+        public static string CreateCasePageTitle {
+            get {
+                return ResourceManager.GetString("CreateCasePageTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Case Detail.
+        /// </summary>
+        public static string CaseDetailPageTitle {
+            get {
+                return ResourceManager.GetString("CaseDetailPageTitle", resourceCulture);
+            }
+        }
     }
 }

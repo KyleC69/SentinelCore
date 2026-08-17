@@ -44,4 +44,28 @@ public static class CaseMappingExtensions
                 PatternMemoryId = @case.PatternMemoryId
         };
     }
+
+
+
+
+
+    /// <summary>
+    ///     Maps a <see cref="CaseEntity" /> persistence object to a <see cref="Case" /> contract object.
+    /// </summary>
+    public static Case ToCase(this CaseEntity entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        return new Case
+        {
+            Id = entity.Id,
+            CaseId = entity.CaseId,
+            Status = (CaseStatus)entity.Status,
+            InitiatingSignal = entity.InitiatingSignal,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt,
+            PlanId = entity.PlanId,
+            PatternMemoryId = entity.PatternMemoryId,
+        };
+    }
 }

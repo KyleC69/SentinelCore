@@ -78,6 +78,18 @@
                                       Command="{Binding MenuViewsTraceLogCommand}"
                                       AutomationProperties.Name="{Binding Header, RelativeSource={RelativeSource Self}}" />
                         </MenuItem>
+                        <MenuItem Header="{x:Static properties:Resources.ShellMenuCaseManagementHeader}"
+                                  AutomationProperties.Name="{Binding Header, RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="{x:Static properties:Resources.ShellMenuItemCaseListPageHeader}"
+                                      Command="{Binding MenuCaseManagementCaseListCommand}"
+                                      AutomationProperties.Name="{Binding Header, RelativeSource={RelativeSource Self}}" />
+                            <MenuItem Header="{x:Static properties:Resources.ShellMenuItemCreateCasePageHeader}"
+                                      Command="{Binding MenuCaseManagementCreateCaseCommand}"
+                                      AutomationProperties.Name="{Binding Header, RelativeSource={RelativeSource Self}}" />
+                            <MenuItem Header="{x:Static properties:Resources.ShellMenuItemCaseDetailPageHeader}"
+                                      Command="{Binding MenuCaseManagementCaseDetailCommand}"
+                                      AutomationProperties.Name="{Binding Header, RelativeSource={RelativeSource Self}}" />
+                        </MenuItem>
                     </Menu>
                     <Frame
                         Grid.Row="1"

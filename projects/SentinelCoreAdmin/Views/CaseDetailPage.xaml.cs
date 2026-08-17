@@ -1,6 +1,6 @@
 // Solution: SentinelCore
 // Project:   SentinelCoreAdmin
-// File:         TraceLogPage.xaml.cs
+// File:         CaseDetailPage.xaml.cs
 // Author: Kyle L. Crowder
 // Build Num:  081602
 
@@ -21,14 +21,14 @@ namespace SentinelCoreAdmin.Views;
 
 
 
-public partial class TraceLogPage : Page
+public partial class CaseDetailPage : Page
 {
 
 
 
 
 
-    public TraceLogPage([CanBeNull] TraceLogViewModel viewModel)
+    public CaseDetailPage([CanBeNull] CaseDetailViewModel viewModel)
     {
         InitializeComponent();
         DataContext = viewModel;
