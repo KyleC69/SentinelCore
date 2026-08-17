@@ -31,6 +31,7 @@
                 <ResourceDictionary Source="/Styles/ChatBrushes.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
             <converters:InvertBoolToVisibilityConverter x:Key="InvertBoolToVisibility" />
         </ResourceDictionary>
     </Application.Resources>
