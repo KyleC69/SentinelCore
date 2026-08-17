@@ -7,6 +7,7 @@
 
 
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Data;
 
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -39,7 +40,9 @@ namespace SentinelCoreAdmin.ViewModels;
 public sealed partial class CoreChatViewModel : ObservableObject, IDisposable
 {
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _alertedCount;
 
     /// <summary>
@@ -48,24 +51,32 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable
     /// </summary>
     private readonly CancellationToken _appShutdownToken;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _blockedCount;
 
     private readonly ICaseFlowEngine _caseFlowEngine;
 
     private bool _disposed;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _escalatedCount;
 
     private readonly ISentinelCoreEvents _events;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private string _inputText = string.Empty;
 
     [ObservableProperty] private int _investigationCount;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private bool _isBusy;
 
     /// <summary>
@@ -206,6 +217,20 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable
 
 
     private bool CanSend() => !IsBusy && !string.IsNullOrWhiteSpace(InputText);
+
+
+    /// <summary>
+    ///     Copies a single chat message's raw text to the system clipboard.
+    /// </summary>
+    /// <param name="text">The message text to copy.</param>
+    [RelayCommand]
+    private void CopyMessage(string? text)
+    {
+        if (!string.IsNullOrEmpty(text))
+        {
+            Clipboard.SetText(text);
+        }
+    }
 
 
 

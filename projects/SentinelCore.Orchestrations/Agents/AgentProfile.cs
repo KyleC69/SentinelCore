@@ -6,6 +6,7 @@
 
 
 
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Personas;
@@ -49,6 +50,17 @@ public sealed record AgentProfile
 {
     public string AgentId { get; set; } = string.Empty;
     public string AgentName { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets the list of <see cref="AIContextProvider" /> instances to attach to the
+    ///     agent's context provider pipeline via <see cref="ChatClientAgentOptions.AIContextProviders" />.
+    ///     <para>
+    ///         Use this for providers that derive from <see cref="AIContextProvider" /> but not from
+    ///         <see cref="MessageAIContextProvider" />, such as
+    ///         <see cref="Microsoft.Agents.AI.Compaction.CompactionProvider" />.
+    ///     </para>
+    /// </summary>
+    public IList<AIContextProvider> AIContextProviders { get; set; } = new List<AIContextProvider>();
 
     /// <summary>
     ///     Gets or initializes the delegate responsible for constructing an <see cref="AIAgent" />.

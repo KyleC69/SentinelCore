@@ -6,6 +6,7 @@
 
 
 
+using Microsoft.Agents.AI.Compaction;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -99,10 +100,13 @@ public class CaseGenerator : ICaseGenerator, IDisposable
     {
 
         _client = await McpClient.CreateAsync(new StdioClientTransport(new()
-                {
-                        //Should be running from the output directory
-                        Name = "SentinelCore-MCP", Command = "SentinelCore-MCP.exe", WorkingDirectory = AppContext.BaseDirectory, Arguments = ["--stdio"]
-                }, _factory))
+        {
+            //Should be running from the output directory
+            Name = "SentinelCoreMCP",
+            Command = "SentinelCoreMCP.exe",
+            WorkingDirectory = AppContext.BaseDirectory,
+            Arguments = ["--stdio"]
+        }, _factory))
                 .ConfigureAwait(false);
 
 
@@ -117,8 +121,33 @@ public class CaseGenerator : ICaseGenerator, IDisposable
         profile.Model = _options.Value?.DefaultModel!;
         profile.Tools = [AIFunctionFactory.Create(caseTool.CreateCase), .. mcpTools]; // Combine MCP tools with the CaseTool
 
+
+
+#pragma warning disable MAAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+       var tools= new ToolResultCompactionStrategy(CompactionTriggers.TokensExceed(120000),minimumPreservedGroups:2);
+#pragma warning restore MAAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+        // Wrap the compaction strategy in a CompactionProvider (an AIContextProvider) and
+        // register it on the profile so the SentinelAgentFactory wires it into
+        // ChatClientAgentOptions.AIContextProviders. CompactionProvider derives from
+        // AIContextProvider (not MessageAIContextProvider), so it cannot be added via
+        // AIAgentBuilder.UseAIContextProviders; it must go through ChatClientAgentOptions.
+#pragma warning disable MAAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        CompactionProvider compactionProvider = new(tools, loggerFactory: _factory);
+#pragma warning restore MAAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+        profile.AIContextProviders.Add(compactionProvider);
+
         // Build the agent using the factory.
         _agent = await _agentFactory.BuildFromProfileAsync(profile).ConfigureAwait(false);
+
+
+
+
+        return _agent!;
+
+
+
 
         return _agent!;
     }

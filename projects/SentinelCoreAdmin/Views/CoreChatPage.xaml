@@ -24,7 +24,7 @@
                 <Setter Property="BorderBrush" Value="Transparent" />
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Padding" Value="0" />
-                <Setter Property="Focusable" Value="False" />
+                <Setter Property="Focusable" Value="True" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
             </Style>
 
@@ -77,16 +77,35 @@
                     </Border.Style>
 
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold"
-                                   Foreground="{DynamicResource ChatTextMuted}"
-                                   FontSize="11"
-                                   Text="{Binding Role}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource ChatTextMuted}"
+                                       FontSize="11"
+                                       Text="{Binding Role}" />
+                            <Button Grid.Column="1"
+                                    Content="Copy"
+                                    FontSize="10"
+                                    Padding="6,1"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Foreground="{DynamicResource ChatTextMuted}"
+                                    Cursor="Hand"
+                                    ToolTip="Copy message text"
+                                    Command="{Binding DataContext.CopyMessageCommand, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
+                                    CommandParameter="{Binding Text}" />
+                        </Grid>
                         <mdv:MarkdownView x:Name="MessageMarkdown"
                                           Margin="0,6,0,0"
                                           Foreground="{DynamicResource ChatTextPrimary}"
                                           Markdown="{Binding Text}"
                                           IsHitTestVisible="True"
                                           IsEnabled="True"
+                                          Focusable="True"
                                           IsManipulationEnabled="True"
                                           HorizontalAlignment="Stretch"
                                           HorizontalScrollBarVisibility="Hidden"

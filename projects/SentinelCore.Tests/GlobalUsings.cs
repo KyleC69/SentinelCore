@@ -15,3 +15,6 @@ global using SentinelCore.Contracts;
 global using SentinelCore.Events;
 global using SentinelCore.Personas;
 global using SentinelCore.Tools;
+global using SentinelCore.Abstractions;
+global using SentinelCore.Application;
+global using SentinelCoreAdmin.ViewModels;

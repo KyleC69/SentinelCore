@@ -36,7 +36,7 @@ public partial class CaseEntity
 
     public int? EvidenceId { get; set; }
 
-    [StringLength(10)]
+    
     public string Remediation { get; set; }
 
     public int? PatternMemoryId { get; set; }

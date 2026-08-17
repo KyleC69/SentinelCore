@@ -211,31 +211,34 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         ChatOptions chatOptions = new()
         {
-                ConversationId = Guid.NewGuid().ToString("N"),
-                Instructions = profile.Instructions,
-                Temperature = profile.Model.Temperature,
-                MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
-                TopP = profile.Model.TopP,
-                TopK = profile.Model.TopK,
-                ModelId = profile.Model.ModelId,
-                Tools = profile.Tools,
-                ResponseFormat = profile.ResponseFormat
+            ConversationId = Guid.NewGuid().ToString("N"),
+            Instructions = profile.Instructions,
+            Temperature = profile.Model.Temperature,
+            MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
+            TopP = profile.Model.TopP,
+            TopK = profile.Model.TopK,
+            ModelId = profile.Model.ModelId,
+            Tools = profile.Tools,
+            ResponseFormat = profile.ResponseFormat
         };
 
         return new ChatClientAgentOptions
         {
-                Id = profile.AgentId,
-                Name = profile.AgentName,
-                Description = "An AI Agent",
-                ChatOptions = chatOptions,
-                UseProvidedChatClientAsIs = false,
-                ClearOnChatHistoryProviderConflict = false,
-                WarnOnChatHistoryProviderConflict = false,
-                ThrowOnChatHistoryProviderConflict = false,
-                RequirePerServiceCallChatHistoryPersistence = false,
-                EnableMessageInjection = false,
-                DisableApprovalNotRequiredFunctionBypassing = false,
-                DisableApprovalResponseBinding = false
+            Id = profile.AgentId,
+            Name = profile.AgentName,
+            Description = "An AI Agent",
+            ChatOptions = chatOptions,
+            AIContextProviders = profile.AIContextProviders?.Count > 0
+                        ? profile.AIContextProviders.ToList()
+                        : null,
+            UseProvidedChatClientAsIs = false,
+            ClearOnChatHistoryProviderConflict = false,
+            WarnOnChatHistoryProviderConflict = false,
+            ThrowOnChatHistoryProviderConflict = false,
+            RequirePerServiceCallChatHistoryPersistence = false,
+            EnableMessageInjection = false,
+            DisableApprovalNotRequiredFunctionBypassing = false,
+            DisableApprovalResponseBinding = false
         };
     }
 

@@ -94,7 +94,7 @@ public partial class App : Application
         // SentinelCore orchestration, events, and case-flow
         SentinelCoreSettings sentinelSettings = new()
         {
-            SqlConnectionString = "server=DESKTOP-NC01091;Database=SentinelCore;Integrated Security=true; TrustServerCertificate=true",
+            SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
             TraceEnabled = true,
             TraceLogLevel = LogLevel.Trace,
             OrchestrationType = OrchestrationType.CustomGroup,

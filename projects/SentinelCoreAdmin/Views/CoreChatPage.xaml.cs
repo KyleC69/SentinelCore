@@ -6,16 +6,16 @@
 
 
 
-using System.ComponentModel;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-
 using JetBrains.Annotations;
 
 using Microsoft.Extensions.AI;
 
 using SentinelCoreAdmin.ViewModels;
+
+using System.ComponentModel;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 
 
@@ -118,6 +118,7 @@ public partial class CoreChatPage : Page
     /// </summary>
     private void ScrollToBottom()
     {
+        /*
         if (!MessagesListBox.Dispatcher.CheckAccess())
         {
             MessagesListBox.Dispatcher.Invoke(ScrollToBottom);
@@ -130,5 +131,6 @@ public partial class CoreChatPage : Page
         }
 
         MessagesListBox.ScrollIntoView(MessagesListBox.Items[^1]);
+        */
     }
 }

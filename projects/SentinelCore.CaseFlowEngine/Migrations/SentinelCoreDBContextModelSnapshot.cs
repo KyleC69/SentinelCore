@@ -56,8 +56,7 @@ namespace SentinelCore.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Remediation")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

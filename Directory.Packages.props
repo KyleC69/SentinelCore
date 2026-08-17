@@ -65,7 +65,7 @@
 		<PackageVersion Include="OllamaSharp" Version="5.4.30" />
 		<PackageVersion Include="Jetbrains.Annotations" Version="2026.2.0" />
 		<PackageVersion Include="OpenAI" Version="2.12.0" />
-		<PackageVersion Include="System.Management" Version="10.0.10" />
+		<PackageVersion Include="System.Management" Version="10.0.11" />
 		<PackageVersion Include="System.ServiceProcess.ServiceController" Version="10.0.0-preview.4.25258.110" />
 		<PackageVersion Include="ColorJsonProvider" Version="1.0.0" />
 	</ItemGroup>

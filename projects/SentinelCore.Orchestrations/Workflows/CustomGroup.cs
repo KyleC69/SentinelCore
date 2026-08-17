@@ -79,7 +79,6 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
     public async Task<WorkflowExecutionResult?> ExecuteAsync(ChatMessage promptSignal, CancellationToken token)
     {
-
         AgentResponse response = await GetAgentResponse(promptSignal.Text);
 
         Console.WriteLine(response.Text);

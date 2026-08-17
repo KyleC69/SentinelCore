@@ -48,7 +48,7 @@
 		<PackageReference Include="TaskScheduler" />
 
 
-<None Include="SentinelCore-MCP.exe" CopyToOutputDirectory="PreserveNewest" />
+<None Include="SentinelCoreMCP.exe" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 
 </Project>
