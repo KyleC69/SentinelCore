@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin.Core
 // File:         IdentityService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -42,7 +42,7 @@ namespace SentinelCoreAdmin.Core.Services;
 /// </summary>
 public class IdentityService : IIdentityService
 {
-    private AuthenticationResult _authenticationResult;
+    private AuthenticationResult? _authenticationResult;
 
     /// <summary>
     ///     Allows the host application to modify the <see cref="PublicClientApplicationBuilder" />
@@ -50,9 +50,9 @@ public class IdentityService : IIdentityService
     ///     to enable platform-specific features such as the WAM broker on Windows:
     ///     <c>builder.WithBroker(new BrokerOptions(BrokerOptions.OperatingSystems.Windows))</c>.
     /// </summary>
-    private Action<PublicClientApplicationBuilder> _builderAction;
+    private Action<PublicClientApplicationBuilder>? _builderAction;
 
-    private IPublicClientApplication _client;
+    private IPublicClientApplication? _client;
     private readonly string[] _graphScopes = new[] { "User.Read" };
     private readonly IIdentityCacheService _identityCacheService;
 
@@ -60,7 +60,7 @@ public class IdentityService : IIdentityService
     ///     WPF window handle callback — set by the host application so that WAM
     ///     broker dialogs (UAC prompts, account picker) are parented correctly.
     /// </summary>
-    private Func<IntPtr> _parentWindowHandle;
+    private Func<IntPtr>? _parentWindowHandle;
 
 
 
@@ -138,7 +138,7 @@ public class IdentityService : IIdentityService
 
 
 
-    public string GetAccountUserName()
+    public string? GetAccountUserName()
     {
         return _authenticationResult?.Account?.Username;
     }
@@ -151,7 +151,7 @@ public class IdentityService : IIdentityService
 
 
     /// <inheritdoc />
-    public async Task<LoginResultType> InitializeAndLoginAsync(AccountType accountType, string clientId, string redirectUri = null, string tenant = null, CancellationToken cancellationToken = default)
+    public async Task<LoginResultType> InitializeAndLoginAsync(AccountType accountType, string clientId, string? redirectUri = null, string? tenant = null, CancellationToken cancellationToken = default)
     {
         InitializeWithAccountType(accountType, clientId, redirectUri, tenant);
         return await LoginAsync(cancellationToken).ConfigureAwait(false);
@@ -165,7 +165,7 @@ public class IdentityService : IIdentityService
 
 
     /// <inheritdoc />
-    public void InitializeWithAccountType(AccountType accountType, string clientId, string redirectUri = null, string tenant = null)
+    public void InitializeWithAccountType(AccountType accountType, string clientId, string? redirectUri = null, string? tenant = null)
     {
         PublicClientApplicationBuilder builder = PublicClientApplicationBuilder.Create(clientId).WithDefaultRedirectUri();
 
@@ -213,8 +213,8 @@ public class IdentityService : IIdentityService
     public bool IsLoggedIn() => _authenticationResult != null;
 
 
-    public event EventHandler LoggedIn;
-    public event EventHandler LoggedOut;
+    public event EventHandler? LoggedIn;
+    public event EventHandler? LoggedOut;
 
 
 
@@ -354,24 +354,21 @@ public class IdentityService : IIdentityService
 
     private void ConfigureCache()
     {
-        if (_identityCacheService != null)
+        _client.UserTokenCache.SetBeforeAccess(args =>
         {
-            _client.UserTokenCache.SetBeforeAccess(args =>
+            byte[] data = _identityCacheService.ReadMsalToken();
+            if (data is { Length: > 0 })
             {
-                byte[] data = _identityCacheService.ReadMsalToken();
-                if (data != null && data.Length > 0)
-                {
-                    args.TokenCache.DeserializeMsalV3(data);
-                }
-            });
-            _client.UserTokenCache.SetAfterAccess(args =>
+                args.TokenCache.DeserializeMsalV3(data);
+            }
+        });
+        _client.UserTokenCache.SetAfterAccess(args =>
+        {
+            if (args.HasStateChanged)
             {
-                if (args.HasStateChanged)
-                {
-                    _identityCacheService.SaveMsalToken(args.TokenCache.SerializeMsalV3());
-                }
-            });
-        }
+                _identityCacheService.SaveMsalToken(args.TokenCache.SerializeMsalV3());
+            }
+        });
     }
 
 

@@ -2,9 +2,12 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         PatternMemoryStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
+
+using Microsoft.Data.SqlTypes;
+using Microsoft.EntityFrameworkCore;
 
 using SentinelCore.Abstractions;
 using SentinelCore.Cfe.Persistence;
@@ -23,7 +26,7 @@ namespace SentinelCore.Infrastructure.Persistence;
 /// </summary>
 public sealed class PatternMemoryStore : IPatternMemoryStore
 {
-    private SentinelCoreDBContext _context;
+    private readonly SentinelCoreDBContext _context;
 
 
 
@@ -48,9 +51,20 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
 
 
-    public Task<IReadOnlyList<PatternMemoryResult>> GetByCaseIdAsync(string caseId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PatternMemoryResult>> GetByCaseIdAsync(string caseId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (!int.TryParse(caseId, out int caseRecordId))
+        {
+            return [];
+        }
+
+        List<PatternMemoryEntity> entities = await _context.PatternMemoryEntities
+                .AsNoTracking()
+                .Where(p => p.CaseId == caseRecordId)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+        return entities.Select(ToResult).ToList();
     }
 
 
@@ -60,9 +74,28 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
 
 
-    public Task<IReadOnlyList<PatternMemoryResult>> SearchAsync(float[] embedding, int topK = 10, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PatternMemoryResult>> SearchAsync(float[] embedding, int topK = 10, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(embedding);
+
+        if (topK <= 0 || embedding.Length == 0)
+        {
+            return [];
+        }
+
+        List<PatternMemoryEntity> entities = await _context.PatternMemoryEntities
+                .AsNoTracking()
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+        return entities
+                .Select(ToResult)
+                .Select(r => (Result: r, Score: CosineSimilarity(embedding, r.SignalEmbedding ?? [])))
+                .Where(x => x.Score > 0)
+                .OrderByDescending(x => x.Score)
+                .Take(topK)
+                .Select(x => x.Result)
+                .ToList();
     }
 
 
@@ -72,9 +105,46 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
 
 
-    public Task StoreAsync(string caseId, string summary, float[] signalEmbedding, float[] summaryEmbedding, CancellationToken cancellationToken = default)
+    public async Task StoreAsync(string caseId, string summary, float[] signalEmbedding, float[] summaryEmbedding, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(summary);
+        ArgumentNullException.ThrowIfNull(signalEmbedding);
+        ArgumentNullException.ThrowIfNull(summaryEmbedding);
+
+        if (!int.TryParse(caseId, out int caseRecordId))
+        {
+            throw new ArgumentException("Case identifier must be a numeric record identifier.", nameof(caseId));
+        }
+
+        PatternMemoryEntity entity = new()
+        {
+                PatternId = Guid.NewGuid().GetHashCode(),
+                CaseId = caseRecordId,
+                Summary = summary,
+                SignalEmbedding = new SqlVector<float>(signalEmbedding),
+                SummaryEmbedding = new SqlVector<float>(summaryEmbedding),
+                Timestamp = DateTime.Now
+        };
+
+        _context.PatternMemoryEntities.Add(entity);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+
+
+
+
+    private static PatternMemoryResult ToResult(PatternMemoryEntity e)
+    {
+        return new PatternMemoryResult
+        {
+                CaseId = e.CaseId,
+                PatternId = e.PatternId,
+                Summary = e.Summary,
+                SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
+                SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
+                Timestamp = e.Timestamp
+        };
     }
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         WindowManagerService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -54,7 +54,7 @@ public class WindowManagerService : IWindowManagerService
 
 
     [CanBeNull]
-    public Window GetWindow([CanBeNull] string key)
+    public Window? GetWindow([CanBeNull] string? key)
     {
         foreach (Window window in Application.Current.Windows)
         {
@@ -76,7 +76,7 @@ public class WindowManagerService : IWindowManagerService
 
 
     [CanBeNull]
-    public Window MainWindow
+    public Window? MainWindow
     {
         get => Application.Current.MainWindow;
     }
@@ -88,13 +88,18 @@ public class WindowManagerService : IWindowManagerService
 
 
 
-    public bool? OpenInDialog([CanBeNull] string key, [CanBeNull] object parameter = null)
+    public bool? OpenInDialog([CanBeNull] string? key, [CanBeNull] object? parameter = null)
     {
-        Window shellWindow = _serviceProvider.GetService(typeof(IShellDialogWindow)) as Window;
+        Window? shellWindow = _serviceProvider.GetService(typeof(IShellDialogWindow)) as Window;
+        if (shellWindow is null)
+        {
+            return null;
+        }
+
         Frame frame = ((IShellDialogWindow)shellWindow).GetDialogFrame();
         frame.Navigated += OnNavigated;
         shellWindow.Closed += OnWindowClosed;
-        Page page = _pageService.GetPage(key);
+        Page page = _pageService.GetPage(key!);
         bool navigated = frame.Navigate(page, parameter);
         return shellWindow.ShowDialog();
     }
@@ -106,9 +111,9 @@ public class WindowManagerService : IWindowManagerService
 
 
 
-    public void OpenInNewWindow([CanBeNull] string key, [CanBeNull] object parameter = null)
+    public void OpenInNewWindow([CanBeNull] string? key, [CanBeNull] object? parameter = null)
     {
-        Window window = GetWindow(key);
+        Window? window = GetWindow(key);
         if (window != null)
         {
             window.Activate();
@@ -119,7 +124,7 @@ public class WindowManagerService : IWindowManagerService
             Frame frame = new() { Focusable = false, NavigationUIVisibility = NavigationUIVisibility.Hidden };
 
             window.Content = frame;
-            Page page = _pageService.GetPage(key);
+            Page? page = _pageService.GetPage(key!);
             window.Closed += OnWindowClosed;
             window.Show();
             frame.Navigated += OnNavigated;

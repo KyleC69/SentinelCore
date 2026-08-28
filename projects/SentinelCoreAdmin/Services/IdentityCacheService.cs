@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         IdentityCacheService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -31,7 +31,7 @@ public class IdentityCacheService : IIdentityCacheService
 
     private readonly object _fileLock = new();
 
-    private static readonly string CacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Assembly.GetExecutingAssembly().GetName().Name);
+    private static readonly string CacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Assembly.GetExecutingAssembly().GetName().Name ?? "SentinelCoreAdmin");
 
     private static readonly string CacheFilePath = Path.Combine(CacheDirectory, ".msalcache.bin3");
 
@@ -42,7 +42,7 @@ public class IdentityCacheService : IIdentityCacheService
 
 
 
-    public byte[] ReadMsalToken()
+    public byte[]? ReadMsalToken()
     {
         lock (_fileLock)
         {

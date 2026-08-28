@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         LogInViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -37,7 +37,7 @@ public partial class LogInViewModel : ObservableObject
 
     [ObservableProperty] private AccountType _selectedAccountType = AccountType.AadAndPersonalMsAccounts;
 
-    [ObservableProperty] private string _statusMessage;
+    [ObservableProperty] private string? _statusMessage;
 
 
 

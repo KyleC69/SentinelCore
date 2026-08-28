@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         ApplicationHostService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -37,14 +37,14 @@ public class ApplicationHostService : IHostedService
     private readonly IHostApplicationLifetime _hostLifetime;
     private readonly IIdentityService _identityService;
     private bool _isInitialized;
-    private ILogInWindow _logInWindow;
+    private ILogInWindow? _logInWindow;
     private readonly ILogger<ApplicationHostService> _logger;
     private readonly INavigationService _navigationService;
     private readonly IPersistAndRestoreService _persistAndRestoreService;
 
     private readonly IRightPaneService _rightPaneService;
     private readonly IServiceProvider _serviceProvider;
-    private IShellWindow _shellWindow;
+    private IShellWindow? _shellWindow;
     private readonly IThemeSelectorService _themeSelectorService;
     private readonly IToastNotificationsService _toastNotificationsService;
     private readonly IUserDataService _userDataService;
@@ -113,6 +113,12 @@ public class ApplicationHostService : IHostedService
             if (!silentLoginSuccess || !_identityService.IsAuthorized())
             {
                 _logInWindow = _serviceProvider.GetService(typeof(ILogInWindow)) as ILogInWindow;
+                if (_logInWindow is null)
+                {
+                    _logger.LogError("Failed to resolve ILogInWindow from service provider.");
+                    return;
+                }
+
                 _logInWindow.ShowWindow();
                 await StartupAsync();
                 _isInitialized = true;
@@ -155,13 +161,13 @@ public class ApplicationHostService : IHostedService
 
     private AccountType GetSavedAccountType()
     {
-        if (App.Current.Properties.Contains("IdentityAccountType") && App.Current.Properties["IdentityAccountType"] is string saved && Enum.TryParse<AccountType>(saved, out AccountType result))
+        if (App.Current.Properties.Contains("IdentityAccountType") && App.Current.Properties["IdentityAccountType"] is string saved && Enum.TryParse(saved, out AccountType result))
         {
             return result;
         }
 
         // Fall back to config default
-        if (Enum.TryParse<AccountType>(_appConfig.IdentityAccountType, out AccountType configDefault))
+        if (Enum.TryParse(_appConfig.IdentityAccountType, out AccountType configDefault))
         {
             return configDefault;
         }
@@ -178,7 +184,7 @@ public class ApplicationHostService : IHostedService
 
     private async Task HandleActivationAsync()
     {
-        IActivationHandler activationHandler = _activationHandlers.FirstOrDefault(h => h.CanHandle());
+        IActivationHandler? activationHandler = _activationHandlers.FirstOrDefault(h => h.CanHandle());
 
         if (activationHandler != null)
         {
@@ -191,10 +197,16 @@ public class ApplicationHostService : IHostedService
         {
             // Default activation that navigates to the apps default page
             _shellWindow = _serviceProvider.GetService(typeof(IShellWindow)) as IShellWindow;
+            if (_shellWindow is null)
+            {
+                _logger.LogError("Failed to resolve IShellWindow from service provider.");
+                return;
+            }
+
             _navigationService.Initialize(_shellWindow.GetNavigationFrame());
             _rightPaneService.Initialize(_shellWindow.GetRightPaneFrame(), _shellWindow.GetSplitView());
             _shellWindow.ShowWindow();
-            _navigationService.NavigateTo(typeof(CoreChatViewModel).FullName);
+            _navigationService.NavigateTo(typeof(CoreChatViewModel).FullName!);
             await Task.CompletedTask;
         }
     }
@@ -226,10 +238,10 @@ public class ApplicationHostService : IHostedService
 
 
 
-    private async void OnLoggedIn(object sender, EventArgs e)
+    private async void OnLoggedIn(object? sender, EventArgs e)
     {
         await HandleActivationAsync();
-        _logInWindow.CloseWindow();
+        _logInWindow?.CloseWindow();
     }
 
 
@@ -239,12 +251,18 @@ public class ApplicationHostService : IHostedService
 
 
 
-    private void OnLoggedOut(object sender, EventArgs e)
+    private void OnLoggedOut(object? sender, EventArgs e)
     {
         _logInWindow = _serviceProvider.GetService(typeof(ILogInWindow)) as ILogInWindow;
+        if (_logInWindow is null)
+        {
+            _logger.LogError("Failed to resolve ILogInWindow from service provider.");
+            return;
+        }
+
         _logInWindow.ShowWindow();
 
-        _shellWindow.CloseWindow();
+        _shellWindow?.CloseWindow();
         _navigationService.UnsubscribeNavigation();
     }
 

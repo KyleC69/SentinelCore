@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         CaseListPage.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -30,6 +30,9 @@ public partial class CaseListPage : Page
 
 
 
+
+
+
     public CaseListPage([CanBeNull] CaseListViewModel viewModel)
     {
         _viewModel = viewModel;
@@ -41,15 +44,6 @@ public partial class CaseListPage : Page
 
 
 
-    private void SummaryDataGrid_MouseDoubleClick(object sender, RoutedEventArgs e)
-    {
-        if (_viewModel?.DrillIntoStatusCommand.CanExecute(null) == true)
-        {
-            _viewModel.DrillIntoStatusCommand.Execute(null);
-        }
-    }
-
-
 
 
 
@@ -58,6 +52,21 @@ public partial class CaseListPage : Page
         if (_viewModel?.OpenCaseDetailCommand.CanExecute(null) == true)
         {
             _viewModel.OpenCaseDetailCommand.Execute(null);
+        }
+    }
+
+
+
+
+
+
+
+
+    private void SummaryDataGrid_MouseDoubleClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel?.DrillIntoStatusCommand.CanExecute(null) == true)
+        {
+            _viewModel.DrillIntoStatusCommand.Execute(null);
         }
     }
 }

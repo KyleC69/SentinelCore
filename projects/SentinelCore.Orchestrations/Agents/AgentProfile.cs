@@ -2,11 +2,10 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
-using Microsoft.Agents.AI;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Personas;
@@ -48,8 +47,6 @@ namespace SentinelCore.Agents;
 /// </summary>
 public sealed record AgentProfile
 {
-    public string AgentId { get; set; } = string.Empty;
-    public string AgentName { get; set; } = string.Empty;
 
     /// <summary>
     ///     Gets or sets the list of <see cref="AIContextProvider" /> instances to attach to the
@@ -61,6 +58,9 @@ public sealed record AgentProfile
     ///     </para>
     /// </summary>
     public IList<AIContextProvider> AIContextProviders { get; set; } = new List<AIContextProvider>();
+
+    public string AgentId { get; set; } = string.Empty;
+    public string AgentName { get; set; } = string.Empty;
 
     /// <summary>
     ///     Gets or initializes the delegate responsible for constructing an <see cref="AIAgent" />.

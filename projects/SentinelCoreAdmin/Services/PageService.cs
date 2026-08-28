@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         PageService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -56,7 +56,7 @@ public class PageService : IPageService
 
 
     [CanBeNull]
-    public Page GetPage([NotNull] string key)
+    public Page? GetPage([NotNull] string key)
     {
         Type pageType = GetPageType(key);
         return _serviceProvider.GetService(pageType) as Page;
@@ -72,7 +72,7 @@ public class PageService : IPageService
     [CanBeNull]
     public Type GetPageType([NotNull] string key)
     {
-        Type pageType;
+        Type? pageType;
         lock (_pages)
         {
             if (!_pages.TryGetValue(key, out pageType))
@@ -95,7 +95,7 @@ public class PageService : IPageService
     {
         lock (_pages)
         {
-            string key = typeof(VM).FullName;
+            string key = typeof(VM).FullName!;
             if (_pages.ContainsKey(key))
             {
                 throw new ArgumentException($"The key {key} is already configured in PageService");

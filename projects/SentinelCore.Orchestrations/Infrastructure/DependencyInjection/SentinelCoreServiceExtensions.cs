@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
+
+using System.Text.Json;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -21,8 +23,6 @@ using SentinelCore.Events;
 using SentinelCore.Infrastructure.Persistence;
 using SentinelCore.Workflows;
 using SentinelCore.Workflows.Executors;
-
-using System.Text.Json;
 
 
 
@@ -97,23 +97,28 @@ public static class SentinelCoreServiceExtensions
         // or hosted services. The store and engine registrations below follow suit.
         // The factory overload is also transient so any design-time/internal factory
         // resolution matches the context lifetime.
-        // Retrieve the connection string from the supplied settings. A valid connection string
-        // is required for migrations and runtime operation. If it is missing we throw a clear
-        // exception so the mis‑configuration is evident early in the application start‑up.
+        // Retrieve the connection string from the supplied settings. If it is missing
+        // we skip DbContext registration so the host still starts — persistence-dependent
+        // features will fail at runtime with a clear error, rather than preventing the
+        // entire application from launching.
         string? connectionString = options.SqlConnectionString;
 
-        if (string.IsNullOrWhiteSpace(connectionString))
+        if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            throw new InvalidOperationException("SqlConnectionString is not configured. Provide a valid connection string in SentinelCoreSettings.");
+            services.AddDbContext<SentinelCoreDBContext>(dbOptions => dbOptions.UseSqlServer(connectionString), ServiceLifetime.Transient, ServiceLifetime.Transient);
+            services.AddTransient<IDbContextFactory<SentinelCoreDBContext>, PooledDbContextFactory<SentinelCoreDBContext>>();
+
+            // DatabaseInitializer is [Obsolete] (persistence is migrating to *.sqlproj), but it
+            // remains the only Database.MigrateAsync path in the solution — schema would never be
+            // applied without it. Keep registering until the sqlproj migration lands.
+#pragma warning disable CS0618 // Type or member is obsolete
+            services.AddHostedService<DatabaseInitializer>();
+#pragma warning restore CS0618 // Type or member is obsolete
         }
-
-
-        services.AddDbContext<SentinelCoreDBContext>(dbOptions => dbOptions.UseSqlServer(connectionString), ServiceLifetime.Transient, ServiceLifetime.Transient);
-
-        services.AddTransient<IDbContextFactory<SentinelCoreDBContext>, PooledDbContextFactory<SentinelCoreDBContext>>();
-
-
-        services.AddHostedService<DatabaseInitializer>();
+        else
+        {
+            System.Diagnostics.Debug.WriteLine("[WARN] SqlConnectionString is not configured — database persistence will be unavailable. Provide a valid connection string in SentinelCoreSettings.");
+        }
 
         // -- Always-on core services --
         // Safety middleware defaults to pass-through; host can override with real rules
@@ -166,14 +171,11 @@ public static class SentinelCoreServiceExtensions
 
         JsonLoggerOptions jsonOptions = new()
         {
-            MinimumLevel = LogLevel.Trace,
-            Indented = true,
-            Output = JsonLoggerOutput.File,
-            FilePath = "SentinelCore.log"
+                MinimumLevel = LogLevel.Trace, Indented = true, Output = JsonLoggerOutput.File, FilePath = "SentinelCore.log"
 
-            // Or:
-            // Output = JsonLoggerOutput.File,
-            // FilePath = "logs/sentinelcore.json"
+                // Or:
+                // Output = JsonLoggerOutput.File,
+                // FilePath = "logs/sentinelcore.json"
         };
 
 

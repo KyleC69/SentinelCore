@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         RightPaneService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -28,10 +28,10 @@ namespace SentinelCoreAdmin.Services;
 
 public class RightPaneService : IRightPaneService
 {
-    private Frame _frame;
-    private object _lastParameterUsed;
+    private Frame? _frame;
+    private object? _lastParameterUsed;
     private readonly IPageService _pageService;
-    private SplitView _splitView;
+    private SplitView? _splitView;
 
 
 
@@ -54,8 +54,15 @@ public class RightPaneService : IRightPaneService
 
     public void CleanUp()
     {
-        _frame.Navigated -= OnNavigated;
-        _splitView.PaneClosed -= OnPaneClosed;
+        if (_frame != null)
+        {
+            _frame.Navigated -= OnNavigated;
+        }
+
+        if (_splitView != null)
+        {
+            _splitView.PaneClosed -= OnPaneClosed;
+        }
     }
 
 
@@ -65,8 +72,13 @@ public class RightPaneService : IRightPaneService
 
 
 
-    public void Initialize([CanBeNull] Frame rightPaneFrame, [CanBeNull] SplitView splitView)
+    public void Initialize([CanBeNull] Frame? rightPaneFrame, [CanBeNull] SplitView? splitView)
     {
+        if (rightPaneFrame == null || splitView == null)
+        {
+            return;
+        }
+
         _frame = rightPaneFrame;
         _splitView = splitView;
         _frame.Navigated += OnNavigated;
@@ -80,8 +92,13 @@ public class RightPaneService : IRightPaneService
 
 
 
-    public void OpenInRightPane([CanBeNull] string pageKey, [CanBeNull] object parameter = null)
+    public void OpenInRightPane([CanBeNull] string? pageKey, [CanBeNull] object? parameter = null)
     {
+        if (pageKey is null || _frame is null)
+        {
+            return;
+        }
+
         Type pageType = _pageService.GetPageType(pageKey);
         if (_frame.Content?.GetType() != pageType || (parameter != null && !parameter.Equals(_lastParameterUsed)))
         {
@@ -98,7 +115,7 @@ public class RightPaneService : IRightPaneService
             }
         }
 
-        _splitView.IsPaneOpen = true;
+        _splitView!.IsPaneOpen = true;
         PaneOpened?.Invoke(_splitView, EventArgs.Empty);
     }
 
@@ -109,18 +126,18 @@ public class RightPaneService : IRightPaneService
 
 
 
-    public event EventHandler PaneClosed;
+    public event EventHandler? PaneClosed;
 
-    public event EventHandler PaneOpened;
-
-
+    public event EventHandler? PaneOpened;
 
 
 
 
 
 
-    private void OnNavigated([CanBeNull] object sender, [CanBeNull] NavigationEventArgs e)
+
+
+    private void OnNavigated(object sender, NavigationEventArgs e)
     {
         if (sender is Frame frame)
         {
@@ -140,5 +157,5 @@ public class RightPaneService : IRightPaneService
 
 
 
-    private void OnPaneClosed([CanBeNull] object sender, [CanBeNull] EventArgs e) => PaneClosed?.Invoke(sender, e);
+    private void OnPaneClosed(object? sender, EventArgs e) => PaneClosed?.Invoke(sender, e);
 }

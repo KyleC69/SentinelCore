@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         IUserDataService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -20,11 +20,11 @@ namespace SentinelCoreAdmin.Contracts.Services;
 public interface IUserDataService
 {
 
-    UserViewModel GetUser();
+    UserViewModel? GetUser();
 
 
     void Initialize();
 
 
-    event EventHandler<UserViewModel> UserDataUpdated;
+    event EventHandler<UserViewModel>? UserDataUpdated;
 }

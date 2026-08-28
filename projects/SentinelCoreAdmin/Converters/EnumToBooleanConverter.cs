@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         EnumToBooleanConverter.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -22,7 +22,7 @@ namespace SentinelCoreAdmin.Converters;
 
 public class EnumToBooleanConverter : IValueConverter
 {
-    public Type EnumType { get; set; }
+    public Type? EnumType { get; set; }
 
 
 
@@ -31,9 +31,9 @@ public class EnumToBooleanConverter : IValueConverter
 
 
 
-    public object Convert(object value, [CanBeNull] Type targetType, object parameter, [CanBeNull] CultureInfo culture)
+    public object Convert(object value, [CanBeNull] Type? targetType, object parameter, [CanBeNull] CultureInfo? culture)
     {
-        if (parameter is string enumString)
+        if (EnumType != null && parameter is string enumString)
         {
             if (Enum.IsDefined(EnumType, value))
             {
@@ -53,9 +53,9 @@ public class EnumToBooleanConverter : IValueConverter
 
 
 
-    public object ConvertBack(object value, [CanBeNull] Type targetType, object parameter, [CanBeNull] CultureInfo culture)
+    public object? ConvertBack(object value, [CanBeNull] Type? targetType, object parameter, [CanBeNull] CultureInfo? culture)
     {
-        if (parameter is string enumString)
+        if (EnumType != null && parameter is string enumString)
         {
             return Enum.Parse(EnumType, enumString);
         }

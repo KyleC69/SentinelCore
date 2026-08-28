@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         InvestigationPlanStepMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -34,15 +34,15 @@ public static class InvestigationPlanStepMappingExtensions
 
         return new InvestigationPlanStepsEntity
         {
-            Id = step.Id,
-            StepId = step.StepId,
-            PlanId = step.PlanId,
-            Surface = step.Surface,
-            Instruction = step.Instruction,
-            Result = step.Result,
-            CompletedSuccessfully = step.CompletedSuccessfully,
-            TaskBlocked = step.TaskBlocked,
-            IsTargetPropertyMissing = step.IsTargetPropertyMissing
+                Id = step.Id,
+                StepId = step.StepId,
+                PlanId = step.PlanId,
+                Surface = step.Surface,
+                Instruction = step.Instruction,
+                Result = step.Result,
+                CompletedSuccessfully = step.CompletedSuccessfully,
+                TaskBlocked = step.TaskBlocked,
+                IsTargetPropertyMissing = step.IsTargetPropertyMissing
         };
     }
 }

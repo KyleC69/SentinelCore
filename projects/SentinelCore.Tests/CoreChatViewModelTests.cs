@@ -2,11 +2,9 @@
 // Project:   SentinelCore.Tests
 // File:         CoreChatViewModelTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
-
-using System.Threading;
 
 using Microsoft.Extensions.Logging;
 
@@ -37,46 +35,21 @@ namespace SentinelCore.Tests;
 [TestClass]
 public sealed class CoreChatViewModelTests
 {
-    private static (Mock<IOrchestrationControl> Orchestration, Mock<ISentinelCoreEvents> Events, Mock<ICaseFlowEngine> CaseFlow, ILogger<CoreChatViewModel> Logger) CreateDependencies()
-    {
-        Mock<IOrchestrationControl> orchestration = new(MockBehavior.Strict);
-        Mock<ISentinelCoreEvents> events = new();
-        Mock<ICaseFlowEngine> caseFlow = new(MockBehavior.Strict);
-
-        caseFlow.Setup(c => c.GetCaseCountByStatusAsync(It.IsAny<CaseStatus>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(0);
-
-        return (orchestration, events, caseFlow, NoOpLoggerFactory.CreateLogger<CoreChatViewModel>());
-    }
-
-
-
-
-    // ────────────────────────────────────────────────────────────
-    //  Constructor null-guards
-    // ────────────────────────────────────────────────────────────
-
-
-
 
     [TestMethod]
-    public void Constructor_NullOrchestrationControl_Throws()
+    public void CancelCommand_NotBusy_CannotExecute()
     {
-        (_, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
+        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
 
-        Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(null!, events.Object, caseFlow.Object, logger));
+        Assert.IsFalse(viewModel.CancelCommand.CanExecute(null));
+
+        viewModel.Dispose();
     }
 
 
 
 
-    [TestMethod]
-    public void Constructor_NullEvents_Throws()
-    {
-        (Mock<IOrchestrationControl> orchestration, _, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
-
-        Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(orchestration.Object, null!, caseFlow.Object, logger));
-    }
 
 
 
@@ -92,6 +65,25 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
+    [TestMethod]
+    public void Constructor_NullEvents_Throws()
+    {
+        (Mock<IOrchestrationControl> orchestration, _, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
+
+        Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(orchestration.Object, null!, caseFlow.Object, logger));
+    }
+
+
+
+
+
+
+
+
     [TestMethod]
     public void Constructor_NullLogger_Throws()
     {
@@ -103,9 +95,43 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
+    // ────────────────────────────────────────────────────────────
+    //  Constructor null-guards
+    // ────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+    [TestMethod]
+    public void Constructor_NullOrchestrationControl_Throws()
+    {
+        (_, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
+
+        Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(null!, events.Object, caseFlow.Object, logger));
+    }
+
+
+
+
+
+
+
+
     // ────────────────────────────────────────────────────────────
     //  Welcome message seeding
     // ────────────────────────────────────────────────────────────
+
+
+
+
 
 
 
@@ -127,22 +153,19 @@ public sealed class CoreChatViewModelTests
 
 
 
-    // ────────────────────────────────────────────────────────────
-    //  Send / Cancel command gating (CanSend / CanCancel)
-    // ────────────────────────────────────────────────────────────
 
 
 
 
     [TestMethod]
-    public void SendCommand_EmptyInputText_CannotExecute()
+    public void CopyMessageCommand_AlwaysCanExecute()
     {
         (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
 
-        viewModel.InputText = string.Empty;
-
-        Assert.IsFalse(viewModel.SendCommand.CanExecute(null));
+        // Regression anchor: the Copy button must remain clickable regardless of
+        // busy/send state — it has no CanExecute predicate by design.
+        Assert.IsTrue(viewModel.CopyMessageCommand.CanExecute(null));
 
         viewModel.Dispose();
     }
@@ -150,69 +173,6 @@ public sealed class CoreChatViewModelTests
 
 
 
-    [TestMethod]
-    public void SendCommand_WhitespaceInputText_CannotExecute()
-    {
-        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
-        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
-
-        viewModel.InputText = "   ";
-
-        Assert.IsFalse(viewModel.SendCommand.CanExecute(null));
-
-        viewModel.Dispose();
-    }
-
-
-
-
-    [TestMethod]
-    public void SendCommand_NonEmptyInputTextAndNotBusy_CanExecute()
-    {
-        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
-        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
-
-        viewModel.InputText = "investigate host 10.0.0.5";
-
-        Assert.IsTrue(viewModel.SendCommand.CanExecute(null));
-
-        viewModel.Dispose();
-    }
-
-
-
-
-    [TestMethod]
-    public void CancelCommand_NotBusy_CannotExecute()
-    {
-        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
-        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
-
-        Assert.IsFalse(viewModel.CancelCommand.CanExecute(null));
-
-        viewModel.Dispose();
-    }
-
-
-
-
-    // ────────────────────────────────────────────────────────────
-    //  Copy-message command (clipboard copy-ready regression surface)
-    // ────────────────────────────────────────────────────────────
-
-
-
-
-    [TestMethod]
-    public void CopyMessageCommand_NullText_DoesNotThrow()
-    {
-        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
-        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
-
-        viewModel.CopyMessageCommand.Execute(null);
-
-        viewModel.Dispose();
-    }
 
 
 
@@ -231,18 +191,6 @@ public sealed class CoreChatViewModelTests
 
 
 
-    [TestMethod]
-    public void CopyMessageCommand_AlwaysCanExecute()
-    {
-        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
-        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
-
-        // Regression anchor: the Copy button must remain clickable regardless of
-        // busy/send state — it has no CanExecute predicate by design.
-        Assert.IsTrue(viewModel.CopyMessageCommand.CanExecute(null));
-
-        viewModel.Dispose();
-    }
 
 
 
@@ -283,25 +231,73 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     // ────────────────────────────────────────────────────────────
-    //  Event wiring → StatusMessage
+    //  Copy-message command (clipboard copy-ready regression surface)
     // ────────────────────────────────────────────────────────────
+
+
+
+
 
 
 
 
     [TestMethod]
-    public void SentinelOutputEvent_Raised_UpdatesStatusMessage()
+    public void CopyMessageCommand_NullText_DoesNotThrow()
     {
         (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
 
-        events.Raise(e => e.SentinelOutputEvent += null, new SentinelOutputEventArgs("TheCore", "reasoning about signal", ActivityType.Core));
-
-        Assert.AreEqual("Agent: TheCore reasoning about signal", viewModel.StatusMessage);
+        viewModel.CopyMessageCommand.Execute(null);
 
         viewModel.Dispose();
     }
+
+
+
+
+
+
+
+
+    private static (Mock<IOrchestrationControl> Orchestration, Mock<ISentinelCoreEvents> Events, Mock<ICaseFlowEngine> CaseFlow, ILogger<CoreChatViewModel> Logger) CreateDependencies()
+    {
+        Mock<IOrchestrationControl> orchestration = new(MockBehavior.Strict);
+        Mock<ISentinelCoreEvents> events = new();
+        Mock<ICaseFlowEngine> caseFlow = new(MockBehavior.Strict);
+
+        caseFlow.Setup(c => c.GetCaseCountByStatusAsync(It.IsAny<CaseStatus>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+        return (orchestration, events, caseFlow, NoOpLoggerFactory.CreateLogger<CoreChatViewModel>());
+    }
+
+
+
+
+
+
+
+
+    [TestMethod]
+    public void Dispose_UnsubscribesFromEvents_SubsequentRaiseDoesNotUpdateStatusMessage()
+    {
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
+        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
+
+        viewModel.Dispose();
+
+        events.Raise(e => e.ErrorOccurred += null, "should be ignored", new InvalidOperationException("boom"));
+
+        Assert.AreEqual(string.Empty, viewModel.StatusMessage);
+    }
+
+
+
+
 
 
 
@@ -322,16 +318,102 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
+    // ────────────────────────────────────────────────────────────
+    //  Send / Cancel command gating (CanSend / CanCancel)
+    // ────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
     [TestMethod]
-    public void Dispose_UnsubscribesFromEvents_SubsequentRaiseDoesNotUpdateStatusMessage()
+    public void SendCommand_EmptyInputText_CannotExecute()
     {
         (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
 
+        viewModel.InputText = string.Empty;
+
+        Assert.IsFalse(viewModel.SendCommand.CanExecute(null));
+
         viewModel.Dispose();
+    }
 
-        events.Raise(e => e.ErrorOccurred += null, "should be ignored", new InvalidOperationException("boom"));
 
-        Assert.AreEqual(string.Empty, viewModel.StatusMessage);
+
+
+
+
+
+
+    [TestMethod]
+    public void SendCommand_NonEmptyInputTextAndNotBusy_CanExecute()
+    {
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
+        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
+
+        viewModel.InputText = "investigate host 10.0.0.5";
+
+        Assert.IsTrue(viewModel.SendCommand.CanExecute(null));
+
+        viewModel.Dispose();
+    }
+
+
+
+
+
+
+
+
+    [TestMethod]
+    public void SendCommand_WhitespaceInputText_CannotExecute()
+    {
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
+        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
+
+        viewModel.InputText = "   ";
+
+        Assert.IsFalse(viewModel.SendCommand.CanExecute(null));
+
+        viewModel.Dispose();
+    }
+
+
+
+
+
+
+
+
+    // ────────────────────────────────────────────────────────────
+    //  Event wiring → StatusMessage
+    // ────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+    [TestMethod]
+    public void SentinelOutputEvent_Raised_UpdatesStatusMessage()
+    {
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger) = CreateDependencies();
+        CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger);
+
+        events.Raise(e => e.SentinelOutputEvent += null, new SentinelOutputEventArgs("TheCore", "reasoning about signal", ActivityType.Core));
+
+        Assert.AreEqual("Agent: TheCore reasoning about signal", viewModel.StatusMessage);
+
+        viewModel.Dispose();
     }
 }

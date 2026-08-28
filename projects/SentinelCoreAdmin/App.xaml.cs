@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -48,7 +48,7 @@ namespace SentinelCoreAdmin;
 // Tracking issue for improving this is https://github.com/dotnet/wpf/issues/1946
 public partial class App : Application
 {
-    private IHost _host;
+    private IHost? _host;
 
     /// <summary>
     ///     Shared cancellation token source that is cancelled when the application
@@ -97,7 +97,7 @@ public partial class App : Application
             SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
             TraceEnabled = true,
             TraceLogLevel = LogLevel.Trace,
-            OrchestrationType = OrchestrationType.CustomGroup,
+            OrchestrationType = OrchestrationType.TheCore,
             DefaultModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", .2f, 15000, 1, .2f),
             DefaultUtilityModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", 0.1f, 12000, 1, 0.3f)
         };
@@ -118,7 +118,7 @@ public partial class App : Application
 
 
     [CanBeNull]
-    public T GetService<T>() where T : class => _host?.Services.GetService(typeof(T)) as T;
+    public T? GetService<T>() where T : class => _host?.Services.GetService(typeof(T)) as T;
 
 
 
@@ -165,7 +165,7 @@ public partial class App : Application
 
     private void OnDispatcherUnhandledException([CanBeNull] object sender, [NotNull] DispatcherUnhandledExceptionEventArgs e)
     {
-        ILogger<App> logger = _host?.Services.GetService<ILogger<App>>();
+        ILogger<App>? logger = _host?.Services.GetService<ILogger<App>>();
         logger?.LogCritical(e.Exception, "Unhandled dispatcher exception — initiating shutdown.");
 
         // Signal all in-flight async work to cancel immediately.
@@ -216,6 +216,35 @@ public partial class App : Application
 
     private async void OnStartup([CanBeNull] object sender, [NotNull] StartupEventArgs e)
     {
+        try
+        {
+            await StartApplicationAsync(e);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[FATAL] Startup failed: {ex}");
+
+            // Ensure the shutdown token is cancelled so in-flight work stops.
+            if (!_shutdownCts.IsCancellationRequested)
+            {
+                _shutdownCts.Cancel();
+            }
+
+            MessageBox.Show($"A critical error occurred during startup:\n\n{ex.Message}\n\nSee the debug output for details.", "SentinelCore — Fatal Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+            this.Shutdown(1);
+        }
+    }
+
+
+
+
+
+
+
+
+    private async Task StartApplicationAsync(StartupEventArgs e)
+    {
         // https://docs.microsoft.com/windows/apps/design/shell/tiles-and-notifications/send-local-toast?tabs=desktop
         ToastNotificationManagerCompat.OnActivated += toastArgs =>
         {
@@ -238,14 +267,14 @@ public partial class App : Application
         };
 
         // TODO: Register arguments you want to use on App initialization
-        Dictionary<string, string> activationArgs = new() { { ToastNotificationActivationHandler.ActivationArguments, string.Empty } };
-        string appLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        Dictionary<string, string?> activationArgs = new() { { ToastNotificationActivationHandler.ActivationArguments, string.Empty } };
+        string? appLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 
         // For more information about .NET generic host see  https://docs.microsoft.com/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.0
         _host = Host.CreateDefaultBuilder(e.Args)
                 .ConfigureAppConfiguration(c =>
                 {
-                    c.SetBasePath(appLocation);
+                    c.SetBasePath(appLocation ?? string.Empty);
                     c.AddInMemoryCollection(activationArgs);
                 })
                 .ConfigureServices(ConfigureServices)

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CreateCaseTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -24,7 +24,7 @@ namespace SentinelCore.Tools;
 public class CaseTool : AITool
 {
 
-    private readonly ICaseFlowEngine _engine = new CaseFlowEngine(new EvidenceStore(new SentinelCoreDBContext()), new SentinelCoreDBContext());
+    private readonly ICaseFlowEngine _engine = new CaseFlowEngine(new SentinelCoreDBContext());
 
     public override string Description { get; } = "A tool for creating a new case in the Sentinel Core platform from the provided signal. " + "The signal should be a string that describes the issue or anomaly that needs to be investigated.";
 

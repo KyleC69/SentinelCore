@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         INavigationAware.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 

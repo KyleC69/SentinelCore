@@ -45,10 +45,11 @@
 		<PackageReference Include="System.Management" />
 		<PackageReference Include="System.Management.Automation" />
 		<PackageReference Include="System.ServiceProcess.ServiceController" />
-		<PackageReference Include="TaskScheduler" />
-
-
-<None Include="SentinelCoreMCP.exe" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
+	<Target Name="CopyBuildOutput" AfterTargets="Build">
+		<Message Text="Copying build output..." Importance="High" />
+		<Copy SourceFiles="$(TargetDir)$(ProjectName).dll;$(TargetDir)$(ProjectName).pdb" DestinationFolder="F:\Builds\$(ProjectName)" SkipUnchangedFiles="true" />
+		<Message Text="Copied files to F:\Builds\$(ProjectName)" Importance="High" />
+	</Target>
 
 </Project>

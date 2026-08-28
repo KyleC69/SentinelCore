@@ -2,16 +2,18 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
+using SentinelCore.Cfe;
+using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts;
 
 
 
 
-namespace SentinelCore.Cfe.Persistence;
+namespace SentinelCore.Persistence;
 
 
 
@@ -23,6 +25,34 @@ namespace SentinelCore.Cfe.Persistence;
 /// </summary>
 public static class CaseMappingExtensions
 {
+
+    /// <summary>
+    ///     Maps a <see cref="CaseEntity" /> persistence object to a <see cref="Case" /> contract object.
+    /// </summary>
+    public static Case ToCase(this CaseEntity entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        return new Case
+        {
+                Id = entity.Id,
+                CaseId = entity.CaseId,
+                Status = (CaseStatus)entity.Status,
+                InitiatingSignal = entity.InitiatingSignal,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt,
+                PlanId = entity.PlanId,
+                PatternMemoryId = entity.PatternMemoryId
+        };
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Maps a <see cref="Case" /> DTO to a new <see cref="CaseEntity" />.
     /// </summary>
@@ -42,30 +72,6 @@ public static class CaseMappingExtensions
                 UpdatedAt = @case.UpdatedAt,
                 PlanId = @case.PlanId,
                 PatternMemoryId = @case.PatternMemoryId
-        };
-    }
-
-
-
-
-
-    /// <summary>
-    ///     Maps a <see cref="CaseEntity" /> persistence object to a <see cref="Case" /> contract object.
-    /// </summary>
-    public static Case ToCase(this CaseEntity entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        return new Case
-        {
-            Id = entity.Id,
-            CaseId = entity.CaseId,
-            Status = (CaseStatus)entity.Status,
-            InitiatingSignal = entity.InitiatingSignal,
-            CreatedAt = entity.CreatedAt,
-            UpdatedAt = entity.UpdatedAt,
-            PlanId = entity.PlanId,
-            PatternMemoryId = entity.PatternMemoryId,
         };
     }
 }

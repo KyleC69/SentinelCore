@@ -1,20 +1,31 @@
-﻿using System.ServiceProcess;
+﻿// Solution: SentinelCore
+// Project:   SentinelCoreService
+// File:         Program.cs
+// Author: Kyle L. Crowder
+// Build Num:  082808
 
-namespace WindowsService1
+
+
+using System.ServiceProcess;
+
+
+
+
+namespace SentinelCore;
+
+
+
+
+
+internal static class Program
 {
-    internal static class Program
+    /// <summary>
+    ///     The main entry point for the application.
+    /// </summary>
+    private static void Main()
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
-        static void Main()
-        {
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[]
-            {
-                new SentinelCoreService()
-            };
-            ServiceBase.Run(ServicesToRun);
-        }
+        ServiceBase[] ServicesToRun;
+        ServicesToRun = new ServiceBase[] { new SentinelCoreService() };
+        ServiceBase.Run(ServicesToRun);
     }
 }

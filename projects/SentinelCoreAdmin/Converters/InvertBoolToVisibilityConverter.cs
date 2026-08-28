@@ -1,8 +1,8 @@
 // Solution: SentinelCore
 // Project:   SentinelCoreAdmin
 // File:         InvertBoolToVisibilityConverter.cs
-// Author: Kyle L. Crowler
-// Build Num:  081602
+// Author: Kyle L. Crowder
+// Build Num:  082808
 
 
 
@@ -17,6 +17,10 @@ using JetBrains.Annotations;
 
 namespace SentinelCoreAdmin.Converters;
 
+
+
+
+
 /// <summary>
 ///     Converts a boolean to <see cref="Visibility" />, inverting the result.
 ///     <c>true</c> → <see cref="Visibility.Collapsed" />,
@@ -29,6 +33,9 @@ public sealed class InvertBoolToVisibilityConverter : IValueConverter
         bool flag = value is bool b && b;
         return flag ? Visibility.Collapsed : Visibility.Visible;
     }
+
+
+
 
 
 

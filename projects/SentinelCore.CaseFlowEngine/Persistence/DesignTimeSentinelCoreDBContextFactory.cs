@@ -2,17 +2,19 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         DesignTimeSentinelCoreDBContextFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
+using SentinelCore.Cfe.Persistence;
 
 
 
-namespace SentinelCore.Cfe.Persistence;
+
+namespace SentinelCore.Persistence;
 
 
 
@@ -26,7 +28,7 @@ namespace SentinelCore.Cfe.Persistence;
 ///     <c>SENTINELCORE_CONNECTIONSTRING</c>. If the variable is not set, it falls back to a LocalDB
 ///     instance which works for development and CI environments.
 /// </summary>
-public sealed class DesignTimeSentinelCoreDBContextFactory : IDesignTimeDbContextFactory<SentinelCoreDBContext>
+public sealed class DesignTimeSentinelCoreDbContextFactory : IDesignTimeDbContextFactory<SentinelCoreDBContext>
 {
     private const string EnvVar = "SENTINEL_CORE";
 

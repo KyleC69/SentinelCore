@@ -2,7 +2,8 @@
 
 **Advanced Agentic Investigation Platform for Windows**
 
-![ChatWindow](assets/ChatWindow.png)
+![SignalFound](assets/SignalFound.png)
+
 
 Sentinel Core is a multi-agent AI investigation platform that learns from every case and interaction to accelerate future resolutions. It takes a signal — a prompt, an event log error, an anomaly alert — and orchestrates a team of AI agents to investigate, gather evidence, and deliver a diagnosis with remediation steps.
 

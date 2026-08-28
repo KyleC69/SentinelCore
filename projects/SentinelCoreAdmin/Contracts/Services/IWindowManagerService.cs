@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         IWindowManagerService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -19,14 +19,14 @@ namespace SentinelCoreAdmin.Contracts.Services;
 
 public interface IWindowManagerService
 {
-    Window MainWindow { get; }
+    Window? MainWindow { get; }
 
 
-    Window GetWindow(string pageKey);
+    Window? GetWindow(string? pageKey);
 
 
-    bool? OpenInDialog(string pageKey, object parameter = null);
+    bool? OpenInDialog(string? pageKey, object? parameter = null);
 
 
-    void OpenInNewWindow(string pageKey, object parameter = null);
+    void OpenInNewWindow(string? pageKey, object? parameter = null);
 }

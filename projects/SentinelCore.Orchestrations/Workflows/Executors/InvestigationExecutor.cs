@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         InvestigationExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -65,7 +65,7 @@ public sealed partial class InvestigationExecutor() : Executor("InvestigationExe
     public async ValueTask<string> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken)
     {
 
-        _events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(nameof(InvestigationExecutor), "InvestigationExecutor: Starting Magentic investigation…", ActivityType.System));
+        _events!.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(nameof(InvestigationExecutor), "InvestigationExecutor: Starting Magentic investigation…", ActivityType.System));
 
         // _investigationWorkflow is injected and guaranteed non-null by the container; use null-forgiving to satisfy the compiler.
         await using StreamingRun run = await InProcessExecution.RunStreamingAsync(_investigationWorkflow!, new ChatMessage(ChatRole.User, message), cancellationToken: cancellationToken).ConfigureAwait(false);

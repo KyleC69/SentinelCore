@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         UserDataService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -36,7 +36,7 @@ public class UserDataService : IUserDataService
     private readonly IIdentityService _identityService;
     private readonly string _localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
     private readonly IMicrosoftGraphService _microsoftGraphService;
-    private UserViewModel _user;
+    private UserViewModel? _user;
 
 
 
@@ -61,7 +61,7 @@ public class UserDataService : IUserDataService
 
 
     [CanBeNull]
-    public UserViewModel GetUser()
+    public UserViewModel? GetUser()
     {
         if (_user == null)
         {
@@ -95,7 +95,7 @@ public class UserDataService : IUserDataService
 
 
 
-    public event EventHandler<UserViewModel> UserDataUpdated;
+    public event EventHandler<UserViewModel>? UserDataUpdated;
 
 
 
@@ -117,11 +117,11 @@ public class UserDataService : IUserDataService
 
 
     [CanBeNull]
-    private UserViewModel GetUserFromCache()
+    private UserViewModel? GetUserFromCache()
     {
         string folderPath = Path.Combine(_localAppData, _appConfig.ConfigurationsFolder);
         string fileName = _appConfig.UserFileName;
-        User cacheData = _fileService.Read<User>(folderPath, fileName);
+        User? cacheData = _fileService.Read<User>(folderPath, fileName);
         return GetUserViewModelFromData(cacheData);
     }
 
@@ -133,15 +133,15 @@ public class UserDataService : IUserDataService
 
 
     [ItemCanBeNull]
-    private async Task<UserViewModel> GetUserFromGraphApiAsync()
+    private async Task<UserViewModel?> GetUserFromGraphApiAsync()
     {
-        string accessToken = await _identityService.GetAccessTokenForGraphAsync();
+        string? accessToken = await _identityService.GetAccessTokenForGraphAsync();
         if (string.IsNullOrEmpty(accessToken))
         {
             return null;
         }
 
-        User userData = await _microsoftGraphService.GetUserInfoAsync(accessToken);
+        User? userData = await _microsoftGraphService.GetUserInfoAsync(accessToken);
         if (userData != null)
         {
             userData.Photo = await _microsoftGraphService.GetUserPhoto(accessToken);
@@ -161,7 +161,7 @@ public class UserDataService : IUserDataService
 
 
     [CanBeNull]
-    private UserViewModel GetUserViewModelFromData([CanBeNull] User userData)
+    private UserViewModel? GetUserViewModelFromData([CanBeNull] User? userData)
     {
         if (userData == null)
         {
@@ -180,10 +180,13 @@ public class UserDataService : IUserDataService
 
 
 
-    private async void OnLoggedIn([CanBeNull] object sender, [CanBeNull] EventArgs e)
+    private async void OnLoggedIn(object? sender, EventArgs e)
     {
         _user = await GetUserFromGraphApiAsync();
-        UserDataUpdated?.Invoke(this, _user);
+        if (_user != null)
+        {
+            UserDataUpdated?.Invoke(this, _user);
+        }
     }
 
 
@@ -193,7 +196,7 @@ public class UserDataService : IUserDataService
 
 
 
-    private void OnLoggedOut([CanBeNull] object sender, [CanBeNull] EventArgs e)
+    private void OnLoggedOut(object? sender, EventArgs e)
     {
         _user = null;
         string folderPath = Path.Combine(_localAppData, _appConfig.ConfigurationsFolder);

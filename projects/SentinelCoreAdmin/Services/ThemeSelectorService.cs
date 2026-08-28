@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         ThemeSelectorService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -40,7 +40,7 @@ public class ThemeSelectorService : IThemeSelectorService
     {
         if (App.Current.Properties.Contains("Theme"))
         {
-            string themeName = App.Current.Properties["Theme"].ToString();
+            string? themeName = App.Current.Properties["Theme"]?.ToString();
             Enum.TryParse(themeName, out AppTheme theme);
             return theme;
         }

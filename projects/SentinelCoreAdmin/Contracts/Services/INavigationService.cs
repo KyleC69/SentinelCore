@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         INavigationService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -32,10 +32,10 @@ public interface INavigationService
     void Initialize(Frame shellFrame);
 
 
-    bool NavigateTo(string pageKey, object parameter = null, bool clearNavigation = false);
+    bool NavigateTo(string? pageKey, object? parameter = null, bool clearNavigation = false);
 
 
-    event EventHandler<string> Navigated;
+    event EventHandler<string>? Navigated;
 
 
     void UnsubscribeNavigation();

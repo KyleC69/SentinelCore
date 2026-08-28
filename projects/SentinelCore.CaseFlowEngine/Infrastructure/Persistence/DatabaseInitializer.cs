@@ -2,10 +2,11 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         DatabaseInitializer.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -63,10 +64,17 @@ public sealed class DatabaseInitializer : IHostedService
     {
         _logger.LogInformation("Ensuring SentinelCore database tables exist…");
 
-        using IServiceScope scope = _scopeFactory.CreateScope();
-        SentinelCoreDBContext context = scope.ServiceProvider.GetRequiredService<SentinelCoreDBContext>();
-        await context.Database.MigrateAsync(cancellationToken);
-        _logger.LogInformation("SentinelCore database tables are ready.");
+        try
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            SentinelCoreDBContext context = scope.ServiceProvider.GetRequiredService<SentinelCoreDBContext>();
+            await context.Database.MigrateAsync(cancellationToken);
+            _logger.LogInformation("SentinelCore database tables are ready.");
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or SqlException)
+        {
+            _logger.LogError(ex, "Failed to initialize the SentinelCore database. Database persistence will be unavailable. Verify the SqlConnectionString in SentinelCoreSettings.");
+        }
     }
 
 

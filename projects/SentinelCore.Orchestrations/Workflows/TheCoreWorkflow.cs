@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -537,7 +537,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
                             No explanations.
                             """;
 
-        prof.Tools = ToolRegistry.GetAllTools();
         AIAgent utility1 = await _agentFactory.BuildFromProfileAsync(prof);
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         CreateCasePage.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -23,10 +23,6 @@ namespace SentinelCoreAdmin.Views;
 
 public partial class CreateCasePage : Page
 {
-
-
-
-
 
     public CreateCasePage([CanBeNull] CreateCaseViewModel viewModel)
     {

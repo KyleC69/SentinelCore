@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SentinelCoreEvents.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -83,16 +83,4 @@ public sealed class SentinelCoreEvents : ISentinelCoreEvents
     ///     This event is not tied to any specific orchestration or agent, and is intended for general output messages.
     /// </summary>
     public event Action<SentinelOutputEventArgs>? SentinelOutputEvent;
-
-    public event Action<SentinelErrorEventArgs>? SentinelErrorEvent;
-}
-
-
-
-
-
-public record SentinelErrorEventArgs(string Message, Exception? Exception = null)
-{
-    public Exception? Exception { get; } = Exception;
-    public string Message { get; } = Message;
 }

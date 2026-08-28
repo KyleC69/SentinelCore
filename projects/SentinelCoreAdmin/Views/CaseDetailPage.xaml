@@ -9,7 +9,6 @@
     mc:Ignorable="d"
     d:DesignHeight="600" d:DesignWidth="900">
     <Page.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
     </Page.Resources>
     <ScrollViewer>
         <Grid Margin="{StaticResource MediumLeftTopRightBottomMargin}">
@@ -25,7 +24,8 @@
                 Text="{x:Static properties:Resources.CaseDetailPageTitle}" />
 
             <!-- Form -->
-            <StackPanel Grid.Row="1" Margin="{StaticResource MediumLeftRightMargin}" Width="500" HorizontalAlignment="Left">
+            <StackPanel Grid.Row="1" Margin="{StaticResource MediumLeftRightMargin}" Width="500"
+                        HorizontalAlignment="Left">
                 <TextBlock
                     Style="{StaticResource SubtitleTextStyle}"
                     Margin="{StaticResource SmallTopMargin}"
@@ -44,8 +44,7 @@
                 <TextBlock
                     Style="{StaticResource BodyTextStyle}"
                     Margin="{StaticResource SmallTopMargin}"
-                    Text="{Binding StatusInfo}"
-                    TextWrapping="Wrap" />
+                    Text="{Binding StatusInfo}" />
 
                 <TextBlock
                     Style="{StaticResource SubtitleTextStyle}"
@@ -76,7 +75,6 @@
                 <TextBlock
                     Margin="{StaticResource SmallTopMargin}"
                     Style="{StaticResource BodyTextStyle}"
-                    TextWrapping="Wrap"
                     Text="{Binding ResultMessage}"
                     Visibility="{Binding ResultVisibility}" />
             </StackPanel>

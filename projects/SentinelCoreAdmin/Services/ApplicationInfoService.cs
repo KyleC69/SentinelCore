@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         ApplicationInfoService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -27,7 +27,7 @@ public class ApplicationInfoService : IApplicationInfoService
     {
         // Set the app version in SentinelCoreAdmin > Properties > Package > PackageVersion
         string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-        string version = FileVersionInfo.GetVersionInfo(assemblyLocation).FileVersion;
-        return new Version(version);
+        string? version = FileVersionInfo.GetVersionInfo(assemblyLocation).FileVersion;
+        return new Version(string.IsNullOrEmpty(version) ? "0.0.0.0" : version);
     }
 }

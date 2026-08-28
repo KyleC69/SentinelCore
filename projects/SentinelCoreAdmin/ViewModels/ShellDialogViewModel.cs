@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         ShellDialogViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -22,14 +22,14 @@ namespace SentinelCoreAdmin.ViewModels;
 
 public class ShellDialogViewModel : ObservableObject
 {
-    private ICommand _closeCommand;
+    private ICommand? _closeCommand;
 
     public ICommand CloseCommand
     {
         get => _closeCommand ?? (_closeCommand = new RelayCommand(OnClose));
     }
 
-    public Action<bool?> SetResult { get; set; }
+    public Action<bool?>? SetResult { get; set; }
 
 
 
@@ -41,6 +41,6 @@ public class ShellDialogViewModel : ObservableObject
     private void OnClose()
     {
         bool result = true;
-        SetResult(result);
+        SetResult?.Invoke(result);
     }
 }

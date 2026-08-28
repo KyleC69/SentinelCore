@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         ShellViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -83,6 +83,36 @@ public partial class ShellViewModel : ObservableObject
 
 
     [RelayCommand]
+    private void MenuCaseManagementCaseDetail() => _navigationService.NavigateTo(typeof(CaseDetailViewModel).FullName!, null, true);
+
+
+
+
+
+
+
+
+    [RelayCommand]
+    private void MenuCaseManagementCaseList() => _navigationService.NavigateTo(typeof(CaseListViewModel).FullName!, null, true);
+
+
+
+
+
+
+
+
+    [RelayCommand]
+    private void MenuCaseManagementCreateCase() => _navigationService.NavigateTo(typeof(CreateCaseViewModel).FullName!, null, true);
+
+
+
+
+
+
+
+
+    [RelayCommand]
     private void MenuFileExit() => Application.Current.Shutdown();
 
 
@@ -93,7 +123,7 @@ public partial class ShellViewModel : ObservableObject
 
 
     [RelayCommand]
-    private void MenuFileSettings() => _rightPaneService.OpenInRightPane(typeof(SettingsViewModel).FullName);
+    private void MenuFileSettings() => _rightPaneService.OpenInRightPane(typeof(SettingsViewModel).FullName!);
 
 
 
@@ -103,7 +133,7 @@ public partial class ShellViewModel : ObservableObject
 
 
     [RelayCommand]
-    private void MenuViewsCoreChat() => _navigationService.NavigateTo(typeof(CoreChatViewModel).FullName, null, true);
+    private void MenuViewsCoreChat() => _navigationService.NavigateTo(typeof(CoreChatViewModel).FullName!, null, true);
 
 
 
@@ -113,25 +143,7 @@ public partial class ShellViewModel : ObservableObject
 
 
     [RelayCommand]
-    private void MenuViewsTraceLog() => _navigationService.NavigateTo(typeof(TraceLogViewModel).FullName, null, true);
-
-
-
-
-    [RelayCommand]
-    private void MenuCaseManagementCaseList() => _navigationService.NavigateTo(typeof(CaseListViewModel).FullName, null, true);
-
-
-
-
-    [RelayCommand]
-    private void MenuCaseManagementCreateCase() => _navigationService.NavigateTo(typeof(CreateCaseViewModel).FullName, null, true);
-
-
-
-
-    [RelayCommand]
-    private void MenuCaseManagementCaseDetail() => _navigationService.NavigateTo(typeof(CaseDetailViewModel).FullName, null, true);
+    private void MenuViewsTraceLog() => _navigationService.NavigateTo(typeof(TraceLogViewModel).FullName!, null, true);
 
 
 
@@ -140,7 +152,7 @@ public partial class ShellViewModel : ObservableObject
 
 
 
-    private void OnNavigated([CanBeNull] object sender, [CanBeNull] string viewModelName) => GoBackCommand.NotifyCanExecuteChanged();
+    private void OnNavigated(object? sender, string viewModelName) => GoBackCommand.NotifyCanExecuteChanged();
 
 
 

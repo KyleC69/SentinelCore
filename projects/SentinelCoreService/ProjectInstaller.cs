@@ -1,19 +1,27 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Configuration.Install;
-using System.Linq;
-using System.Threading.Tasks;
+﻿// Solution: SentinelCore
+// Project:   SentinelCoreService
+// File:         ProjectInstaller.cs
+// Author: Kyle L. Crowder
+// Build Num:  082808
 
-namespace WindowsService1
+
+
+using System.ComponentModel;
+
+
+
+
+namespace SentinelCore;
+
+
+
+
+
+[RunInstaller(true)]
+public partial class ProjectInstaller : System.Configuration.Install.Installer
 {
-    [RunInstaller(true)]
-    public partial class ProjectInstaller : System.Configuration.Install.Installer
+    public ProjectInstaller()
     {
-        public ProjectInstaller()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

@@ -1,6 +1,16 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿// Solution: SentinelCore
+// Project:   SentinelCoreService
+// File:         AssemblyInfo.cs
+// Author: Kyle L. Crowder
+// Build Num:  082808
+
+
+
+using System.Reflection;
 using System.Runtime.InteropServices;
+
+
+
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information

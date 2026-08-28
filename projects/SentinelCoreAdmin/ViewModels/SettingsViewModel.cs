@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         SettingsViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -39,11 +39,11 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
 
     private readonly IThemeSelectorService _themeSelectorService;
 
-    [ObservableProperty] private UserViewModel _user;
+    [ObservableProperty] private UserViewModel? _user;
 
     private readonly IUserDataService _userDataService;
 
-    [ObservableProperty] private string _versionDescription;
+    [ObservableProperty] private string? _versionDescription;
 
 
 
@@ -104,10 +104,10 @@ public partial class SettingsViewModel : ObservableObject, INavigationAware
 
 
 
-    private void OnLoggedOut([CanBeNull] object sender, [CanBeNull] EventArgs e) => UnregisterEvents();
+    private void OnLoggedOut(object? sender, EventArgs e) => UnregisterEvents();
 
 
-    private void OnUserDataUpdated([CanBeNull] object sender, [NotNull] UserViewModel userData) => User = userData;
+    private void OnUserDataUpdated(object? sender, UserViewModel userData) => User = userData;
 
 
 

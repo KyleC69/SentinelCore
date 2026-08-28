@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         IRightPaneService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -28,9 +28,9 @@ public interface IRightPaneService
     void Initialize(Frame rightPaneFrame, SplitView splitView);
 
 
-    void OpenInRightPane(string pageKey, object parameter = null);
+    void OpenInRightPane(string? pageKey, object? parameter = null);
 
 
-    event EventHandler PaneClosed;
-    event EventHandler PaneOpened;
+    event EventHandler? PaneClosed;
+    event EventHandler? PaneOpened;
 }

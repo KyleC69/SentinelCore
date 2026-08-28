@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         Case.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -22,7 +22,7 @@ public sealed class Case
 
     public Guid CaseId { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     ///     Gets or sets the collection of evidence items associated with the case.

@@ -5,7 +5,7 @@
 namespace SentinelCore.Migrations
 {
     /// <inheritdoc />
-    public partial class models : Migration
+    public partial class Models : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

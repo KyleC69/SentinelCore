@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         CaseDetailViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -16,13 +16,16 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Cfe;
-using SentinelCore.Contracts;
+
 using SentinelCoreAdmin.Contracts.ViewModels;
 
 
 
 
 namespace SentinelCoreAdmin.ViewModels;
+
+
+
 
 
 /// <summary>
@@ -32,11 +35,11 @@ namespace SentinelCoreAdmin.ViewModels;
 public partial class CaseDetailViewModel : ObservableObject, INavigationAware
 {
     private readonly ICaseFlowEngine _caseFlowEngine;
-    private readonly ILogger<CaseDetailViewModel> _logger;
 
     [ObservableProperty] private string _caseIdText = string.Empty;
 
     [ObservableProperty] private bool _isBusy;
+    private readonly ILogger<CaseDetailViewModel> _logger;
 
     [ObservableProperty] private string _resultMessage = string.Empty;
 
@@ -45,6 +48,9 @@ public partial class CaseDetailViewModel : ObservableObject, INavigationAware
     [ObservableProperty] private CaseStatus? _selectedTargetStatus;
 
     [ObservableProperty] private string _statusInfo = string.Empty;
+
+
+
 
 
 
@@ -60,6 +66,9 @@ public partial class CaseDetailViewModel : ObservableObject, INavigationAware
 
 
 
+
+
+
     /// <summary>
     ///     Available case statuses for the advance target combo box.
     /// </summary>
@@ -69,7 +78,15 @@ public partial class CaseDetailViewModel : ObservableObject, INavigationAware
 
 
 
-    public void OnNavigatedFrom() { }
+
+
+
+    public void OnNavigatedFrom()
+    {
+    }
+
+
+
 
 
 
@@ -86,9 +103,6 @@ public partial class CaseDetailViewModel : ObservableObject, INavigationAware
 
 
 
-
-
-    private bool CanAdvanceCase() => !IsBusy && !string.IsNullOrWhiteSpace(CaseIdText) && SelectedTargetStatus is not null;
 
 
 
@@ -139,6 +153,35 @@ public partial class CaseDetailViewModel : ObservableObject, INavigationAware
 
 
 
+
+
+
+    private bool CanAdvanceCase() => !IsBusy && !string.IsNullOrWhiteSpace(CaseIdText) && SelectedTargetStatus is not null;
+
+
+
+
+
+
+
+
+    [RelayCommand]
+    private void ClearForm()
+    {
+        CaseIdText = string.Empty;
+        SelectedTargetStatus = null;
+        StatusInfo = string.Empty;
+        ResultMessage = string.Empty;
+        ResultVisibility = Visibility.Collapsed;
+    }
+
+
+
+
+
+
+
+
     [RelayCommand]
     private async Task LookupCaseAsync()
     {
@@ -179,19 +222,5 @@ public partial class CaseDetailViewModel : ObservableObject, INavigationAware
         {
             IsBusy = false;
         }
-    }
-
-
-
-
-
-    [RelayCommand]
-    private void ClearForm()
-    {
-        CaseIdText = string.Empty;
-        SelectedTargetStatus = null;
-        StatusInfo = string.Empty;
-        ResultMessage = string.Empty;
-        ResultVisibility = Visibility.Collapsed;
     }
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         IErrorReporter.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -17,7 +17,11 @@ namespace SentinelCore.Abstractions;
 /// </summary>
 public interface ISystemReporter
 {
-    void DebugMsg(string v);
+    /// <summary>
+    ///     Logs a debug-level message through the logging pipeline.
+    /// </summary>
+    /// <param name="message">The debug message to log.</param>
+    void DebugMsg(string message);
 
 
 

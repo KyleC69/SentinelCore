@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin.Core
 // File:         IMicrosoftGraphService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -19,7 +19,7 @@ namespace SentinelCoreAdmin.Core.Contracts.Services;
 
 public interface IMicrosoftGraphService
 {
-    Task<User> GetUserInfoAsync(string accessToken);
+    Task<User?> GetUserInfoAsync(string accessToken);
 
 
     Task<string> GetUserPhoto(string accessToken);

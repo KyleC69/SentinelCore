@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SentinelCore.Migrations
 {
     /// <inheritdoc />
-    public partial class repair : Migration
+    public partial class Repair : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

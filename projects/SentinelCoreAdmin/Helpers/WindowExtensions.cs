@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         WindowExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -23,7 +23,7 @@ namespace SentinelCoreAdmin.Helpers;
 public static class WindowExtensions
 {
     [CanBeNull]
-    public static object GetDataContext([NotNull] this Window window)
+    public static object? GetDataContext([NotNull] this Window window)
     {
         if (window.Content is Frame frame)
         {

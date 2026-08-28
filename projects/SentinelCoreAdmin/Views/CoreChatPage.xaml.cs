@@ -2,20 +2,20 @@
 // Project:   SentinelCoreAdmin
 // File:         CoreChatPage.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
+
+using System.ComponentModel;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 using JetBrains.Annotations;
 
 using Microsoft.Extensions.AI;
 
 using SentinelCoreAdmin.ViewModels;
-
-using System.ComponentModel;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
 
 
 

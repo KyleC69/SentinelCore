@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin.Core
 // File:         IIdentityService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -29,7 +29,7 @@ public interface IIdentityService
     Task<string> GetAccessTokenForGraphAsync(CancellationToken cancellationToken = default);
 
 
-    string GetAccountUserName();
+    string? GetAccountUserName();
 
 
 
@@ -49,7 +49,7 @@ public interface IIdentityService
     /// <param name="redirectUri">Optional redirect URI for auth flows.</param>
     /// <param name="tenant">Optional tenant for single-org scenarios.</param>
     /// <param name="cancellationToken">Cancellation token for cooperative shutdown.</param>
-    Task<LoginResultType> InitializeAndLoginAsync(AccountType accountType, string clientId, string redirectUri = null, string tenant = null, CancellationToken cancellationToken = default);
+    Task<LoginResultType> InitializeAndLoginAsync(AccountType accountType, string clientId, string? redirectUri = null, string? tenant = null, CancellationToken cancellationToken = default);
 
 
 
@@ -62,7 +62,7 @@ public interface IIdentityService
     ///     Initializes the MSAL client for the specified <paramref name="accountType" />
     ///     without performing a login. Used for silent re-authentication on startup.
     /// </summary>
-    void InitializeWithAccountType(AccountType accountType, string clientId, string redirectUri = null, string tenant = null);
+    void InitializeWithAccountType(AccountType accountType, string clientId, string? redirectUri = null, string? tenant = null);
 
 
 

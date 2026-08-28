@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         UserViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -23,9 +23,9 @@ namespace SentinelCoreAdmin.ViewModels;
 
 public class UserViewModel : ObservableObject
 {
-    private string _name;
-    private BitmapImage _photo;
-    private string _userPrincipalName;
+    private string? _name;
+    private BitmapImage? _photo;
+    private string? _userPrincipalName;
 
     [CanBeNull]
     public string Name

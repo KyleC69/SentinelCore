@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         CaseDetailPage.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -23,10 +23,6 @@ namespace SentinelCoreAdmin.Views;
 
 public partial class CaseDetailPage : Page
 {
-
-
-
-
 
     public CaseDetailPage([CanBeNull] CaseDetailViewModel viewModel)
     {

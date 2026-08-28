@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         TraceLogViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -26,6 +26,9 @@ using SentinelCoreAdmin.Contracts.ViewModels;
 namespace SentinelCoreAdmin.ViewModels;
 
 
+
+
+
 /// <summary>
 ///     View-model for the TraceLog page.
 ///     Loads and displays the SentinelCore JSON trace log file written
@@ -33,8 +36,6 @@ namespace SentinelCoreAdmin.ViewModels;
 /// </summary>
 public partial class TraceLogViewModel : ObservableObject, INavigationAware
 {
-    private readonly ILogger<TraceLogViewModel> _logger;
-    private readonly ISystemService _systemService;
 
     [ObservableProperty] private Visibility _failedMessageVisibility = Visibility.Collapsed;
 
@@ -44,13 +45,18 @@ public partial class TraceLogViewModel : ObservableObject, INavigationAware
 
     [ObservableProperty] private string _logContent = string.Empty;
 
-    [ObservableProperty] private string _logFilePath = string.Empty;
-
     [ObservableProperty] private ObservableCollection<LogEntry> _logEntries = new();
+
+    [ObservableProperty] private string _logFilePath = string.Empty;
+    private readonly ILogger<TraceLogViewModel> _logger;
 
     [ObservableProperty] private string _searchText = string.Empty;
 
     [ObservableProperty] private LogEntry? _selectedLogEntry;
+    private readonly ISystemService _systemService;
+
+
+
 
 
 
@@ -66,7 +72,15 @@ public partial class TraceLogViewModel : ObservableObject, INavigationAware
 
 
 
-    public void OnNavigatedFrom() { }
+
+
+
+    public void OnNavigatedFrom()
+    {
+    }
+
+
+
 
 
 
@@ -76,6 +90,38 @@ public partial class TraceLogViewModel : ObservableObject, INavigationAware
     {
         await RefreshLogAsync();
     }
+
+
+
+
+
+
+
+
+    [RelayCommand]
+    private void ClearSearch()
+    {
+        SearchText = string.Empty;
+    }
+
+
+
+
+
+
+
+
+    [RelayCommand]
+    private void OpenLogFolder()
+    {
+        string? directory = Path.GetDirectoryName(LogFilePath);
+        string path = directory ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        _systemService.OpenInWebBrowser(path);
+    }
+
+
+
 
 
 
@@ -133,29 +179,6 @@ public partial class TraceLogViewModel : ObservableObject, INavigationAware
             IsLoading = false;
         }
     }
-
-
-
-
-
-    [RelayCommand]
-    private void ClearSearch()
-    {
-        SearchText = string.Empty;
-    }
-
-
-
-
-
-    [RelayCommand]
-    private void OpenLogFolder()
-    {
-        string? directory = Path.GetDirectoryName(LogFilePath);
-        string path = directory ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        _systemService.OpenInWebBrowser(path);
-    }
 }
 
 
@@ -167,12 +190,18 @@ public partial class TraceLogViewModel : ObservableObject, INavigationAware
 /// </summary>
 public sealed class LogEntry
 {
-    public DateTimeOffset Timestamp { get; init; }
-    public string Level { get; init; } = string.Empty;
     public string Category { get; init; } = string.Empty;
-    public string Message { get; init; } = string.Empty;
     public int EventId { get; init; }
     public string? Exception { get; init; }
+    public string Level { get; init; } = string.Empty;
+    public string Message { get; init; } = string.Empty;
+    public DateTimeOffset Timestamp { get; init; }
+
+
+    public override string ToString() => $"[{Timestamp:HH:mm:ss.fff}] [{Level}] {Category}: {Message}";
+
+
+
 
 
 
@@ -187,12 +216,12 @@ public sealed class LogEntry
 
             return new LogEntry
             {
-                Timestamp = root.TryGetProperty("Timestamp", out System.Text.Json.JsonElement ts) ? ts.GetDateTimeOffset() : DateTimeOffset.Now,
-                Level = root.TryGetProperty("Level", out System.Text.Json.JsonElement lvl) ? lvl.GetString() ?? "Unknown" : "Unknown",
-                Category = root.TryGetProperty("Category", out System.Text.Json.JsonElement cat) ? cat.GetString() ?? "" : "",
-                Message = root.TryGetProperty("Message", out System.Text.Json.JsonElement msg) ? msg.GetString() ?? "" : "",
-                EventId = root.TryGetProperty("EventId", out System.Text.Json.JsonElement eid) ? eid.GetInt32() : 0,
-                Exception = root.TryGetProperty("Exception", out System.Text.Json.JsonElement ex) && ex.ValueKind != System.Text.Json.JsonValueKind.Null ? ex.GetString() : null,
+                    Timestamp = root.TryGetProperty("Timestamp", out System.Text.Json.JsonElement ts) ? ts.GetDateTimeOffset() : DateTimeOffset.Now,
+                    Level = root.TryGetProperty("Level", out System.Text.Json.JsonElement lvl) ? lvl.GetString() ?? "Unknown" : "Unknown",
+                    Category = root.TryGetProperty("Category", out System.Text.Json.JsonElement cat) ? cat.GetString() ?? "" : "",
+                    Message = root.TryGetProperty("Message", out System.Text.Json.JsonElement msg) ? msg.GetString() ?? "" : "",
+                    EventId = root.TryGetProperty("EventId", out System.Text.Json.JsonElement eid) ? eid.GetInt32() : 0,
+                    Exception = root.TryGetProperty("Exception", out System.Text.Json.JsonElement ex) && ex.ValueKind != System.Text.Json.JsonValueKind.Null ? ex.GetString() : null
             };
         }
         catch
@@ -200,10 +229,4 @@ public sealed class LogEntry
             return null;
         }
     }
-
-
-
-
-
-    public override string ToString() => $"[{Timestamp:HH:mm:ss.fff}] [{Level}] {Category}: {Message}";
 }

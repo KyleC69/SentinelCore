@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         GlobalUsings.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -17,4 +17,5 @@ global using SentinelCore.Personas;
 global using SentinelCore.Tools;
 global using SentinelCore.Abstractions;
 global using SentinelCore.Application;
+
 global using SentinelCoreAdmin.ViewModels;

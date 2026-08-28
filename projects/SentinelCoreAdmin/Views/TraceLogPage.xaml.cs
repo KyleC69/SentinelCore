@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         TraceLogPage.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -23,10 +23,6 @@ namespace SentinelCoreAdmin.Views;
 
 public partial class TraceLogPage : Page
 {
-
-
-
-
 
     public TraceLogPage([CanBeNull] TraceLogViewModel viewModel)
     {

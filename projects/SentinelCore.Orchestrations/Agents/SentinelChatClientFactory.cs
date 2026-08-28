@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelChatClientFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -81,7 +81,7 @@ public static class SentinelChatClientFactory
                 ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
                 ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
                 ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
-                ModelProfile.ModelProvider.ONNX => CreateOnnxClient(model),
+                ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
                 _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
         };
 

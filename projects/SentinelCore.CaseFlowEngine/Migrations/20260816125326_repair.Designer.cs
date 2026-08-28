@@ -14,7 +14,7 @@ namespace SentinelCore.Migrations
 {
     [DbContext(typeof(SentinelCoreDBContext))]
     [Migration("20260816125326_repair")]
-    partial class repair
+    partial class Repair
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

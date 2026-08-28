@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SentinelCoreSettings.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -23,9 +23,6 @@ namespace SentinelCore.Contracts;
 /// </summary>
 public sealed class SentinelCoreSettings
 {
-    /// <summary>
-    ///     Model options for the Core investigative agent.
-    /// </summary>
     /// <summary>
     ///     Default model options used when no specialized model is configured.
     /// </summary>

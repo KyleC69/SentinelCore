@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin.Core
 // File:         IFileService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -18,7 +18,7 @@ public interface IFileService
     void Delete(string folderPath, string fileName);
 
 
-    T Read<T>(string folderPath, string fileName);
+    T? Read<T>(string folderPath, string fileName);
 
 
     void Save<T>(string folderPath, string fileName, T content);

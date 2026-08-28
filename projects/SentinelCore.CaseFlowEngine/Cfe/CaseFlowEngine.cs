@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseFlowEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -72,6 +72,13 @@ public interface ICaseFlowEngine
     /// <returns>The count of cases matching the given status.</returns>
     Task<int> GetCaseCountByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default);
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Returns all cases currently in the specified <paramref name="status" />.
     /// </summary>
@@ -97,8 +104,6 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 {
     private readonly SentinelCoreDBContext _dbContext;
 
-    private readonly IEvidenceStore _evidenceStore;
-
     /// <summary>
     ///     Allowed state transitions for the case lifecycle.
     ///     Each key is the current status; each value is the set of statuses
@@ -106,17 +111,17 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     private static readonly Dictionary<CaseStatus, HashSet<CaseStatus>> AllowedTransitions = new()
     {
-        [CaseStatus.Open] = [CaseStatus.Analysis, CaseStatus.Cancelled],
-        [CaseStatus.Analysis] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Cancelled],
-        [CaseStatus.Investigation] = [CaseStatus.Review, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
-        [CaseStatus.Review] = [CaseStatus.Complete, CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Cancelled],
-        [CaseStatus.AwaitingInput] = [CaseStatus.Investigation, CaseStatus.Escalated, CaseStatus.Cancelled],
-        [CaseStatus.Escalated] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Alerted, CaseStatus.Cancelled],
-        [CaseStatus.Alerted] = [CaseStatus.Escalated, CaseStatus.Blocked, CaseStatus.Cancelled],
-        [CaseStatus.Blocked] = [CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
-        [CaseStatus.Complete] = [CaseStatus.Closed],
-        [CaseStatus.Cancelled] = [CaseStatus.Closed],
-        [CaseStatus.Closed] = []
+            [CaseStatus.Open] = [CaseStatus.Analysis, CaseStatus.Cancelled],
+            [CaseStatus.Analysis] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Cancelled],
+            [CaseStatus.Investigation] = [CaseStatus.Review, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
+            [CaseStatus.Review] = [CaseStatus.Complete, CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Cancelled],
+            [CaseStatus.AwaitingInput] = [CaseStatus.Investigation, CaseStatus.Escalated, CaseStatus.Cancelled],
+            [CaseStatus.Escalated] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Alerted, CaseStatus.Cancelled],
+            [CaseStatus.Alerted] = [CaseStatus.Escalated, CaseStatus.Blocked, CaseStatus.Cancelled],
+            [CaseStatus.Blocked] = [CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
+            [CaseStatus.Complete] = [CaseStatus.Closed],
+            [CaseStatus.Cancelled] = [CaseStatus.Closed],
+            [CaseStatus.Closed] = []
     };
 
 
@@ -129,19 +134,14 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// <summary>
     ///     Initializes a new instance of the <see cref="CaseFlowEngine" /> class.
     /// </summary>
-    /// <param name="evidenceStore">
-    ///     The evidence store used for managing and linking evidence to cases.
-    /// </param>
     /// <param name="dbContext">
     ///     The database context for accessing and persisting case-related data.
     /// </param>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="evidenceStore" /> or <paramref name="dbContext" /> is <c>null</c>.
+    ///     Thrown when <paramref name="dbContext" /> is <c>null</c>.
     /// </exception>
-    public CaseFlowEngine(IEvidenceStore evidenceStore, SentinelCoreDBContext dbContext)
+    public CaseFlowEngine(SentinelCoreDBContext dbContext)
     {
-        _evidenceStore = evidenceStore ?? throw new ArgumentNullException(nameof(evidenceStore));
-
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     }
 
@@ -160,7 +160,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
         }
 
         // 1. Retrieve the current case
-        Case? caseRecord = await GetCaseByIdAsync(caseId.ToString(), cancellationToken).ConfigureAwait(false);
+        Case? caseRecord = await GetCaseByIdAsync(caseId, cancellationToken).ConfigureAwait(false);
 
         if (caseRecord is null)
         {
@@ -242,9 +242,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
         Case caseRecord = new() { CaseId = Guid.NewGuid(), Status = CaseStatus.Open, CreatedAt = DateTime.Now };
 
         // Single atomic SaveChanges: signal + case + FK link, all in one round-trip
-        await CreateCaseWithSignalAsync(signal, caseRecord, cancellationToken).ConfigureAwait(false);
-
-        return caseRecord.CaseId;
+        return await CreateCaseWithSignalAsync(signal, caseRecord, cancellationToken).ConfigureAwait(false);
     }
 
 
@@ -274,14 +272,15 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
 
+
+
+
     /// <summary>
     ///     Returns all cases currently in the specified <paramref name="status" />.
     /// </summary>
     public async Task<IReadOnlyList<Case>> GetCasesByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default)
     {
-        List<CaseEntity> entities = await _dbContext.CaseEntities
-            .Where(c => c.Status == (int)status)
-            .ToListAsync(cancellationToken);
+        List<CaseEntity> entities = await _dbContext.CaseEntities.Where(c => c.Status == (int)status).ToListAsync(cancellationToken);
 
         return entities.Select(e => e.ToCase()).ToList();
     }
@@ -317,21 +316,17 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </remarks>
     private async Task<Guid> CreateCaseWithSignalAsync(Signal signal, Case caseRecord, CancellationToken cancellationToken)
     {
-
-
         //Save the signal first so we can grab this records identifier and use it in the case.
         SignalEntity ent = signal.ToEntity();
-        //   ent.SignalId = (next value for)  // <----- need to trigger next value
         _dbContext.SignalEntities.Add(ent);
-        await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         //Now the case.
         CaseEntity caseent = caseRecord.ToEntity();
         caseent.InitiatingSignal = ent.SignalId;
-        caseent.CaseId = Guid.NewGuid();
         caseent.Status = (int)CaseStatus.Open;
         _dbContext.CaseEntities.Add(caseent);
-        await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return caseent.CaseId;
     }
 
@@ -342,31 +337,46 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
 
-    private async Task<Case?> GetCaseByIdAsync(string toString, CancellationToken cancellationToken)
+    /// <summary>
+    ///     Retrieves a case by its identifier, or <c>null</c> when no matching case exists.
+    /// </summary>
+    private async Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken)
     {
-        return null;
+        CaseEntity? entity = await _dbContext.CaseEntities
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken)
+                .ConfigureAwait(false);
+
+        return entity?.ToCase();
     }
-
-
-
-
-
-
-
-
-    private async Task UpdateAsync(Case caseRecord, CancellationToken cancellationToken)
-    {
-    }
-
-
-
-
 
 
 
 
     /// <summary>
-    ///     Validates that the transition from <paramref name="from" /> to
+    ///     Persists the status and timestamp of <paramref name="caseRecord" /> to its database row.
+    /// </summary>
+    private async Task UpdateAsync(Case caseRecord, CancellationToken cancellationToken)
+    {
+        CaseEntity? tracked = await _dbContext.CaseEntities
+                .FirstOrDefaultAsync(c => c.CaseId == caseRecord.CaseId, cancellationToken)
+                .ConfigureAwait(false);
+
+        if (tracked is null)
+        {
+            throw new InvalidOperationException($"Case '{caseRecord.CaseId}' not found.");
+        }
+
+                    tracked.Status = (int)caseRecord.Status;
+                    tracked.UpdatedAt = caseRecord.UpdatedAt;
+                    await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+
+
+
+                /// <summary>
+                ///     Validates that the transition from <paramref name="from" /> to
     ///     <paramref name="to" /> is allowed by the case lifecycle.
     ///     This ensures that the case status changes adhere to the predefined
     ///     lifecycle rules, preventing invalid state transitions.

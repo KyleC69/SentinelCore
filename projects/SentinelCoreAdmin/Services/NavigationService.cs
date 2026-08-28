@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         NavigationService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -26,8 +26,8 @@ namespace SentinelCoreAdmin.Services;
 
 public class NavigationService : INavigationService
 {
-    private Frame _frame;
-    private object _lastParameterUsed;
+    private Frame? _frame;
+    private object? _lastParameterUsed;
     private readonly IPageService _pageService;
 
 
@@ -51,11 +51,11 @@ public class NavigationService : INavigationService
 
     public bool CanGoBack
     {
-        get => _frame.CanGoBack;
+        get => _frame?.CanGoBack ?? false;
     }
 
 
-    public void CleanNavigation() => _frame.CleanNavigation();
+    public void CleanNavigation() => _frame?.CleanNavigation();
 
 
 
@@ -66,9 +66,9 @@ public class NavigationService : INavigationService
 
     public void GoBack()
     {
-        if (_frame.CanGoBack)
+        if (_frame is { CanGoBack: true })
         {
-            object vmBeforeNavigation = _frame.GetDataContext();
+            object? vmBeforeNavigation = _frame.GetDataContext();
             _frame.GoBack();
             if (vmBeforeNavigation is INavigationAware navigationAware)
             {
@@ -84,9 +84,9 @@ public class NavigationService : INavigationService
 
 
 
-    public void Initialize([CanBeNull] Frame shellFrame)
+    public void Initialize([CanBeNull] Frame? shellFrame)
     {
-        if (_frame == null)
+        if (_frame == null && shellFrame != null)
         {
             _frame = shellFrame;
             _frame.Navigated += OnNavigated;
@@ -100,8 +100,13 @@ public class NavigationService : INavigationService
 
 
 
-    public bool NavigateTo([CanBeNull] string pageKey, [CanBeNull] object parameter = null, bool clearNavigation = false)
+    public bool NavigateTo([CanBeNull] string? pageKey, [CanBeNull] object? parameter = null, bool clearNavigation = false)
     {
+        if (pageKey is null || _frame is null)
+        {
+            return false;
+        }
+
         Type pageType = _pageService.GetPageType(pageKey);
 
         if (_frame.Content?.GetType() != pageType || (parameter != null && !parameter.Equals(_lastParameterUsed)))
@@ -132,7 +137,7 @@ public class NavigationService : INavigationService
 
 
 
-    public event EventHandler<string> Navigated;
+    public event EventHandler<string>? Navigated;
 
 
 
@@ -143,8 +148,11 @@ public class NavigationService : INavigationService
 
     public void UnsubscribeNavigation()
     {
-        _frame.Navigated -= OnNavigated;
-        _frame = null;
+        if (_frame != null)
+        {
+            _frame.Navigated -= OnNavigated;
+            _frame = null;
+        }
     }
 
 
@@ -154,7 +162,7 @@ public class NavigationService : INavigationService
 
 
 
-    private void OnNavigated([CanBeNull] object sender, [CanBeNull] NavigationEventArgs e)
+    private void OnNavigated(object sender, NavigationEventArgs e)
     {
         if (sender is Frame frame)
         {
@@ -164,13 +172,16 @@ public class NavigationService : INavigationService
                 frame.CleanNavigation();
             }
 
-            object dataContext = frame.GetDataContext();
+            object? dataContext = frame.GetDataContext();
             if (dataContext is INavigationAware navigationAware)
             {
                 navigationAware.OnNavigatedTo(e.ExtraData);
             }
 
-            Navigated?.Invoke(sender, dataContext.GetType().FullName);
+            if (dataContext != null)
+            {
+                Navigated?.Invoke(sender, dataContext.GetType().FullName!);
+            }
         }
     }
 }

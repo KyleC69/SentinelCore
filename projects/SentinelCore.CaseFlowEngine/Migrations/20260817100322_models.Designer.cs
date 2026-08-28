@@ -14,7 +14,7 @@ namespace SentinelCore.Migrations
 {
     [DbContext(typeof(SentinelCoreDBContext))]
     [Migration("20260817100322_models")]
-    partial class models
+    partial class Models
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

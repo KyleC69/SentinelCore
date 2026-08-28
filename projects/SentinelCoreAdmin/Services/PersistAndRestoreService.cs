@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         PersistAndRestoreService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -56,8 +56,8 @@ public class PersistAndRestoreService : IPersistAndRestoreService
     {
         if (App.Current.Properties != null)
         {
-            string folderPath = Path.Combine(_localAppData, _appConfig.ConfigurationsFolder);
-            string fileName = _appConfig.AppPropertiesFileName;
+            string folderPath = Path.Combine(_localAppData, _appConfig.ConfigurationsFolder ?? string.Empty);
+            string fileName = _appConfig.AppPropertiesFileName ?? string.Empty;
             _fileService.Save(folderPath, fileName, App.Current.Properties);
         }
     }
@@ -71,9 +71,9 @@ public class PersistAndRestoreService : IPersistAndRestoreService
 
     public void RestoreData()
     {
-        string folderPath = Path.Combine(_localAppData, _appConfig.ConfigurationsFolder);
-        string fileName = _appConfig.AppPropertiesFileName;
-        IDictionary properties = _fileService.Read<IDictionary>(folderPath, fileName);
+        string folderPath = Path.Combine(_localAppData, _appConfig.ConfigurationsFolder ?? string.Empty);
+        string fileName = _appConfig.AppPropertiesFileName ?? string.Empty;
+        IDictionary? properties = _fileService.Read<IDictionary>(folderPath, fileName);
         if (properties != null)
         {
             foreach (DictionaryEntry property in properties) App.Current.Properties.Add(property.Key, property.Value);

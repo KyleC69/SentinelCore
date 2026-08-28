@@ -2,14 +2,14 @@
 // Project:   SentinelCoreAdmin
 // File:         FrameExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
-
-using JetBrains.Annotations;
 
 using System.Windows;
 using System.Windows.Controls;
+
+using JetBrains.Annotations;
 
 
 
@@ -39,7 +39,7 @@ public static class FrameExtensions
 
 
     [CanBeNull]
-    public static object GetDataContext([NotNull] this Frame frame)
+    public static object? GetDataContext([NotNull] this Frame frame)
     {
         if (frame.Content is FrameworkElement element)
         {

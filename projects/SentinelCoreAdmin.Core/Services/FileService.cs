@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin.Core
 // File:         FileService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -24,9 +24,10 @@ public class FileService : IFileService
 
     public void Delete(string folderPath, string fileName)
     {
-        if (fileName != null && File.Exists(Path.Combine(folderPath, fileName)))
+        string path = Path.Combine(folderPath, fileName);
+        if (File.Exists(path))
         {
-            File.Delete(Path.Combine(folderPath, fileName));
+            File.Delete(path);
         }
     }
 
@@ -37,7 +38,7 @@ public class FileService : IFileService
 
 
 
-    public T Read<T>(string folderPath, string fileName)
+    public T? Read<T>(string folderPath, string fileName)
     {
         string path = Path.Combine(folderPath, fileName);
         if (File.Exists(path))

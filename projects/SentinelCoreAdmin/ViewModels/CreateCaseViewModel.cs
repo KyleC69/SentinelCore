@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin
 // File:         CreateCaseViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -16,13 +16,16 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Cfe;
-using SentinelCore.Contracts;
+
 using SentinelCoreAdmin.Contracts.ViewModels;
 
 
 
 
 namespace SentinelCoreAdmin.ViewModels;
+
+
+
 
 
 /// <summary>
@@ -32,17 +35,20 @@ namespace SentinelCoreAdmin.ViewModels;
 public partial class CreateCaseViewModel : ObservableObject, INavigationAware
 {
     private readonly ICaseFlowEngine _caseFlowEngine;
-    private readonly ILogger<CreateCaseViewModel> _logger;
 
     [ObservableProperty] private string _description = string.Empty;
 
     [ObservableProperty] private bool _isBusy;
+    private readonly ILogger<CreateCaseViewModel> _logger;
 
     [ObservableProperty] private string _resultMessage = string.Empty;
 
     [ObservableProperty] private Visibility _resultVisibility = Visibility.Collapsed;
 
     [ObservableProperty] private string _signalSource = string.Empty;
+
+
+
 
 
 
@@ -58,7 +64,15 @@ public partial class CreateCaseViewModel : ObservableObject, INavigationAware
 
 
 
-    public void OnNavigatedFrom() { }
+
+
+
+    public void OnNavigatedFrom()
+    {
+    }
+
+
+
 
 
 
@@ -77,7 +91,13 @@ public partial class CreateCaseViewModel : ObservableObject, INavigationAware
 
 
 
+
+
+
     private bool CanCreateCase() => !IsBusy && !string.IsNullOrWhiteSpace(Description) && !string.IsNullOrWhiteSpace(SignalSource);
+
+
+
 
 
 
@@ -112,6 +132,9 @@ public partial class CreateCaseViewModel : ObservableObject, INavigationAware
             CreateCaseCommand.NotifyCanExecuteChanged();
         }
     }
+
+
+
 
 
 

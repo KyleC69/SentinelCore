@@ -2,11 +2,9 @@
 // Project:   SentinelCore.Contracts
 // File:         SystemReporter.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
-
-using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.Logging;
 
@@ -44,11 +42,12 @@ public sealed class SystemReporter : ISystemReporter
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="publisher">The SentinelCore event hub.</param>
-    public SystemReporter([NotNull] ILogger<SystemReporter> logger, [NotNull] ISentinelCoreEvents publisher)
+    public SystemReporter(ILogger<SystemReporter> logger, ISentinelCoreEvents publisher)
     {
-        _logger = logger ?? Throw.IfNull(logger);
-        _publisher = publisher ?? Throw.IfNull(publisher);
-
+        Throw.IfNull(logger);
+        Throw.IfNull(publisher);
+        _logger = logger;
+        _publisher = publisher;
     }
 
 
@@ -59,13 +58,12 @@ public sealed class SystemReporter : ISystemReporter
 
 
     /// <summary>
+    ///     Logs a debug-level message through the logging pipeline.
     /// </summary>
-    /// <param name="v"></param>
-    public void DebugMsg(string v)
+    /// <param name="message">The debug message to log.</param>
+    public void DebugMsg(string message)
     {
-        _logger.LogDebug(v);
-
-
+        _logger.LogDebug(message);
     }
 
 

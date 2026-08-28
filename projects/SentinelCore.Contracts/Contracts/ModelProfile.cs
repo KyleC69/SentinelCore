@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Contracts
 // File:         ModelProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
+
+using SentinelCore.Abstractions;
 
 namespace SentinelCore.Contracts;
 
@@ -22,9 +24,12 @@ public sealed class ModelProfile
 
     public ModelProfile(string endpoint, string modelId, float? temperature, int? maxOutputTokens = 16000, int topK = 1, float topP = .1f, ModelProvider provider = ModelProvider.Ollama, string? apiKey = null, string? modelPath = null, string? executionProvider = null)
     {
-        Endpoint = endpoint ?? "http://127.0.0.1:11434";
+        Throw.IfNull(endpoint);
+        Throw.IfNull(modelId);
+        Throw.IfNull(temperature);
+        Endpoint = endpoint;
         Provider = provider;
-        ModelId = modelId ?? string.Empty;
+        ModelId = modelId;
         Temperature = temperature ?? 0;
         TopK = topK;
         TopP = topP;
@@ -157,6 +162,6 @@ public sealed class ModelProfile
         Anthropic,
         Foundry,
         Azure,
-        ONNX
+        OnnxRuntime
     }
 }

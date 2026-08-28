@@ -2,7 +2,7 @@
 // Project:   SentinelCoreAdmin.Core
 // File:         MicrosoftGraphService.cs
 // Author: Kyle L. Crowder
-// Build Num:  081602
+// Build Num:  082808
 
 
 
@@ -55,10 +55,10 @@ public class MicrosoftGraphService : IMicrosoftGraphService
 
 
 
-    public async Task<User> GetUserInfoAsync(string accessToken)
+    public async Task<User?> GetUserInfoAsync(string accessToken)
     {
-        User user = null;
-        HttpContent httpContent = await GetDataAsync($"{_apiServiceMe}", accessToken);
+        User? user = null;
+        HttpContent? httpContent = await GetDataAsync(_apiServiceMe, accessToken);
         if (httpContent != null)
         {
             string userData = await httpContent.ReadAsStringAsync();
@@ -80,7 +80,7 @@ public class MicrosoftGraphService : IMicrosoftGraphService
 
     public async Task<string> GetUserPhoto(string accessToken)
     {
-        HttpContent httpContent = await GetDataAsync($"{_apiServiceMePhoto}", accessToken);
+        HttpContent httpContent = await GetDataAsync(_apiServiceMePhoto, accessToken);
 
         if (httpContent == null)
         {
@@ -98,7 +98,7 @@ public class MicrosoftGraphService : IMicrosoftGraphService
 
 
 
-    private async Task<HttpContent> GetDataAsync(string url, string accessToken)
+    private async Task<HttpContent?> GetDataAsync(string url, string accessToken)
     {
         try
         {
@@ -109,17 +109,10 @@ public class MicrosoftGraphService : IMicrosoftGraphService
             {
                 return response.Content;
             }
-            // TODO: Please handle other status codes as appropriate to your scenario
         }
         catch (HttpRequestException)
         {
-            // TODO: The request failed due to an underlying issue such as
-            // network connectivity, DNS failure, server certificate validation or timeout.
-            // Please handle this exception as appropriate to your scenario
-        }
-        catch (Exception)
-        {
-            // TODO: This call can fail please handle exceptions as appropriate to your scenario
+            // Network connectivity, DNS failure, server certificate validation or timeout.
         }
 
         return null;
