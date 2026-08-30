@@ -1,0 +1,84 @@
+﻿<Window x:Class="SentinelCore.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="SentinelCore"
+        Height="800" Width="1100"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ChatBackground}">
+
+    <Window.Resources>
+        <!-- Nav tab style (radio buttons used as tab selectors) -->
+        <Style x:Key="NavButtonStyle" TargetType="RadioButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource ChatTextMuted}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="NavBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="NavBorder" Property="Background" Value="{DynamicResource ChatSurface2}" />
+                                <Setter Property="Foreground" Value="{DynamicResource ChatTextPrimary}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="NavBorder" Property="Background" Value="{DynamicResource ChatSurface2}" />
+                                <Setter TargetName="NavBorder" Property="BorderBrush" Value="{DynamicResource ChatAccent}" />
+                                <Setter Property="Foreground" Value="{DynamicResource ChatTextPrimary}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Top navigation bar -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource ChatSurface}"
+                BorderBrush="{DynamicResource ChatBorder}"
+                BorderThickness="0,0,0,1"
+                Padding="16,8">
+            <StackPanel Orientation="Horizontal">
+                <RadioButton x:Name="NavChatButton"
+                             Style="{StaticResource NavButtonStyle}"
+                             GroupName="Nav"
+                             Content="Chat" />
+                <RadioButton x:Name="NavCasesButton"
+                             Style="{StaticResource NavButtonStyle}"
+                             GroupName="Nav"
+                             Content="Cases" />
+                <RadioButton x:Name="NavCreateCaseButton"
+                             Style="{StaticResource NavButtonStyle}"
+                             GroupName="Nav"
+                             Content="Create Case" />
+            </StackPanel>
+        </Border>
+
+        <!-- Page content -->
+        <Frame x:Name="MainFrame"
+               Grid.Row="1"
+               NavigationUIVisibility="Hidden"
+               Margin="0" />
+    </Grid>
+</Window>

@@ -18,4 +18,5 @@ global using SentinelCore.Tools;
 global using SentinelCore.Abstractions;
 global using SentinelCore.Application;
 
-global using SentinelCoreAdmin.ViewModels;
+global using SentinelCore.UI.ViewModels;
+global using SentinelCore.UI.Services;

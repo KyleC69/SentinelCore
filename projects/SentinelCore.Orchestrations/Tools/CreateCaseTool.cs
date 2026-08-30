@@ -24,7 +24,12 @@ namespace SentinelCore.Tools;
 public class CaseTool : AITool
 {
 
-    private readonly ICaseFlowEngine _engine = new CaseFlowEngine(new SentinelCoreDBContext());
+    private readonly ICaseFlowEngine _engine;
+
+    public CaseTool(ICaseFlowEngine engine)
+    {
+        _engine = engine ?? throw new ArgumentNullException(nameof(engine));
+    }
 
     public override string Description { get; } = "A tool for creating a new case in the Sentinel Core platform from the provided signal. " + "The signal should be a string that describes the issue or anomaly that needs to be investigated.";
 

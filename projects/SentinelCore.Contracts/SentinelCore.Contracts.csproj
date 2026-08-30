@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
 	  <ImplicitUsings>true</ImplicitUsings>
     <Nullable>enable</Nullable>
-	  <RootNamespace>SentinelCore</RootNamespace>
+	  <RootNamespace>SentinelCore.Contracts</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

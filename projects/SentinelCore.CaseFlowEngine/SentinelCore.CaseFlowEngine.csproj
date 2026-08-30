@@ -4,7 +4,7 @@
 	<TargetFramework>net10.0-windows</TargetFramework>
 	<ImplicitUsings>enable</ImplicitUsings>
 	<Nullable>enable</Nullable>
-	  <RootNamespace>SentinelCore</RootNamespace>
+	  <RootNamespace>SentinelCore.CaseFlowEngine</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

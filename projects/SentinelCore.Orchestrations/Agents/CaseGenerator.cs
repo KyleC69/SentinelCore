@@ -36,9 +36,10 @@ public interface ICaseGenerator
 
 
 /// <summary>
-///     Provides bulk case generation by AI for both baseline start and identify pre-existing problems in environment
+///     Ad-hoc agent for bulk case generation by AI for baseline and db generation.
 ///     Encapsulates the specialty agent for case generation based on system scans.
 /// </summary>
+[Obsolete("Only temporary single agent, will be removed")]
 public class CaseGenerator : ICaseGenerator, IDisposable
 {
 
@@ -99,11 +100,16 @@ public class CaseGenerator : ICaseGenerator, IDisposable
     public async Task<AIAgent> BuildAgentAsync()
     {
 
+
+        //Start mcp server tooling
         _client = await McpClient.CreateAsync(new StdioClientTransport(new()
-                {
-                        //Should be running from the output directory
-                        Name = "SentinelCoreMCP", Command = "SentinelCoreMCP.exe", WorkingDirectory = AppContext.BaseDirectory, Arguments = ["--stdio"]
-                }, _factory))
+        {
+            //Should be running from the output directory
+            Name = "SentinelCoreMCP",
+            Command = "SentinelCoreMCP.exe",
+            WorkingDirectory = AppContext.BaseDirectory,
+            Arguments = ["--stdio"]
+        }, _factory))
                 .ConfigureAwait(false);
 
 
@@ -112,7 +118,7 @@ public class CaseGenerator : ICaseGenerator, IDisposable
         // Build a profile for the CaseGenerator agent.
         AgentProfile profile = _profileBuilder.BuildAgentSpec("CaseGenerator");
         var mcpTools = await GetMcpToolsAsync().ConfigureAwait(false);
-        CaseTool caseTool = new();
+        CaseTool caseTool = new(_engine);
 
         profile.Instructions = GeneratorInstructions;
         profile.Model = _options.Value?.DefaultModel!;

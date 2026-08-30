@@ -1,0 +1,22 @@
+﻿<Application x:Class="SentinelCore.UI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:SentinelCore.UI.Converters"
+             Startup="OnStartup"
+             Exit="OnExit"
+             DispatcherUnhandledException="OnDispatcherUnhandledException">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Chat-themed brush resources (dark palette) -->
+                <ResourceDictionary Source="/Styles/ChatBrushes.xaml" />
+                <!-- Shared styles for case management pages -->
+                <ResourceDictionary Source="/Styles/CaseStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+            <converters:InvertBoolToVisibilityConverter x:Key="InvertBoolToVisibility" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -10,31 +10,33 @@ The solution is organized into a clear, layered architecture with strict depende
 
 ### Solution Folders
 
-```
+
 Solution-Root/
 ├── docs/                  # Documentation (this folder)
 ├── projects/              # Source code projects
 │   ├── SentinelCore.Contracts/        # Shared abstractions, DTOs, settings, events
 │   ├── SentinelCore.CaseFlowEngine/   # Case lifecycle, persistence, pattern memory
 │   ├── SentinelCore.Orchestrations/   # Agents, workflows, tools, safety engine, DI
-│   └── SentinelCoreHost/              # WPF host application
+│   ├── SentinelCore.UI/               # WPF host application (composition root)
+│   └── SentinelCoreAdmin/             # Legacy admin host (being deprecated)
 └── SentinelCore.slnx                 # Solution file
-```
+
 
 ### Projects and Their Responsibilities
 
 | Project | Role | Dependencies |
-|---------|------|--------------|
+| --------- | ------ | -------------- |
 | `SentinelCore.Contracts` | Shared abstractions, DTOs, settings, events — zero project dependencies | None (only NuGet packages) |
 | `SentinelCore.CaseFlowEngine` | Case lifecycle, persistence, pattern memory | `SentinelCore.Contracts` |
 | `SentinelCore.Orchestrations` | Agents, workflows, tools, safety engine, DI wiring | `SentinelCore.Contracts`, `SentinelCore.CaseFlowEngine` |
-| `SentinelCoreHost` | WPF host application that wires up the entire system | All three core projects |
+| `SentinelCore.UI` | WPF host application — composition root, DI wiring, chat UI | All three core projects |
+| `SentinelCoreAdmin` | Legacy admin host (being deprecated) | All three core projects |
 
 ### Dependency Graph
 
 ```
 ┌──────────────────────┐
-│  SentinelCoreHost     │  ← WPF host (knows everything)
+│  SentinelCore.UI      │  ← WPF host (composition root)
 └──────┬───────┬───────┘
        │       │
        ▼       ▼
@@ -56,8 +58,8 @@ Solution-Root/
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  SentinelCoreHost                                           │
-│  WPF application — bootstraps DI, hosts UI                  │
+│  SentinelCore.UI                                            │
+│  WPF application — composition root, bootstraps DI, chat UI │
 ├─────────────────────────────────────────────────────────────┤
 │  SentinelCore.Orchestrations / Infrastructure / DI          │
 │  Wiring layer — registers all services                       │
@@ -89,7 +91,7 @@ Solution-Root/
 ### Dependency Rules
 
 | Rule | Description |
-|------|-------------|
+| ------ | ------------- |
 | **Contracts is zero-dependency** | `SentinelCore.Contracts` contains only pure DTOs, settings, abstractions, and events. No project references — only NuGet packages. |
 | **CaseFlowEngine depends on Contracts only** | `SentinelCore.CaseFlowEngine` references `SentinelCore.Contracts` for abstractions and DTOs. |
 | **Orchestrations depends on Contracts + CaseFlowEngine** | `SentinelCore.Orchestrations` references both projects. It needs `ICaseFlowEngine` for case operations in workflow executors. |
@@ -109,11 +111,11 @@ All namespaces use the `SentinelCore.*` root. Namespaces **must** match the fold
 Key namespace mappings:
 
 | Project | Namespaces |
-|---------|-----------|
+| --------- | ----------- |
 | Contracts | `SentinelCore.Abstractions`, `SentinelCore.CaseFlow`, `SentinelCore.CaseEngine`, `SentinelCore.Contracts`, `SentinelCore.Events`, `SentinelCore.DependencyInjection` |
 | CaseFlowEngine | `SentinelCore.CaseFlowEngine.CaseFlow`, `SentinelCore.CaseFlowEngine.Infrastructure.Persistence`, `SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection` |
 | Orchestrations | `SentinelCore.Agents`, `SentinelCore.Application`, `SentinelCore.Orchestrations`, `SentinelCore.SafetyEngine`, `SentinelCore.Tools`, `SentinelCore.Workflows`, `SentinelCore.Workflows.Executors`, `SentinelCore.Personas`, `SentinelCore.Infrastructure.DependencyInjection` |
-| Host | `SentinelCoreHost`, `SentinelCoreHost.ViewModels`, `SentinelCoreHost.Views` |
+| Host (UI) | `SentinelCore.UI`, `SentinelCore.UI.ViewModels`, `SentinelCore.UI.Views`, `SentinelCore.UI.Services`, `SentinelCore.UI.Converters`, `SentinelCore.UI.Models` |
 
 ### Key Architectural Patterns
 
@@ -156,11 +158,18 @@ Key namespace mappings:
 - Depends only on `SentinelCore.Contracts`.
 - Provides `ICaseFlowEngine` implementation and repository classes (`EvidenceStore`, `SignalRepository`, `PatternMemoryStore`).
 
-#### SentinelCoreHost
+#### SentinelCore.UI
 
-- WPF host application with dark theme, markdown viewer, trace log window, and settings.
-- References all three core projects.
-- Serves as the composition root for dependency injection.
+- WPF host application serving as the composition root for dependency injection.
+- References all three core projects (`Contracts`, `CaseFlowEngine`, `Orchestrations`).
+- Contains the chat UI (`CoreChatViewModel`, `CoreChatPage`), dispatcher service, converters, and styles.
+- Uses CommunityToolkit.Mvvm for MVVM pattern with source-generated observables and commands.
+- Decouples ViewModels from WPF dispatcher via `IDispatcherService` abstraction for testability.
+
+#### SentinelCoreAdmin (Legacy)
+
+- Previous WPF host application with MahApps.Metro shell, Template Studio scaffolding, and navigation framework.
+- Being deprecated in favor of `SentinelCore.UI`. Features will migrate incrementally.
 
 ### Related Documents
 
@@ -197,7 +206,7 @@ The solution is organized into a clear layered architecture with strict dependen
 The solution consists of the following projects:
 
 | Project | Role | Dependencies |
-|---------|------|--------------|
+| --------- | ------ | -------------- |
 | `SentinelCore.Contracts` | Shared abstractions, DTOs, settings, events, safety engine — zero project dependencies | Only NuGet packages |
 | `SentinelCore.Orchestrations` | Agent construction, orchestration, tools, DI wiring — depends on Contracts only | `SentinelCore.Contracts` |
 | `SentinelCore.CaseFlowEngine` | Case lifecycle, persistence, pattern memory — depends on Contracts only | `SentinelCore.Contracts` |
@@ -256,7 +265,7 @@ The solution follows a strict layered architecture with one-way dependency flow.
 ### Dependency Rules (Immutable)
 
 | Rule | Description |
-|------|-------------|
+| ------ | ------------- |
 | **Contracts is zero-dependency** | `SentinelCore.Contracts` contains only pure DTOs, settings, abstractions, events, and safety types. It has no project references — only NuGet packages. |
 | **Orchestrations depends on Contracts only** | `SentinelCore.Orchestrations` references `SentinelCore.Contracts` for abstractions, events, and settings. It does not reference `SentinelCore.CaseFlowEngine`. |
 | **CaseFlowEngine depends on Contracts only** | `SentinelCore.CaseFlowEngine` references `SentinelCore.Contracts` for abstractions and DTOs. It does **not** depend on `SentinelCore.Orchestrations`. |

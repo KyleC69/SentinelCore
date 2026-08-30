@@ -21,7 +21,7 @@
 		<ProjectReference Include="..\SentinelCore.Contracts\SentinelCore.Contracts.csproj" />
 		<ProjectReference Include="..\SentinelCore.CaseFlowEngine\SentinelCore.CaseFlowEngine.csproj" />
 		<ProjectReference Include="..\SentinelCore.Orchestrations\SentinelCore.Orchestrations.csproj" />
-		<ProjectReference Include="..\SentinelCoreAdmin\SentinelCoreAdmin.csproj" />
+		<ProjectReference Include="..\SentinelCore.UI\SentinelCore.UI.csproj" />
 
 	</ItemGroup>
 

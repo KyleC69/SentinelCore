@@ -102,7 +102,7 @@ public interface ICaseFlowEngine
 /// </summary>
 public sealed class CaseFlowEngine : ICaseFlowEngine
 {
-    private readonly SentinelCoreDBContext _dbContext;
+    private readonly IDbContextFactory<SentinelCoreDBContext> _dbContextFactory;
 
     /// <summary>
     ///     Allowed state transitions for the case lifecycle.
@@ -134,15 +134,12 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// <summary>
     ///     Initializes a new instance of the <see cref="CaseFlowEngine" /> class.
     /// </summary>
-    /// <param name="dbContext">
-    ///     The database context for accessing and persisting case-related data.
+    /// <param name="dbContextFactory">
+    ///     Factory for creating database contexts on demand.
     /// </param>
-    /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="dbContext" /> is <c>null</c>.
-    /// </exception>
-    public CaseFlowEngine(SentinelCoreDBContext dbContext)
+    public CaseFlowEngine(IDbContextFactory<SentinelCoreDBContext> dbContextFactory)
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
 
 
@@ -159,16 +156,22 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
             throw new ArgumentException("Case identifier must be a non-empty GUID.", nameof(caseId));
         }
 
-        // 1. Retrieve the current case
-        Case? caseRecord = await GetCaseByIdAsync(caseId, cancellationToken).ConfigureAwait(false);
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        if (caseRecord is null)
+        // 1. Retrieve the current case
+        CaseEntity? entity = await db.CaseEntities
+                .FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken)
+                .ConfigureAwait(false);
+
+        if (entity is null)
         {
             throw new InvalidOperationException($"Case '{caseId}' not found.");
         }
 
+        CaseStatus currentStatus = (CaseStatus)entity.Status;
+
         // 2. Validate the transition is allowed by the lifecycle
-        ValidateTransition(caseRecord.Status, status);
+        ValidateTransition(currentStatus, status);
         /*
                 // 3. Safety gate — evaluate before applying the transition
                 SafetyContext safetyContext = new() { CaseId = caseId.ToString() };
@@ -178,17 +181,17 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
                 if (verdict == SafetyVerdict.Blocked)
                 {
                     // Transition blocked by safety — force to Blocked status instead
-                    caseRecord.Status = CaseStatus.Blocked;
-                    caseRecord.UpdatedAt = DateTime.Now;
-                    //   await _caseRepository.UpdateAsync(caseRecord, cancellationToken).ConfigureAwait(false);
+                    entity.Status = (int)CaseStatus.Blocked;
+                    entity.UpdatedAt = DateTime.Now;
+                    await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                     return;
                 }
                 */
         // 4. Apply the transition
-        caseRecord.Status = status;
-        caseRecord.UpdatedAt = DateTime.Now;
+        entity.Status = (int)status;
+        entity.UpdatedAt = DateTime.Now;
 
-        await UpdateAsync(caseRecord, cancellationToken).ConfigureAwait(false);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
 
@@ -200,15 +203,20 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
     public Guid CreateCase(Signal rawSignal, CancellationToken cancellationToken = default)
     {
+        using SentinelCoreDBContext db = _dbContextFactory.CreateDbContext();
+        using var transaction = db.Database.BeginTransaction();
+
         //Save the signal first so we can grab this records identifier and use it in the case.
         SignalEntity ent = rawSignal.ToEntity();
-        _dbContext.SignalEntities.Add(ent);
-        _dbContext.SaveChanges();
+        db.SignalEntities.Add(ent);
+        db.SaveChanges();
 
         //Now the case.
         CaseEntity caseent = new CaseEntity { InitiatingSignal = ent.SignalId, CaseId = Guid.NewGuid(), Status = (int)CaseStatus.Open };
-        _dbContext.CaseEntities.Add(caseent);
-        _dbContext.SaveChanges();
+        db.CaseEntities.Add(caseent);
+        db.SaveChanges();
+
+        transaction.Commit();
         return caseent.CaseId;
     }
 
@@ -260,12 +268,8 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// <returns>The count of cases matching the given status.</returns>
     public async Task<int> GetCaseCountByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default)
     {
-        // Validate input
-
-
-
-        // Query the database and return the count
-        return await _dbContext.CaseEntities.Where(d => d.Status == (int)status).CountAsync(cancellationToken);
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.CaseEntities.Where(d => d.Status == (int)status).CountAsync(cancellationToken);
     }
 
 
@@ -280,7 +284,8 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     public async Task<IReadOnlyList<Case>> GetCasesByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default)
     {
-        List<CaseEntity> entities = await _dbContext.CaseEntities.Where(c => c.Status == (int)status).ToListAsync(cancellationToken);
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        List<CaseEntity> entities = await db.CaseEntities.Where(c => c.Status == (int)status).ToListAsync(cancellationToken);
 
         return entities.Select(e => e.ToCase()).ToList();
     }
@@ -316,17 +321,22 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </remarks>
     private async Task<Guid> CreateCaseWithSignalAsync(Signal signal, Case caseRecord, CancellationToken cancellationToken)
     {
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
         //Save the signal first so we can grab this records identifier and use it in the case.
         SignalEntity ent = signal.ToEntity();
-        _dbContext.SignalEntities.Add(ent);
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        db.SignalEntities.Add(ent);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         //Now the case.
         CaseEntity caseent = caseRecord.ToEntity();
         caseent.InitiatingSignal = ent.SignalId;
         caseent.Status = (int)CaseStatus.Open;
-        _dbContext.CaseEntities.Add(caseent);
-        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        db.CaseEntities.Add(caseent);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return caseent.CaseId;
     }
 
@@ -342,7 +352,8 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     private async Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken)
     {
-        CaseEntity? entity = await _dbContext.CaseEntities
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        CaseEntity? entity = await db.CaseEntities
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken)
                 .ConfigureAwait(false);
@@ -358,7 +369,8 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     private async Task UpdateAsync(Case caseRecord, CancellationToken cancellationToken)
     {
-        CaseEntity? tracked = await _dbContext.CaseEntities
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        CaseEntity? tracked = await db.CaseEntities
                 .FirstOrDefaultAsync(c => c.CaseId == caseRecord.CaseId, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -369,7 +381,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
                     tracked.Status = (int)caseRecord.Status;
                     tracked.UpdatedAt = caseRecord.UpdatedAt;
-                    await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                    await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 }
 
 

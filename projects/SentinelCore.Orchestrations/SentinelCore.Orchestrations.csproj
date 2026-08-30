@@ -4,9 +4,7 @@
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<PackageId>SentinelCore.Orchestrations</PackageId>
-		<!--Must use the Rootnamespace to keep all projects properly aligned and visible DO NOT CHANGE-->
-		<RootNamespace>SentinelCore</RootNamespace>
+		<RootNamespace>SentinelCore.Orchestrations</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
