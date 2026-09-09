@@ -1,17 +1,17 @@
 ﻿{
    "CodeGenerationMode": 6,
-   "ContextClassName": "SentinelCoreDBContext",
+   "ContextClassName": "SentinelRAGDBContext",
    "ContextNamespace": null,
    "FilterSchemas": false,
    "IncludeConnectionString": true,
    "IrregularWords": null,
-   "MinimumProductVersion": "2.6.1604",
+   "MinimumProductVersion": "2.6.1706",
    "ModelNamespace": null,
    "OutputContextPath": null,
    "OutputPath": "Persistence",
    "PluralRules": null,
    "PreserveCasingWithRegex": true,
-   "ProjectRootNamespace": "SentinelCore.Cfe",
+   "ProjectRootNamespace": "SentinelCore.RemoteKB",
    "Schemas": null,
    "SelectedHandlebarsLanguage": 2,
    "SelectedToBeGenerated": 0,
@@ -19,23 +19,11 @@
    "T4TemplatePath": null,
    "Tables": [
       {
-         "Name": "[dbo].[InvestigationPlanEntity]",
+         "Name": "[dbo].[RemoteSources]",
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[InvestigationPlanStepsEntity]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[PatternMemoryEntity]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[ResolutionEntity]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[SignalEntity]",
+         "Name": "[dbo].[SourceDoc]",
          "ObjectType": 0
       }
    ],
@@ -56,8 +44,8 @@
    "UseLegacyPluralizer": false,
    "UseManyToManyEntity": false,
    "UseNoDefaultConstructor": false,
-   "UseNoNavigations": true,
-   "UseNoObjectFilter": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": true,
    "UseNodaTime": false,
    "UseNullableReferences": false,
    "UsePrefixNavigationNaming": false,

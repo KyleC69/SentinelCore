@@ -8,10 +8,10 @@
 
 using Microsoft.EntityFrameworkCore;
 
-using SentinelCore.Abstractions;
 using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts;
 using SentinelCore.Persistence;
+using SentinelCore.RemoteKB.Persistence;
 
 
 
@@ -111,17 +111,17 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     private static readonly Dictionary<CaseStatus, HashSet<CaseStatus>> AllowedTransitions = new()
     {
-            [CaseStatus.Open] = [CaseStatus.Analysis, CaseStatus.Cancelled],
-            [CaseStatus.Analysis] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Cancelled],
-            [CaseStatus.Investigation] = [CaseStatus.Review, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
-            [CaseStatus.Review] = [CaseStatus.Complete, CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Cancelled],
-            [CaseStatus.AwaitingInput] = [CaseStatus.Investigation, CaseStatus.Escalated, CaseStatus.Cancelled],
-            [CaseStatus.Escalated] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Alerted, CaseStatus.Cancelled],
-            [CaseStatus.Alerted] = [CaseStatus.Escalated, CaseStatus.Blocked, CaseStatus.Cancelled],
-            [CaseStatus.Blocked] = [CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
-            [CaseStatus.Complete] = [CaseStatus.Closed],
-            [CaseStatus.Cancelled] = [CaseStatus.Closed],
-            [CaseStatus.Closed] = []
+        [CaseStatus.Open] = [CaseStatus.Analysis, CaseStatus.Cancelled],
+        [CaseStatus.Analysis] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Cancelled],
+        [CaseStatus.Investigation] = [CaseStatus.Review, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
+        [CaseStatus.Review] = [CaseStatus.Complete, CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Cancelled],
+        [CaseStatus.AwaitingInput] = [CaseStatus.Investigation, CaseStatus.Escalated, CaseStatus.Cancelled],
+        [CaseStatus.Escalated] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Alerted, CaseStatus.Cancelled],
+        [CaseStatus.Alerted] = [CaseStatus.Escalated, CaseStatus.Blocked, CaseStatus.Cancelled],
+        [CaseStatus.Blocked] = [CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
+        [CaseStatus.Complete] = [CaseStatus.Closed],
+        [CaseStatus.Cancelled] = [CaseStatus.Closed],
+        [CaseStatus.Closed] = []
     };
 
 
@@ -379,16 +379,16 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
             throw new InvalidOperationException($"Case '{caseRecord.CaseId}' not found.");
         }
 
-                    tracked.Status = (int)caseRecord.Status;
-                    tracked.UpdatedAt = caseRecord.UpdatedAt;
-                    await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-                }
+        tracked.Status = (int)caseRecord.Status;
+        tracked.UpdatedAt = caseRecord.UpdatedAt;
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
 
 
 
 
-                /// <summary>
-                ///     Validates that the transition from <paramref name="from" /> to
+    /// <summary>
+    ///     Validates that the transition from <paramref name="from" /> to
     ///     <paramref name="to" /> is allowed by the case lifecycle.
     ///     This ensures that the case status changes adhere to the predefined
     ///     lifecycle rules, preventing invalid state transitions.
