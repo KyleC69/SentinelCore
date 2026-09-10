@@ -10,6 +10,7 @@ using System.Windows.Controls;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using SentinelCore.Mcp;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
 using SentinelCore.UI.ViewModels;
@@ -45,12 +46,14 @@ public static class SentinelCoreUIServiceExtensions
         services.AddTransient<CaseListViewModel>();
         services.AddTransient<CaseDetailViewModel>();
         services.AddTransient<CreateCaseViewModel>();
+        services.AddTransient<McpServersViewModel>();
 
         // Views (each page is resolved from DI so its ViewModel is injected)
         services.AddTransient<CoreChatPage>();
         services.AddTransient<CaseListPage>();
         services.AddTransient<CaseDetailPage>();
         services.AddTransient<CreateCasePage>();
+        services.AddTransient<McpServersPage>();
 
         // Navigation — ViewLocator holds the ViewModel→Page type map
         Dictionary<string, Type> pageTypeMap = new()
@@ -58,7 +61,8 @@ public static class SentinelCoreUIServiceExtensions
             [typeof(CoreChatViewModel).FullName!] = typeof(CoreChatPage),
             [typeof(CaseListViewModel).FullName!] = typeof(CaseListPage),
             [typeof(CaseDetailViewModel).FullName!] = typeof(CaseDetailPage),
-            [typeof(CreateCaseViewModel).FullName!] = typeof(CreateCasePage)
+            [typeof(CreateCaseViewModel).FullName!] = typeof(CreateCasePage),
+            [typeof(McpServersViewModel).FullName!] = typeof(McpServersPage)
         };
 
         services.AddSingleton<IViewLocator>(sp => new ViewLocator(sp, pageTypeMap));

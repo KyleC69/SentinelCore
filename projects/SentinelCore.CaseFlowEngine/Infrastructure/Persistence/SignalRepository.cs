@@ -6,6 +6,8 @@
 
 
 
+using Microsoft.EntityFrameworkCore;
+
 using SentinelCore.Abstractions;
 using SentinelCore.Cfe;
 using SentinelCore.Cfe.Persistence;
@@ -25,7 +27,7 @@ namespace SentinelCore.Infrastructure.Persistence;
 /// </summary>
 public sealed class SignalRepository : ISignalRepository
 {
-    private readonly SentinelCoreDBContext _context;
+    private readonly IDbContextFactory<SentinelCoreDBContext> _dbContextFactory;
 
 
 
@@ -37,9 +39,12 @@ public sealed class SignalRepository : ISignalRepository
     /// <summary>
     ///     Initializes a new instance of the <see cref="SignalRepository" /> class.
     /// </summary>
-    public SignalRepository(SentinelCoreDBContext context)
+    /// <param name="dbContextFactory">
+    ///     Factory that creates a short-lived <see cref="SentinelCoreDBContext" /> per operation.
+    /// </param>
+    public SignalRepository(IDbContextFactory<SentinelCoreDBContext> dbContextFactory)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
 
 
@@ -49,14 +54,19 @@ public sealed class SignalRepository : ISignalRepository
 
 
 
+    /// <summary>
+    ///     Persists a signal and returns its generated record identifier.
+    /// </summary>
     public async Task<int> AddAsync(Signal signal, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(signal);
 
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+
         SignalEntity entity = signal.ToEntity();
 
-        _context.SignalEntities.Add(entity);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        db.SignalEntities.Add(entity);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return entity.Id;
     }
 }

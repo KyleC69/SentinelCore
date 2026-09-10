@@ -6,22 +6,25 @@
 
 
 
-using System.IO;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Windows;
-using System.Windows.Threading;
-
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Abstractions;
+using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts;
 using SentinelCore.Infrastructure.DependencyInjection;
+using SentinelCore.RemoteKB.Persistence;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
+
+using System.IO;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Threading;
 
 
 
@@ -51,6 +54,12 @@ public partial class App : System.Windows.Application
     private CancellationTokenSource _shutdownCts = new();
 
     /// <summary>
+    ///     Guards <see cref="_shutdownCts" /> against double disposal when both the
+    ///     unhandled-exception path and <see cref="OnExit" /> run.
+    /// </summary>
+    private bool _shutdownDisposed;
+
+    /// <summary>
     ///     A <see cref="CancellationToken" /> that is cancelled when the application is shutting down.
     ///     Thread this through long-running async operations (chat, orchestration, workflows)
     ///     so they can be cancelled gracefully on all exit paths.
@@ -70,20 +79,41 @@ public partial class App : System.Windows.Application
         // SentinelCore orchestration, events, and case-flow
         SentinelCoreSettings sentinelSettings = new()
         {
-                SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
-                TraceEnabled = true,
-                TraceLogLevel = LogLevel.Trace,
-                OrchestrationType = OrchestrationType.TheCore,
-                DefaultModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", .2f, 15000, 1, .2f),
-                DefaultUtilityModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", 0.1f, 12000, 1, 0.3f)
+            SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
+            TraceEnabled = true,
+            TraceLogLevel = LogLevel.Trace,
+            OrchestrationType = OrchestrationType.TheCore,
+            DefaultModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", .2f, 15000, 1, .2f),
+            DefaultUtilityModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", 0.1f, 12000, 1, 0.3f)
         };
         services.AddSentinelCore(sentinelSettings);
 
         // UI layer — services, ViewModels, Views, and navigation
         services.AddSentinelCoreUI();
 
+        // Application shutdown token — injected into ViewModels so in-flight work
+        // can be cancelled cooperatively when the app exits. CancellationToken is a
+        // struct, so the non-generic registration overload is required.
+        services.AddSingleton(typeof(CancellationToken), _ => (object)ShutdownToken);
+
         // Configuration
         services.Configure<AppConfig>(context.Configuration.GetSection(nameof(AppConfig)));
+
+        // AddDbContextFactory registers BOTH IDbContextFactory<SentinelCoreDBContext> (singleton,
+        // required by CaseFlowEngine) and the DbContext itself (scoped, required by
+        // EvidenceStore/PatternMemoryStore/SignalRepository). AddDbContext alone would leave the
+        // factory unresolvable.
+        services.AddDbContextFactory<SentinelCoreDBContext>(options =>
+        {
+            options.UseSqlServer(Environment.GetEnvironmentVariable("SENTINEL_CORE"));
+        });
+        services.AddDbContextFactory<SentinelRAGDBContext>(options =>
+        {
+            options.UseSqlServer(Environment.GetEnvironmentVariable("REMOTEKB"));
+        });
+
+
+
     }
 
 
@@ -106,7 +136,7 @@ public partial class App : System.Windows.Application
 
     /// <summary>
     ///     Cancels the shared <see cref="ShutdownToken" />, stops the <see cref="IHost" />,
-    ///     and disposes resources. Safe to call from any exit path.
+    ///     and disposes resources. Safe to call from any exit path and idempotent.
     /// </summary>
     private async Task InitiateShutdownAsync()
     {
@@ -119,7 +149,11 @@ public partial class App : System.Windows.Application
         {
             try
             {
-                await _host.StopAsync(ShutdownToken).ConfigureAwait(false);
+                // The shutdown token is already cancelled; stopping the host with it
+                // would abort graceful hosted-service shutdown. Use a fresh timeout
+                // token so IHostedService.StopAsync implementations get a chance to run.
+                using CancellationTokenSource stopCts = new(TimeSpan.FromSeconds(10));
+                await _host.StopAsync(stopCts.Token).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -130,7 +164,11 @@ public partial class App : System.Windows.Application
             _host = null;
         }
 
-        _shutdownCts.Dispose();
+        if (!_shutdownDisposed)
+        {
+            _shutdownDisposed = true;
+            _shutdownCts.Dispose();
+        }
     }
 
 
@@ -202,6 +240,18 @@ public partial class App : System.Windows.Application
     {
         // Startup breadcrumb — visible in the VS Output window.
         System.Diagnostics.Debug.WriteLine("Starting host…");
+
+        // Fail fast with a clear message when required configuration is missing;
+        // otherwise EF Core surfaces a cryptic activation error much later.
+        string? caseFlowConnection = Environment.GetEnvironmentVariable("SENTINEL_CORE");
+        string? remoteKbConnection = Environment.GetEnvironmentVariable("REMOTEKB");
+
+        if (string.IsNullOrWhiteSpace(caseFlowConnection) || string.IsNullOrWhiteSpace(remoteKbConnection))
+        {
+            throw new InvalidOperationException(
+                "Required environment variables are missing. Set SENTINEL_CORE (case flow database connection string) "
+                + "and REMOTEKB (remote knowledge base connection string) before starting SentinelCore.");
+        }
 
         string? appLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly()?.Location);
 

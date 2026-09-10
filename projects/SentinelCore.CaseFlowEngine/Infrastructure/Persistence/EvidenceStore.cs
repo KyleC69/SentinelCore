@@ -26,7 +26,7 @@ namespace SentinelCore.Infrastructure.Persistence;
 /// </summary>
 public sealed class EvidenceStore : IEvidenceStore
 {
-    private readonly SentinelCoreDBContext _context;
+    private readonly IDbContextFactory<SentinelCoreDBContext> _dbContextFactory;
 
 
 
@@ -38,10 +38,12 @@ public sealed class EvidenceStore : IEvidenceStore
     /// <summary>
     ///     Initializes a new instance of the <see cref="EvidenceStore" /> class.
     /// </summary>
-    /// <param name="context">The <see cref="SentinelCoreDBContext" /> used for persistence.</param>
-    public EvidenceStore(SentinelCoreDBContext context)
+    /// <param name="dbContextFactory">
+    ///     Factory that creates a short-lived <see cref="SentinelCoreDBContext" /> per operation.
+    /// </param>
+    public EvidenceStore(IDbContextFactory<SentinelCoreDBContext> dbContextFactory)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
 
 
@@ -63,7 +65,9 @@ public sealed class EvidenceStore : IEvidenceStore
             throw new ArgumentException("Case identifier must be a non-empty GUID string.", nameof(caseId));
         }
 
-        CaseEntity? caseRecord = await _context.CaseEntities.AsNoTracking().FirstOrDefaultAsync(c => c.CaseId == caseIdGuid, cancellationToken).ConfigureAwait(false);
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+
+        CaseEntity? caseRecord = await db.CaseEntities.AsNoTracking().FirstOrDefaultAsync(c => c.CaseId == caseIdGuid, cancellationToken).ConfigureAwait(false);
 
         if (caseRecord is null)
         {
@@ -80,8 +84,8 @@ public sealed class EvidenceStore : IEvidenceStore
                 Timestamp = item.Timestamp
         };
 
-        _context.EvidenceEntities.Add(entity);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        db.EvidenceEntities.Add(entity);
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
 
@@ -101,9 +105,11 @@ public sealed class EvidenceStore : IEvidenceStore
             return [];
         }
 
-        List<EvidenceEntity> entities = await _context.EvidenceEntities
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+
+        List<EvidenceEntity> entities = await db.EvidenceEntities
                 .AsNoTracking()
-                .Where(e => _context.CaseEntities.Any(c => c.CaseId == caseIdGuid && c.EvidenceId == e.EvidenceId))
+                .Where(e => db.CaseEntities.Any(c => c.CaseId == caseIdGuid && c.EvidenceId == e.EvidenceId))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 

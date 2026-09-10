@@ -29,46 +29,43 @@
             </Style>
 
             <Style TargetType="mdvctrl:CodeBlockTextBlock">
-                <Setter Property="Background" Value="DarkGray" />
-                <Setter Property="Foreground" Value="Black" />
+                <Setter Property="Background" Value="{DynamicResource ChatCodeBackground}" />
+                <Setter Property="Foreground" Value="{DynamicResource ChatCodeForeground}" />
             </Style>
             <Style TargetType="mdvctrl:CodeBlockHeaderBorder">
-                <Setter Property="Background" Value="Silver" />
+                <Setter Property="Background" Value="{DynamicResource ChatCodeHeaderBackground}" />
             </Style>
 
             <!-- Message DataTemplate -->
             <DataTemplate DataType="{x:Type models:ChatMessage}">
+                <!-- All visual state lives in the Style so DataTriggers can override it;
+                     local values on the Border would defeat the triggers (DP precedence). -->
                 <Border Name="ChatBubble"
                         Margin="0,5"
                         Padding="14,10"
-                        HorizontalAlignment="Stretch"
-                        Background="{DynamicResource ChatSurface2}"
-                        BorderBrush="{DynamicResource ChatBorder}"
-                        BorderThickness="1"
-                        CornerRadius="12,12,12,12">
-                    <Border.MaxWidth>
-                        <Binding Path="ActualWidth"
-                                 RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBoxItem}, AncestorLevel=1}"
-                                 Converter="{StaticResource PercentageWidthConverter}"
-                                 ConverterParameter="0.8" />
-                    </Border.MaxWidth>
+                        MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBoxItem}, AncestorLevel=1}, Converter={StaticResource PercentageWidthConverter}, ConverterParameter=0.8}">
                     <Border.Style>
                         <Style TargetType="{x:Type Border}">
-                            <Setter Property="HorizontalAlignment" Value="Left" />
                             <Setter Property="Background" Value="{DynamicResource ChatSurface2}" />
                             <Setter Property="BorderBrush" Value="{DynamicResource ChatBorder}" />
+                            <Setter Property="BorderThickness" Value="1" />
+                            <Setter Property="CornerRadius" Value="12" />
+                            <Setter Property="HorizontalAlignment" Value="Left" />
+                            <!-- ChatRole exposes the role as its instance string Value
+                                 ('user' / 'assistant' / 'system' / 'tool'); the static
+                                 ChatRole.User members cannot be used in a Binding path. -->
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Role.User}" Value="True">
+                                <DataTrigger Binding="{Binding Role.Value}" Value="user">
                                     <Setter Property="HorizontalAlignment" Value="Right" />
                                     <Setter Property="Background" Value="{DynamicResource ChatUserBubble}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource ChatUserBubble}" />
                                     <Setter Property="CornerRadius" Value="12,12,2,12" />
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding Role.Assistant}" Value="True">
+                                <DataTrigger Binding="{Binding Role.Value}" Value="assistant">
                                     <Setter Property="Background" Value="{DynamicResource ChatSurface}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource ChatAccent}" />
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding Role.System}" Value="True">
+                                <DataTrigger Binding="{Binding Role.Value}" Value="system">
                                     <Setter Property="Background" Value="{DynamicResource ChatSurface2}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource ChatDanger}" />
                                 </DataTrigger>
@@ -109,7 +106,7 @@
                                           IsManipulationEnabled="True"
                                           HorizontalAlignment="Stretch"
                                           HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled"
                                           WordWrap="True" />
                     </StackPanel>
                 </Border>
@@ -118,12 +115,13 @@
             <!-- Send button style -->
             <Style x:Key="SendButtonStyle" TargetType="Button">
                 <Setter Property="Background" Value="{DynamicResource ChatAccent}" />
-                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Foreground" Value="{DynamicResource ChatTextPrimary}" />
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Padding" Value="22,0" />
                 <Setter Property="Height" Value="40" />
                 <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="FocusVisualStyle" Value="{StaticResource ChatFocusVisual}" />
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Template">
                     <Setter.Value>
@@ -163,6 +161,7 @@
                 <Setter Property="Padding" Value="16,0" />
                 <Setter Property="Height" Value="40" />
                 <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="FocusVisualStyle" Value="{StaticResource ChatFocusVisual}" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
@@ -438,7 +437,7 @@
                                        FontSize="11"
                                        HorizontalAlignment="Center" />
                             <TextBlock Text="{Binding InvestigationCount}"
-                                       Foreground="#3B82F6"
+                                       Foreground="{DynamicResource ChatStatusInfo}"
                                        FontSize="18"
                                        FontWeight="Bold"
                                        HorizontalAlignment="Center" />
@@ -457,7 +456,7 @@
                                        FontSize="11"
                                        HorizontalAlignment="Center" />
                             <TextBlock Text="{Binding EscalatedCount}"
-                                       Foreground="#F59E0B"
+                                       Foreground="{DynamicResource ChatStatusAttention}"
                                        FontSize="18"
                                        FontWeight="Bold"
                                        HorizontalAlignment="Center" />
@@ -476,7 +475,7 @@
                                        FontSize="11"
                                        HorizontalAlignment="Center" />
                             <TextBlock Text="{Binding AlertedCount}"
-                                       Foreground="#EF4444"
+                                       Foreground="{DynamicResource ChatStatusCritical}"
                                        FontSize="18"
                                        FontWeight="Bold"
                                        HorizontalAlignment="Center" />

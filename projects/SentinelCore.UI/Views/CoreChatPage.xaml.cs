@@ -6,13 +6,10 @@
 
 
 
-using System.ComponentModel;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
-
-using Microsoft.Extensions.AI;
 
 using SentinelCore.UI.ViewModels;
 
@@ -26,8 +23,7 @@ namespace SentinelCore.UI.Views;
 ///     Code-behind for the chat page.
 ///     Responsibilities scoped to this file:
 ///     • ViewModel wiring and DataContext assignment
-///     • Collection synchronization for cross-thread message updates
-///     • Auto-scroll to latest message (new message + streaming content updates)
+///     • Auto-scroll to the latest message as items arrive
 ///     • Enter-to-send keyboard shortcut
 /// </summary>
 public partial class CoreChatPage : Page
@@ -38,17 +34,18 @@ public partial class CoreChatPage : Page
 
 
 
+    /// <summary>
+    ///     Creates the page, binds the view-model, and wires auto-scroll.
+    /// </summary>
+    /// <param name="viewModel">The chat view-model injected by DI.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="viewModel" /> is <c>null</c>.</exception>
     public CoreChatPage(CoreChatViewModel? viewModel)
     {
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         InitializeComponent();
         DataContext = _viewModel;
 
-        // Enable cross-thread collection synchronization using the ViewModel's sync root.
-        // This keeps the ViewModel free of WPF-specific BindingOperations calls.
-        BindingOperations.EnableCollectionSynchronization(_viewModel.Messages, _viewModel.MessagesSyncRoot);
-
-        _viewModel.Messages.CollectionChanged += (_, _) => ScrollToBottom();
+        _viewModel.Messages.CollectionChanged += OnMessagesCollectionChanged;
         Unloaded += OnUnloaded;
     }
 
@@ -76,9 +73,12 @@ public partial class CoreChatPage : Page
 
 
 
-    private void Message_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    /// <summary>
+    ///     Scrolls the feed to the newest message whenever the collection changes.
+    /// </summary>
+    private void OnMessagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ChatMessage.Text))
+        if (e.Action is NotifyCollectionChangedAction.Add)
         {
             ScrollToBottom();
         }
@@ -91,7 +91,7 @@ public partial class CoreChatPage : Page
     private void OnUnloaded(object? sender, RoutedEventArgs? e)
     {
         Unloaded -= OnUnloaded;
-        _viewModel.Dispose();
+        _viewModel.Messages.CollectionChanged -= OnMessagesCollectionChanged;
     }
 
 
@@ -104,10 +104,9 @@ public partial class CoreChatPage : Page
     /// </summary>
     private void ScrollToBottom()
     {
-        /*
         if (!MessagesListBox.Dispatcher.CheckAccess())
         {
-            MessagesListBox.Dispatcher.Invoke(ScrollToBottom);
+            MessagesListBox.Dispatcher.InvokeAsync(ScrollToBottom);
             return;
         }
 
@@ -117,6 +116,5 @@ public partial class CoreChatPage : Page
         }
 
         MessagesListBox.ScrollIntoView(MessagesListBox.Items[^1]);
-        */
     }
 }

@@ -6,8 +6,6 @@
 
 
 
-using System.Collections.ObjectModel;
-
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -19,6 +17,8 @@ using SentinelCore.Application;
 using SentinelCore.Cfe;
 using SentinelCore.Events;
 using SentinelCore.UI.Services;
+
+using System.Collections.ObjectModel;
 
 
 
@@ -92,8 +92,6 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     [ObservableProperty] private string _statusMessage = string.Empty;
 
-    private readonly object _syncRoot = new();
-
 
 
 
@@ -127,6 +125,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
         _appShutdownToken = appShutdownToken;
 
+
         _logger.LogInformation("CoreChatViewModel initialized.");
 
         _events.SentinelOutputEvent += OnSentinelOutput;
@@ -146,22 +145,18 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     /// <summary>
     ///     Gets the observable collection of chat messages displayed in the UI.
-    ///     Collection synchronization is handled by the View code-behind to
-    ///     keep this ViewModel free of WPF-specific types.
+    ///     All mutations are marshaled to the UI thread by <see cref="AddToMessages" />.
     /// </summary>
     public ObservableCollection<ChatMessage> Messages { get; } = new();
 
+
+
+
+
     /// <summary>
-    ///     Gets the synchronization lock for <see cref="Messages" />.
-    ///     The View code-behind uses this to enable collection synchronization
-    ///     via <c>BindingOperations.EnableCollectionSynchronization</c>.
+    ///     Releases the linked cancellation source and unsubscribes from the
+    ///     shared event bus so no callbacks reach a dead view-model.
     /// </summary>
-    public object MessagesSyncRoot => _syncRoot;
-
-
-
-
-
     public void Dispose()
     {
         if (_disposed)
@@ -290,19 +285,16 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     {
         try
         {
-            int open = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Open, _appShutdownToken).ConfigureAwait(false);
-            int investigation = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Investigation, _appShutdownToken).ConfigureAwait(false);
-            int escalated = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Escalated, _appShutdownToken).ConfigureAwait(false);
-            int alerted = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Alerted, _appShutdownToken).ConfigureAwait(false);
-            int blocked = await _caseFlowEngine.GetCaseCountByStatusAsync(CaseStatus.Blocked, _appShutdownToken).ConfigureAwait(false);
+            // Single grouped query instead of one round-trip per status.
+            IReadOnlyDictionary<CaseStatus, int> counts = await _caseFlowEngine.GetCaseStatusCountsAsync(_appShutdownToken).ConfigureAwait(false);
 
             _dispatcher.Invoke(() =>
             {
-                OpenCount = open;
-                InvestigationCount = investigation;
-                EscalatedCount = escalated;
-                AlertedCount = alerted;
-                BlockedCount = blocked;
+                OpenCount = counts.TryGetValue(CaseStatus.Open, out int open) ? open : 0;
+                InvestigationCount = counts.TryGetValue(CaseStatus.Investigation, out int investigation) ? investigation : 0;
+                EscalatedCount = counts.TryGetValue(CaseStatus.Escalated, out int escalated) ? escalated : 0;
+                AlertedCount = counts.TryGetValue(CaseStatus.Alerted, out int alerted) ? alerted : 0;
+                BlockedCount = counts.TryGetValue(CaseStatus.Blocked, out int blocked) ? blocked : 0;
             });
         }
         catch (OperationCanceledException)
@@ -378,6 +370,14 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         {
             _logger.LogInformation("Send cancelled by user.");
             StatusMessage = "Request cancelled.";
+        }
+        catch (Exception ex)
+        {
+            // Surface orchestration failures in-chat instead of letting them escape to
+            // the dispatcher's unhandled-exception handler, which shuts the app down.
+            _logger.LogError(ex, "Orchestration failed while sending a chat message.");
+            StatusMessage = $"Request failed: {ex.Message}";
+            AddToMessages(new ChatMessage(ChatRole.Assistant, $"⚠️ The request failed: {ex.Message}"));
         }
         finally
         {

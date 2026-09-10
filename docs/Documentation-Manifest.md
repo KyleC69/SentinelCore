@@ -30,4 +30,5 @@ last_updated: 2026-07-19
 | DOC-018 | Memory Layer Component | Active | 2026-07-19 | v1.0 |
 | DOC-019 | Safety Rails Component | Active | 2026-07-19 | v1.0 |
 | DOC-020 | Persistence Component | Active | 2026-07-19 | v1.0 |
-
+| DOC-021 | MCP Server Registry Component | Active | 2026-09-09 | v1.0 |
+| DOC-022 | Pattern Lock (architecture/pattern-lock.md) — authoritative architectural patterns & rules | Active | 2026-09-10 | v1.0 |

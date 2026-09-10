@@ -12,16 +12,32 @@ Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combine
 NOTE: The projects in this repo are not complete and are still under active development, expect changes and check back for updates.
 
 BUGS: Please report any bugs to the issues section of this repo. Some features may not be fully implemented yet.
+
 ---
 
-## Key Features
+## Key Features Development Status
+| Feature | Description |   Status  |
+| :------: | :-----------: | :---------: |
+| RAG Knowledge Base | Vectorized indexing of remote resources for on-demand retrieval | 75%   |
+| Multi-agent Orchestration | Several orchestrated agents perform investigation tasks as  collective and adversaries | ✅ |
+| Pattern Memory | Vectorized case history & resolutions enables instant resolution when a similar signal has been seen before | 50% |
+| Signal-driven Investigations | Submit a natural-language prompt, event log error, or automated anomaly alert the let the AI investigate | ✅ |
+| Deterministic Case Lifecycle | 11-state state machine with safety gating ensures no case transitions without validation | ✅ |
+| Safety Engine | `ISafetyMiddleware` gates every state transition; hosts can inject custom rules to block, allow, or modify actions | ✅ |
+| 35+ Agent Personas | Slightly different perspectives produce richer debate and more accurate results | ✅ |
+| Tools  |  80+ tools for Windows system interrogation packaged as MCP server | 70% |
+| MCP Plugins | Pluggable design allows system to shift focus to any domain, medical, fabrication, manufacturing etc. by switching knowledge sources and toolsets that act as the hands.| 50% |
+| LLM providers | Support for various LLM providers including Ollama (local), OpenAI, Azure OpenAI, GitHub Models, Anthropic, ONNX, or Foundry endpoints | ✅ |
 
+
+---
+# Feature Details
 - **Multi-agent orchestration** — TheCore agent is at the heart and handles main reasoning and long term context memory. Several supportive agents are used for short term workload and pure decision gating. Nested workflows and executors keeps logic modular and easy to debug. Isolated core keeps main context clean and reduces model latency and increases over all reasoning accuracy. Design breaks up workload to allow for smaller local models to perform targeted tasks and not prone to stall.
-
+- **Air-gapped capable** — Ollama local model endpoint allows for fully air-gapped operation. No internet connection is required to run the system. All models and tools can be run locally.
 - **Versatile Design** - Pluggable RAG knowledge base allows system to shift focus to any domain, medical, fabrication, manufacturing etc. RAG features vector indexing summaries of remote resources and pulling remote data only when needed and relevant to task.
-
-- **Pattern memory** — Vectorized case history enables instant resolution when a similar signal has been seen before
-- **Signal-driven investigations** — Submit a natural-language prompt, event log error, or automated anomaly alert and let the AI investigate
+- **RAG Knowledge Base** — Vectorized indexing of remote resources for on-demand retrieval. Only retrieves when needed. Local db only contains minimal metadata and the searchable vectors, could be a summary or snippet from entire doc/page. You only store locally your vectors and where the page/doc lives in the wild if you need it. No need to ingest entire websites or document stores. Can also use MCP servers as knowledge source for RAG system.
+- **Pattern memory** — Vectorized case history & resolutions enables instant resolution when a similar signal has been seen before.
+- **Signal-driven investigations** — Submit a natural-language prompt, event log error, or automated anomaly alert the let the AI investigate
 - **Deterministic case lifecycle** — 11-state state machine with safety gating ensures no case transitions without validation
 - **Safety engine** — `ISafetyMiddleware` gates every state transition; hosts can inject custom rules to block, allow, or modify actions
 - **35+ agent personas** — Slightly different perspectives produce richer debate and more accurate results

@@ -41,10 +41,12 @@ public interface INavigationService
 
     /// <summary>
     ///     Navigates the shell frame to the page associated with a view-model type.
+    ///     The frame's navigation journal is always cleared after navigating —
+    ///     this shell uses tab-style navigation and transient pages must not be
+    ///     retained by the back stack.
     /// </summary>
     /// <param name="pageKey">The view-model type full name identifying the page.</param>
     /// <param name="parameter">Optional parameter passed to <c>OnNavigatedTo</c>.</param>
-    /// <param name="clearNavigation">Removes back-stack entries after navigating.</param>
     /// <returns>True when navigation occurred.</returns>
-    bool NavigateTo(string? pageKey, object? parameter = null, bool clearNavigation = false);
+    bool NavigateTo(string? pageKey, object? parameter = null);
 }

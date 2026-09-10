@@ -39,6 +39,16 @@
                     HorizontalAlignment="Left"
                     Content="Look Up" />
 
+                <!-- Busy indicator while a lookup or advance is in flight -->
+                <ProgressBar
+                    Height="3"
+                    Margin="0,12,0,0"
+                    HorizontalAlignment="Stretch"
+                    IsIndeterminate="True"
+                    Foreground="{DynamicResource ChatAccent}"
+                    Background="Transparent"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+
                 <TextBlock
                     Style="{StaticResource BodyText}"
                     Margin="0,10,0,0"
@@ -48,7 +58,7 @@
                     Style="{StaticResource SubtitleText}"
                     Text="Advance To Status" />
                 <ComboBox
-                    ItemsSource="{Binding AvailableStatuses}"
+                    ItemsSource="{Binding AllowedTransitions}"
                     SelectedItem="{Binding SelectedTargetStatus}"
                     Style="{StaticResource FormComboBoxStyle}"
                     HorizontalAlignment="Left" />

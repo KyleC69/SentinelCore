@@ -78,6 +78,48 @@ public interface ICaseFlowEngine
 
 
 
+    /// <summary>
+    ///     Returns the count of cases in every status in a single grouped query.
+    ///     Statuses with no cases are included with a count of zero.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A read-only dictionary mapping each case status to its case count.</returns>
+    Task<IReadOnlyDictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns the case with the given business identifier, or <c>null</c> when no
+    /// matching case exists.
+    /// </summary>
+    /// <param name="caseId">The business identifier of the case.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The matching case, or <c>null</c> when not found.</returns>
+    Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns the statuses a case in the given status may legally transition to.
+    /// </summary>
+    /// <param name="status">The current status of the case.</param>
+    /// <returns>A read-only list of the statuses reachable from <paramref name="status" />.</returns>
+    IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status);
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Returns all cases currently in the specified <paramref name="status" />.
@@ -278,6 +320,88 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
 
+    /// <summary>
+    ///     Returns the count of cases in every status in a single grouped query.
+    ///     Statuses with no cases are included with a count of zero.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A read-only dictionary mapping each case status to its case count.</returns>
+    public async Task<IReadOnlyDictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default)
+    {
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        Dictionary<CaseStatus, int> counts = Enum.GetValues<CaseStatus>()
+            .ToDictionary(status => status, _ => 0);
+
+        List<StatusCount> grouped = await db.CaseEntities
+            .GroupBy(c => c.Status)
+            .Select(g => new StatusCount(g.Key, g.Count()))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        foreach (StatusCount group in grouped)
+        {
+            counts[(CaseStatus)group.Status] = group.Count;
+        }
+
+        return counts;
+    }
+
+    /// <summary>
+    ///     A single grouped count row: the raw status ordinal and its case count.
+    /// </summary>
+    /// <param name="Status">The raw database status ordinal.</param>
+    /// <param name="Count">The number of cases in that status.</param>
+    private sealed record StatusCount(int Status, int Count);
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns the case with the given business identifier, or <c>null</c> when no
+    ///     matching case exists.
+    /// </summary>
+    /// <param name="caseId">The business identifier of the case.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The matching case, or <c>null</c> when not found.</returns>
+    public async Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken = default)
+    {
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        CaseEntity? entity = await db.CaseEntities
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken)
+                .ConfigureAwait(false);
+
+        return entity?.ToCase();
+    }
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns the statuses a case in the given status may legally transition to.
+    /// </summary>
+    /// <param name="status">The current status of the case.</param>
+    /// <returns>A read-only list of the statuses reachable from <paramref name="status" />.</returns>
+    public IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status)
+    {
+        return AllowedTransitions.TryGetValue(status, out HashSet<CaseStatus>? allowed)
+            ? allowed.ToList()
+            : [];
+    }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Returns all cases currently in the specified <paramref name="status" />.
@@ -343,23 +467,6 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
 
-
-
-
-
-    /// <summary>
-    ///     Retrieves a case by its identifier, or <c>null</c> when no matching case exists.
-    /// </summary>
-    private async Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken)
-    {
-        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        CaseEntity? entity = await db.CaseEntities
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken)
-                .ConfigureAwait(false);
-
-        return entity?.ToCase();
-    }
 
 
 

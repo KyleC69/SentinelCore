@@ -21,18 +21,18 @@ The **Case Flow Engine (CFE)** is the **single owner of case lifecycle state**. 
 * **Coordinator of work**: requests actions from the Core/Manager agent pair but never performs reasoning itself.
 * **Guardrail for scope**: prevents uncontrolled branching, looping, or state drift.
 
-The CFE is _not_ an agent and does _not_ call LLMs directly. It is a deterministic state machine that manages the case state.
+The CFE is *not* an agent and does *not* call LLMs directly. It is a deterministic state machine that manages the case state.
 
 ---
 
 ## 2. Responsibilities
 
-- **Case creation** from a `Signal` (the triggering event)
-- **State transitions** via `AdvanceCaseAsync(caseId, newStatus)` with validation
-- **Persistence coordination** via `ICaseRepository`, `IEvidenceStore`, `ISignalRepository`, `IPatternMemoryStore`
-- **Safety gating** via `ISafetyMiddleware` before state transitions
-- **Evidence linkage** — every evidence item is tied to a `CaseRecordId`
-- **Signal-to-case binding** — atomic creation of `Signal` + `Case` + FK link in one transaction
+* **Case creation** from a `Signal` (the triggering event)
+* **State transitions** via `AdvanceCaseAsync(caseId, newStatus)` with validation
+* **Persistence coordination** via `ICaseRepository`, `IEvidenceStore`, `ISignalRepository`, `IPatternMemoryStore`
+* **Safety gating** via `ISafetyMiddleware` before state transitions
+* **Evidence linkage** — every evidence item is tied to a `CaseRecordId`
+* **Signal-to-case binding** — atomic creation of `Signal` + `Case` + FK link in one transaction
 
 ---
 
@@ -45,18 +45,26 @@ public interface ICaseFlowEngine
 {
     Task<Guid> CreateCaseAsync(Signal signal, CancellationToken cancellationToken = default);
     Task AdvanceCaseAsync(Guid caseId, CaseStatus status, CancellationToken cancellationToken = default);
+    Task<int> GetCaseCountByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default);
+    Task<IReadOnlyDictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default);
+    Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken = default);
+    IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status);
 }
 ```
 
-- `CreateCaseAsync(Signal)` → returns `Guid` (the `CaseId`). Creates `Case` with `Status = CaseStatus.Open`, persists `Signal` + `Case` atomically via `ICaseRepository.CreateCaseWithSignalAsync`.
-- `AdvanceCaseAsync(Guid, CaseStatus)` → validates transition, updates `Case.Status` and `Case.UpdatedAt`, persists via `ICaseRepository.UpdateAsync`.
+* `CreateCaseAsync(Signal)` → returns `Guid` (the `CaseId`). Creates `Case` with `Status = CaseStatus.Open`, persists `Signal` + `Case` atomically via `ICaseRepository.CreateCaseWithSignalAsync`.
+* `AdvanceCaseAsync(Guid, CaseStatus)` → validates transition, updates `Case.Status` and `Case.UpdatedAt`, persists via `ICaseRepository.UpdateAsync`.
+* `GetCaseCountByStatusAsync(CaseStatus)` → count for a single status.
+* `GetCaseStatusCountsAsync()` → counts for **all** statuses in one grouped query; statuses with no cases report zero. UI list/count screens must use this instead of per-status loops (see PL-8.6).
+* `GetCaseByIdAsync(Guid)` → the case with the given business id, or `null` when not found.
+* `GetAllowedTransitions(CaseStatus)` → the statuses reachable from the given status per the lifecycle map; UIs use this to offer only legal advance targets.
 
 ### `CaseStatus` (`SentinelCore.Contracts.CaseFlow.CaseStatus`)
 
 **13-state deterministic lifecycle enum** (with XML docs on each value):
 
 | Value | Ordinal | Meaning |
-|-------|---------|---------|
+| ------- | --------- | --------- |
 | `Open` | 0 | Case created, awaiting analysis |
 | `Analysis` | 1 | Core agent analyzing signal, building context |
 | `Investigation` | 2 | Magnetic workflow executing (Manager + Workers) |
@@ -203,14 +211,14 @@ public DbSet<PatternMemoryEntity> PatternMemories { get; set; }
 public DbSet<ResolutionEntity> Resolutions { get; set; }
 ```
 
-- SQL Server provider (`UseSqlServer`)
-- `SqlVector<float>` for `SignalEmbedding` / `SummaryEmbedding` on `PatternMemoryEntity` (vector similarity search)
-- FK relationships: `CaseEntity` 1→N `EvidenceEntity`, `SignalEntity`, `InvestigationPlanEntity`, `PatternMemoryEntity`, `ResolutionEntity`
+* SQL Server provider (`UseSqlServer`)
+* `SqlVector<float>` for `SignalEmbedding` / `SummaryEmbedding` on `PatternMemoryEntity` (vector similarity search)
+* FK relationships: `CaseEntity` 1→N `EvidenceEntity`, `SignalEntity`, `InvestigationPlanEntity`, `PatternMemoryEntity`, `ResolutionEntity`
 
 ### Entity Mappings (all in `SentinelCore.CaseFlowEngine.Persistence`)
 
 | Entity | Table | Key | Notable |
-|--------|-------|-----|---------|
+| -------- | ------- | ----- | --------- |
 | `CaseEntity` | `Cases` | `Id` (PK), `CaseRecordId` (unique) | `CaseId` business key, `Status` (int), navigation to all children |
 | `EvidenceEntity` | `Evidence` | `Id` (PK) | FK → `CaseEntity.CaseRecordId`, `ContentJson` (nvarchar(max)) |
 | `SignalEntity` | `Signals` | `Id` (PK) | FK → `CaseEntity.CaseRecordId`, `SignalText`, `Source` |
@@ -224,7 +232,7 @@ public DbSet<ResolutionEntity> Resolutions { get; set; }
 ## 5. Repository Abstractions (from `SentinelCore.Contracts.Abstractions`)
 
 | Interface | Purpose | Key Methods |
-|-----------|---------|-------------|
+| ----------- | --------- | ------------- |
 | `ICaseRepository` | Case persistence | `CreateAsync`, `CreateCaseWithSignalAsync`, `GetByIdAsync`, `ListAsync`, `UpdateAsync` |
 | `IEvidenceStore` | Evidence persistence | `AddAsync`, `GetByCaseIdAsync` |
 | `ISignalRepository` | Signal persistence | `AddAsync`, `AssignToCaseAsync` |
@@ -274,23 +282,23 @@ public class CaseFlowEngine : ICaseFlowEngine
 ```
 
 **Current implementation status:**
-- ✅ `CreateCaseAsync` — fully implemented with atomic `Signal`+`Case` persistence
-- ❌ `AdvanceCaseAsync` — **throws `NotImplementedException`** (transition validation + safety gating TODO)
+* ✅ `CreateCaseAsync` — fully implemented with atomic `Signal`+`Case` persistence
+* ❌ `AdvanceCaseAsync` — **throws `NotImplementedException`** (transition validation + safety gating TODO)
 
 ---
 
 ## 7. Safety Integration
 
-- `ISafetyMiddleware` (from `SentinelCore.Contracts.SafetyEngine`) is injected into `CaseFlowEngine`
-- **TODO:** Before any `AdvanceCaseAsync` transition, invoke `_safetyMiddleware.InvokeAsync(context, next)` with `SafetyContext` containing `CaseId`, `FromStatus`, `ToStatus`, `Actor`
-- `SafetyVerdict.Allow` → proceed; `SafetyVerdict.Deny` / `SafetyVerdict.Escalate` → throw / transition to `Escalated` / `Blocked`
+* `ISafetyMiddleware` (from `SentinelCore.Contracts.SafetyEngine`) is injected into `CaseFlowEngine`
+* **TODO:** Before any `AdvanceCaseAsync` transition, invoke `_safetyMiddleware.InvokeAsync(context, next)` with `SafetyContext` containing `CaseId`, `FromStatus`, `ToStatus`, `Actor`
+* `SafetyVerdict.Allow` → proceed; `SafetyVerdict.Deny` / `SafetyVerdict.Escalate` → throw / transition to `Escalated` / `Blocked`
 
 ---
 
 ## 8. Contracts & Invariants
 
 | Invariant | Enforcement |
-|-----------|-------------|
+| ----------- | ------------- |
 | Single source of truth for `CaseStatus` | Only `CaseFlowEngine.AdvanceCaseAsync` mutates `Case.Status` |
 | Atomic `Signal`+`Case` creation | `ICaseRepository.CreateCaseWithSignalAsync` uses single transaction |
 | Evidence always linked to valid `CaseRecordId` | FK constraint in DB; `Evidence.CaseRecordId` required |
@@ -364,15 +372,15 @@ public class SentinelCoreSettings
 }
 ```
 
-- `SqlConnectionString` → `SentinelCoreDbContext` via `SentinelCoreBuilder`
-- `OrchestrationType` → selects `ISentinelWorkflow` implementation via `IOrchestrationFactory`
+* `SqlConnectionString` → `SentinelCoreDbContext` via `SentinelCoreBuilder`
+* `OrchestrationType` → selects `ISentinelWorkflow` implementation via `IOrchestrationFactory`
 
 ---
 
 ## 11. Open TODOs / Known Gaps
 
 | Item | Location | Status |
-|------|----------|--------|
+| ------ | ---------- | -------- |
 | `CaseStatusTransitionValidator` (transition matrix) | `CaseFlowEngine.AdvanceCaseAsync` | ❌ Not implemented |
 | `ISafetyMiddleware` integration in `AdvanceCaseAsync` | `CaseFlowEngine` | ❌ Not implemented |
 | `AdvanceCaseAsync` full implementation | `CaseFlowEngine.cs` | ❌ Throws `NotImplementedException` |
@@ -385,7 +393,7 @@ public class SentinelCoreSettings
 ## 12. Related Components
 
 | Component | Relationship |
-|-----------|--------------|
+| ----------- | -------------- |
 | `OrchestrationComponent` | `TheCoreOrchestration` calls `ICaseFlowEngine.AdvanceCaseAsync` at each phase transition |
 | `SafetyRailsComponent` | Provides `ISafetyMiddleware` for transition gating |
 | `MemoryLayerComponent` | Provides `IPatternMemoryStore` for pattern memory persistence/search |

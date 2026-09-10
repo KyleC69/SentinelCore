@@ -29,6 +29,12 @@ public sealed class SentinelCoreSettings
     public ModelProfile? DefaultModel { get; set; }
 
     /// <summary>
+    ///     Model for the Magnetic Orchestration Manager agent. When <c>null</c>, the
+    ///     Manager falls back to <see cref="DefaultModel" />.
+    /// </summary>
+    public ModelProfile? ManagerModel { get; set; }
+
+    /// <summary>
     ///     Default utility model options used when no specialized utility model is configured.
     /// </summary>
     public ModelProfile? DefaultUtilityModel { get; set; }

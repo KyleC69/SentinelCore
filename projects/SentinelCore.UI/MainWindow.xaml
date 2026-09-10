@@ -6,6 +6,7 @@
         mc:Ignorable="d"
         Title="SentinelCore"
         Height="800" Width="1100"
+        MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource ChatBackground}">
 
@@ -18,7 +19,7 @@
             <Setter Property="Padding" Value="14,8" />
             <Setter Property="Margin" Value="0,0,4,0" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource ChatFocusVisual}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
@@ -63,15 +64,23 @@
                 <RadioButton x:Name="NavChatButton"
                              Style="{StaticResource NavButtonStyle}"
                              GroupName="Nav"
-                             Content="Chat" />
+                             AutomationProperties.Name="Chat"
+                             Content="_Chat" />
                 <RadioButton x:Name="NavCasesButton"
                              Style="{StaticResource NavButtonStyle}"
                              GroupName="Nav"
-                             Content="Cases" />
+                             AutomationProperties.Name="Cases"
+                             Content="_Cases" />
                 <RadioButton x:Name="NavCreateCaseButton"
                              Style="{StaticResource NavButtonStyle}"
                              GroupName="Nav"
-                             Content="Create Case" />
+                             AutomationProperties.Name="Create Case"
+                             Content="Create _Case" />
+                <RadioButton x:Name="NavMcpServersButton"
+                             Style="{StaticResource NavButtonStyle}"
+                             GroupName="Nav"
+                             AutomationProperties.Name="MCP Servers"
+                             Content="_MCP Servers" />
             </StackPanel>
         </Border>
 

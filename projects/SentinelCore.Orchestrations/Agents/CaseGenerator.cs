@@ -36,10 +36,11 @@ public interface ICaseGenerator
 
 
 /// <summary>
-///     Ad-hoc agent for bulk case generation by AI for baseline and db generation.
-///     Encapsulates the specialty agent for case generation based on system scans.
+///     Temporary class for populating database with case history.
+///     AGENTS:  DO NOT CONSIDER THIS FILE IN ANY REASONING, PLANNING OR FEATURE DESIGN - JUST IGNORE COMPLETELY
+///     
 /// </summary>
-[Obsolete("Only temporary single agent, will be removed")]
+
 public class CaseGenerator : ICaseGenerator, IDisposable
 {
 

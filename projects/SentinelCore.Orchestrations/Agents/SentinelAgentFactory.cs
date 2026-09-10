@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging.Console;
 using SentinelCore.Abstractions;
 using SentinelCore.Agents.Middleware;
 using SentinelCore.Events;
+using SentinelCore.Mcp;
 using SentinelCore.SafetyEngine;
 using SentinelCore.SafetyEngine.Rules;
 
@@ -30,7 +31,7 @@ namespace SentinelCore.Agents;
 
 public interface ISentinelAgentFactory
 {
-    Task<AIAgent> BuildFromProfileAsync([System.Diagnostics.CodeAnalysis.NotNull] AgentProfile profile, AgentRole? overrideRole = null);
+    Task<AIAgent> BuildFromProfileAsync([System.Diagnostics.CodeAnalysis.NotNull] AgentProfile profile, AgentRole? overrideRole = null, CancellationToken cancellationToken = default);
 }
 
 
@@ -65,6 +66,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
     private readonly ISentinelCoreEvents _events;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IMcpServerRegistry _mcpServerRegistry;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true, PropertyNameCaseInsensitive = true };
 
 
@@ -79,10 +81,12 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// </summary>
     /// <param name="events">The event hub for publishing agent activity.</param>
     /// <param name="loggerFactory">The logger factory for trace logging.</param>
-    public SentinelAgentFactory([System.Diagnostics.CodeAnalysis.NotNull] ISentinelCoreEvents events, [System.Diagnostics.CodeAnalysis.NotNull] ILoggerFactory loggerFactory)
+    /// <param name="mcpServerRegistry">The MCP server registry that provides connected server tools.</param>
+    public SentinelAgentFactory([System.Diagnostics.CodeAnalysis.NotNull] ISentinelCoreEvents events, [System.Diagnostics.CodeAnalysis.NotNull] ILoggerFactory loggerFactory, [System.Diagnostics.CodeAnalysis.NotNull] IMcpServerRegistry mcpServerRegistry)
     {
         _events = events ?? throw new ArgumentNullException(nameof(events));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _mcpServerRegistry = mcpServerRegistry ?? throw new ArgumentNullException(nameof(mcpServerRegistry));
 
         JsonConsoleFormatterOptions options = new() { IncludeScopes = true, UseUtcTimestamp = false, JsonWriterOptions = new JsonWriterOptions { Indented = true, MaxDepth = 5, SkipValidation = false } };
     }
@@ -115,13 +119,17 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     ///     It also creates and wraps the necessary chat client, applies middleware, and configures the agent
     ///     with the appropriate options.
     /// </remarks>
-    public async Task<AIAgent> BuildFromProfileAsync([System.Diagnostics.CodeAnalysis.NotNull] AgentProfile profile, AgentRole? overrideRole = null)
+    public async Task<AIAgent> BuildFromProfileAsync([System.Diagnostics.CodeAnalysis.NotNull] AgentProfile profile, AgentRole? overrideRole = null, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(profile);
 
 
         // Validates the agent name and ensures uniqueness across all active agents within the platform..
         // There is conflicting documentation on which needs to be unique: the AgentId or the AgentName.
+        // Capture the logical name requested by the caller before ValidateUniqueAgentName rewrites it for
+        // collision avoidance. This is the identity used to decide which MCP servers are available.
+        string logicalAgentName = profile.AgentName;
+
         (string uniqueId, string uniqueName) = ValidateUniqueAgentName(profile.AgentId, profile.AgentName);
         ActiveAgents.Add(uniqueId, uniqueName);
         profile.AgentId = uniqueId;
@@ -138,7 +146,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         IChatClient loggingClient = WrapLoggingClient(eventClient, profile); //Client
 
 
-        ChatClientAgentOptions agentOptions = BuildAgentOptions(profile);
+        ChatClientAgentOptions agentOptions = await BuildAgentOptionsAsync(profile, logicalAgentName, cancellationToken).ConfigureAwait(false);
         // The factory always creates ChatOptions before this line, so null-forgiving is safe.
 
         ChatClientAgent agent = new(loggingClient, agentOptions);
@@ -204,40 +212,76 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     ///     This is the ONLY place model tuning parameters (Temperature, TopP, TopK, MaxOutputTokens)
     ///     are assigned — they flow into <see cref="ChatOptions" /> which the ChatClientAgent reads.
     /// </summary>
-    private static ChatClientAgentOptions BuildAgentOptions(AgentProfile profile)
+    /// <param name="profile">The <see cref="AgentProfile" /> containing base agent configuration.</param>
+    /// <param name="logicalAgentName">
+    ///     The logical agent name used to filter MCP servers by assignment.
+    ///     An empty value or a server with no assignments allows the server to be used by any agent.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    ///     A task that resolves to a fully configured <see cref="ChatClientAgentOptions" /> instance.
+    /// </returns>
+    private async Task<ChatClientAgentOptions> BuildAgentOptionsAsync(AgentProfile profile, string logicalAgentName, CancellationToken cancellationToken)
     {
 
 
 
         ChatOptions chatOptions = new()
         {
-                ConversationId = Guid.NewGuid().ToString("N"),
-                Instructions = profile.Instructions,
-                Temperature = profile.Model.Temperature,
-                MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
-                TopP = profile.Model.TopP,
-                TopK = profile.Model.TopK,
-                ModelId = profile.Model.ModelId,
-                Tools = profile.Tools,
-                ResponseFormat = profile.ResponseFormat
+            ConversationId = Guid.NewGuid().ToString("N"),
+            Instructions = profile.Instructions,
+            Temperature = profile.Model.Temperature,
+            MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
+            TopP = profile.Model.TopP,
+            TopK = profile.Model.TopK,
+            ModelId = profile.Model.ModelId,
+            Tools = profile.Tools,
+            ResponseFormat = profile.ResponseFormat
         };
+
+        List<AITool> mcpTools = await GetMcpToolsAsync(logicalAgentName, cancellationToken).ConfigureAwait(false);
+        if (mcpTools.Count > 0)
+        {
+            chatOptions.Tools = chatOptions.Tools is null
+                ? mcpTools
+                : new List<AITool>(chatOptions.Tools.Concat(mcpTools));
+        }
 
         return new ChatClientAgentOptions
         {
-                Id = profile.AgentId,
-                Name = profile.AgentName,
-                Description = "An AI Agent",
-                ChatOptions = chatOptions,
-                AIContextProviders = profile.AIContextProviders?.Count > 0 ? profile.AIContextProviders.ToList() : null,
-                UseProvidedChatClientAsIs = false,
-                ClearOnChatHistoryProviderConflict = false,
-                WarnOnChatHistoryProviderConflict = false,
-                ThrowOnChatHistoryProviderConflict = false,
-                RequirePerServiceCallChatHistoryPersistence = false,
-                EnableMessageInjection = false,
-                DisableApprovalNotRequiredFunctionBypassing = false,
-                DisableApprovalResponseBinding = false
+            Id = profile.AgentId,
+            Name = profile.AgentName,
+            Description = "An AI Agent",
+            ChatOptions = chatOptions,
+            AIContextProviders = profile.AIContextProviders?.Count > 0 ? profile.AIContextProviders.ToList() : null,
+            UseProvidedChatClientAsIs = false,
+            ClearOnChatHistoryProviderConflict = false,
+            WarnOnChatHistoryProviderConflict = false,
+            ThrowOnChatHistoryProviderConflict = false,
+            RequirePerServiceCallChatHistoryPersistence = false,
+            EnableMessageInjection = false,
+            DisableApprovalNotRequiredFunctionBypassing = false,
+            DisableApprovalResponseBinding = false
         };
+    }
+
+    /// <summary>
+    ///     Retrieves tools from connected MCP servers that are available to the specified agent.
+    /// </summary>
+    /// <param name="logicalAgentName">The logical agent name to filter server assignments.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    ///     A list of <see cref="AITool" /> instances from connected MCP servers. A server is included
+    ///     when it is connected and either has no assigned agent names or its assignments include
+    ///     <paramref name="logicalAgentName" />.
+    /// </returns>
+    private async Task<List<AITool>> GetMcpToolsAsync(string logicalAgentName, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<AITool> tools = await _mcpServerRegistry
+            .GetToolsForAgentAsync(logicalAgentName, cancellationToken)
+            .ConfigureAwait(false);
+
+        return tools.ToList();
     }
 
 

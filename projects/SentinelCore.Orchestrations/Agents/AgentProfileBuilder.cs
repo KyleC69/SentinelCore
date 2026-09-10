@@ -157,7 +157,7 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
                 profile.Model = _options.DefaultModel ?? ModelProfile.Glm5();
                 break;
             case AgentRole.Manager:
-                profile.Model = _options.DefaultModel ?? ModelProfile.Gpt120();
+                profile.Model = _options.ManagerModel ?? _options.DefaultModel ?? ModelProfile.Gpt120();
                 break;
             case AgentRole.Utility:
                 profile.Model = _options.DefaultUtilityModel ?? ModelProfile.Gpt20();

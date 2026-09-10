@@ -6,23 +6,24 @@
 
 
 
-using System.Text.Json;
-
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+
+using ModelContextProtocol.Authentication;
 
 using SentinelCore.Abstractions;
 using SentinelCore.Agents;
 using SentinelCore.Application;
 using SentinelCore.Cfe;
-using SentinelCore.Cfe.Persistence;
 using SentinelCore.Events;
 using SentinelCore.Infrastructure.Persistence;
+using SentinelCore.Mcp;
+using SentinelCore.Orchestrations.Mcp;
 using SentinelCore.Workflows;
 using SentinelCore.Workflows.Executors;
+
+using System.Text.Json;
 
 
 
@@ -83,6 +84,7 @@ public static class SentinelCoreServiceExtensions
                     opt.TraceEnabled = options.TraceEnabled;
                     opt.TraceLogLevel = options.TraceLogLevel;
                     opt.DefaultModel = options.DefaultModel;
+                    opt.ManagerModel = options.ManagerModel;
                     opt.DefaultUtilityModel = options.DefaultUtilityModel;
                     opt.OrchestrationType = options.OrchestrationType;
                     opt.SqlConnectionString = options.SqlConnectionString;
@@ -90,35 +92,6 @@ public static class SentinelCoreServiceExtensions
 
         JsonConfiguredLogging(services);
 
-        // -- Persistence (first-class, always-on) --
-        // EF Core DbContext configured from SentinelCoreSettings.SqlConnectionString.
-        // The DbContext is registered as Transient to keep scoping flexible and to
-        // avoid captive-dependency issues when consumed from singleton orchestrations
-        // or hosted services. The store and engine registrations below follow suit.
-        // The factory overload is also transient so any design-time/internal factory
-        // resolution matches the context lifetime.
-        // Retrieve the connection string from the supplied settings. If it is missing
-        // we skip DbContext registration so the host still starts — persistence-dependent
-        // features will fail at runtime with a clear error, rather than preventing the
-        // entire application from launching.
-        string? connectionString = options.SqlConnectionString;
-
-        if (!string.IsNullOrWhiteSpace(connectionString))
-        {
-            services.AddDbContext<SentinelCoreDBContext>(dbOptions => dbOptions.UseSqlServer(connectionString), ServiceLifetime.Transient, ServiceLifetime.Transient);
-            services.AddTransient<IDbContextFactory<SentinelCoreDBContext>, PooledDbContextFactory<SentinelCoreDBContext>>();
-
-            // DatabaseInitializer is [Obsolete] (persistence is migrating to *.sqlproj), but it
-            // remains the only Database.MigrateAsync path in the solution — schema would never be
-            // applied without it. Keep registering until the sqlproj migration lands.
-#pragma warning disable CS0618 // Type or member is obsolete
-            services.AddHostedService<DatabaseInitializer>();
-#pragma warning restore CS0618 // Type or member is obsolete
-        }
-        else
-        {
-            System.Diagnostics.Debug.WriteLine("[WARN] SqlConnectionString is not configured — database persistence will be unavailable. Provide a valid connection string in SentinelCoreSettings.");
-        }
 
         // -- Always-on core services --
         // Safety middleware defaults to pass-through; host can override with real rules
@@ -129,6 +102,10 @@ public static class SentinelCoreServiceExtensions
         services.AddTransient<ICaseFlowEngine, CaseFlowEngine>();
         services.AddTransient<IEvidenceStore, EvidenceStore>();
         services.AddTransient<IPatternMemoryStore, PatternMemoryStore>();
+        services.AddSingleton<IOrchestrationControl, OrchestrationControl>();
+        services.AddTransient<IOrchestration, CustomGroupWorkflow>();
+        services.AddTransient<IOrchestration, TheCoreWorkflow>();
+        //services.AddTransient<IClipboardService>();
         services.AddTransient<CaseGenExec>();
         services.AddTransient<CustomGroupWorkflow>();
         services.AddTransient<ICaseGenerator, CaseGenerator>();
@@ -142,6 +119,23 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<MagneticOrchestration>();
         services.AddTransient<NewCaseExecutor>();
         services.RegisterExecutors();
+
+        // -- MCP server registry --
+        // Stores server definitions in %APPDATA%\SentinelCore\mcp-servers.json unless
+        // the SENTINEL_MCP_REGISTRY_PATH environment variable overrides it.
+        string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        string defaultRegistryPath = Path.Combine(appDataPath, "SentinelCore", "mcp-servers.json");
+        string registryPath = Environment.GetEnvironmentVariable("SENTINEL_MCP_REGISTRY_PATH") ?? defaultRegistryPath;
+        string tokenCachePath = Path.Combine(Path.GetDirectoryName(registryPath)!, "mcp-tokens.bin");
+
+        services.AddSingleton<IMcpServerRegistryStore>(sp => new JsonFileMcpServerRegistryStore(
+            registryPath,
+            sp.GetRequiredService<ILogger<JsonFileMcpServerRegistryStore>>()));
+        services.AddSingleton<ITokenCache>(_ => new DpapiTokenCache(tokenCachePath));
+        services.AddSingleton<IMcpConnectionFactory, McpConnectionFactory>();
+        services.AddSingleton<IMcpServerRegistry, McpServerRegistry>();
+        services.AddSingleton<ISentinelAgentCatalog, SentinelAgentCatalog>();
+        services.AddHostedService<McpServerRegistryInitializer>();
 
 
         return services;
@@ -171,11 +165,14 @@ public static class SentinelCoreServiceExtensions
 
         JsonLoggerOptions jsonOptions = new()
         {
-                MinimumLevel = LogLevel.Trace, Indented = true, Output = JsonLoggerOutput.File, FilePath = "SentinelCore.log"
+            MinimumLevel = LogLevel.Trace,
+            Indented = true,
+            Output = JsonLoggerOutput.File,
+            FilePath = "SentinelCore.log"
 
-                // Or:
-                // Output = JsonLoggerOutput.File,
-                // FilePath = "logs/sentinelcore.json"
+            // Or:
+            // Output = JsonLoggerOutput.File,
+            // FilePath = "logs/sentinelcore.json"
         };
 
 

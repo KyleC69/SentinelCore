@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Cfe;
+using SentinelCore.Contracts;
 using SentinelCore.UI.Services;
 
 
@@ -63,9 +64,17 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
 
 
     /// <summary>
-    ///     Available case statuses for the advance target combo box.
+    ///     Available case statuses for the advance target combo box. Populated with
+    ///     the legal transitions for the looked-up case's current status; falls back
+    ///     to the full lifecycle until a case is loaded.
     /// </summary>
     public IReadOnlyList<CaseStatus> AvailableStatuses { get; } = Enum.GetValues<CaseStatus>().ToList();
+
+    /// <summary>
+    ///     Gets the statuses the looked-up case may legally advance to.
+    /// </summary>
+    [ObservableProperty]
+    private IReadOnlyList<CaseStatus> _allowedTransitions = [];
 
 
 
@@ -86,10 +95,11 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
         StatusInfo = string.Empty;
         ResultMessage = string.Empty;
         ShowResult = false;
+        AllowedTransitions = [];
 
         if (!string.IsNullOrWhiteSpace(CaseIdText))
         {
-            LookupCaseCommand.Execute(null);
+            _ = LookupCaseAsync();
         }
     }
 
@@ -156,6 +166,7 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
         StatusInfo = string.Empty;
         ResultMessage = string.Empty;
         ShowResult = false;
+        AllowedTransitions = [];
     }
 
 
@@ -175,27 +186,25 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
 
         try
         {
-            List<string> lines = new() { $"Case ID: {caseId}" };
+            Case? found = await _caseFlowEngine.GetCaseByIdAsync(caseId);
 
-            foreach (CaseStatus status in Enum.GetValues<CaseStatus>())
+            if (found is null)
             {
-                try
-                {
-                    int count = await _caseFlowEngine.GetCaseCountByStatusAsync(status);
-                    lines.Add($"  {status}: {count}");
-                }
-                catch
-                {
-                    // Skip statuses that fail
-                }
+                StatusInfo = $"No case found with ID {caseId}.";
+                AllowedTransitions = [];
+                return;
             }
 
-            StatusInfo = string.Join(Environment.NewLine, lines);
+            StatusInfo = $"Case ID: {found.CaseId}{Environment.NewLine}Status: {found.Status}{Environment.NewLine}Created: {found.CreatedAt:g}{Environment.NewLine}Updated: {(found.UpdatedAt.HasValue ? found.UpdatedAt.Value.ToString("g") : "—")}";
+
+            // Only offer the statuses the lifecycle actually allows from here.
+            AllowedTransitions = _caseFlowEngine.GetAllowedTransitions(found.Status);
         }
         catch (Exception ex)
         {
             StatusInfo = $"Lookup failed: {ex.Message}";
             _logger.LogError(ex, "Case lookup failed");
+            AllowedTransitions = [];
         }
         finally
         {

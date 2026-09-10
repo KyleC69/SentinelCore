@@ -71,6 +71,27 @@
             </DataGrid.Columns>
         </DataGrid>
 
+        <!-- Loading indicator -->
+        <ProgressBar
+            Grid.Row="2"
+            Height="3"
+            Margin="0,8,0,0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Top"
+            IsIndeterminate="True"
+            Foreground="{DynamicResource ChatAccent}"
+            Background="Transparent"
+            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}" />
+
+        <!-- Error message -->
+        <TextBlock
+            Grid.Row="2"
+            Margin="0,16,0,0"
+            Style="{StaticResource BodyText}"
+            Foreground="{DynamicResource ChatDanger}"
+            Text="{Binding ErrorMessage}"
+            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}" />
+
         <!-- Drill-down detail panel (visible when drilled down) -->
         <Grid Grid.Row="2" Visibility="{Binding IsDrilledDown, Converter={StaticResource BoolToVisibility}}">
             <Grid.RowDefinitions>

@@ -13,9 +13,6 @@ namespace SentinelCore.Cfe.Persistence;
 
 public partial class SentinelCoreDBContext : DbContext
 {
-    public SentinelCoreDBContext()
-    {
-    }
 
     public SentinelCoreDBContext(DbContextOptions<SentinelCoreDBContext> options)
         : base(options)
@@ -42,7 +39,8 @@ public partial class SentinelCoreDBContext : DbContext
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer(Environment.GetEnvironmentVariable("SENTINEL_CORE"));
+    {
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

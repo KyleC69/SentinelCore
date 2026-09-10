@@ -6,6 +6,8 @@
 
 
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace SentinelCore.Tests.TestInfrastructure;
 
 
@@ -58,7 +60,7 @@ public sealed class CapturingAgentBuilder : ISentinelAgentFactory
 
 
 
-    public Task<AIAgent> BuildFromProfileAsync(AgentProfile profile, AgentRole? overrideRole = null)
+    public Task<AIAgent> BuildFromProfileAsync([NotNull] AgentProfile profile, AgentRole? overrideRole = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(profile);
         CapturedSpecs.Add(profile);

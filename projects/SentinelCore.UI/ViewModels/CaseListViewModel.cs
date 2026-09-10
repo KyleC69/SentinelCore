@@ -39,6 +39,10 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 
     [ObservableProperty] private string _drillDownHeader = string.Empty;
 
+    [ObservableProperty] private string _errorMessage = string.Empty;
+
+    [ObservableProperty] private bool _hasError;
+
     [ObservableProperty] private bool _isDrilledDown;
 
     [ObservableProperty] private bool _isLoading;
@@ -93,7 +97,7 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 
     public void OnNavigatedTo(object? parameter)
     {
-        LoadCasesCommand.Execute(null);
+        _ = LoadCasesAsync();
     }
 
 
@@ -122,26 +126,28 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
         }
 
         IsLoading = true;
+        HasError = false;
+        ErrorMessage = string.Empty;
 
         try
         {
             IReadOnlyList<Case> cases = await _caseFlowEngine.GetCasesByStatusAsync(status.Value);
 
-            ObservableCollection<CaseDetailItem> items = new();
-
+            DetailCases.Clear();
             foreach (Case c in cases)
             {
-                items.Add(new CaseDetailItem { CaseId = c.CaseId, Status = c.Status, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt });
+                DetailCases.Add(new CaseDetailItem { CaseId = c.CaseId, Status = c.Status, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt });
             }
 
-            DetailCases = items;
             IsDrilledDown = true;
-            DrillDownHeader = $"Cases in status: {status.Value} ({items.Count})";
-            _logger.LogTrace("Drilled down into {Status} — {Count} cases", status, items.Count);
+            DrillDownHeader = $"Cases in status: {status.Value} ({DetailCases.Count})";
+            _logger.LogTrace("Drilled down into {Status} — {Count} cases", status, DetailCases.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load cases for status {Status}", status);
+            HasError = true;
+            ErrorMessage = $"Failed to load cases for status {status.Value}: {ex.Message}";
         }
         finally
         {
@@ -202,31 +208,27 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
     private async Task LoadCasesAsync()
     {
         IsLoading = true;
+        HasError = false;
+        ErrorMessage = string.Empty;
 
         try
         {
-            ObservableCollection<CaseRow> rows = new();
+            // Single grouped query instead of one round-trip per status.
+            IReadOnlyDictionary<CaseStatus, int> counts = await _caseFlowEngine.GetCaseStatusCountsAsync();
 
+            Cases.Clear();
             foreach (CaseStatus status in Enum.GetValues<CaseStatus>())
             {
-                try
-                {
-                    int count = await _caseFlowEngine.GetCaseCountByStatusAsync(status);
-                    rows.Add(new CaseRow { Status = status, Count = count });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to load case count for status {Status}", status);
-                    rows.Add(new CaseRow { Status = status, Count = 0 });
-                }
+                Cases.Add(new CaseRow { Status = status, Count = counts.TryGetValue(status, out int count) ? count : 0 });
             }
 
-            Cases = rows;
-            _logger.LogTrace("Case list loaded — {Count} status entries", rows.Count);
+            _logger.LogTrace("Case list loaded — {Count} status entries", Cases.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load cases");
+            HasError = true;
+            ErrorMessage = $"Failed to load case counts: {ex.Message}";
         }
         finally
         {

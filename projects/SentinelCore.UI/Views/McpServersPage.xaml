@@ -1,0 +1,290 @@
+<Page
+    x:Class="SentinelCore.UI.Views.McpServersPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    mc:Ignorable="d"
+    d:DesignHeight="700" d:DesignWidth="900"
+    Background="{DynamicResource ChatBackground}"
+    FontFamily="Segoe UI">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+            <!-- Status text color: green = connected, amber = starting, red = error, muted = stopped -->
+            <Style x:Key="StatusText" TargetType="TextBlock" BasedOn="{StaticResource BodyText}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Status}" Value="Connected">
+                        <Setter Property="Foreground" Value="{DynamicResource ChatStatusSuccess}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Status}" Value="Starting">
+                        <Setter Property="Foreground" Value="{DynamicResource ChatStatusWarning}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Status}" Value="Error">
+                        <Setter Property="Foreground" Value="{DynamicResource ChatDanger}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Status}" Value="Stopped">
+                        <Setter Property="Foreground" Value="{DynamicResource ChatTextMuted}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="32,28,32,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Page Title -->
+            <TextBlock
+                Grid.Row="0"
+                Style="{StaticResource PageTitleText}"
+                Text="MCP Servers" />
+
+            <!-- Toolbar -->
+            <StackPanel Grid.Row="1"
+                        Orientation="Horizontal"
+                        Margin="0,0,0,16">
+                <Button
+                    Command="{Binding RefreshCommand}"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Padding="12,6"
+                    Margin="0,0,12,0"
+                    Content="Refresh" />
+                <Button
+                    Command="{Binding ShowAddServerCommand}"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Padding="12,6"
+                    Margin="0,0,12,0"
+                    Content="Add Server" />
+                <Button
+                    Command="{Binding StartServerCommand}"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Padding="12,6"
+                    Margin="0,0,8,0"
+                    Content="Start" />
+                <Button
+                    Command="{Binding StopServerCommand}"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Padding="12,6"
+                    Margin="0,0,8,0"
+                    Content="Stop" />
+                <Button
+                    Command="{Binding RemoveServerCommand}"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Padding="12,6"
+                    Content="Remove" />
+            </StackPanel>
+
+            <!-- Add Server Form -->
+            <Border Grid.Row="2"
+                   Background="{DynamicResource ChatSurface}"
+                   BorderBrush="{DynamicResource ChatBorder}"
+                   BorderThickness="1"
+                   CornerRadius="8"
+                   Padding="20"
+                   Margin="0,0,0,20"
+                   Visibility="{Binding IsAddingServer, Converter={StaticResource BoolToVisibility}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                              Style="{StaticResource SubtitleText}"
+                              Text="Add MCP Server" />
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,0">
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Style="{StaticResource BodyText}" Text="Display Name" />
+                            <TextBox Text="{Binding NewServerDisplayName, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormTextBoxStyle}"
+                                     Width="240" />
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource BodyText}" Text="Transport" />
+                            <ComboBox ItemsSource="{Binding TransportTypes}"
+                                     SelectedItem="{Binding NewServerTransportType}"
+                                     Style="{StaticResource FormComboBoxStyle}"
+                                     Width="140" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Margin="0,12,0,0">
+                        <TextBlock Style="{StaticResource BodyText}" Text="Command or Endpoint" />
+                        <TextBox Text="{Binding NewServerCommandOrEndpoint, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBoxStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,12,0,0">
+                        <StackPanel Margin="0,0,16,0"
+                                    IsEnabled="{Binding IsStdioTransport}">
+                            <TextBlock Style="{StaticResource BodyText}" Text="Arguments (stdio only)" />
+                            <TextBox Text="{Binding NewServerArgumentsText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormTextBoxStyle}"
+                                     Width="360" />
+                        </StackPanel>
+
+                        <StackPanel IsEnabled="{Binding IsStdioTransport}">
+                            <TextBlock Style="{StaticResource BodyText}" Text="Working Directory (stdio only)" />
+                            <TextBox Text="{Binding NewServerWorkingDirectory, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormTextBoxStyle}"
+                                     Width="360" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="4" Margin="0,12,0,0"
+                                IsEnabled="{Binding IsStdioTransport}">
+                        <TextBlock Style="{StaticResource BodyText}" Text="Environment Variables (stdio only, one NAME=value per line)" />
+                        <TextBox Text="{Binding NewServerEnvironmentText, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBoxStyle}"
+                                 MinHeight="60"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="5" Margin="0,12,0,0">
+                        <TextBlock Style="{StaticResource BodyText}"
+                                   Text="Assigned Agents (leave all unchecked for every agent)" />
+                        <ItemsControl ItemsSource="{Binding NewServerAgentAssignments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding AgentName}"
+                                              IsChecked="{Binding IsAssigned, Mode=TwoWay}"
+                                              Margin="0,2,16,2" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="6"
+                                 Orientation="Horizontal"
+                                 Margin="0,18,0,0">
+                        <Button Command="{Binding AddServerCommand}"
+                                 Style="{StaticResource AccentButtonStyle}"
+                                 Margin="0,0,12,0"
+                                 Padding="12,6"
+                                 Content="Save Server" />
+                        <Button Command="{Binding CancelAddServerCommand}"
+                                 Style="{StaticResource SecondaryButtonStyle}"
+                                 Padding="12,6"
+                                 Content="Cancel" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Server list -->
+            <DataGrid Grid.Row="3"
+                     ItemsSource="{Binding Servers}"
+                     SelectedItem="{Binding SelectedServer}"
+                     AutoGenerateColumns="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name"
+                                        Binding="{Binding DisplayName}"
+                                        Width="200" />
+                    <DataGridTextColumn Header="Transport"
+                                        Binding="{Binding TransportType}"
+                                        Width="100" />
+                    <DataGridTextColumn Header="Command / Endpoint"
+                                        Binding="{Binding CommandOrEndpoint}"
+                                        Width="260" />
+                    <DataGridTemplateColumn Header="Status" Width="110">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="{DynamicResource ChatTextMuted}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Connected">
+                                                        <Setter Property="Fill" Value="{DynamicResource ChatStatusSuccess}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Starting">
+                                                        <Setter Property="Fill" Value="{DynamicResource ChatStatusWarning}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                        <Setter Property="Fill" Value="{DynamicResource ChatDanger}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="{Binding Status}"
+                                               Style="{StaticResource StatusText}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Tools"
+                                        Binding="{Binding ToolNamesText}"
+                                        Width="200" />
+                    <DataGridTextColumn Header="Assigned Agents"
+                                        Binding="{Binding AssignedAgentsText}"
+                                        Width="180" />
+                    <DataGridTextColumn Header="Last Error"
+                                        Binding="{Binding LastError}"
+                                        Width="240" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Assignment editor for the selected server -->
+            <Border Grid.Row="4"
+                   Background="{DynamicResource ChatSurface}"
+                   BorderBrush="{DynamicResource ChatBorder}"
+                   BorderThickness="1"
+                   CornerRadius="8"
+                   Padding="20"
+                   Margin="0,16,0,0"
+                   Visibility="{Binding HasSelectedServer, Converter={StaticResource BoolToVisibility}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SubtitleText}"
+                              Text="Agent Assignments" />
+                    <TextBlock Margin="0,6,0,0"
+                              Style="{StaticResource BodyText}"
+                              Text="Select which agents can use this server. Leave all unchecked to make it available to every agent." />
+                    <ItemsControl ItemsSource="{Binding SelectedServerAgentAssignments}"
+                                 Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Content="{Binding AgentName}"
+                                          IsChecked="{Binding IsAssigned, Mode=TwoWay}"
+                                          Margin="0,2,16,2" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Command="{Binding UpdateAssignmentsCommand}"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Padding="12,6"
+                            Margin="0,14,0,0"
+                            HorizontalAlignment="Left"
+                            Content="Save Assignments" />
+                </StackPanel>
+            </Border>
+
+            <!-- Result message (visible for any operation) -->
+            <TextBlock Grid.Row="5"
+                      Margin="0,16,0,0"
+                      Style="{StaticResource BodyText}"
+                      Text="{Binding ResultMessage}"
+                      Visibility="{Binding ShowResult, Converter={StaticResource BoolToVisibility}}" />
+        </Grid>
+    </ScrollViewer>
+</Page>

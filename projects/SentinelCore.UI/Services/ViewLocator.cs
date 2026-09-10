@@ -40,7 +40,11 @@ public sealed class ViewLocator : IViewLocator
     }
 
 
-    /// <inheritdoc />
+   /// <summary>
+   /// 
+   /// </summary>
+   /// <param name="pageKey"></param>
+   /// <returns></returns>
     public Page? ResolvePage(string pageKey)
     {
         if (string.IsNullOrWhiteSpace(pageKey) || !_pageTypeMap.TryGetValue(pageKey, out Type? pageType))

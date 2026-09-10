@@ -19,4 +19,19 @@
     <SolidColorBrush x:Key="ChatDisabled" Color="#4B5563" />
     <SolidColorBrush x:Key="ChatTextDark" Color="#212620" />
 
+    <!-- ====== Status colors (semantic, shared by all pages) ====== -->
+    <SolidColorBrush x:Key="ChatStatusSuccess" Color="#3FB950" />
+    <SolidColorBrush x:Key="ChatStatusWarning" Color="#D29922" />
+    <SolidColorBrush x:Key="ChatStatusInfo" Color="#3B82F6" />
+    <SolidColorBrush x:Key="ChatStatusAttention" Color="#F59E0B" />
+    <SolidColorBrush x:Key="ChatStatusCritical" Color="#EF4444" />
+
+    <!-- ====== Code block surfaces (MarkdownViewer) ====== -->
+    <SolidColorBrush x:Key="ChatCodeBackground" Color="#161B22" />
+    <SolidColorBrush x:Key="ChatCodeForeground" Color="#E6EDF3" />
+    <SolidColorBrush x:Key="ChatCodeHeaderBackground" Color="#21262D" />
+
+    <!-- ====== Focus visuals (keyboard accessibility) ====== -->
+    <SolidColorBrush x:Key="ChatFocusBorder" Color="#A78BFA" />
+
 </ResourceDictionary>

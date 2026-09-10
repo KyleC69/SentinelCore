@@ -6,6 +6,14 @@
 
 
 
+
+
+using Microsoft.Extensions.AI;
+
+
+
+using SentinelCore.Mcp;
+
 using SentinelCore.Tests.TestInfrastructure;
 
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
@@ -163,7 +171,7 @@ public sealed class AgentBuilderTests
     [TestMethod]
     public void Constructor_NullEvents_Throws()
     {
-        Assert.Throws<ArgumentNullException>(() => new SentinelAgentFactory(null!, NoOpLoggerFactory.Instance));
+        Assert.Throws<ArgumentNullException>(() => new SentinelAgentFactory(null!, NoOpLoggerFactory.Instance, new FakeMcpServerRegistry()));
     }
 
 
@@ -178,7 +186,7 @@ public sealed class AgentBuilderTests
     {
         EventCapture events = new();
 
-        Assert.Throws<ArgumentNullException>(() => new SentinelAgentFactory(events, null!));
+        Assert.Throws<ArgumentNullException>(() => new SentinelAgentFactory(events, null!, new FakeMcpServerRegistry()));
     }
 
 
@@ -191,7 +199,7 @@ public sealed class AgentBuilderTests
     private static SentinelAgentFactory CreateFactory(EventCapture? events = null)
     {
         events ??= new EventCapture();
-        return new SentinelAgentFactory(events, NoOpLoggerFactory.Instance);
+        return new SentinelAgentFactory(events, NoOpLoggerFactory.Instance, new FakeMcpServerRegistry());
     }
 
 
@@ -201,15 +209,29 @@ public sealed class AgentBuilderTests
 
 
 
+    private sealed class FakeMcpServerRegistry : IMcpServerRegistry
+    {
+        public Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AITool>>([]);
+
+        public Task RegisterAsync(McpServerDefinition definition, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task RemoveAsync(string serverId, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task StartAsync(string serverId, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task StopAsync(string serverId, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task UpdateAssignmentsAsync(string serverId, IReadOnlyList<string> assignedAgentNames, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<McpServerInfo?> GetAsync(string serverId, CancellationToken cancellationToken = default) => Task.FromResult<McpServerInfo?>(null);
+        public Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<McpServerInfo>>([]);
+    }
+
     private static AgentProfile CreateProfile(AgentRole role, string name, IList<AITool>? tools = null)
     {
         return new AgentProfile
         {
-                Role = role,
-                AgentName = name,
-                Persona = new AgentPersona { Name = name, Instructions = "test instructions", Description = "test description" },
-                Tools = tools ?? [],
-                Model = ModelProfile.Glm5()
+            Role = role,
+            AgentName = name,
+            Persona = new AgentPersona { Name = name, Instructions = "test instructions", Description = "test description" },
+            Tools = tools ?? [],
+            Model = ModelProfile.Glm5()
         };
     }
 }

@@ -314,7 +314,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public string Description { get; } = "TheCore is a multi-agent & non-agent workflow that classifies an incoming signal and routes it to the appropriate executor based on the classification result. It demonstrates a structured approach to handling various scenarios, including investigation, direct answers, safety concerns, and escalation to human operators. The workflow is designed to ensure that each step is executed by the appropriate agent or executor, providing a clear and efficient process for managing complex tasks.";
+    public string Description { get; } =
+        "TheCore is a multi-agent & non-agent workflow that classifies an incoming signal and routes it to" +
+        " the appropriate executor based on the classification result. It demonstrates a structured approach to" +
+        " handling various scenarios, including investigation, direct answers, safety concerns, and escalation to human operators." +
+        " The workflow is designed to ensure that each step is executed by the appropriate agent or executor, providing a clear and efficient process for managing complex tasks.";
 
 
 
@@ -379,17 +383,17 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     {
         AgentProfile agentProfile = new()
         {
-                AgentId = "SafetyAgent",
-                AgentName = "SafetyAgent",
-                Model = new ModelProfile
-                {
-                        Endpoint = "http://localhost:11111",
-                        Provider = ModelProfile.ModelProvider.Ollama,
-                        MaxOutputTokens = 16000,
-                        ModelId = "gemma4",
-                        Temperature = 0.3f
-                },
-                Instructions = "You are a helpful agent."
+            AgentId = "SafetyAgent",
+            AgentName = "SafetyAgent",
+            Model = new ModelProfile
+            {
+                Endpoint = "http://localhost:11111",
+                Provider = ModelProfile.ModelProvider.Ollama,
+                MaxOutputTokens = 16000,
+                ModelId = "gemma4",
+                Temperature = 0.3f
+            },
+            Instructions = "You are a helpful agent."
         };
         SafetyEngineOptions opt = new();
 
