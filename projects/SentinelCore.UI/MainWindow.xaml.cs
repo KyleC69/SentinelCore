@@ -57,6 +57,7 @@ public partial class MainWindow : Window
         NavCasesButton.Checked += (_, _) => NavigateTo(typeof(CaseListViewModel).FullName!);
         NavCreateCaseButton.Checked += (_, _) => NavigateTo(typeof(CreateCaseViewModel).FullName!);
         NavMcpServersButton.Checked += (_, _) => NavigateTo(typeof(McpServersViewModel).FullName!);
+        NavModelConfigButton.Checked += (_, _) => NavigateTo(typeof(ModelConfigViewModel).FullName!);
         _navigationService.Navigated += OnNavigated;
 
         NavChatButton.IsChecked = true;

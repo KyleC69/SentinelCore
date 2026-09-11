@@ -38,17 +38,21 @@ public sealed class McpServersViewModelTests
     ///     A tuple of the registry mock, agent catalog mock, dispatcher mock, and the
     ///     no-op logger passed to the view-model constructor.
     /// </returns>
-    private static (Mock<IMcpServerRegistry> Registry, Mock<ISentinelAgentCatalog> Catalog, Mock<IDispatcherService> Dispatcher, ILogger<McpServersViewModel> Logger) CreateDependencies()
+    private static (Mock<IMcpServerRegistry> Registry, Mock<ISentinelAgentCatalog> Catalog, Mock<IDispatcherService> Dispatcher, Mock<IDialogService> Dialog, Mock<IFolderBrowserService> FolderBrowser, ILogger<McpServersViewModel> Logger) CreateDependencies()
     {
         Mock<IMcpServerRegistry> registry = new();
         Mock<ISentinelAgentCatalog> catalog = new();
         Mock<IDispatcherService> dispatcher = new();
+        Mock<IDialogService> dialog = new();
+        Mock<IFolderBrowserService> folderBrowser = new();
 
         dispatcher.Setup(d => d.CheckAccess()).Returns(true);
         registry.Setup(r => r.ListAsync(It.IsAny<CancellationToken>())).ReturnsAsync([]);
         catalog.Setup(c => c.GetAgentNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(["CoreChat", "Classifier"]);
 
-        return (registry, catalog, dispatcher, NullLogger<McpServersViewModel>.Instance);
+        dialog.Setup(d => d.Confirm(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
+
+        return (registry, catalog, dispatcher, dialog, folderBrowser, NullLogger<McpServersViewModel>.Instance);
     }
 
 
@@ -59,10 +63,10 @@ public sealed class McpServersViewModelTests
     public void Constructor_NullRegistry_Throws()
     {
         // Arrange
-        var (_, catalog, dispatcher, logger) = CreateDependencies();
+        var (_, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new McpServersViewModel(null!, catalog.Object, logger, dispatcher.Object));
+        Assert.Throws<ArgumentNullException>(() => new McpServersViewModel(null!, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object));
     }
 
 
@@ -73,10 +77,10 @@ public sealed class McpServersViewModelTests
     public void Constructor_NullCatalog_Throws()
     {
         // Arrange
-        var (registry, _, dispatcher, logger) = CreateDependencies();
+        var (registry, _, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new McpServersViewModel(registry.Object, null!, logger, dispatcher.Object));
+        Assert.Throws<ArgumentNullException>(() => new McpServersViewModel(registry.Object, null!, logger, dispatcher.Object, dialog.Object, folderBrowser.Object));
     }
 
 
@@ -87,10 +91,10 @@ public sealed class McpServersViewModelTests
     public void Constructor_NullLogger_Throws()
     {
         // Arrange
-        var (registry, catalog, dispatcher, _) = CreateDependencies();
+        var (registry, catalog, dispatcher, dialog, folderBrowser, _) = CreateDependencies();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new McpServersViewModel(registry.Object, catalog.Object, null!, dispatcher.Object));
+        Assert.Throws<ArgumentNullException>(() => new McpServersViewModel(registry.Object, catalog.Object, null!, dispatcher.Object, dialog.Object, folderBrowser.Object));
     }
 
 
@@ -101,10 +105,10 @@ public sealed class McpServersViewModelTests
     public void Constructor_NullDispatcher_Throws()
     {
         // Arrange
-        var (registry, catalog, _, logger) = CreateDependencies();
+        var (registry, catalog, _, dialog, folderBrowser, logger) = CreateDependencies();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new McpServersViewModel(registry.Object, catalog.Object, logger, null!));
+        Assert.Throws<ArgumentNullException>(() => new McpServersViewModel(registry.Object, catalog.Object, logger, null!, dialog.Object, folderBrowser.Object));
     }
 
 
@@ -115,8 +119,8 @@ public sealed class McpServersViewModelTests
     public void AddServerCommand_NotAddingServer_CannotExecute()
     {
         // Arrange
-        var (registry, catalog, dispatcher, logger) = CreateDependencies();
-        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object);
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
 
         // Act
         bool canExecute = viewModel.AddServerCommand.CanExecute(null);
@@ -135,8 +139,8 @@ public sealed class McpServersViewModelTests
     public void ShowAddServerCommand_ThenAddServerCommand_CanExecute()
     {
         // Arrange
-        var (registry, catalog, dispatcher, logger) = CreateDependencies();
-        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object);
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
 
         // Act
         viewModel.ShowAddServerCommand.Execute(null);
@@ -155,11 +159,33 @@ public sealed class McpServersViewModelTests
 
 
     [TestMethod]
+    public async Task RefreshCommand_OffThread_BusyStateUsesDispatcher()
+    {
+        // Arrange
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        dispatcher.Setup(d => d.CheckAccess()).Returns(false);
+        dispatcher.Setup(d => d.Invoke(It.IsAny<Action>())).Callback<Action>(action => action());
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
+
+        // Act
+        await Task.Run(() => viewModel.RefreshCommand.Execute(null));
+
+        // Assert
+        dispatcher.Verify(d => d.Invoke(It.IsAny<Action>()), Times.AtLeastOnce);
+
+        viewModel.Dispose();
+    }
+
+
+
+
+
+    [TestMethod]
     public async Task AddServerCommand_ValidInput_RegistersServerAsync()
     {
         // Arrange
-        var (registry, catalog, dispatcher, logger) = CreateDependencies();
-        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object);
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
 
         viewModel.ShowAddServerCommand.Execute(null);
         viewModel.NewServerDisplayName = "Test Server";
@@ -185,8 +211,8 @@ public sealed class McpServersViewModelTests
     public async Task RemoveServerCommand_NoSelection_CannotExecute()
     {
         // Arrange
-        var (registry, catalog, dispatcher, logger) = CreateDependencies();
-        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object);
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
 
         // Act
         bool canExecute = viewModel.RemoveServerCommand.CanExecute(null);
@@ -205,8 +231,8 @@ public sealed class McpServersViewModelTests
     public async Task RemoveServerCommand_WithSelection_RemovesServerAsync()
     {
         // Arrange
-        var (registry, catalog, dispatcher, logger) = CreateDependencies();
-        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object);
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
 
         McpServerDefinition definition = new("server-1", "Test Server", McpServerTransportType.Stdio, "test.exe");
         McpServerInfo info = new(definition, McpServerStatus.Stopped, []);
@@ -235,8 +261,8 @@ public sealed class McpServersViewModelTests
     public async Task RefreshCommand_LoadsServers_AndAgentsAsync()
     {
         // Arrange
-        var (registry, catalog, dispatcher, logger) = CreateDependencies();
-        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object);
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
 
         McpServerDefinition definition = new("server-1", "Test Server", McpServerTransportType.Stdio, "test.exe");
         McpServerInfo info = new(definition, McpServerStatus.Connected, ["tool-a"]);
@@ -265,8 +291,8 @@ public sealed class McpServersViewModelTests
     public async Task StartServerCommand_WithSelection_StartsServerAsync()
     {
         // Arrange
-        var (registry, catalog, dispatcher, logger) = CreateDependencies();
-        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object);
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
 
         McpServerDefinition definition = new("server-1", "Test Server", McpServerTransportType.Stdio, "test.exe");
         McpServerInfo info = new(definition, McpServerStatus.Stopped, []);
@@ -295,8 +321,8 @@ public sealed class McpServersViewModelTests
     public async Task StopServerCommand_WithConnectedSelection_StopsServerAsync()
     {
         // Arrange
-        var (registry, catalog, dispatcher, logger) = CreateDependencies();
-        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object);
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
 
         McpServerDefinition definition = new("server-1", "Test Server", McpServerTransportType.Stdio, "test.exe");
         McpServerInfo info = new(definition, McpServerStatus.Connected, ["tool-a"]);
@@ -325,8 +351,8 @@ public sealed class McpServersViewModelTests
     public void Dispose_CalledTwice_DoesNotThrow()
     {
         // Arrange
-        var (registry, catalog, dispatcher, logger) = CreateDependencies();
-        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object);
+        var (registry, catalog, dispatcher, dialog, folderBrowser, logger) = CreateDependencies();
+        McpServersViewModel viewModel = new(registry.Object, catalog.Object, logger, dispatcher.Object, dialog.Object, folderBrowser.Object);
 
         // Act & Assert
         viewModel.Dispose();

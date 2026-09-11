@@ -81,6 +81,11 @@
                              GroupName="Nav"
                              AutomationProperties.Name="MCP Servers"
                              Content="_MCP Servers" />
+                <RadioButton x:Name="NavModelConfigButton"
+                             Style="{StaticResource NavButtonStyle}"
+                             GroupName="Nav"
+                             AutomationProperties.Name="Model Configuration"
+                             Content="Model _Config" />
             </StackPanel>
         </Border>
 

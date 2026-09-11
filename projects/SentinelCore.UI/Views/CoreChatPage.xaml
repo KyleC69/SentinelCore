@@ -218,10 +218,11 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <!-- ═══ Layout: Header | Messages | Input | Telemetry ═══ -->
+    <!-- ═══ Layout: Header | Gate banner | Messages | Input | Telemetry ═══ -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="52" />    <!-- Header bar        -->
+            <RowDefinition Height="Auto" />   <!-- Config gate       -->
             <RowDefinition Height="*" />      <!-- Message feed      -->
             <RowDefinition Height="Auto" />   <!-- Input / actions   -->
             <RowDefinition Height="Auto" />   <!-- Telemetry panel   -->
@@ -276,9 +277,22 @@
             </Grid>
         </Border>
 
+        <!-- ── Configuration gate banner ─────────────────────────────── -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource ChatSurface}"
+                BorderBrush="{DynamicResource ChatStatusWarning}"
+                BorderThickness="0,0,0,1"
+                Padding="14,8"
+                Visibility="{Binding IsConfigIncomplete, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="{Binding ConfigGateMessage}"
+                       Foreground="{DynamicResource ChatStatusWarning}"
+                       FontSize="12"
+                       TextWrapping="Wrap" />
+        </Border>
+
         <!-- ── Message Feed ───────────────────────────────────────────── -->
         <ListBox x:Name="MessagesListBox"
-                 Grid.Row="1"
+                 Grid.Row="2"
                  Margin="15,0"
                  BorderThickness="0"
                  Background="{DynamicResource ChatBackground}"
@@ -289,7 +303,7 @@
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
 
         <!-- ── Input Area ─────────────────────────────────────────────── -->
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 Background="{DynamicResource ChatSurface}"
                 BorderThickness="0,1,0,0"
                 BorderBrush="{DynamicResource ChatBorder}"
@@ -385,7 +399,7 @@
         </Border>
 
         <!-- ── Telemetry Panel: Case Status ───────────────────────────── -->
-        <Border Grid.Row="3"
+        <Border Grid.Row="4"
                 Background="{DynamicResource ChatSurface2}"
                 BorderThickness="0,1,0,0"
                 BorderBrush="{DynamicResource ChatBorder}"
@@ -512,3 +526,4 @@
         </Border>
     </Grid>
 </Page>
+

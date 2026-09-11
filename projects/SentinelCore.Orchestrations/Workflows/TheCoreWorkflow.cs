@@ -381,20 +381,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
     private async Task<AIAgent> BuildAgentAsync()
     {
-        AgentProfile agentProfile = new()
-        {
-            AgentId = "SafetyAgent",
-            AgentName = "SafetyAgent",
-            Model = new ModelProfile
-            {
-                Endpoint = "http://localhost:11111",
-                Provider = ModelProfile.ModelProvider.Ollama,
-                MaxOutputTokens = 16000,
-                ModelId = "gemma4",
-                Temperature = 0.3f
-            },
-            Instructions = "You are a helpful agent."
-        };
+        // The SafetyAgent model is owned by the Model Configuration page — the
+        // builder resolves the per-agent entry (Utility tier as secondary source)
+        // and the factory gates the build when it is unconfigured.
+        AgentProfile agentProfile = _agentSpecBuilder.BuildAgentSpec("SafetyAgent", AgentRole.Utility);
+        agentProfile.Instructions = "You are a helpful agent.";
         SafetyEngineOptions opt = new();
 
 

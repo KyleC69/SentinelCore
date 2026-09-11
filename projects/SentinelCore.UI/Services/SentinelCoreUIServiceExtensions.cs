@@ -40,6 +40,9 @@ public static class SentinelCoreUIServiceExtensions
         // Platform services
         services.AddSingleton<IDispatcherService, WpfDispatcherService>();
         services.AddSingleton<IClipboardService, WpfClipboardService>();
+        services.AddSingleton<IDialogService, WpfDialogService>();
+        services.AddSingleton<IFolderBrowserService, WpfFolderBrowserService>();
+        services.AddSingleton<IModelConfigStore, FileModelConfigStore>();
 
         // ViewModels
         services.AddTransient<CoreChatViewModel>();
@@ -47,6 +50,7 @@ public static class SentinelCoreUIServiceExtensions
         services.AddTransient<CaseDetailViewModel>();
         services.AddTransient<CreateCaseViewModel>();
         services.AddTransient<McpServersViewModel>();
+        services.AddTransient<ModelConfigViewModel>();
 
         // Views (each page is resolved from DI so its ViewModel is injected)
         services.AddTransient<CoreChatPage>();
@@ -54,6 +58,7 @@ public static class SentinelCoreUIServiceExtensions
         services.AddTransient<CaseDetailPage>();
         services.AddTransient<CreateCasePage>();
         services.AddTransient<McpServersPage>();
+        services.AddTransient<ModelConfigPage>();
 
         // Navigation — ViewLocator holds the ViewModel→Page type map
         Dictionary<string, Type> pageTypeMap = new()
@@ -62,7 +67,8 @@ public static class SentinelCoreUIServiceExtensions
             [typeof(CaseListViewModel).FullName!] = typeof(CaseListPage),
             [typeof(CaseDetailViewModel).FullName!] = typeof(CaseDetailPage),
             [typeof(CreateCaseViewModel).FullName!] = typeof(CreateCasePage),
-            [typeof(McpServersViewModel).FullName!] = typeof(McpServersPage)
+            [typeof(McpServersViewModel).FullName!] = typeof(McpServersPage),
+            [typeof(ModelConfigViewModel).FullName!] = typeof(ModelConfigPage)
         };
 
         services.AddSingleton<IViewLocator>(sp => new ViewLocator(sp, pageTypeMap));

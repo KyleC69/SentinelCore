@@ -38,7 +38,7 @@ public interface ICaseGenerator
 /// <summary>
 ///     Temporary class for populating database with case history.
 ///     AGENTS:  DO NOT CONSIDER THIS FILE IN ANY REASONING, PLANNING OR FEATURE DESIGN - JUST IGNORE COMPLETELY
-///     
+///
 /// </summary>
 
 public class CaseGenerator : ICaseGenerator, IDisposable
@@ -122,7 +122,8 @@ public class CaseGenerator : ICaseGenerator, IDisposable
         CaseTool caseTool = new(_engine);
 
         profile.Instructions = GeneratorInstructions;
-        profile.Model = _options.Value?.DefaultModel!;
+        // The model is owned by the Model Configuration page (per-agent entry,
+        // Core tier as secondary source). The factory gates the build when unconfigured.
         profile.Tools = [AIFunctionFactory.Create(caseTool.CreateCase), .. mcpTools]; // Combine MCP tools with the CaseTool
 
 

@@ -42,8 +42,8 @@ public sealed class WpfFolderBrowserService : IFolderBrowserService
             dialog.InitialDirectory = initialDirectory;
         }
 
-        Window? owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
-            ?? Application.Current?.MainWindow;
+        Window? owner = System.Windows.Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+            ?? System.Windows.Application.Current?.MainWindow;
 
         return dialog.ShowDialog(owner) == true ? dialog.FolderName : null;
     }

@@ -4,34 +4,43 @@
 
 ![SignalFound](assets/SignalFound.png)
 
-
 Sentinel Core is a multi-agent AI investigation platform that learns from every case and interaction to accelerate future resolutions. It takes a signal — a prompt, an event log error, an anomaly alert — and orchestrates a team of AI agents to investigate, gather evidence, and deliver a diagnosis with remediation steps.
 
 Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combines deterministic case lifecycle management, safety-gated state transitions, pattern memory, and 35+ agent personas to deliver accurate, auditable investigations on Windows systems. Explore the power of MAF and versatility with this application using multi-agents, RAG, context enriching, workflows, executors, multi-provider flexibility. NOTE: MAF is still under development.
 
-NOTE: The projects in this repo are not complete and are still under active development, expect changes and check back for updates.
-
-BUGS: Please report any bugs to the issues section of this repo. Some features may not be fully implemented yet.
+## **RELEASE DATE:** I am expecting to release v1.0 by the end of the month. I expect to have all the features implemented, they may not be fully polished yet, but I should have both editions done, regular and deluxe done by October 1st.
 
 ---
 
-## Key Features Development Status
-| Feature | Description |   Status  |
-| :------: | :-----------: | :---------: |
-| RAG Knowledge Base | Vectorized indexing of remote resources for on-demand retrieval | 75%   |
-| Multi-agent Orchestration | Several orchestrated agents perform investigation tasks as  collective and adversaries | ✅ |
-| Pattern Memory | Vectorized case history & resolutions enables instant resolution when a similar signal has been seen before | 50% |
-| Signal-driven Investigations | Submit a natural-language prompt, event log error, or automated anomaly alert the let the AI investigate | ✅ |
-| Deterministic Case Lifecycle | 11-state state machine with safety gating ensures no case transitions without validation | ✅ |
-| Safety Engine | `ISafetyMiddleware` gates every state transition; hosts can inject custom rules to block, allow, or modify actions | ✅ |
-| 35+ Agent Personas | Slightly different perspectives produce richer debate and more accurate results | ✅ |
-| Tools  |  80+ tools for Windows system interrogation packaged as MCP server | 70% |
-| MCP Plugins | Pluggable design allows system to shift focus to any domain, medical, fabrication, manufacturing etc. by switching knowledge sources and toolsets that act as the hands.| 50% |
-| LLM providers | Support for various LLM providers including Ollama (local), OpenAI, Azure OpenAI, GitHub Models, Anthropic, ONNX, or Foundry endpoints | ✅ |
+## New Features
 
+    Some unexpected enhancements were implemented that change the application in a huge way.
+    Sentinel Core now has MCP support. Knowledge and tools can be added live giving this forensic platform a completely different purpose. Sentinel Core ships with the Windows troubleshooting toolkit (MCP Server) other toolkits may be purchased for various  other domains and purposes such as enterprise toolkit which has tools for SQL Server,
+
+    The deluxe edition also has selectable orchestration patterns, 12 different orchestrations are available to attack a task.
+    There is magnetic group, cooperative group, adversarial group, group hand-off to name a few. Paired up with the personas each agent in the group can have a slightly different perspective, giving a brainstorming session a powerful twist.
 
 ---
+
+## Feature Development Status
+
+|           Feature            |                                                                               Description                                                                                | Status |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: |
+|      RAG Knowledge Base      |                                                     Vectorized indexing of remote or on-site resources for injected or on-demand retrieval.                                                       |  75%   |
+|  Multi-agent Orchestration   |                                          Several orchestrated agents perform investigation tasks as collective and adversaries. (Deluxe)                                           |   ✅   |
+|        Pattern Memory        |                               Global searchable case history & resolution knowledgebase enables instant resolution when a similar signal has been seen before                                |  50%   |
+| Signal-driven Investigations |                                 Submit a natural-language prompt, event log error, or automated anomaly alert the let the AI investigate                                 |   ✅   |
+| Deterministic Case Lifecycle |                                         11-state state machine with safety gating ensures no case transitions without validation                                         |   ✅   |
+|        Safety Engine         |                            `ISafetyMiddleware` gates every state transition; hosts can inject custom rules to block, allow, or modify actions                            |   ✅   |
+|      35+ Agent Personas      |                                             Slightly different perspectives produce richer debate and more accurate results (Deluxe)                                             |   ✅   |
+|            Tools             |                                                    80+ tools for Windows system interrogation packaged as MCP server                                                     |  100%   |
+|         MCP Support          | Pluggable design allows system to shift focus to any domain, medical, fabrication, manufacturing etc. by switching knowledge sources and toolsets that act as the hands. |  85%   |
+|        LLM providers         |                  Support for various LLM providers including Ollama (local), OpenAI, Azure OpenAI, GitHub Models, Anthropic, ONNX, or Foundry endpoints                  |   ✅   |
+
+---
+
 # Feature Details
+
 - **Multi-agent orchestration** — TheCore agent is at the heart and handles main reasoning and long term context memory. Several supportive agents are used for short term workload and pure decision gating. Nested workflows and executors keeps logic modular and easy to debug. Isolated core keeps main context clean and reduces model latency and increases over all reasoning accuracy. Design breaks up workload to allow for smaller local models to perform targeted tasks and not prone to stall.
 - **Air-gapped capable** — Ollama local model endpoint allows for fully air-gapped operation. No internet connection is required to run the system. All models and tools can be run locally.
 - **Versatile Design** - Pluggable RAG knowledge base allows system to shift focus to any domain, medical, fabrication, manufacturing etc. RAG features vector indexing summaries of remote resources and pulling remote data only when needed and relevant to task.
@@ -41,7 +50,7 @@ BUGS: Please report any bugs to the issues section of this repo. Some features m
 - **Deterministic case lifecycle** — 11-state state machine with safety gating ensures no case transitions without validation
 - **Safety engine** — `ISafetyMiddleware` gates every state transition; hosts can inject custom rules to block, allow, or modify actions
 - **35+ agent personas** — Slightly different perspectives produce richer debate and more accurate results
-- **40+ Windows diagnostic tools** — Registry, WMI, Event Log, Defender, Hyper-V, Firewall, and more
+- **80+ Windows diagnostic tools** — Registry, WMI, Event Log, Defender, Hyper-V, Firewall, and more
 - **Always-on persistence** — EF Core with SQL Server stores cases, evidence, signals, and pattern memory
 - **Model flexibility** — Ollama (local), OpenAI, Azure OpenAI, GitHub Models, Anthropic, ONNX, or Foundry endpoints
 - **Minimal host integration** — One extension method, one settings class, event handlers — you're running
@@ -52,36 +61,34 @@ BUGS: Please report any bugs to the issues section of this repo. Some features m
 
 ## Architecture
 
-
 ┌──────────────────────────────────────────────────────────────────────┐
-│                        SentinelCoreHost (WPF)                        │
-│  Calls AddSentinelCore(), subscribes to ISentinelCoreEvents         │
+│ SentinelCoreHost (WPF) │
+│ Calls AddSentinelCore(), subscribes to ISentinelCoreEvents │
 └──────────────────────────────┬───────────────────────────────────────┘
-                               │
+│
 ┌──────────────────────────────▼───────────────────────────────────────┐
-│              SentinelCore.Orchestrations (DI wiring)                  │
-│  AgentBuilder · SentinelAgentFactory · TheCoreWorkflow                │
-│  MagneticOrchestration · Executors · ToolRegistry · Events           │
+│ SentinelCore.Orchestrations (DI wiring) │
+│ AgentBuilder · SentinelAgentFactory · TheCoreWorkflow │
+│ MagneticOrchestration · Executors · ToolRegistry · Events │
 ├──────────────────────────────────────────────────────────────────────┤
-│              SentinelCore.CaseFlowEngine (lifecycle)                  │
-│  CaseFlowEngine · CaseRepository · EvidenceStore · PatternMemory    │
+│ SentinelCore.CaseFlowEngine (lifecycle) │
+│ CaseFlowEngine · CaseRepository · EvidenceStore · PatternMemory │
 ├──────────────────────────────────────────────────────────────────────┤
-│              SentinelCore.Contracts (zero dependencies)               │
-│  ICaseFlowEngine · ICaseRepository · IEvidenceStore · IPatternStore  │
-│  ISafetyMiddleware · SafetyContext · SafetyVerdict · CaseStatus      │
-│  Signal · Case · Evidence · SentinelCoreSettings · ModelProfile      │
-│  ISentinelCoreEvents · ActivityType · OrchestrationType              │
+│ SentinelCore.Contracts (zero dependencies) │
+│ ICaseFlowEngine · ICaseRepository · IEvidenceStore · IPatternStore │
+│ ISafetyMiddleware · SafetyContext · SafetyVerdict · CaseStatus │
+│ Signal · Case · Evidence · SentinelCoreSettings · ModelProfile │
+│ ISentinelCoreEvents · ActivityType · OrchestrationType │
 └──────────────────────────────────────────────────────────────────────┘
-
 
 ### Dependency Rules (Immutable)
 
-| Rule | Description |
-| ------ | ------------- |
-| **Contracts is zero-dependency** | Only NuGet packages — no project references |
-| **CaseFlowEngine depends on Contracts only** | Never references Orchestrations |
-| **Orchestrations depends on Contracts + CaseFlowEngine** | Wires everything together via DI |
-| **Host depends on all three** | Composes the final application |
+| Rule                                                     | Description                                 |
+| -------------------------------------------------------- | ------------------------------------------- |
+| **Contracts is zero-dependency**                         | Only NuGet packages — no project references |
+| **CaseFlowEngine depends on Contracts only**             | Never references Orchestrations             |
+| **Orchestrations depends on Contracts + CaseFlowEngine** | Wires everything together via DI            |
+| **Host depends on all three**                            | Composes the final application              |
 
 ---
 
@@ -227,22 +234,22 @@ services.AddSentinelCore(settings);
 
 This registers **all** SentinelCore services unconditionally:
 
-| Service | Lifetime | Description |
-| --------- | ---------- | ------------- |
-| `ICaseFlowEngine` | Transient | Case lifecycle state machine |
-| `ICaseRepository` | Transient | Case persistence (internal to CFE) |
-| `IEvidenceStore` | Transient | Evidence storage |
-| `IPatternMemoryStore` | Transient | Pattern memory (vector search) |
-| `ISafetyMiddleware` | Singleton | Safety gate (defaults to `NullSafetyMiddleware`) |
-| `ISentinelCoreEvents` | Singleton | Event hub for UI integration |
-| `IAgentProfileBuilder` | Singleton | Agent specification factory |
-| `ISystemReporter` | Singleton | Error/info reporting |
-| `ISentinelWorkflowExecution` | Singleton | Workflow execution engine |
-| `TheCoreWorkflow` | Singleton | Main investigation workflow |
-| `ISentinelAgentFactory` | Singleton | Agent construction pipeline |
-| `IOrchestrationFactory` | Singleton | Orchestration type factory |
-| `MagneticOrchestration` | Singleton | Multi-agent orchestration |
-| `SentinelCoreDBContext` | Scoped | EF Core DbContext |
+| Service                      | Lifetime  | Description                                      |
+| ---------------------------- | --------- | ------------------------------------------------ |
+| `ICaseFlowEngine`            | Transient | Case lifecycle state machine                     |
+| `ICaseRepository`            | Transient | Case persistence (internal to CFE)               |
+| `IEvidenceStore`             | Transient | Evidence storage                                 |
+| `IPatternMemoryStore`        | Transient | Pattern memory (vector search)                   |
+| `ISafetyMiddleware`          | Singleton | Safety gate (defaults to `NullSafetyMiddleware`) |
+| `ISentinelCoreEvents`        | Singleton | Event hub for UI integration                     |
+| `IAgentProfileBuilder`       | Singleton | Agent specification factory                      |
+| `ISystemReporter`            | Singleton | Error/info reporting                             |
+| `ISentinelWorkflowExecution` | Singleton | Workflow execution engine                        |
+| `TheCoreWorkflow`            | Singleton | Main investigation workflow                      |
+| `ISentinelAgentFactory`      | Singleton | Agent construction pipeline                      |
+| `IOrchestrationFactory`      | Singleton | Orchestration type factory                       |
+| `MagneticOrchestration`      | Singleton | Multi-agent orchestration                        |
+| `SentinelCoreDBContext`      | Scoped    | EF Core DbContext                                |
 
 ### 3. Subscribe to Events
 
@@ -372,59 +379,59 @@ projects/
 
 ### Contracts (`SentinelCore.Contracts`)
 
-| Type | Description |
-| ------ | ------------- |
-| `ICaseFlowEngine` | Owns the case lifecycle. Create cases and advance status. |
-| `ICaseRepository` | Internal persistence for case records. Use `ICaseFlowEngine` instead. |
-| `IEvidenceStore` | Append and retrieve evidence items for a case. |
-| `IPatternMemoryStore` | Store and search vectorized case patterns. |
-| `ISafetyMiddleware` | Evaluate `SafetyContext` → `SafetyVerdict` (Allowed/Blocked/Modified). |
-| `ISentinelCoreEvents` | Event hub for UI integration (output, errors, orchestration). |
-| `ISystemReporter` | Report errors, warnings, and info to logging + event stream. |
-| `IOrchestrationControl` | Entry point to start an orchestration from a signal. |
-| `ISentinelWorkflowExecution` | Execute a `Workflow` with event capture. |
-| `IAgentProfileBuilder` | Build `AgentProfile` specs by role and name. |
-| `ISentinelAgentFactory` | Construct `AIAgent` instances from profiles. |
-| `IOrchestrationFactory` | Create `IOrchestration` instances by `OrchestrationType`. |
+| Type                         | Description                                                            |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| `ICaseFlowEngine`            | Owns the case lifecycle. Create cases and advance status.              |
+| `ICaseRepository`            | Internal persistence for case records. Use `ICaseFlowEngine` instead.  |
+| `IEvidenceStore`             | Append and retrieve evidence items for a case.                         |
+| `IPatternMemoryStore`        | Store and search vectorized case patterns.                             |
+| `ISafetyMiddleware`          | Evaluate `SafetyContext` → `SafetyVerdict` (Allowed/Blocked/Modified). |
+| `ISentinelCoreEvents`        | Event hub for UI integration (output, errors, orchestration).          |
+| `ISystemReporter`            | Report errors, warnings, and info to logging + event stream.           |
+| `IOrchestrationControl`      | Entry point to start an orchestration from a signal.                   |
+| `ISentinelWorkflowExecution` | Execute a `Workflow` with event capture.                               |
+| `IAgentProfileBuilder`       | Build `AgentProfile` specs by role and name.                           |
+| `ISentinelAgentFactory`      | Construct `AIAgent` instances from profiles.                           |
+| `IOrchestrationFactory`      | Create `IOrchestration` instances by `OrchestrationType`.              |
 
 ### Case Flow (`SentinelCore.CaseFlowEngine`)
 
-| Type | Description |
-| ------ | ------------- |
-| `CaseFlowEngine` | Default `ICaseFlowEngine` implementation. Validates transitions, gates with safety. |
-| `CaseRepository` | EF Core implementation of `ICaseRepository`. |
-| `EvidenceStore` | EF Core implementation of `IEvidenceStore`. |
-| `PatternMemoryStore` | EF Core implementation of `IPatternMemoryStore`. |
-| `SignalRepository` | EF Core implementation of `ISignalRepository`. |
-| `DatabaseInitializer` | `IHostedService` that runs EF Core migrations on startup. |
-| `SentinelCoreDBContext` | EF Core DbContext for SQL Server persistence. |
+| Type                    | Description                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| `CaseFlowEngine`        | Default `ICaseFlowEngine` implementation. Validates transitions, gates with safety. |
+| `CaseRepository`        | EF Core implementation of `ICaseRepository`.                                        |
+| `EvidenceStore`         | EF Core implementation of `IEvidenceStore`.                                         |
+| `PatternMemoryStore`    | EF Core implementation of `IPatternMemoryStore`.                                    |
+| `SignalRepository`      | EF Core implementation of `ISignalRepository`.                                      |
+| `DatabaseInitializer`   | `IHostedService` that runs EF Core migrations on startup.                           |
+| `SentinelCoreDBContext` | EF Core DbContext for SQL Server persistence.                                       |
 
-### Safety Engine (`SentinelCore.SafetyEngine`)  -- stubs/hooks only, design TBD
+### Safety Engine (`SentinelCore.SafetyEngine`) -- stubs/hooks only, design TBD
 
-| Type | Description |
-| ------ | ------------- |
-| `ISafetyMiddleware` | Evaluate a `SafetyContext` and return a `SafetyVerdict`. |
-| `SafetyContext` | Carries `CaseId`, `FunctionCall`, `FunctionResult`, `Message`, `MutatingToolNames`, `RegisteredToolNames`. |
-| `SafetyVerdict` | `Allowed`, `Blocked`, or `Modified`. |
-| `NullSafetyMiddleware` | Default pass-through — always returns `Allowed`. |
+| Type                   | Description                                                                                                |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `ISafetyMiddleware`    | Evaluate a `SafetyContext` and return a `SafetyVerdict`.                                                   |
+| `SafetyContext`        | Carries `CaseId`, `FunctionCall`, `FunctionResult`, `Message`, `MutatingToolNames`, `RegisteredToolNames`. |
+| `SafetyVerdict`        | `Allowed`, `Blocked`, or `Modified`.                                                                       |
+| `NullSafetyMiddleware` | Default pass-through — always returns `Allowed`.                                                           |
 
 ### Orchestration (`SentinelCore.Orchestrations`) -- (Single pattern version)
 
 The platform is built around selectable varying patterns for many use cases.
-** Extra patterns have been removed from the Forensics Edition
+\*\* Extra patterns have been removed from the Forensics Edition
 
-| Type | Description |
-| ------ | ------------- |
-| `TheCoreWorkflow` | Main investigation workflow with signal classification and routing. |
-| `MagneticOrchestration` | Multi-agent orchestration: Manager dispatches Domain Agents. | -- reduced to mag workflow
-| `OrchestrationControl` | `IOrchestrationControl` implementation — starts an orchestration. |
-| `OrchestrationFactory` | Creates `IOrchestration` instances by `OrchestrationType`. | -- Expansion to add orchestrations
-| `SentinelAgentFactory` | Builds `AIAgent` from `AgentProfile` with full middleware pipeline. |
-| `AgentBuilder` | Constructs agents with logging, events, safety, and pattern memory. |
-| `AgentProfile` | Immutable specification for agent construction (model, tools, persona, role). |
-| `AgentRole` | `Core`, `Manager`, or `Utility`. | -- Phasing out in favor of profile
-| `AgentMiddlewarePipeline` | Predefined middleware stacks: Core, Default, Domain, Manager, Minimal. | -- RAG/KB indexing/specialty knowledge
-| `ToolRegistry` | Maps 40+ Windows diagnostic tools to domain categories. | --- Read-only system interrogaters
+| Type                      | Description                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------- | -------------------------------------- |
+| `TheCoreWorkflow`         | Main investigation workflow with signal classification and routing.           |
+| `MagneticOrchestration`   | Multi-agent orchestration: Manager dispatches Domain Agents.                  | -- reduced to mag workflow             |
+| `OrchestrationControl`    | `IOrchestrationControl` implementation — starts an orchestration.             |
+| `OrchestrationFactory`    | Creates `IOrchestration` instances by `OrchestrationType`.                    | -- Expansion to add orchestrations     |
+| `SentinelAgentFactory`    | Builds `AIAgent` from `AgentProfile` with full middleware pipeline.           |
+| `AgentBuilder`            | Constructs agents with logging, events, safety, and pattern memory.           |
+| `AgentProfile`            | Immutable specification for agent construction (model, tools, persona, role). |
+| `AgentRole`               | `Core`, `Manager`, or `Utility`.                                              | -- Phasing out in favor of profile     |
+| `AgentMiddlewarePipeline` | Predefined middleware stacks: Core, Default, Domain, Manager, Minimal.        | -- RAG/KB indexing/specialty knowledge |
+| `ToolRegistry`            | Maps 40+ Windows diagnostic tools to domain categories.                       | --- Read-only system interrogaters     |
 
 ---
 
@@ -432,15 +439,15 @@ The platform is built around selectable varying patterns for many use cases.
 
 SentinelCore supports multiple model providers via `ModelProfile`:
 
-| Provider | Endpoint Example | Notes |
-| ---------- | ----------------- | ------- |
-| `Ollama` | `http://127.0.0.1:11434` | Local/cloud inference, air-gapped capable |
-| `OpenAI` | `https://api.openai.com/v1` | Requires `ApiKey` |
-| `AzureOpenAI` | `https://<resource>.openai.azure.com` | Requires `ApiKey` |
-| `GitHubModels` | `https://models.inference.ai.azure.com` | Requires `ApiKey` |
-| `Anthropic` | — | Planned (not yet implemented) |
-| `Foundry` | — | Azure AI Foundry |
-| `ONNX` | Local file path | On-device inference via `ModelPath` + `ExecutionProvider` |
+| Provider       | Endpoint Example                        | Notes                                                     |
+| -------------- | --------------------------------------- | --------------------------------------------------------- |
+| `Ollama`       | `http://127.0.0.1:11434`                | Local/cloud inference, air-gapped capable                 |
+| `OpenAI`       | `https://api.openai.com/v1`             | Requires `ApiKey`                                         |
+| `AzureOpenAI`  | `https://<resource>.openai.azure.com`   | Requires `ApiKey`                                         |
+| `GitHubModels` | `https://models.inference.ai.azure.com` | Requires `ApiKey`                                         |
+| `Anthropic`    | —                                       | Planned (not yet implemented)                             |
+| `Foundry`      | —                                       | Azure AI Foundry                                          |
+| `ONNX`         | Local file path                         | On-device inference via `ModelPath` + `ExecutionProvider` |
 
 ---
 
@@ -451,14 +458,14 @@ These have been crafted to only alter a point of view, not restrict any system o
 This eliminates stale group debates, encourages variations in thinking patterns, paired with TopN and temperature you get a clean
 separation of ideas and an actual group discussion that can produced inventive and powerful variations with the same model accross the board.
 
-| Category | Personas |
-| ---------- | ---------- |
-| Leadership | TheArchitect, TheLeader, TheManager, TheStrategist, TheVisionary |
-| Analysis | TheAnalyst, TheResearcher, TheEvaluator, TheCritic |
-| Building | TheEngineer, TheDesigner, TheInnovator, TheImplementer |
-| Communication | TheCommunicator, TheCollaborator, TheNegotiator, TheInfluencer, TheAdvisor |
-| Support | TheMentor, TheCoach, TheFacilitator, TheSupporter, TheTrainer, TheEducator, TheMotivator, TheInspirer |
-| Operations | ThePlanner, TheOrganizer, TheTester, TheMaintainer, TheProblemSolver, TheDecisionMaker |
+| Category      | Personas                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------- |
+| Leadership    | TheArchitect, TheLeader, TheManager, TheStrategist, TheVisionary                                      |
+| Analysis      | TheAnalyst, TheResearcher, TheEvaluator, TheCritic                                                    |
+| Building      | TheEngineer, TheDesigner, TheInnovator, TheImplementer                                                |
+| Communication | TheCommunicator, TheCollaborator, TheNegotiator, TheInfluencer, TheAdvisor                            |
+| Support       | TheMentor, TheCoach, TheFacilitator, TheSupporter, TheTrainer, TheEducator, TheMotivator, TheInspirer |
+| Operations    | ThePlanner, TheOrganizer, TheTester, TheMaintainer, TheProblemSolver, TheDecisionMaker                |
 
 ---
 
@@ -469,14 +476,14 @@ to fix what it found. Tools are exploratory only, operator applies fixes.
 
 40+ read-only AITools organized by domain:
 
-| Domain | Tools |
-| -------- | ------- |
-| System | Registry, WMI, Environment Variables, Processes, Services, Drivers, Boot Config |
+| Domain   | Tools                                                                              |
+| -------- | ---------------------------------------------------------------------------------- |
+| System   | Registry, WMI, Environment Variables, Processes, Services, Drivers, Boot Config    |
 | Security | Defender, Firewall, AppLocker, BitLocker, UAC, Credentials, Certificates, Auditing |
-| Network | Network, VPN, Wireless, Proxy, RDP |
-| Hardware | Battery, Display, PnP Devices, Sensors, Hyper-V |
-| Software | Installed Apps, Browser Config, Fonts, Search Indexing, Scheduled Tasks |
-| User | Local Accounts, Group Policy, Notifications, Accessibility, Shell Explorer |
+| Network  | Network, VPN, Wireless, Proxy, RDP                                                 |
+| Hardware | Battery, Display, PnP Devices, Sensors, Hyper-V                                    |
+| Software | Installed Apps, Browser Config, Fonts, Search Indexing, Scheduled Tasks            |
+| User     | Local Accounts, Group Policy, Notifications, Accessibility, Shell Explorer         |
 
 ---
 
@@ -507,12 +514,12 @@ public interface ISentinelCoreEvents
 
 ## Exceptions
 
-| Exception | Purpose |
-| ----------- | --------- |
-| `SentinelCaseEngineException` | Errors in case lifecycle operations |
-| `SentinelCoreModelException` | Errors directly attributable to the AI model |
-| `SentinelCorePlatformException` | Fatal platform errors requiring immediate attention |
-| `SentinelOrchestrationException` | Errors during orchestration execution |
+| Exception                        | Purpose                                             |
+| -------------------------------- | --------------------------------------------------- |
+| `SentinelCaseEngineException`    | Errors in case lifecycle operations                 |
+| `SentinelCoreModelException`     | Errors directly attributable to the AI model        |
+| `SentinelCorePlatformException`  | Fatal platform errors requiring immediate attention |
+| `SentinelOrchestrationException` | Errors during orchestration execution               |
 
 ---
 

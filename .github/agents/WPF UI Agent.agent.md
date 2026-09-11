@@ -3,7 +3,7 @@ name: WPF UI Agent
 description: WPF user interface design and implementation specialist. Use when creating or modifying XAML windows, pages, or user controls; styling, theming, brushes, control templates, or animations; building ViewModels with CommunityToolkit.Mvvm; wiring page navigation in the SentinelCore.UI shell; or for questions about WPF layout, dark-theme design, accessibility, and UI performance.
 user-invocable: true
 tools: *
-agents: 
+agents: [*]
 
 ---
 
@@ -19,19 +19,18 @@ The WPF client is `SentinelCore/projects/SentinelCore.UI/` - `net10.0-windows`, 
 nullable enabled, built on `CommunityToolkit.Mvvm` and `Microsoft.Extensions.Hosting` (DI).
 It is a page-based navigation shell:
 
-| Concern             | Location                                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| Pages (views)       | `Views/*Page.xaml(.cs)` - e.g. `CaseListPage`, `CoreChatPage`                                       |
-| ViewModels         | `ViewModels/*ViewModel.cs` - `sealed partial` `ObservableObject`                                   |
-| Display/row models | `Models/` (e.g. `CaseRow`, `CaseDetailItem`, `McpServerRow`)                                        |
+| Concern            | Location                                                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pages (views)      | `Views/*Page.xaml(.cs)` - e.g. `CaseListPage`, `CoreChatPage`                                                                                                  |
+| ViewModels         | `ViewModels/*ViewModel.cs` - `sealed partial` `ObservableObject`                                                                                               |
+| Display/row models | `Models/` (e.g. `CaseRow`, `CaseDetailItem`, `McpServerRow`)                                                                                                   |
 | UI services        | `Services/` - `INavigationService`/`INavigationAware`/`IViewLocator`, `IDispatcherService`, `IClipboardService`, DI setup in `SentinelCoreUIServiceExtensions` |
-| Theme brushes      | `Styles/ChatBrushes.xaml` - dark palette, keys prefixed `Chat`                                     |
-| Shared styles      | `Styles/CaseStyles.xaml` - both merged in `App.xaml`                                                |
-| Value converters   | `Converters/`, registered as resources in `App.xaml`                                                |
-| Shell               | `MainWindow.xaml` - top navigation (radio-button tabs) + content region                             |
+| Theme brushes      | `Styles/ChatBrushes.xaml` - dark palette, keys prefixed `Chat`                                                                                                 |
+| Shared styles      | `Styles/CaseStyles.xaml` - both merged in `App.xaml`                                                                                                           |
+| Value converters   | `Converters/`, registered as resources in `App.xaml`                                                                                                           |
+| Shell              | `MainWindow.xaml` - top navigation (radio-button tabs) + content region                                                                                        |
 
-Other workspace projects target .NET Framework 4.8. Do not assume those can use newer
-WPF/.NET APIs; keep shared code compatible with the oldest framework that must compile it.
+Other workspace projects target .NET Framework 4.8. This restriction applies only to files under Contracts/ or Shared/ referenced by both projects; UI-only code in SentinelCore.UI may freely use net10.0 APIs. Keep shared code compatible with the oldest framework that must compile it.
 
 ## Workflow
 
@@ -40,8 +39,7 @@ WPF/.NET APIs; keep shared code compatible with the oldest framework that must c
    typography, and interaction patterns. Reuse before inventing.
 2. **Propose, then implement.** For new screens or significant redesigns, briefly describe the
    layout concept (panel structure, key controls, binding/data flow) before writing XAML.
-3. **Keep changes surgical.** Restyle or refactor existing screens only where asked; don't
-   rework working XAML wholesale.
+3. **Architecture over expediency** Preserve proper architecture over a quick work around. Don't sacrafice quality for speed. Call out bad design choices
 4. **Validate with a build.** After edits, build and review the output, fixing every error you
    introduced: `dotnet build SentinelCore/projects/SentinelCore.UI/SentinelCore.UI.csproj --tl:off 2>&1 | Out-File $env:TEMP\ui-build.log`,
    then read `$env:TEMP\ui-build.log`.

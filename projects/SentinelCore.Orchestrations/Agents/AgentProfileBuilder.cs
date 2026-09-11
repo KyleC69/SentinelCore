@@ -151,20 +151,44 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
         AgentProfile profile = BuildDefaultAgentSpec(agentName);
         profile.Role = role;
 
-        switch (role)
-        {
-            case AgentRole.Core:
-                profile.Model = _options.DefaultModel ?? ModelProfile.Glm5();
-                break;
-            case AgentRole.Manager:
-                profile.Model = _options.ManagerModel ?? _options.DefaultModel ?? ModelProfile.Gpt120();
-                break;
-            case AgentRole.Utility:
-                profile.Model = _options.DefaultUtilityModel ?? ModelProfile.Gpt20();
-                break;
-        }
+        // Per-agent configuration wins; the role tier is the secondary source.
+        // There is deliberately NO hardcoded fallback — an unconfigured agent
+        // carries a null Model and the agent factory gates it with a clear error.
+        profile.Model = TryGetModel(agentName, role) ?? new ModelProfile();
 
         return profile;
+    }
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Attempts to resolve the model profile configured for a logical agent name.
+    ///     Resolution order: per-agent entry in <see cref="SentinelCoreSettings.AgentModels" />,
+    ///     then the agent's role tier. Returns <c>null</c> when the agent is unconfigured.
+    /// </summary>
+    /// <param name="agentName">The logical agent name.</param>
+    /// <param name="role">The agent's role, used for the tier fallback.</param>
+    /// <returns>The configured model profile, or <c>null</c> when the agent is unconfigured.</returns>
+    public ModelProfile? TryGetModel(string agentName, AgentRole role)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
+
+        if (_options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent))
+        {
+            return perAgent;
+        }
+
+        return role switch
+        {
+            AgentRole.Core => _options.DefaultModel,
+            AgentRole.Manager => _options.ManagerModel ?? _options.DefaultModel,
+            AgentRole.Utility => _options.DefaultUtilityModel,
+            _ => _options.DefaultModel
+        };
     }
 
 
@@ -251,8 +275,10 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
         profile.AgentName = agentName;
         profile.AgentId = agentName;
         profile.Instructions = "";
-        // If the configuration does not provide a default model, fallback to Glm5.
-        profile.Model = _options.DefaultModel ?? ModelProfile.Glm5();
+        // No hardcoded fallback — the factory gate rejects unconfigured agents.
+        profile.Model = _options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent)
+            ? perAgent
+            : null;
 
 
 

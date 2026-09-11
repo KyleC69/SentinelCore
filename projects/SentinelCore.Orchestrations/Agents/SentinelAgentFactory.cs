@@ -140,6 +140,16 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         // Synchronously wait for the async method to complete
 
+        // Configuration gate — an agent without a model profile cannot run.
+        // There is deliberately no fallback: the user must configure the agent
+        // on the Model Configuration page.
+        if (profile.Model is null)
+        {
+            throw new InvalidOperationException(
+                $"Agent '{logicalAgentName}' has no model configuration. " +
+                "Open the Model Configuration page and set a provider, model, and endpoint for this agent.");
+        }
+
         // 1. Create the chat client from the profile's model configuration.
         IChatClient chatClient = SentinelChatClientFactory.CreateChatClient(profile.Model);
         IChatClient eventClient = WrapEventPublishing(chatClient, profile); //client

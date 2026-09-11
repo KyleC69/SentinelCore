@@ -77,7 +77,13 @@ public sealed record AgentProfile
     /// </summary>
     public string Instructions { get; set; } = string.Empty;
 
-    public ModelProfile Model { get; set; } = new();
+    /// <summary>
+    ///     The model profile for this agent. <c>null</c> means the agent is not
+    ///     configured — <see cref="SentinelAgentFactory.BuildFromProfileAsync" />
+    ///     rejects such agents with a descriptive error pointing at the Model
+    ///     Configuration page.
+    /// </summary>
+    public ModelProfile? Model { get; set; }
 
     /// <summary>
     ///     A persona is a unique feature within this platform. It provides an agent with a strong personality characteristic.

@@ -59,6 +59,8 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private bool _disposed;
 
+    private readonly IModelConfigGate _modelConfigGate;
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
@@ -107,6 +109,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// <param name="logger">The logger for this view-model.</param>
     /// <param name="dispatcher">The dispatcher service for thread-affinity marshaling.</param>
     /// <param name="clipboardService">The clipboard service for copying message text.</param>
+    /// <param name="modelConfigGate">The gate that reports whether agent models are configured.</param>
     /// <param name="appShutdownToken">A token cancelled when the application begins shutting down.</param>
     public CoreChatViewModel(
         IOrchestrationControl orchestrationControl,
@@ -115,6 +118,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         ILogger<CoreChatViewModel> logger,
         IDispatcherService dispatcher,
         IClipboardService clipboardService,
+        IModelConfigGate modelConfigGate,
         CancellationToken appShutdownToken)
     {
         _orchestrationControl = orchestrationControl ?? throw new ArgumentNullException(nameof(orchestrationControl));
@@ -123,6 +127,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
+        _modelConfigGate = modelConfigGate ?? throw new ArgumentNullException(nameof(modelConfigGate));
         _appShutdownToken = appShutdownToken;
 
 
@@ -139,6 +144,21 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     }
 
 
+
+
+
+
+    /// <summary>
+    ///     Gets the message describing incomplete model configuration, or an empty
+    ///     string when every agent is configured. Bound to the warning banner.
+    /// </summary>
+    public string ConfigGateMessage => _modelConfigGate.BuildGateMessage();
+
+    /// <summary>
+    ///     Gets a value indicating whether model configuration is incomplete,
+    ///     driving the warning banner visibility.
+    /// </summary>
+    public bool IsConfigIncomplete => !_modelConfigGate.IsConfigurationComplete;
 
 
 
@@ -222,7 +242,8 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private bool CanSend()
     {
-        return !IsBusy && !string.IsNullOrWhiteSpace(InputText);
+        // Gate: agent models must be configured before any orchestration can run.
+        return !IsBusy && !string.IsNullOrWhiteSpace(InputText) && _modelConfigGate.IsConfigurationComplete;
     }
 
 
@@ -288,14 +309,14 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
             // Single grouped query instead of one round-trip per status.
             IReadOnlyDictionary<CaseStatus, int> counts = await _caseFlowEngine.GetCaseStatusCountsAsync(_appShutdownToken).ConfigureAwait(false);
 
-            _dispatcher.Invoke(() =>
+            if (_dispatcher.CheckAccess())
             {
-                OpenCount = counts.TryGetValue(CaseStatus.Open, out int open) ? open : 0;
-                InvestigationCount = counts.TryGetValue(CaseStatus.Investigation, out int investigation) ? investigation : 0;
-                EscalatedCount = counts.TryGetValue(CaseStatus.Escalated, out int escalated) ? escalated : 0;
-                AlertedCount = counts.TryGetValue(CaseStatus.Alerted, out int alerted) ? alerted : 0;
-                BlockedCount = counts.TryGetValue(CaseStatus.Blocked, out int blocked) ? blocked : 0;
-            });
+                ApplyCaseCounts(counts);
+            }
+            else
+            {
+                await _dispatcher.InvokeAsync(() => ApplyCaseCounts(counts)).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -305,6 +326,24 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         {
             _logger.LogWarning(ex, "Failed to refresh case status counts.");
         }
+    }
+
+
+
+
+
+    /// <summary>
+    ///     Applies freshly loaded case counts to the telemetry properties.
+    ///     Must run on the UI thread.
+    /// </summary>
+    /// <param name="counts">The per-status case counts.</param>
+    private void ApplyCaseCounts(IReadOnlyDictionary<CaseStatus, int> counts)
+    {
+        OpenCount = counts.TryGetValue(CaseStatus.Open, out int open) ? open : 0;
+        InvestigationCount = counts.TryGetValue(CaseStatus.Investigation, out int investigation) ? investigation : 0;
+        EscalatedCount = counts.TryGetValue(CaseStatus.Escalated, out int escalated) ? escalated : 0;
+        AlertedCount = counts.TryGetValue(CaseStatus.Alerted, out int alerted) ? alerted : 0;
+        BlockedCount = counts.TryGetValue(CaseStatus.Blocked, out int blocked) ? blocked : 0;
     }
 
 
@@ -325,12 +364,15 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
     /// <summary>
-    ///     Navigated back to the chat page — re-query case counts so the
-    ///     telemetry panel reflects changes made on the other pages.
+    ///     Navigated back to the chat page — re-query case counts and refresh the
+    ///     configuration gate so the banner reflects changes made on the config page.
     /// </summary>
     public void OnNavigatedTo(object? parameter)
     {
         _ = RefreshCaseCountsAsync();
+        OnPropertyChanged(nameof(IsConfigIncomplete));
+        OnPropertyChanged(nameof(ConfigGateMessage));
+        SendCommand.NotifyCanExecuteChanged();
     }
 
 

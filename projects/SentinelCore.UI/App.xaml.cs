@@ -11,11 +11,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using SentinelCore.Abstractions;
+using SentinelCore.Agents;
 using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts;
 using SentinelCore.Infrastructure.DependencyInjection;
+using SentinelCore.Mcp;
 using SentinelCore.RemoteKB.Persistence;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
@@ -76,20 +79,42 @@ public partial class App : System.Windows.Application
 
     private void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
-        // SentinelCore orchestration, events, and case-flow
+        // SentinelCore orchestration, events, and case-flow.
+        // Model configuration is owned by the Model Configuration page — loaded
+        // from the persisted document. There is no hardcoded fallback: agents
+        // without configuration are gated at the factory.
         SentinelCoreSettings sentinelSettings = new()
         {
             SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
             TraceEnabled = true,
             TraceLogLevel = LogLevel.Trace,
-            OrchestrationType = OrchestrationType.TheCore,
-            DefaultModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", .2f, 15000, 1, .2f),
-            DefaultUtilityModel = new ModelProfile("http://127.0.0.1:11434", "glm-5.1:cloud", 0.1f, 12000, 1, 0.3f)
+            OrchestrationType = OrchestrationType.TheCore
         };
+
+        // Seed per-agent models from the persisted configuration document so the
+        // first orchestration after startup uses the user's saved configuration.
+        FileModelConfigStore seedStore = new(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<FileModelConfigStore>.Instance);
+        ModelConfigDocument? document = seedStore.Load();
+
+        if (document is not null)
+        {
+            foreach (KeyValuePair<string, ModelProfile> entry in document.AgentModels)
+            {
+                sentinelSettings.AgentModels[entry.Key] = entry.Value;
+            }
+        }
+
         services.AddSentinelCore(sentinelSettings);
 
         // UI layer — services, ViewModels, Views, and navigation
         services.AddSentinelCoreUI();
+
+        // Model configuration gate — evaluates catalog agents against the live settings.
+        services.AddSingleton<IModelConfigGate>(sp => new ModelConfigGate(
+            sp.GetRequiredService<ISentinelAgentCatalog>(),
+            sp.GetRequiredService<IAgentProfileBuilder>(),
+            sp.GetRequiredService<IOptions<SentinelCoreSettings>>().Value));
 
         // Application shutdown token — injected into ViewModels so in-flight work
         // can be cancelled cooperatively when the app exits. CancellationToken is a

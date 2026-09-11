@@ -24,6 +24,15 @@ namespace SentinelCore.Contracts;
 public sealed class SentinelCoreSettings
 {
     /// <summary>
+    ///     Per-agent model profiles keyed by logical agent name (e.g. "TheCore",
+    ///     "Manager", "Worker1"). The Model Configuration page owns this map — an
+    ///     agent with no entry here falls back to its role tier, and an agent with
+    ///     no configuration anywhere fails the factory gate with a descriptive error.
+    /// </summary>
+    public IDictionary<string, ModelProfile> AgentModels { get; set; } =
+        new Dictionary<string, ModelProfile>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     ///     Default model options used when no specialized model is configured.
     /// </summary>
     public ModelProfile? DefaultModel { get; set; }

@@ -33,8 +33,8 @@ public sealed class WpfDialogService : IDialogService
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
         ArgumentException.ThrowIfNullOrWhiteSpace(confirmButtonText);
 
-        Window? owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
-            ?? Application.Current?.MainWindow;
+        Window? owner = System.Windows.Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+            ?? System.Windows.Application.Current?.MainWindow;
 
         ConfirmationDialog dialog = new(title, message, confirmButtonText, isDestructive)
         {

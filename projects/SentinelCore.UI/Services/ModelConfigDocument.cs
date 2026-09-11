@@ -21,27 +21,16 @@ namespace SentinelCore.UI.Services;
 
 
 /// <summary>
-///     The persisted model configuration document. One <see cref="ModelProfile" />
-///     per configuration slot; <c>null</c> slots fall back at runtime
-///     (MagManager → TheCore, Utility → engine defaults).
+///     The persisted model configuration document: one <see cref="ModelProfile" />
+///     per logical agent name, matching the cards on the Model Configuration page.
+///     Agents with no entry are unconfigured and fail the factory gate.
 /// </summary>
 public sealed class ModelConfigDocument
 {
     /// <summary>
-    ///     The model profile for the TheCore reasoning agent slot.
+    ///     Per-agent model profiles keyed by logical agent name.
     /// </summary>
-    [JsonPropertyName("theCore")]
-    public ModelProfile? TheCore { get; set; }
-
-    /// <summary>
-    ///     The model profile for the Magnetic Orchestration Manager slot.
-    /// </summary>
-    [JsonPropertyName("magManager")]
-    public ModelProfile? MagManager { get; set; }
-
-    /// <summary>
-    ///     The model profile for the Utility catch-all slot (all remaining agents).
-    /// </summary>
-    [JsonPropertyName("utility")]
-    public ModelProfile? Utility { get; set; }
+    [JsonPropertyName("agentModels")]
+    public IDictionary<string, ModelProfile> AgentModels { get; set; } =
+        new Dictionary<string, ModelProfile>(StringComparer.OrdinalIgnoreCase);
 }

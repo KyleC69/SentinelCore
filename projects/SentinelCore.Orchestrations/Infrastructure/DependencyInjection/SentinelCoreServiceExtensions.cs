@@ -88,6 +88,11 @@ public static class SentinelCoreServiceExtensions
                     opt.DefaultUtilityModel = options.DefaultUtilityModel;
                     opt.OrchestrationType = options.OrchestrationType;
                     opt.SqlConnectionString = options.SqlConnectionString;
+
+                    foreach (KeyValuePair<string, ModelProfile> entry in options.AgentModels)
+                    {
+                        opt.AgentModels[entry.Key] = entry.Value;
+                    }
                 });
 
         JsonConfiguredLogging(services);

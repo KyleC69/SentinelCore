@@ -17,6 +17,8 @@ using SentinelCore.UI.Services;
 
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Windows.Input;
+
 
 
 
@@ -33,7 +35,9 @@ namespace SentinelCore.UI.ViewModels;
 public sealed partial class McpServersViewModel : ObservableObject, INavigationAware, IDisposable
 {
     private readonly ISentinelAgentCatalog _agentCatalog;
+    private readonly IDialogService _dialogService;
     private readonly IDispatcherService _dispatcher;
+    private readonly IFolderBrowserService _folderBrowser;
     private readonly IMcpServerRegistry _registry;
     private readonly ILogger<McpServersViewModel> _logger;
     private readonly CancellationTokenSource _lifecycleCts = new();
@@ -106,6 +110,31 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     /// </summary>
     private int _assignmentLoadVersion;
 
+    private void HookCommand(IRelayCommand command)
+    {
+        command.CanExecuteChanged += (s, e) =>
+        {
+            if (_dispatcher.CheckAccess())
+            {
+                CommandManager.InvalidateRequerySuggested();
+            }
+            else
+            {
+                _dispatcher.Invoke(CommandManager.InvalidateRequerySuggested);
+            }
+        };
+    }
+
+    private void SetBusyState(bool isBusy)
+    {
+        if (_dispatcher.CheckAccess())
+        {
+            IsBusy = isBusy;
+            return;
+        }
+
+        _dispatcher.Invoke(() => IsBusy = isBusy);
+    }
 
 
 
@@ -117,16 +146,32 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     /// <param name="agentCatalog">The catalog of logical agent names.</param>
     /// <param name="logger">The logger for this view-model.</param>
     /// <param name="dispatcher">The dispatcher service for thread-affinity marshaling.</param>
+    /// <param name="dialogService">The dialog service for destructive-action confirmations.</param>
+    /// <param name="folderBrowser">The folder browser service for the working-directory picker.</param>
     public McpServersViewModel(
         IMcpServerRegistry registry,
         ISentinelAgentCatalog agentCatalog,
         ILogger<McpServersViewModel> logger,
-        IDispatcherService dispatcher)
+        IDispatcherService dispatcher,
+        IDialogService dialogService,
+        IFolderBrowserService folderBrowser)
     {
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _agentCatalog = agentCatalog ?? throw new ArgumentNullException(nameof(agentCatalog));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+        _folderBrowser = folderBrowser ?? throw new ArgumentNullException(nameof(folderBrowser));
+
+        HookCommand(AddServerCommand);
+        HookCommand(StartServerCommand);
+        HookCommand(StopServerCommand);
+        HookCommand(RemoveServerCommand);
+        HookCommand(UpdateAssignmentsCommand);
+    }
+
+    public McpServersViewModel()
+    {
     }
 
 
@@ -228,7 +273,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             }
             else
             {
-                _dispatcher.Invoke(() => SelectedServerAgentAssignments = rows);
+                await _dispatcher.InvokeAsync(() => SelectedServerAgentAssignments = rows).ConfigureAwait(false);
             }
         }
         catch (Exception ex)
@@ -328,6 +373,26 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
 
 
+    /// <summary>
+    ///     Opens the folder picker and stores the selected path as the new
+    /// server's working directory (stdio only).
+    /// </summary>
+    [RelayCommand]
+    private void BrowseWorkingDirectory()
+    {
+        string? folder = _folderBrowser.BrowseFolder(
+            "Select the server working directory",
+            NewServerWorkingDirectory);
+
+        if (!string.IsNullOrWhiteSpace(folder))
+        {
+            NewServerWorkingDirectory = folder;
+        }
+    }
+
+
+
+
     [RelayCommand]
     private void ShowAddServer()
     {
@@ -354,7 +419,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     [RelayCommand(CanExecute = nameof(CanAddServer))]
     private async Task AddServerAsync(CancellationToken token)
     {
-        IsBusy = true;
+        SetBusyState(true);
         ShowResult = false;
 
         try
@@ -396,7 +461,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
         finally
         {
-            IsBusy = false;
+            SetBusyState(false);
         }
     }
 
@@ -412,7 +477,19 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             return;
         }
 
-        IsBusy = true;
+        // Destructive action — confirm before removing the server registration.
+        bool confirmed = _dialogService.Confirm(
+            "Remove MCP Server",
+            $"Remove '{SelectedServer.DisplayName}'? Its tools will no longer be available to assigned agents.",
+            "Remove",
+            isDestructive: true);
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        SetBusyState(true);
         ShowResult = false;
 
         try
@@ -432,7 +509,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
         finally
         {
-            IsBusy = false;
+            SetBusyState(false);
         }
     }
 
@@ -448,7 +525,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             return;
         }
 
-        IsBusy = true;
+        SetBusyState(true);
         ShowResult = false;
 
         try
@@ -468,7 +545,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
         finally
         {
-            IsBusy = false;
+            SetBusyState(false);
         }
     }
 
@@ -484,7 +561,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             return;
         }
 
-        IsBusy = true;
+        SetBusyState(true);
         ShowResult = false;
 
         try
@@ -504,7 +581,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
         finally
         {
-            IsBusy = false;
+            SetBusyState(false);
         }
     }
 
@@ -520,7 +597,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             return;
         }
 
-        IsBusy = true;
+        SetBusyState(true);
         ShowResult = false;
 
         try
@@ -544,7 +621,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
         finally
         {
-            IsBusy = false;
+            SetBusyState(false);
         }
     }
 
@@ -554,7 +631,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     [RelayCommand]
     private async Task RefreshAsync(CancellationToken token)
     {
-        IsBusy = true;
+        SetBusyState(true);
         ShowResult = false;
 
         try
@@ -563,7 +640,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
         finally
         {
-            IsBusy = false;
+            SetBusyState(false);
         }
     }
 
@@ -605,7 +682,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
         else
         {
-            _dispatcher.Invoke(() => ApplyLoadedData(rows, agentNames));
+            await _dispatcher.InvokeAsync(() => ApplyLoadedData(rows, agentNames)).ConfigureAwait(false);
         }
     }
 

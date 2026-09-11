@@ -143,9 +143,21 @@
 
                         <StackPanel IsEnabled="{Binding IsStdioTransport}">
                             <TextBlock Style="{StaticResource BodyText}" Text="Working Directory (stdio only)" />
-                            <TextBox Text="{Binding NewServerWorkingDirectory, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FormTextBoxStyle}"
-                                     Width="360" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding NewServerWorkingDirectory, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource FormTextBoxStyle}"
+                                         Margin="0,0,8,0" />
+                                <Button Grid.Column="1"
+                                        Command="{Binding BrowseWorkingDirectoryCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="12,6"
+                                        VerticalAlignment="Stretch"
+                                        Content="Browse…" />
+                            </Grid>
                         </StackPanel>
                     </StackPanel>
 

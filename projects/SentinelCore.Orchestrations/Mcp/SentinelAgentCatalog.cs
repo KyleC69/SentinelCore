@@ -36,7 +36,8 @@ public sealed class SentinelAgentCatalog : ISentinelAgentCatalog
             "Manager",
             "Worker1",
             "Worker2",
-            "Worker3"
+            "Worker3",
+            "CaseGenerator"
         };
 
         return Task.FromResult(names);
