@@ -33,9 +33,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 {
     private readonly ICaseFlowEngine _caseFlowEngine;
 
-    [ObservableProperty] private ObservableCollection<CaseRow> _cases = new();
+    [ObservableProperty] private ObservableCollection<CaseRow> _cases = [];
 
-    [ObservableProperty] private ObservableCollection<CaseDetailItem> _detailCases = new();
+    [ObservableProperty] private ObservableCollection<CaseDetailItem> _detailCases = [];
 
     [ObservableProperty] private string _drillDownHeader = string.Empty;
 

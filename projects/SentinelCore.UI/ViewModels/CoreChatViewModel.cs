@@ -167,7 +167,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     ///     Gets the observable collection of chat messages displayed in the UI.
     ///     All mutations are marshaled to the UI thread by <see cref="AddToMessages" />.
     /// </summary>
-    public ObservableCollection<ChatMessage> Messages { get; } = new();
+    public ObservableCollection<ChatMessage> Messages { get; } = [];
 
 
 

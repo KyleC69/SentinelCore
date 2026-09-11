@@ -57,7 +57,7 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
     private bool _showResult;
 
     [ObservableProperty]
-    private ObservableCollection<AgentModelCard> _cards = new();
+    private ObservableCollection<AgentModelCard> _cards = [];
 
 
 
@@ -124,7 +124,7 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
         {
             IReadOnlyList<string> agents = await _agentCatalog.GetAgentNamesAsync().ConfigureAwait(false);
 
-            List<AgentModelCard> cards = new();
+            List<AgentModelCard> cards = [];
             foreach (string agent in agents)
             {
                 _settings.AgentModels.TryGetValue(agent, out ModelProfile? profile);
@@ -171,7 +171,7 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
         {
             ModelConfigDocument document = new();
 
-            List<string> incomplete = new();
+            List<string> incomplete = [];
             foreach (AgentModelCard card in Cards)
             {
                 ModelProfile? profile = card.ToModelProfile();
@@ -216,6 +216,9 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
         finally
         {
             IsBusy = false;
+
+            // Keep the result visible for at least 3 seconds so the user can read it.
+            _ = Task.Delay(3000).ContinueWith(_ => ShowResult = false);
         }
     }
 }

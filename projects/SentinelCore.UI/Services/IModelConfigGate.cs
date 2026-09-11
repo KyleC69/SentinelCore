@@ -104,7 +104,7 @@ public sealed class ModelConfigGate : IModelConfigGate
     {
         get
         {
-            List<string> missing = new();
+            List<string> missing = [];
 
             foreach (string agentName in _agentCatalog.GetAgentNamesAsync().GetAwaiter().GetResult())
             {

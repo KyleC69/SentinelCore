@@ -81,7 +81,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     private bool _showResult;
 
     [ObservableProperty]
-    private ObservableCollection<McpServerRow> _servers = new();
+    private ObservableCollection<McpServerRow> _servers = [];
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
@@ -91,13 +91,13 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     private McpServerRow? _selectedServer;
 
     [ObservableProperty]
-    private ObservableCollection<string> _availableAgents = new();
+    private ObservableCollection<string> _availableAgents = [];
 
     [ObservableProperty]
-    private ObservableCollection<AgentAssignmentRow> _newServerAgentAssignments = new();
+    private ObservableCollection<AgentAssignmentRow> _newServerAgentAssignments = [];
 
     [ObservableProperty]
-    private ObservableCollection<AgentAssignmentRow> _selectedServerAgentAssignments = new();
+    private ObservableCollection<AgentAssignmentRow> _selectedServerAgentAssignments = [];
 
     /// <summary>
     ///     Tracks whether this view-model has been disposed.
@@ -256,7 +256,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
                 return;
             }
 
-            ObservableCollection<AgentAssignmentRow> rows = new();
+            ObservableCollection<AgentAssignmentRow> rows = [];
             foreach (string agent in agents)
             {
                 rows.Add(new AgentAssignmentRow
@@ -756,7 +756,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             return [];
         }
 
-        List<string> result = new();
+        List<string> result = [];
         StringBuilder current = new();
         bool inQuotes = false;
 

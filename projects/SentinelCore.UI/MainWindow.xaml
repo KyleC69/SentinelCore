@@ -65,27 +65,27 @@
                              Style="{StaticResource NavButtonStyle}"
                              GroupName="Nav"
                              AutomationProperties.Name="Chat"
-                             Content="_Chat" />
+                             Content="Chat" />
                 <RadioButton x:Name="NavCasesButton"
                              Style="{StaticResource NavButtonStyle}"
                              GroupName="Nav"
                              AutomationProperties.Name="Cases"
-                             Content="_Cases" />
+                             Content="Cases" />
                 <RadioButton x:Name="NavCreateCaseButton"
                              Style="{StaticResource NavButtonStyle}"
                              GroupName="Nav"
                              AutomationProperties.Name="Create Case"
-                             Content="Create _Case" />
+                             Content="Create Case" />
                 <RadioButton x:Name="NavMcpServersButton"
                              Style="{StaticResource NavButtonStyle}"
                              GroupName="Nav"
                              AutomationProperties.Name="MCP Servers"
-                             Content="_MCP Servers" />
+                             Content="MCP Servers" />
                 <RadioButton x:Name="NavModelConfigButton"
                              Style="{StaticResource NavButtonStyle}"
                              GroupName="Nav"
                              AutomationProperties.Name="Model Configuration"
-                             Content="Model _Config" />
+                             Content="Model Config" />
             </StackPanel>
         </Border>
 

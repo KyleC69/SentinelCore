@@ -60,9 +60,8 @@ public sealed class AgentFactoryTests
         // Arrange — a per-agent entry must beat the role-tier model.
         SentinelCoreSettings settings = new()
         {
-            DefaultModel = new ModelProfile("http://tier", "tier-model", 0.1f)
+            DefaultModel = new ModelProfile("http://tier", "tier-model", 0.1f), AgentModels = { ["TheCore"] = new ModelProfile("http://per-agent", "per-agent-model", 0.5f) }
         };
-        settings.AgentModels["TheCore"] = new ModelProfile("http://per-agent", "per-agent-model", 0.5f);
 
         AgentProfileBuilder specBuilder = new(Microsoft.Extensions.Options.Options.Create(settings));
 

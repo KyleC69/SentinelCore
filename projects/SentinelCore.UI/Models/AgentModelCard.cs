@@ -152,10 +152,10 @@ public sealed partial class AgentModelCard : ObservableObject
             ModelId.Trim(),
             Temperature,
             MaxOutputTokens,
-            TopK,
-            TopP,
-            Provider,
-            string.IsNullOrWhiteSpace(ApiKey) ? null : ApiKey);
+            topK: TopK,
+            topP: TopP,
+            provider: Provider,
+            apiKey: string.IsNullOrWhiteSpace(ApiKey) ? null : ApiKey);
     }
 
 
