@@ -48,7 +48,7 @@ public sealed class CoreChatViewModelTests
     [TestMethod]
     public void Constructor_NullCaseFlowEngine_Throws()
     {
-        var (orchestration, events, _, logger, dispatcher, clipboard) = CreateDependencies();
+        var (orchestration, events, _, logger, dispatcher, clipboard, configGate) = CreateDependencies();
 
         Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(orchestration.Object, events.Object, null!, logger, dispatcher.Object, clipboard.Object, configGate.Object, default));
     }
@@ -59,7 +59,7 @@ public sealed class CoreChatViewModelTests
     [TestMethod]
     public void Constructor_NullDispatcher_Throws()
     {
-        var (orchestration, events, caseFlow, logger, _, clipboard) = CreateDependencies();
+        var (orchestration, events, caseFlow, logger, _, clipboard, configGate) = CreateDependencies();
 
         Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(orchestration.Object, events.Object, caseFlow.Object, logger, null!, clipboard.Object, configGate.Object, default));
     }
@@ -70,7 +70,7 @@ public sealed class CoreChatViewModelTests
     [TestMethod]
     public void Constructor_NullEvents_Throws()
     {
-        var (orchestration, _, caseFlow, logger, dispatcher, clipboard) = CreateDependencies();
+        var (orchestration, _, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
 
         Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(orchestration.Object, null!, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default));
     }

@@ -208,21 +208,6 @@ public sealed class AgentBuilderTests
 
 
 
-
-    private sealed class FakeMcpServerRegistry : IMcpServerRegistry
-    {
-        public Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<AITool>>([]);
-
-        public Task RegisterAsync(McpServerDefinition definition, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task RemoveAsync(string serverId, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task StartAsync(string serverId, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task StopAsync(string serverId, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task UpdateAssignmentsAsync(string serverId, IReadOnlyList<string> assignedAgentNames, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task<McpServerInfo?> GetAsync(string serverId, CancellationToken cancellationToken = default) => Task.FromResult<McpServerInfo?>(null);
-        public Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<McpServerInfo>>([]);
-    }
-
     private static AgentProfile CreateProfile(AgentRole role, string name, IList<AITool>? tools = null)
     {
         return new AgentProfile
