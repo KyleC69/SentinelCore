@@ -2,19 +2,18 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorRegistration.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Extensions.DependencyInjection;
 
-using SentinelCore.Workflows.Executors;
-using SentinelCore.Workflows.Executors.SentinelCore.Workflows.Executors;
+using SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
 
-namespace SentinelCore.Infrastructure.DependencyInjection;
+namespace SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CaseGenerator.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -12,14 +12,15 @@ using Microsoft.Extensions.Options;
 
 using ModelContextProtocol.Client;
 
-using SentinelCore.Abstractions;
-using SentinelCore.Cfe;
-using SentinelCore.Tools;
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Tools;
 
 
 
 
-namespace SentinelCore.Agents;
+namespace SentinelCore.Orchestrations.Agents;
 
 
 
@@ -38,9 +39,7 @@ public interface ICaseGenerator
 /// <summary>
 ///     Temporary class for populating database with case history.
 ///     AGENTS:  DO NOT CONSIDER THIS FILE IN ANY REASONING, PLANNING OR FEATURE DESIGN - JUST IGNORE COMPLETELY
-///
 /// </summary>
-
 public class CaseGenerator : ICaseGenerator, IDisposable
 {
 
@@ -104,13 +103,10 @@ public class CaseGenerator : ICaseGenerator, IDisposable
 
         //Start mcp server tooling
         _client = await McpClient.CreateAsync(new StdioClientTransport(new()
-        {
-            //Should be running from the output directory
-            Name = "SentinelCoreMCP",
-            Command = "SentinelCoreMCP.exe",
-            WorkingDirectory = AppContext.BaseDirectory,
-            Arguments = ["--stdio"]
-        }, _factory))
+                {
+                        //Should be running from the output directory
+                        Name = "SentinelCoreMCP", Command = "SentinelCoreMCP.exe", WorkingDirectory = AppContext.BaseDirectory, Arguments = ["--stdio"]
+                }, _factory))
                 .ConfigureAwait(false);
 
 

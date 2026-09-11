@@ -2,18 +2,18 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CaseGenExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-using SentinelCore.Abstractions;
-using SentinelCore.Agents;
-using SentinelCore.Cfe;
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Orchestrations.Agents;
 
 
 
 
-namespace SentinelCore.Workflows.Executors;
+namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 

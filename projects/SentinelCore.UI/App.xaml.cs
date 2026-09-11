@@ -1,10 +1,16 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
+
+using System.IO;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Threading;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -14,20 +20,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using SentinelCore.Abstractions;
-using SentinelCore.Agents;
 using SentinelCore.Cfe.Persistence;
-using SentinelCore.Contracts;
-using SentinelCore.Infrastructure.DependencyInjection;
-using SentinelCore.Mcp;
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Contracts.Mcp;
+using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 using SentinelCore.RemoteKB.Persistence;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
-
-using System.IO;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Windows;
-using System.Windows.Threading;
 
 
 
@@ -35,12 +35,15 @@ using System.Windows.Threading;
 namespace SentinelCore.UI;
 
 
+
+
+
 /// <summary>
 ///     Composition root for the SentinelCore.UI application.
 ///     Wires the <see cref="IHost" /> container, registers all services,
 ///     and manages application lifecycle including graceful shutdown.
 /// </summary>
-public partial class App : System.Windows.Application
+public partial class App : Application
 {
     private IHost? _host;
 
@@ -62,6 +65,11 @@ public partial class App : System.Windows.Application
     /// </summary>
     private bool _shutdownDisposed;
 
+    public IServiceProvider Services
+    {
+        get => _host?.Services ?? throw new InvalidOperationException("The application host is not available.");
+    }
+
     /// <summary>
     ///     A <see cref="CancellationToken" /> that is cancelled when the application is shutting down.
     ///     Thread this through long-running async operations (chat, orchestration, workflows)
@@ -77,24 +85,19 @@ public partial class App : System.Windows.Application
 
 
 
+
+
     private void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
         // SentinelCore orchestration, events, and case-flow.
         // Model configuration is owned by the Model Configuration page — loaded
         // from the persisted document. There is no hardcoded fallback: agents
         // without configuration are gated at the factory.
-        SentinelCoreSettings sentinelSettings = new()
-        {
-            SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
-            TraceEnabled = true,
-            TraceLogLevel = LogLevel.Trace,
-            OrchestrationType = OrchestrationType.TheCore
-        };
+        SentinelCoreSettings sentinelSettings = new() { SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty, TraceEnabled = true, TraceLogLevel = LogLevel.Trace, OrchestrationType = OrchestrationType.TheCore };
 
         // Seed per-agent models from the persisted configuration document so the
         // first orchestration after startup uses the user's saved configuration.
-        FileModelConfigStore seedStore = new(
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<FileModelConfigStore>.Instance);
+        FileModelConfigStore seedStore = new(Microsoft.Extensions.Logging.Abstractions.NullLogger<FileModelConfigStore>.Instance);
         ModelConfigDocument? document = seedStore.Load();
 
         if (document is not null)
@@ -111,15 +114,12 @@ public partial class App : System.Windows.Application
         services.AddSentinelCoreUI();
 
         // Model configuration gate — evaluates catalog agents against the live settings.
-        services.AddSingleton<IModelConfigGate>(sp => new ModelConfigGate(
-            sp.GetRequiredService<ISentinelAgentCatalog>(),
-            sp.GetRequiredService<IAgentProfileBuilder>(),
-            sp.GetRequiredService<IOptions<SentinelCoreSettings>>().Value));
+        services.AddSingleton<IModelConfigGate>(sp => new ModelConfigGate(sp.GetRequiredService<ISentinelAgentCatalog>(), sp.GetRequiredService<IAgentProfileBuilder>(), sp.GetRequiredService<IOptions<SentinelCoreSettings>>().Value));
 
         // Application shutdown token — injected into ViewModels so in-flight work
         // can be cancelled cooperatively when the app exits. CancellationToken is a
         // struct, so the non-generic registration overload is required.
-        services.AddSingleton(typeof(CancellationToken), _ => (object)ShutdownToken);
+        services.AddSingleton(typeof(CancellationToken), _ => ShutdownToken);
 
         // Configuration
         services.Configure<AppConfig>(context.Configuration.GetSection(nameof(AppConfig)));
@@ -128,18 +128,14 @@ public partial class App : System.Windows.Application
         // required by CaseFlowEngine) and the DbContext itself (scoped, required by
         // EvidenceStore/PatternMemoryStore/SignalRepository). AddDbContext alone would leave the
         // factory unresolvable.
-        services.AddDbContextFactory<SentinelCoreDBContext>(options =>
-        {
-            options.UseSqlServer(Environment.GetEnvironmentVariable("SENTINEL_CORE"));
-        });
-        services.AddDbContextFactory<SentinelRAGDBContext>(options =>
-        {
-            options.UseSqlServer(Environment.GetEnvironmentVariable("REMOTEKB"));
-        });
+        services.AddDbContextFactory<SentinelCoreDBContext>(options => { options.UseSqlServer(Environment.GetEnvironmentVariable("SENTINEL_CORE")); });
+        services.AddDbContextFactory<SentinelRAGDBContext>(options => { options.UseSqlServer(Environment.GetEnvironmentVariable("REMOTEKB")); });
 
 
 
     }
+
+
 
 
 
@@ -153,6 +149,8 @@ public partial class App : System.Windows.Application
     {
         return _host?.Services.GetService(typeof(T)) as T;
     }
+
+
 
 
 
@@ -201,23 +199,62 @@ public partial class App : System.Windows.Application
 
 
 
-    private void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e)
+
+
+    private static void LogStartupException(Exception ex)
+    {
+        string logPath = Path.Combine(AppContext.BaseDirectory, "SentinelCoreHost-startup-errors.log");
+        string message = $"[{DateTime.Now:O}] {ex}\n";
+        File.AppendAllText(logPath, message);
+    }
+
+
+
+
+
+
+
+
+    [LoggerMessage(LogLevel.Error, "Unhandled UI exception.")]
+    static partial void LogUnhandledUiException(ILogger<App> logger, Exception exception);
+
+
+
+
+
+
+
+
+    private static void OnCurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        if (e.ExceptionObject is Exception ex)
+        {
+            LogStartupException(ex);
+        }
+    }
+
+
+
+
+
+
+
+
+    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         ILogger<App>? logger = _host?.Services.GetService<ILogger<App>>();
-        logger?.LogCritical(e.Exception, "Unhandled dispatcher exception — initiating shutdown.");
-
-        // Signal all in-flight async work to cancel immediately.
-        if (!_shutdownCts.IsCancellationRequested)
+        if (logger != null)
         {
-            _shutdownCts.Cancel();
+            LogUnhandledUiException(logger, e.Exception);
         }
 
-        // Prevent the default WPF crash dialog — we want to shut down cleanly.
+        e.Handled = false;
+        LogStartupException(e.Exception);
+        MessageBox.Show($"Unhandled dispatcher exception:\n\n{e.Exception}", "SentinelCore Error", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
-
-        // Begin graceful shutdown on the dispatcher so OnExit fires.
-        Current.Dispatcher.InvokeAsync(() => this.Shutdown());
     }
+
+
 
 
 
@@ -234,11 +271,23 @@ public partial class App : System.Windows.Application
 
 
 
+
+
     private async void OnStartup(object? sender, StartupEventArgs e)
     {
+
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += OnCurrentDomainUnhandledException;
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
+
         try
         {
             await StartApplicationAsync(e);
+
+
+            ILogger<App>? logger = Services.GetService<ILogger<App>>();
+            logger?.LogInformation("SentinelCore Host application started successfully.");
         }
         catch (Exception ex)
         {
@@ -261,6 +310,21 @@ public partial class App : System.Windows.Application
 
 
 
+
+
+    private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        LogStartupException(e.Exception);
+        e.SetObserved();
+    }
+
+
+
+
+
+
+
+
     private async Task StartApplicationAsync(StartupEventArgs e)
     {
         // Startup breadcrumb — visible in the VS Output window.
@@ -273,9 +337,7 @@ public partial class App : System.Windows.Application
 
         if (string.IsNullOrWhiteSpace(caseFlowConnection) || string.IsNullOrWhiteSpace(remoteKbConnection))
         {
-            throw new InvalidOperationException(
-                "Required environment variables are missing. Set SENTINEL_CORE (case flow database connection string) "
-                + "and REMOTEKB (remote knowledge base connection string) before starting SentinelCore.");
+            throw new InvalidOperationException("Required environment variables are missing. Set SENTINEL_CORE (case flow database connection string) " + "and REMOTEKB (remote knowledge base connection string) before starting SentinelCore.");
         }
 
         string? appLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly()?.Location);
@@ -295,6 +357,8 @@ public partial class App : System.Windows.Application
 
         await StartHostOnceAsync();
     }
+
+
 
 
 

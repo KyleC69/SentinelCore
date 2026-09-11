@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         IDispatcherService.cs
 // Author: Kyle L. Crowder
-// Build Num:  083003
+// Build Num:  091112
 
 
 
@@ -44,6 +44,9 @@ public interface IDispatcherService
 
 
 
+
+
+
     /// <summary>
     ///     Executes the specified <paramref name="action" /> asynchronously on the dispatcher thread
     ///     without blocking the calling thread.
@@ -51,6 +54,9 @@ public interface IDispatcherService
     /// <param name="action">The action to invoke on the dispatcher thread.</param>
     /// <returns>A task that completes when the action has run on the dispatcher thread.</returns>
     Task InvokeAsync(Action action);
+
+
+
 
 
 

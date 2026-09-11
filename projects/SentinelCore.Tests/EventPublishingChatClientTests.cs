@@ -2,11 +2,12 @@
 // Project:   SentinelCore.Tests
 // File:         EventPublishingChatClientTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-using SentinelCore.Agents.Middleware;
+using SentinelCore.Contracts.Events;
+using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Tests.TestInfrastructure;
 
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;

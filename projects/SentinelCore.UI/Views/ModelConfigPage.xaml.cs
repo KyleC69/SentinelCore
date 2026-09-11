@@ -1,8 +1,8 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         ModelConfigPage.xaml.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
@@ -11,7 +11,6 @@ using System.Windows.Controls;
 
 using SentinelCore.UI.Models;
 using SentinelCore.UI.ViewModels;
-
 
 
 
@@ -35,6 +34,9 @@ public partial class ModelConfigPage : Page
 
 
 
+
+
+
     /// <summary>
     ///     Creates the page and binds the provided view-model.
     /// </summary>
@@ -46,6 +48,9 @@ public partial class ModelConfigPage : Page
         InitializeComponent();
         DataContext = _viewModel;
     }
+
+
+
 
 
 

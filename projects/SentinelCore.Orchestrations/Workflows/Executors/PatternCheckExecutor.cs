@@ -2,16 +2,16 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PatternCheckExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-using SentinelCore.Abstractions;
+using SentinelCore.Contracts.Abstractions;
 
 
 
 
-namespace SentinelCore.Workflows.Executors;
+namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 

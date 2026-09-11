@@ -1,8 +1,8 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         IFolderBrowserService.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 

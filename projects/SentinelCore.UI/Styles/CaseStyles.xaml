@@ -171,8 +171,10 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{DynamicResource ChatAccent}" />
-                                            <Setter TargetName="Arrow" Property="Stroke" Value="{DynamicResource ChatTextPrimary}" />
+                                            <Setter TargetName="ToggleBorder" Property="BorderBrush"
+                                                    Value="{DynamicResource ChatAccent}" />
+                                            <Setter TargetName="Arrow" Property="Stroke"
+                                                    Value="{DynamicResource ChatTextPrimary}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -237,7 +239,8 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ChatSurface2}" />
+                            <Setter TargetName="ItemBorder" Property="Background"
+                                    Value="{DynamicResource ChatSurface2}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ChatAccent}" />

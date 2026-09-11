@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         CoreChatViewModelTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -10,12 +10,21 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.Cfe;
+using SentinelCore.Contracts.Events;
+using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Tests.TestInfrastructure;
 
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 
+
+
 namespace SentinelCore.Tests;
+
+
+
 
 
 /// <summary>
@@ -34,7 +43,7 @@ public sealed class CoreChatViewModelTests
     [TestMethod]
     public void CancelCommand_NotBusy_CannotExecute()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         Assert.IsFalse(viewModel.CancelCommand.CanExecute(null));
@@ -45,10 +54,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void Constructor_NullCaseFlowEngine_Throws()
     {
-        var (orchestration, events, _, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, _, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
 
         Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(orchestration.Object, events.Object, null!, logger, dispatcher.Object, clipboard.Object, configGate.Object, default));
     }
@@ -56,10 +69,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void Constructor_NullDispatcher_Throws()
     {
-        var (orchestration, events, caseFlow, logger, _, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, _, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
 
         Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(orchestration.Object, events.Object, caseFlow.Object, logger, null!, clipboard.Object, configGate.Object, default));
     }
@@ -67,10 +84,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void Constructor_NullEvents_Throws()
     {
-        var (orchestration, _, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, _, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
 
         Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(orchestration.Object, null!, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default));
     }
@@ -78,13 +99,21 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void Constructor_NullLogger_Throws()
     {
-        var (orchestration, events, caseFlow, _, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, _, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
 
         Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(orchestration.Object, events.Object, caseFlow.Object, null!, dispatcher.Object, clipboard.Object, configGate.Object, default));
     }
+
+
+
+
 
 
 
@@ -96,13 +125,21 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void Constructor_NullOrchestrationControl_Throws()
     {
-        var (_, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (_, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
 
         Assert.Throws<ArgumentNullException>(() => new CoreChatViewModel(null!, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default));
     }
+
+
+
+
 
 
 
@@ -114,10 +151,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void Constructor_ValidDependencies_SeedsSingleAssistantWelcomeMessage()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
 
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
@@ -131,10 +172,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void CopyMessageCommand_AlwaysCanExecute()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         // Regression anchor: the Copy button must remain clickable regardless of
@@ -147,10 +192,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void CopyMessageCommand_EmptyText_DoesNotThrow()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         viewModel.CopyMessageCommand.Execute(string.Empty);
@@ -161,12 +210,16 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     [TestCategory("ProductionBugSuspected")]
     [Ignore("ProductionBugSuspected")]
     public void CopyMessageCommand_NonEmptyText_CopiesToClipboard()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         const string expected = "Copy-ready regression payload — 081602";
@@ -199,6 +252,10 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     // ────────────────────────────────────────────────────────────
     //  Copy-message command (clipboard copy-ready regression surface)
     // ────────────────────────────────────────────────────────────
@@ -206,16 +263,24 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void CopyMessageCommand_NullText_DoesNotThrow()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         viewModel.CopyMessageCommand.Execute(null);
 
         viewModel.Dispose();
     }
+
+
+
+
 
 
 
@@ -241,10 +306,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void Dispose_UnsubscribesFromEvents_SubsequentRaiseDoesNotUpdateStatusMessage()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         viewModel.Dispose();
@@ -257,10 +326,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void ErrorOccurred_Raised_UpdatesStatusMessageToErrorText()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         events.Raise(e => e.ErrorOccurred += null, "tool invocation failed", new InvalidOperationException("boom"));
@@ -273,6 +346,10 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     // ────────────────────────────────────────────────────────────
     //  Send / Cancel command gating (CanSend / CanCancel)
     // ────────────────────────────────────────────────────────────
@@ -280,10 +357,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void SendCommand_EmptyInputText_CannotExecute()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         viewModel.InputText = string.Empty;
@@ -296,10 +377,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void SendCommand_NonEmptyInputTextAndNotBusy_CanExecute()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         viewModel.InputText = "investigate host 10.0.0.5";
@@ -312,10 +397,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void SendCommand_WhitespaceInputText_CannotExecute()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         viewModel.InputText = "   ";
@@ -328,6 +417,10 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     // ────────────────────────────────────────────────────────────
     //  Event wiring → StatusMessage
     // ────────────────────────────────────────────────────────────
@@ -335,10 +428,14 @@ public sealed class CoreChatViewModelTests
 
 
 
+
+
+
+
     [TestMethod]
     public void SentinelOutputEvent_Raised_UpdatesStatusMessage()
     {
-        var (orchestration, events, caseFlow, logger, dispatcher, clipboard, configGate) = CreateDependencies();
+        (Mock<IOrchestrationControl> orchestration, Mock<ISentinelCoreEvents> events, Mock<ICaseFlowEngine> caseFlow, ILogger<CoreChatViewModel> logger, Mock<IDispatcherService> dispatcher, Mock<IClipboardService> clipboard, Mock<IModelConfigGate> configGate) = CreateDependencies();
         CoreChatViewModel viewModel = new(orchestration.Object, events.Object, caseFlow.Object, logger, dispatcher.Object, clipboard.Object, configGate.Object, default);
 
         events.Raise(e => e.SentinelOutputEvent += null, new SentinelOutputEventArgs("TheCore", "reasoning about signal", ActivityType.Core));

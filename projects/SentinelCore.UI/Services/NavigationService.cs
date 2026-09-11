@@ -1,8 +1,8 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         NavigationService.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
@@ -16,6 +16,9 @@ using Microsoft.Extensions.Logging;
 namespace SentinelCore.UI.Services;
 
 
+
+
+
 /// <summary>
 ///     Frame-based navigation backed by <see cref="IViewLocator" />.
 ///     Resolves pages via the locator (which uses DI), raises
@@ -25,17 +28,14 @@ namespace SentinelCore.UI.Services;
 /// </summary>
 public sealed class NavigationService : INavigationService
 {
-    private Frame? _shellFrame;
 
     private readonly ILogger<NavigationService> _logger;
+    private Frame? _shellFrame;
 
     private readonly IViewLocator _viewLocator;
 
 
 
-
-
-    public event EventHandler<string>? Navigated;
 
 
 
@@ -56,11 +56,17 @@ public sealed class NavigationService : INavigationService
 
 
 
+
+
+
     /// <inheritdoc />
     public void Initialize(Frame shellFrame)
     {
         _shellFrame = shellFrame;
     }
+
+
+
 
 
 
@@ -109,23 +115,13 @@ public sealed class NavigationService : INavigationService
 
 
 
-    /// <summary>
-    ///     Tears down the outgoing page: raises <see cref="INavigationAware.OnNavigatedFrom" />
-    ///     and disposes the page's view-model when it implements <see cref="IDisposable" />.
-    /// </summary>
-    /// <param name="page">The page being navigated away from.</param>
-    private void DeactivatePage(Page page)
-    {
-        if (page.DataContext is INavigationAware previousAware)
-        {
-            previousAware.OnNavigatedFrom();
-        }
 
-        if (page.DataContext is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
-    }
+
+
+    public event EventHandler<string>? Navigated;
+
+
+
 
 
 
@@ -145,6 +141,31 @@ public sealed class NavigationService : INavigationService
         while (_shellFrame.NavigationService.RemoveBackEntry() is not null)
         {
             // Drain the journal entry by entry.
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Tears down the outgoing page: raises <see cref="INavigationAware.OnNavigatedFrom" />
+    ///     and disposes the page's view-model when it implements <see cref="IDisposable" />.
+    /// </summary>
+    /// <param name="page">The page being navigated away from.</param>
+    private void DeactivatePage(Page page)
+    {
+        if (page.DataContext is INavigationAware previousAware)
+        {
+            previousAware.OnNavigatedFrom();
+        }
+
+        if (page.DataContext is IDisposable disposable)
+        {
+            disposable.Dispose();
         }
     }
 }

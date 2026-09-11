@@ -1,8 +1,8 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         CoreChatPage.xaml.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
@@ -19,6 +19,9 @@ using SentinelCore.UI.ViewModels;
 namespace SentinelCore.UI.Views;
 
 
+
+
+
 /// <summary>
 ///     Code-behind for the chat page.
 ///     Responsibilities scoped to this file:
@@ -29,6 +32,9 @@ namespace SentinelCore.UI.Views;
 public partial class CoreChatPage : Page
 {
     private readonly CoreChatViewModel _viewModel;
+
+
+
 
 
 
@@ -48,6 +54,9 @@ public partial class CoreChatPage : Page
         _viewModel.Messages.CollectionChanged += OnMessagesCollectionChanged;
         Unloaded += OnUnloaded;
     }
+
+
+
 
 
 
@@ -73,6 +82,9 @@ public partial class CoreChatPage : Page
 
 
 
+
+
+
     /// <summary>
     ///     Scrolls the feed to the newest message whenever the collection changes.
     /// </summary>
@@ -88,11 +100,17 @@ public partial class CoreChatPage : Page
 
 
 
+
+
+
     private void OnUnloaded(object? sender, RoutedEventArgs? e)
     {
         Unloaded -= OnUnloaded;
         _viewModel.Messages.CollectionChanged -= OnMessagesCollectionChanged;
     }
+
+
+
 
 
 

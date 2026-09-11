@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         MainWindow.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  083003
+// Build Num:  091112
 
 
 
@@ -27,13 +27,17 @@ namespace SentinelCore.UI;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private readonly INavigationService _navigationService;
 
     /// <summary>
     ///     The page key of the currently displayed page; used to suppress
     ///     redundant navigation when a tab is re-selected.
     /// </summary>
     private string? _currentPageKey;
+
+    private readonly INavigationService _navigationService;
+
+
+
 
 
 
@@ -80,6 +84,9 @@ public partial class MainWindow : Window
             _navigationService.NavigateTo(pageKey);
         }
     }
+
+
+
 
 
 

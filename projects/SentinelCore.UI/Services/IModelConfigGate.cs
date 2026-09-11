@@ -1,15 +1,14 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         IModelConfigGate.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
-using SentinelCore.Agents;
-using SentinelCore.Contracts;
-using SentinelCore.Mcp;
-
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Contracts.Mcp;
+using SentinelCore.Orchestrations.Agents;
 
 
 
@@ -33,14 +32,13 @@ public interface IModelConfigGate
     /// </summary>
     bool IsConfigurationComplete { get; }
 
-
-
-
-
     /// <summary>
     ///     Gets the names of the catalog agents that have no model configuration.
     /// </summary>
     IReadOnlyList<string> UnconfiguredAgents { get; }
+
+
+
 
 
 
@@ -65,11 +63,14 @@ public interface IModelConfigGate
 /// </summary>
 public sealed class ModelConfigGate : IModelConfigGate
 {
-    private readonly IAgentProfileBuilder _profileBuilder;
 
     private readonly ISentinelAgentCatalog _agentCatalog;
+    private readonly IAgentProfileBuilder _profileBuilder;
 
     private readonly SentinelCoreSettings _settings;
+
+
+
 
 
 
@@ -92,12 +93,34 @@ public sealed class ModelConfigGate : IModelConfigGate
 
 
 
+
+
+
     /// <inheritdoc />
-    public bool IsConfigurationComplete => UnconfiguredAgents.Count == 0;
+    public string BuildGateMessage()
+    {
+        IReadOnlyList<string> missing = UnconfiguredAgents;
+
+        if (missing.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return "Model configuration is incomplete. Open the Model Configuration page and set a " + $"provider, model, and endpoint for: {string.Join(", ", missing)}.";
+    }
 
 
 
 
+
+
+
+
+    /// <inheritdoc />
+    public bool IsConfigurationComplete
+    {
+        get => UnconfiguredAgents.Count == 0;
+    }
 
     /// <inheritdoc />
     public IReadOnlyList<string> UnconfiguredAgents
@@ -116,23 +139,5 @@ public sealed class ModelConfigGate : IModelConfigGate
 
             return missing;
         }
-    }
-
-
-
-
-
-    /// <inheritdoc />
-    public string BuildGateMessage()
-    {
-        IReadOnlyList<string> missing = UnconfiguredAgents;
-
-        if (missing.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        return "Model configuration is incomplete. Open the Model Configuration page and set a "
-            + $"provider, model, and endpoint for: {string.Join(", ", missing)}.";
     }
 }

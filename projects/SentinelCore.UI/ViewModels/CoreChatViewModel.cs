@@ -1,10 +1,12 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         CoreChatViewModel.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
+
+using System.Collections.ObjectModel;
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -12,18 +14,20 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Abstractions;
-using SentinelCore.Application;
-using SentinelCore.Cfe;
-using SentinelCore.Events;
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.Cfe;
+using SentinelCore.Contracts.Events;
+using SentinelCore.Orchestrations.Abstractions;
+using SentinelCore.Orchestrations.Application;
 using SentinelCore.UI.Services;
-
-using System.Collections.ObjectModel;
 
 
 
 
 namespace SentinelCore.UI.ViewModels;
+
+
+
 
 
 /// <summary>
@@ -35,9 +39,7 @@ namespace SentinelCore.UI.ViewModels;
 /// </summary>
 public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, INavigationAware
 {
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _alertedCount;
 
     /// <summary>
@@ -46,9 +48,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// </summary>
     private readonly CancellationToken _appShutdownToken;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _blockedCount;
 
     private readonly ICaseFlowEngine _caseFlowEngine;
@@ -59,25 +59,17 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private bool _disposed;
 
-    private readonly IModelConfigGate _modelConfigGate;
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _escalatedCount;
 
     private readonly ISentinelCoreEvents _events;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private string _inputText = string.Empty;
 
     [ObservableProperty] private int _investigationCount;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private bool _isBusy;
 
     /// <summary>
@@ -87,6 +79,8 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     private CancellationTokenSource? _linkedCts;
 
     private readonly ILogger<CoreChatViewModel> _logger;
+
+    private readonly IModelConfigGate _modelConfigGate;
 
     [ObservableProperty] private int _openCount;
 
@@ -98,28 +92,40 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
+
+
+
     /// <summary>
-    ///     Creates a new instance with an explicit application shutdown token.
-    ///     The token is linked to every send operation so in-flight work
-    ///     is cancelled when the app shuts down.
+    ///     Initializes a new instance of the <see cref="CoreChatViewModel" /> class.
     /// </summary>
-    /// <param name="orchestrationControl">The orchestration control for initializing workflows.</param>
-    /// <param name="events">The event bus for SentinelCore output and error events.</param>
-    /// <param name="caseFlowEngine">The case flow engine for querying case status counts.</param>
-    /// <param name="logger">The logger for this view-model.</param>
-    /// <param name="dispatcher">The dispatcher service for thread-affinity marshaling.</param>
-    /// <param name="clipboardService">The clipboard service for copying message text.</param>
-    /// <param name="modelConfigGate">The gate that reports whether agent models are configured.</param>
-    /// <param name="appShutdownToken">A token cancelled when the application begins shutting down.</param>
-    public CoreChatViewModel(
-        IOrchestrationControl orchestrationControl,
-        ISentinelCoreEvents events,
-        ICaseFlowEngine caseFlowEngine,
-        ILogger<CoreChatViewModel> logger,
-        IDispatcherService dispatcher,
-        IClipboardService clipboardService,
-        IModelConfigGate modelConfigGate,
-        CancellationToken appShutdownToken)
+    /// <param name="orchestrationControl">
+    ///     The orchestration control used to initialize and manage workflows.
+    /// </param>
+    /// <param name="events">
+    ///     The event bus for handling SentinelCore output and error events.
+    /// </param>
+    /// <param name="caseFlowEngine">
+    ///     The case flow engine responsible for querying and managing case status counts.
+    /// </param>
+    /// <param name="logger">
+    ///     The logger instance for logging diagnostic and operational information.
+    /// </param>
+    /// <param name="dispatcher">
+    ///     The dispatcher service used for marshaling operations to the appropriate thread.
+    /// </param>
+    /// <param name="clipboardService">
+    ///     The clipboard service for handling text copying operations.
+    /// </param>
+    /// <param name="modelConfigGate">
+    ///     The gate that determines whether agent models are properly configured.
+    /// </param>
+    /// <param name="appShutdownToken">
+    ///     A cancellation token that is triggered when the application begins shutting down.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown if any of the required parameters are <c>null</c>.
+    /// </exception>
+    public CoreChatViewModel(IOrchestrationControl orchestrationControl, ISentinelCoreEvents events, ICaseFlowEngine caseFlowEngine, ILogger<CoreChatViewModel> logger, IDispatcherService dispatcher, IClipboardService clipboardService, IModelConfigGate modelConfigGate, CancellationToken appShutdownToken)
     {
         _orchestrationControl = orchestrationControl ?? throw new ArgumentNullException(nameof(orchestrationControl));
         _events = events ?? throw new ArgumentNullException(nameof(events));
@@ -148,26 +154,34 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
+
+
     /// <summary>
     ///     Gets the message describing incomplete model configuration, or an empty
     ///     string when every agent is configured. Bound to the warning banner.
     /// </summary>
-    public string ConfigGateMessage => _modelConfigGate.BuildGateMessage();
+    public string ConfigGateMessage
+    {
+        get => _modelConfigGate.BuildGateMessage();
+    }
 
     /// <summary>
     ///     Gets a value indicating whether model configuration is incomplete,
     ///     driving the warning banner visibility.
     /// </summary>
-    public bool IsConfigIncomplete => !_modelConfigGate.IsConfigurationComplete;
-
-
-
+    public bool IsConfigIncomplete
+    {
+        get => !_modelConfigGate.IsConfigurationComplete;
+    }
 
     /// <summary>
     ///     Gets the observable collection of chat messages displayed in the UI.
     ///     All mutations are marshaled to the UI thread by <see cref="AddToMessages" />.
     /// </summary>
     public ObservableCollection<ChatMessage> Messages { get; } = [];
+
+
+
 
 
 
@@ -201,6 +215,41 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
+
+
+    /// <summary>
+    ///     Navigated away from the chat page. No persistent resources hold yet.
+    /// </summary>
+    public void OnNavigatedFrom()
+    {
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Navigated back to the chat page — re-query case counts and refresh the
+    ///     configuration gate so the banner reflects changes made on the config page.
+    /// </summary>
+    public void OnNavigatedTo(object? parameter)
+    {
+        _ = RefreshCaseCountsAsync();
+        this.OnPropertyChanged(nameof(IsConfigIncomplete));
+        this.OnPropertyChanged(nameof(ConfigGateMessage));
+        SendCommand.NotifyCanExecuteChanged();
+    }
+
+
+
+
+
+
+
+
     private void AddToMessages(ChatMessage message)
     {
         ArgumentNullException.ThrowIfNull(message);
@@ -220,6 +269,8 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
+
+
     private void AddWelcomeMessage()
     {
         Messages.Add(new ChatMessage(ChatRole.Assistant, "# SentinelCore 🛡️\n\nForensic investigation platform — ready.\n\nDescribe a signal or security event and I will open an investigation case.\n\n- Press **Enter** to send\n- Press **Shift+Enter** for a new line"));
@@ -230,10 +281,35 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
+
+
+    /// <summary>
+    ///     Applies freshly loaded case counts to the telemetry properties.
+    ///     Must run on the UI thread.
+    /// </summary>
+    /// <param name="counts">The per-status case counts.</param>
+    private void ApplyCaseCounts(IReadOnlyDictionary<CaseStatus, int> counts)
+    {
+        OpenCount = counts.TryGetValue(CaseStatus.Open, out int open) ? open : 0;
+        InvestigationCount = counts.TryGetValue(CaseStatus.Investigation, out int investigation) ? investigation : 0;
+        EscalatedCount = counts.TryGetValue(CaseStatus.Escalated, out int escalated) ? escalated : 0;
+        AlertedCount = counts.TryGetValue(CaseStatus.Alerted, out int alerted) ? alerted : 0;
+        BlockedCount = counts.TryGetValue(CaseStatus.Blocked, out int blocked) ? blocked : 0;
+    }
+
+
+
+
+
+
+
+
     private bool CanCancel()
     {
         return IsBusy;
     }
+
+
 
 
 
@@ -251,12 +327,16 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
+
+
     [RelayCommand(CanExecute = nameof(CanCancel))]
     private Task CancelAsync(CancellationToken token)
     {
         _linkedCts?.Cancel();
         return Task.CompletedTask;
     }
+
+
 
 
 
@@ -282,10 +362,14 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
+
+
     private void OnErrorOccurred(string message, Exception? exception)
     {
         StatusMessage = message;
     }
+
+
 
 
 
@@ -302,6 +386,16 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
+
+
+    /// <summary>
+    ///     Retrieves case status counts from the case flow engine and applies them to the UI thread via the dispatcher.
+    /// </summary>
+    /// <remarks>
+    ///     Performs a single grouped query to fetch all status counts to avoid multiple round-trips.
+    ///     Ignores OperationCanceledException during shutdown and logs other exceptions as warnings.
+    /// </remarks>
+    /// <returns>A Task that completes when the counts have been retrieved and applied, or when the operation is canceled.</returns>
     private async Task RefreshCaseCountsAsync()
     {
         try
@@ -332,54 +426,21 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
-    /// <summary>
-    ///     Applies freshly loaded case counts to the telemetry properties.
-    ///     Must run on the UI thread.
-    /// </summary>
-    /// <param name="counts">The per-status case counts.</param>
-    private void ApplyCaseCounts(IReadOnlyDictionary<CaseStatus, int> counts)
-    {
-        OpenCount = counts.TryGetValue(CaseStatus.Open, out int open) ? open : 0;
-        InvestigationCount = counts.TryGetValue(CaseStatus.Investigation, out int investigation) ? investigation : 0;
-        EscalatedCount = counts.TryGetValue(CaseStatus.Escalated, out int escalated) ? escalated : 0;
-        AlertedCount = counts.TryGetValue(CaseStatus.Alerted, out int alerted) ? alerted : 0;
-        BlockedCount = counts.TryGetValue(CaseStatus.Blocked, out int blocked) ? blocked : 0;
-    }
-
-
-
 
 
 
     /// <summary>
-    ///     Navigated away from the chat page. No persistent resources hold yet.
+    ///     Sends the current input text to the orchestration, updates UI state, and appends returned responses to the
+    ///     conversation.
     /// </summary>
-    public void OnNavigatedFrom()
-    {
-    }
-
-
-
-
-
-
-    /// <summary>
-    ///     Navigated back to the chat page — re-query case counts and refresh the
-    ///     configuration gate so the banner reflects changes made on the config page.
-    /// </summary>
-    public void OnNavigatedTo(object? parameter)
-    {
-        _ = RefreshCaseCountsAsync();
-        OnPropertyChanged(nameof(IsConfigIncomplete));
-        OnPropertyChanged(nameof(ConfigGateMessage));
-        SendCommand.NotifyCanExecuteChanged();
-    }
-
-
-
-
-
-
+    /// <remarks>
+    ///     Links the provided token with the app shutdown token, initializes the orchestration, and adds
+    ///     output messages to the message list. Sets IsBusy while executing, clears InputText before sending, and disposes
+    ///     the linked CancellationTokenSource. Logs and updates StatusMessage on user cancellation, application shutdown,
+    ///     or exceptions, and surfaces failures as assistant messages. Refreshes case counts after completion.
+    /// </remarks>
+    /// <param name="token">Cancellation token linked with the application shutdown token to cancel the send operation.</param>
+    /// <returns>A Task that represents the asynchronous send operation.</returns>
     [RelayCommand(CanExecute = nameof(CanSend))]
     private async Task SendAsync(CancellationToken token)
     {

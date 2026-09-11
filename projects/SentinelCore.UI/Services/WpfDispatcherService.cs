@@ -2,7 +2,9 @@
 // Project:   SentinelCore.UI
 // File:         WpfDispatcherService.cs
 // Author: Kyle L. Crowder
-// Build Num:  083003
+// Build Num:  091112
+
+
 
 namespace SentinelCore.UI.Services;
 
@@ -22,20 +24,25 @@ public sealed class WpfDispatcherService : IDispatcherService
     /// </summary>
     private static System.Windows.Threading.Dispatcher Dispatcher
     {
-        get
-        {
-            return (System.Windows.Application.Current?.Dispatcher)
-                ?? throw new InvalidOperationException(
-                    "No WPF Application is running; the dispatcher is unavailable. " +
-                    "Use a mocked IDispatcherService in unit tests.");
-        }
+        get =>
+                System.Windows.Application.Current?.Dispatcher ?? throw new InvalidOperationException("No WPF Application is running; the dispatcher is unavailable. " + "Use a mocked IDispatcherService in unit tests.");
     }
+
+
+
+
+
+
+
 
     /// <inheritdoc />
     public bool CheckAccess()
     {
         return Dispatcher.CheckAccess();
     }
+
+
+
 
 
 
@@ -52,12 +59,18 @@ public sealed class WpfDispatcherService : IDispatcherService
 
 
 
+
+
+
     /// <inheritdoc />
     public Task InvokeAsync(Action action)
     {
         ArgumentNullException.ThrowIfNull(action);
         return Dispatcher.InvokeAsync(action).Task;
     }
+
+
+
 
 
 
@@ -71,8 +84,7 @@ public sealed class WpfDispatcherService : IDispatcherService
         // Run the async function on the dispatcher and await the returned
         // DispatcherOperation<Task> directly (it exposes GetAwaiter), then
         // await the inner task so completion propagates to the caller.
-        System.Windows.Threading.DispatcherOperation<Task> operation =
-            Dispatcher.InvokeAsync(func);
+        System.Windows.Threading.DispatcherOperation<Task> operation = Dispatcher.InvokeAsync(func);
 
         Task inner = await operation.Task.ConfigureAwait(false);
         await inner.ConfigureAwait(false);

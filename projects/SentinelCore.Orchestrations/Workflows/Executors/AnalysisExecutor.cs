@@ -2,17 +2,17 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AnalysisExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-using SentinelCore.Abstractions;
-using SentinelCore.Events;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.Events;
 
 
 
 
-namespace SentinelCore.Workflows.Executors;
+namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 

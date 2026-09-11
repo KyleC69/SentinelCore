@@ -2,11 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RepetitionAttackRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-namespace SentinelCore.SafetyEngine.Rules;
+namespace SentinelCore.Orchestrations.SafetyEngine.Rules;
 
 
 

@@ -1,13 +1,12 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         IModelConfigStore.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
-using SentinelCore.Contracts;
-
+using SentinelCore.Contracts.Contracts;
 
 
 
@@ -31,6 +30,9 @@ public interface IModelConfigStore
     /// </summary>
     /// <returns>The persisted document, or <c>null</c> when absent or unreadable.</returns>
     ModelConfigDocument? Load();
+
+
+
 
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         OrchestrationFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -10,13 +10,14 @@ using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using SentinelCore.Abstractions;
-using SentinelCore.Workflows;
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Abstractions;
+using SentinelCore.Orchestrations.Workflows;
 
 
 
 
-namespace SentinelCore.Application;
+namespace SentinelCore.Orchestrations.Application;
 
 
 

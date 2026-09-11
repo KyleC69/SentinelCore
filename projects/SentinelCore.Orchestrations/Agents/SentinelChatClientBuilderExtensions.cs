@@ -2,19 +2,19 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelChatClientBuilderExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Agents.Middleware;
-using SentinelCore.Events;
+using SentinelCore.Contracts.Events;
+using SentinelCore.Orchestrations.Agents.Middleware;
 
 
 
 
-namespace SentinelCore.Agents;
+namespace SentinelCore.Orchestrations.Agents;
 
 
 

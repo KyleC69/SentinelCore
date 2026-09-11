@@ -2,19 +2,22 @@
 // Project:   SentinelCore.Orchestrations
 // File:         OrchestrationControl.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Extensions.Options;
 
 using SentinelCore.Abstractions;
-using SentinelCore.Events;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Contracts.Events;
+using SentinelCore.Orchestrations.Abstractions;
 
 
 
 
-namespace SentinelCore.Application;
+namespace SentinelCore.Orchestrations.Application;
 
 
 
@@ -45,9 +48,9 @@ public sealed class OrchestrationControl : IOrchestrationControl
     public OrchestrationControl(IOrchestrationFactory orchestrationFactory, IOptions<SentinelCoreSettings> settings, ISentinelCoreEvents events, ISystemReporter systemReporter, ISentinelWorkflowExecution workflowExecution)
     {
         SentinelCoreSettings settings1 = settings.Value != null ? settings.Value : Throw.IfNull(settings.Value);
-        _sentinelCoreEvents = events != null ? events : Throw.IfNull(events);
-        _systemReporter = systemReporter != null ? systemReporter : Throw.IfNull(systemReporter);
-        _workflowExecution = workflowExecution != null ? workflowExecution : Throw.IfNull(workflowExecution);
+        _sentinelCoreEvents = events;
+        _systemReporter = systemReporter;
+        _workflowExecution = workflowExecution;
         Throw.IfNull(orchestrationFactory);
         _orchestration = orchestrationFactory.CreateOrchestrationInstance(settings1.OrchestrationType);
     }

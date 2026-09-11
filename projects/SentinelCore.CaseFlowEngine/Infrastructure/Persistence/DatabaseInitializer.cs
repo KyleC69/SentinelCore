@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         DatabaseInitializer.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -17,7 +17,7 @@ using SentinelCore.Cfe.Persistence;
 
 
 
-namespace SentinelCore.Infrastructure.Persistence;
+namespace SentinelCore.CaseFlowEngine.Infrastructure.Persistence;
 
 
 

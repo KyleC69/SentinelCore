@@ -2,13 +2,16 @@
 // Project:   SentinelCore.Contracts
 // File:         ModelProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using SentinelCore.Abstractions;
 
-namespace SentinelCore.Contracts;
+
+
+
+namespace SentinelCore.Contracts.Contracts;
 
 
 

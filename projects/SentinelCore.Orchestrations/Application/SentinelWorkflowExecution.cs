@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelWorkflowExecution.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -11,13 +11,14 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Agents.AI.Workflows.Specialized.Magentic;
 using Microsoft.Extensions.Options;
 
-using SentinelCore.Abstractions;
-using SentinelCore.Events;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Contracts.Events;
 
 
 
 
-namespace SentinelCore.Application;
+namespace SentinelCore.Orchestrations.Application;
 
 
 

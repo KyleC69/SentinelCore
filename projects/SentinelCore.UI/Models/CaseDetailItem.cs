@@ -1,15 +1,20 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         CaseDetailItem.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
-using SentinelCore.Cfe;
+using SentinelCore.Contracts.Cfe;
+
+
 
 
 namespace SentinelCore.UI.Models;
+
+
+
 
 
 /// <summary>

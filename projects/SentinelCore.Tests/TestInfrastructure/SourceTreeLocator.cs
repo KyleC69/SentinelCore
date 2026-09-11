@@ -1,13 +1,22 @@
-﻿// Solution:  SentinelCore
+﻿// Solution: SentinelCore
 // Project:   SentinelCore.Tests
-// File:      SourceTreeLocator.cs
-// Author:    Kyle L. Crowder
-// Build Num:  091003
+// File:         SourceTreeLocator.cs
+// Author: Kyle L. Crowder
+// Build Num:  091112
+
+
 
 using System.IO;
 using System.Reflection;
 
+
+
+
 namespace SentinelCore.Tests.TestInfrastructure;
+
+
+
+
 
 /// <summary>
 ///     Locates the SentinelCore source tree from the running test assembly and
@@ -31,14 +40,11 @@ public static class SourceTreeLocator
     {
         // Preferred — the build embeds the projects directory as assembly metadata,
         // which stays correct even when output is redirected via ArtifactsPath.
-        AssemblyMetadataAttribute[] metadata = typeof(SourceTreeLocator).Assembly
-            .GetCustomAttributes<AssemblyMetadataAttribute>()
-            .ToArray();
+        AssemblyMetadataAttribute[] metadata = typeof(SourceTreeLocator).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().ToArray();
 
         foreach (AssemblyMetadataAttribute entry in metadata)
         {
-            if (string.Equals(entry.Key, "SentinelCoreSourceRoot", StringComparison.Ordinal)
-                && entry.Value is not null)
+            if (string.Equals(entry.Key, "SentinelCoreSourceRoot", StringComparison.Ordinal) && entry.Value is not null)
             {
                 string configured = Path.GetFullPath(entry.Value);
                 if (Directory.Exists(configured))
@@ -56,10 +62,7 @@ public static class SourceTreeLocator
         {
             if (directory.EnumerateFiles("*.slnx").Any())
             {
-                string candidate = Path.Combine(
-                    directory.FullName,
-                    "SentinelCore",
-                    "projects");
+                string candidate = Path.Combine(directory.FullName, "SentinelCore", "projects");
 
                 if (Directory.Exists(candidate))
                 {
@@ -70,11 +73,33 @@ public static class SourceTreeLocator
             directory = directory.Parent;
         }
 
-        throw new InvalidOperationException(
-            "Could not locate the SentinelCore source root walking up from '"
-            + AppContext.BaseDirectory
-            + "'. Expected a SentinelCore.slnx with a 'SentinelCore/projects' directory beside it.");
+        throw new InvalidOperationException("Could not locate the SentinelCore source root walking up from '" + AppContext.BaseDirectory + "'. Expected a SentinelCore.slnx with a 'SentinelCore/projects' directory beside it.");
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Determines whether a source file path points at build output rather
+    ///     than authored source.
+    /// </summary>
+    /// <param name="path">The candidate file path.</param>
+    /// <returns><see langword="true" /> when the path lives under a bin or obj folder.</returns>
+    public static bool IsBuildOutput(string path)
+    {
+        return path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) || path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
+    }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Loads every C# source file under the solution's source root, excluding
@@ -89,22 +114,6 @@ public static class SourceTreeLocator
     {
         string root = FindSourceRoot();
 
-        return Directory
-            .EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
-            .Where(path => !IsBuildOutput(path))
-            .Select(path => (path, Source: File.ReadAllText(path)))
-            .ToList();
-    }
-
-    /// <summary>
-    ///     Determines whether a source file path points at build output rather
-    ///     than authored source.
-    /// </summary>
-    /// <param name="path">The candidate file path.</param>
-    /// <returns><see langword="true" /> when the path lives under a bin or obj folder.</returns>
-    public static bool IsBuildOutput(string path)
-    {
-        return path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
-               || path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
+        return Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories).Where(path => !IsBuildOutput(path)).Select(path => (path, Source: File.ReadAllText(path))).ToList();
     }
 }

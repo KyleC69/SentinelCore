@@ -2,21 +2,21 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MagneticOrchestration.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Agents;
-using SentinelCore.Application;
-using SentinelCore.Cfe;
-using SentinelCore.Events;
+using SentinelCore.Contracts.CaseFlow;
+using SentinelCore.Contracts.Events;
+using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Application;
 
 
 
 
-namespace SentinelCore.Orchestrations;
+namespace SentinelCore.Orchestrations.Orchestrations;
 
 
 

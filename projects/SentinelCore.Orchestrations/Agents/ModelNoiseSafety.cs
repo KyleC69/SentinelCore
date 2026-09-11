@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ModelNoiseSafety.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -14,7 +14,7 @@ using JetBrains.Annotations;
 
 
 
-namespace SentinelCore.Agents;
+namespace SentinelCore.Orchestrations.Agents;
 
 
 

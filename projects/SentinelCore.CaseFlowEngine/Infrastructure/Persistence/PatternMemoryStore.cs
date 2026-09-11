@@ -2,20 +2,20 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         PatternMemoryStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Data.SqlTypes;
 using Microsoft.EntityFrameworkCore;
 
-using SentinelCore.Abstractions;
 using SentinelCore.Cfe.Persistence;
+using SentinelCore.Contracts.Abstractions;
 
 
 
 
-namespace SentinelCore.Infrastructure.Persistence;
+namespace SentinelCore.CaseFlowEngine.Infrastructure.Persistence;
 
 
 
@@ -65,11 +65,7 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
-        List<PatternMemoryEntity> entities = await db.PatternMemoryEntities
-                .AsNoTracking()
-                .Where(p => p.CaseId == caseRecordId)
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
+        List<PatternMemoryEntity> entities = await db.PatternMemoryEntities.AsNoTracking().Where(p => p.CaseId == caseRecordId).ToListAsync(cancellationToken).ConfigureAwait(false);
 
         return entities.Select(ToResult).ToList();
     }
@@ -95,19 +91,9 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
-        List<PatternMemoryEntity> entities = await db.PatternMemoryEntities
-                .AsNoTracking()
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
+        List<PatternMemoryEntity> entities = await db.PatternMemoryEntities.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        return entities
-                .Select(ToResult)
-                .Select(r => (Result: r, Score: CosineSimilarity(embedding, r.SignalEmbedding ?? [])))
-                .Where(x => x.Score > 0)
-                .OrderByDescending(x => x.Score)
-                .Take(topK)
-                .Select(x => x.Result)
-                .ToList();
+        return entities.Select(ToResult).Select(r => (Result: r, Score: CosineSimilarity(embedding, r.SignalEmbedding ?? []))).Where(x => x.Score > 0).OrderByDescending(x => x.Score).Take(topK).Select(x => x.Result).ToList();
     }
 
 
@@ -151,28 +137,6 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
 
 
-    /// <summary>
-    ///     Maps a pattern-memory entity to its contract result representation.
-    /// </summary>
-    /// <param name="e">The entity to map.</param>
-    /// <returns>The mapped pattern-memory result.</returns>
-    private static PatternMemoryResult ToResult(PatternMemoryEntity e)
-    {
-        return new PatternMemoryResult
-        {
-                CaseId = e.CaseId,
-                PatternId = e.PatternId,
-                Summary = e.Summary,
-                SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
-                SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
-                Timestamp = e.Timestamp
-        };
-    }
-
-
-
-
-
 
 
 
@@ -201,5 +165,30 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
         double denominator = Math.Sqrt(normA) * Math.Sqrt(normB);
         return denominator == 0 ? 0 : (float)(dot / denominator);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Maps a pattern-memory entity to its contract result representation.
+    /// </summary>
+    /// <param name="e">The entity to map.</param>
+    /// <returns>The mapped pattern-memory result.</returns>
+    private static PatternMemoryResult ToResult(PatternMemoryEntity e)
+    {
+        return new PatternMemoryResult
+        {
+                CaseId = e.CaseId,
+                PatternId = e.PatternId,
+                Summary = e.Summary,
+                SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
+                SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
+                Timestamp = e.Timestamp
+        };
     }
 }

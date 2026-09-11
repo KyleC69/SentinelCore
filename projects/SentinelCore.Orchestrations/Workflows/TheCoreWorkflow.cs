@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -12,17 +12,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Abstractions;
-using SentinelCore.Agents;
-using SentinelCore.Agents.Models;
-using SentinelCore.Application;
-using SentinelCore.Events;
-using SentinelCore.SafetyEngine;
-using SentinelCore.Workflows.Executors;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.Events;
+using SentinelCore.Orchestrations.Abstractions;
+using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Agents.Models;
+using SentinelCore.Orchestrations.Application;
+using SentinelCore.Orchestrations.SafetyEngine;
+using SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
 
-namespace SentinelCore.Workflows;
+namespace SentinelCore.Orchestrations.Workflows;
 
 
 
@@ -314,11 +316,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public string Description { get; } =
-        "TheCore is a multi-agent & non-agent workflow that classifies an incoming signal and routes it to" +
-        " the appropriate executor based on the classification result. It demonstrates a structured approach to" +
-        " handling various scenarios, including investigation, direct answers, safety concerns, and escalation to human operators." +
-        " The workflow is designed to ensure that each step is executed by the appropriate agent or executor, providing a clear and efficient process for managing complex tasks.";
+    public string Description { get; } = "TheCore is a multi-agent & non-agent workflow that classifies an incoming signal and routes it to" + " the appropriate executor based on the classification result. It demonstrates a structured approach to" + " handling various scenarios, including investigation, direct answers, safety concerns, and escalation to human operators." + " The workflow is designed to ensure that each step is executed by the appropriate agent or executor, providing a clear and efficient process for managing complex tasks.";
 
 
 

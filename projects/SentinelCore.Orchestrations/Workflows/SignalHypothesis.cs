@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SignalHypothesis.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 
 
 
-namespace SentinelCore.Workflows;
+namespace SentinelCore.Orchestrations.Workflows;
 
 
 

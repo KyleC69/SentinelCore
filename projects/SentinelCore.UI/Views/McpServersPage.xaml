@@ -87,13 +87,13 @@
 
             <!-- Add Server Form -->
             <Border Grid.Row="2"
-                   Background="{DynamicResource ChatSurface}"
-                   BorderBrush="{DynamicResource ChatBorder}"
-                   BorderThickness="1"
-                   CornerRadius="8"
-                   Padding="20"
-                   Margin="0,0,0,20"
-                   Visibility="{Binding IsAddingServer, Converter={StaticResource BoolToVisibility}}">
+                    Background="{DynamicResource ChatSurface}"
+                    BorderBrush="{DynamicResource ChatBorder}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20"
+                    Margin="0,0,0,20"
+                    Visibility="{Binding IsAddingServer, Converter={StaticResource BoolToVisibility}}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -106,8 +106,8 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0"
-                              Style="{StaticResource SubtitleText}"
-                              Text="Add MCP Server" />
+                               Style="{StaticResource SubtitleText}"
+                               Text="Add MCP Server" />
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,0">
                         <StackPanel Margin="0,0,16,0">
@@ -120,9 +120,9 @@
                         <StackPanel>
                             <TextBlock Style="{StaticResource BodyText}" Text="Transport" />
                             <ComboBox ItemsSource="{Binding TransportTypes}"
-                                     SelectedItem="{Binding NewServerTransportType}"
-                                     Style="{StaticResource FormComboBoxStyle}"
-                                     Width="140" />
+                                      SelectedItem="{Binding NewServerTransportType}"
+                                      Style="{StaticResource FormComboBoxStyle}"
+                                      Width="140" />
                         </StackPanel>
                     </StackPanel>
 
@@ -148,9 +148,10 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding NewServerWorkingDirectory, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource FormTextBoxStyle}"
-                                         Margin="0,0,8,0" />
+                                <TextBox
+                                    Text="{Binding NewServerWorkingDirectory, UpdateSourceTrigger=PropertyChanged}"
+                                    Style="{StaticResource FormTextBoxStyle}"
+                                    Margin="0,0,8,0" />
                                 <Button Grid.Column="1"
                                         Command="{Binding BrowseWorkingDirectoryCommand}"
                                         Style="{StaticResource SecondaryButtonStyle}"
@@ -163,7 +164,8 @@
 
                     <StackPanel Grid.Row="4" Margin="0,12,0,0"
                                 IsEnabled="{Binding IsStdioTransport}">
-                        <TextBlock Style="{StaticResource BodyText}" Text="Environment Variables (stdio only, one NAME=value per line)" />
+                        <TextBlock Style="{StaticResource BodyText}"
+                                   Text="Environment Variables (stdio only, one NAME=value per line)" />
                         <TextBox Text="{Binding NewServerEnvironmentText, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FormTextBoxStyle}"
                                  MinHeight="60"
@@ -186,26 +188,26 @@
                     </StackPanel>
 
                     <StackPanel Grid.Row="6"
-                                 Orientation="Horizontal"
-                                 Margin="0,18,0,0">
+                                Orientation="Horizontal"
+                                Margin="0,18,0,0">
                         <Button Command="{Binding AddServerCommand}"
-                                 Style="{StaticResource AccentButtonStyle}"
-                                 Margin="0,0,12,0"
-                                 Padding="12,6"
-                                 Content="Save Server" />
+                                Style="{StaticResource AccentButtonStyle}"
+                                Margin="0,0,12,0"
+                                Padding="12,6"
+                                Content="Save Server" />
                         <Button Command="{Binding CancelAddServerCommand}"
-                                 Style="{StaticResource SecondaryButtonStyle}"
-                                 Padding="12,6"
-                                 Content="Cancel" />
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="12,6"
+                                Content="Cancel" />
                     </StackPanel>
                 </Grid>
             </Border>
 
             <!-- Server list -->
             <DataGrid Grid.Row="3"
-                     ItemsSource="{Binding Servers}"
-                     SelectedItem="{Binding SelectedServer}"
-                     AutoGenerateColumns="False">
+                      ItemsSource="{Binding Servers}"
+                      SelectedItem="{Binding SelectedServer}"
+                      AutoGenerateColumns="False">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name"
                                         Binding="{Binding DisplayName}"
@@ -226,10 +228,12 @@
                                                 <Setter Property="Fill" Value="{DynamicResource ChatTextMuted}" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Status}" Value="Connected">
-                                                        <Setter Property="Fill" Value="{DynamicResource ChatStatusSuccess}" />
+                                                        <Setter Property="Fill"
+                                                                Value="{DynamicResource ChatStatusSuccess}" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Status}" Value="Starting">
-                                                        <Setter Property="Fill" Value="{DynamicResource ChatStatusWarning}" />
+                                                        <Setter Property="Fill"
+                                                                Value="{DynamicResource ChatStatusWarning}" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Status}" Value="Error">
                                                         <Setter Property="Fill" Value="{DynamicResource ChatDanger}" />
@@ -259,21 +263,21 @@
 
             <!-- Assignment editor for the selected server -->
             <Border Grid.Row="4"
-                   Background="{DynamicResource ChatSurface}"
-                   BorderBrush="{DynamicResource ChatBorder}"
-                   BorderThickness="1"
-                   CornerRadius="8"
-                   Padding="20"
-                   Margin="0,16,0,0"
-                   Visibility="{Binding HasSelectedServer, Converter={StaticResource BoolToVisibility}}">
+                    Background="{DynamicResource ChatSurface}"
+                    BorderBrush="{DynamicResource ChatBorder}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="20"
+                    Margin="0,16,0,0"
+                    Visibility="{Binding HasSelectedServer, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource SubtitleText}"
-                              Text="Agent Assignments" />
+                               Text="Agent Assignments" />
                     <TextBlock Margin="0,6,0,0"
-                              Style="{StaticResource BodyText}"
-                              Text="Select which agents can use this server. Leave all unchecked to make it available to every agent." />
+                               Style="{StaticResource BodyText}"
+                               Text="Select which agents can use this server. Leave all unchecked to make it available to every agent." />
                     <ItemsControl ItemsSource="{Binding SelectedServerAgentAssignments}"
-                                 Margin="0,10,0,0">
+                                  Margin="0,10,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <CheckBox Content="{Binding AgentName}"
@@ -293,10 +297,10 @@
 
             <!-- Result message (visible for any operation) -->
             <TextBlock Grid.Row="5"
-                      Margin="0,16,0,0"
-                      Style="{StaticResource BodyText}"
-                      Text="{Binding ResultMessage}"
-                      Visibility="{Binding ShowResult, Converter={StaticResource BoolToVisibility}}" />
+                       Margin="0,16,0,0"
+                       Style="{StaticResource BodyText}"
+                       Text="{Binding ResultMessage}"
+                       Visibility="{Binding ShowResult, Converter={StaticResource BoolToVisibility}}" />
         </Grid>
     </ScrollViewer>
 </Page>

@@ -2,18 +2,20 @@
 // Project:   SentinelCore.Orchestrations
 // File:         NewCaseExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-using SentinelCore.Abstractions;
-using SentinelCore.Cfe;
-using SentinelCore.Exceptions;
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.CaseFlow;
+using SentinelCore.Contracts.Cfe;
+using SentinelCore.Orchestrations.Exceptions;
 
 
 
 
-namespace SentinelCore.Workflows.Executors;
+namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 

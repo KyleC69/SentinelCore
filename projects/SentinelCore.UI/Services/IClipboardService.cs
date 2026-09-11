@@ -1,12 +1,15 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         IClipboardService.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
 namespace SentinelCore.UI.Services;
+
+
+
 
 
 /// <summary>

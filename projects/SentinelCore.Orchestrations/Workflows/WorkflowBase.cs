@@ -2,18 +2,18 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowBase.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using System.Text;
 
-using SentinelCore.Abstractions;
+using SentinelCore.Contracts.Abstractions;
 
 
 
 
-namespace SentinelCore.Workflows;
+namespace SentinelCore.Orchestrations.Workflows;
 
 
 

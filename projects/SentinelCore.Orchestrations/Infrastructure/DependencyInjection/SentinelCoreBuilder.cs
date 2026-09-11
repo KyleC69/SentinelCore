@@ -2,18 +2,18 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Extensions.DependencyInjection;
 
-using SentinelCore.DependencyInjection;
+using SentinelCore.Contracts.DependencyInjection;
 
 
 
 
-namespace SentinelCore.Infrastructure.DependencyInjection;
+namespace SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 
 
 

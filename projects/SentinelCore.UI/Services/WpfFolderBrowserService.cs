@@ -1,8 +1,8 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         WpfFolderBrowserService.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
@@ -10,7 +10,6 @@ using System.IO;
 using System.Windows;
 
 using Microsoft.Win32;
-
 
 
 
@@ -32,18 +31,14 @@ public sealed class WpfFolderBrowserService : IFolderBrowserService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(title);
 
-        OpenFolderDialog dialog = new()
-        {
-            Title = title
-        };
+        OpenFolderDialog dialog = new() { Title = title };
 
         if (!string.IsNullOrWhiteSpace(initialDirectory) && Directory.Exists(initialDirectory))
         {
             dialog.InitialDirectory = initialDirectory;
         }
 
-        Window? owner = System.Windows.Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
-            ?? System.Windows.Application.Current?.MainWindow;
+        Window? owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current?.MainWindow;
 
         return dialog.ShowDialog(owner) == true ? dialog.FolderName : null;
     }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         DbContextPatternLockTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  091003
+// Build Num:  091112
 
 
 
@@ -13,7 +13,12 @@ using SentinelCore.Tests.TestInfrastructure;
 
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
+
+
+
 namespace SentinelCore.Tests.Architecture;
+
+
 
 
 
@@ -45,11 +50,15 @@ public sealed class DbContextPatternLockTests
         }
 
         // Assert
-        Assert.IsTrue(
-            violations.Count == 0,
-            "PL-7 drift: DbContext registration without a factory is prohibited.\n"
-            + string.Join(Environment.NewLine, violations));
+        Assert.IsTrue(violations.Count == 0, "PL-7 drift: DbContext registration without a factory is prohibited.\n" + string.Join(Environment.NewLine, violations));
     }
+
+
+
+
+
+
+
 
     [TestMethod]
     public void Every_DbContext_Is_Registered_Through_A_DbContext_Factory()
@@ -69,34 +78,69 @@ public sealed class DbContextPatternLockTests
             }
         }
 
-        Assert.IsTrue(
-            declaredContexts.Count > 0,
-            "Expected to discover at least one DbContext in solution source.");
+        Assert.IsTrue(declaredContexts.Count > 0, "Expected to discover at least one DbContext in solution source.");
 
-        List<(string Path, string Source)> productionSources = sources
-            .Where(file => !IsTestProjectFile(file.Path))
-            .ToList();
+        List<(string Path, string Source)> productionSources = sources.Where(file => !IsTestProjectFile(file.Path)).ToList();
 
         List<string> violations = [];
         foreach (string contextType in declaredContexts)
         {
             string requiredRegistration = $"AddDbContextFactory<{contextType}>";
-            bool registered = productionSources.Any(
-                file => file.Source.Contains(requiredRegistration, StringComparison.Ordinal));
+            bool registered = productionSources.Any(file => file.Source.Contains(requiredRegistration, StringComparison.Ordinal));
 
             if (!registered)
             {
-                violations.Add(
-                    $"{contextType} has no '{requiredRegistration}' registration in any production composition root");
+                violations.Add($"{contextType} has no '{requiredRegistration}' registration in any production composition root");
             }
         }
 
         // Assert
-        Assert.IsTrue(
-            violations.Count == 0,
-            "PL-7 drift: every DbContext must be registered through its factory.\n"
-            + string.Join(Environment.NewLine, violations));
+        Assert.IsTrue(violations.Count == 0, "PL-7 drift: every DbContext must be registered through its factory.\n" + string.Join(Environment.NewLine, violations));
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Determines whether a source file is an approved exemption from the
+    ///     consumer scan: build output, generated EF Core Power Tools partials,
+    ///     the design-time factory, and scaffolded migrations.
+    /// </summary>
+    /// <param name="path">The candidate file path.</param>
+    /// <returns><see langword="true" /> when the file is exempt from the scan.</returns>
+    private static bool IsExemptFromConsumerScan(string path)
+    {
+        return SourceTreeLocator.IsBuildOutput(path) || path.Contains($"{Path.DirectorySeparatorChar}SentinelCore.CaseFlowEngine{Path.DirectorySeparatorChar}Persistence{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) || path.Contains($"{Path.DirectorySeparatorChar}Migrations{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Determines whether a source file belongs to the test project, which
+    ///     must not satisfy production registration requirements.
+    /// </summary>
+    /// <param name="path">The candidate file path.</param>
+    /// <returns><see langword="true" /> when the file lives under the test project.</returns>
+    private static bool IsTestProjectFile(string path)
+    {
+        return path.Contains($"{Path.DirectorySeparatorChar}SentinelCore.Tests{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
+    }
+
+
+
+
+
+
+
 
     [TestMethod]
     public void No_Consumer_Captures_A_DbContext_Directly()
@@ -106,8 +150,8 @@ public sealed class DbContextPatternLockTests
         // capture of a raw DbContext are both prohibited.
         Regex[] bannedCaptureRegexes =
         [
-            new("private\\s+readonly\\s+(?:SentinelCoreDBContext|SentinelRAGDBContext)\\b", RegexOptions.Compiled),
-            new("[(,]\\s*(?:SentinelCoreDBContext|SentinelRAGDBContext)\\s+\\w+\\s*[,)]", RegexOptions.Compiled)
+                new("private\\s+readonly\\s+(?:SentinelCoreDBContext|SentinelRAGDBContext)\\b", RegexOptions.Compiled),
+                new("[(,]\\s*(?:SentinelCoreDBContext|SentinelRAGDBContext)\\s+\\w+\\s*[,)]", RegexOptions.Compiled)
         ];
 
         List<string> violations = [];
@@ -130,40 +174,6 @@ public sealed class DbContextPatternLockTests
         }
 
         // Assert
-        Assert.IsTrue(
-            violations.Count == 0,
-            "PL-7 drift: consumers must not capture a DbContext directly.\n"
-            + string.Join(Environment.NewLine, violations));
-    }
-
-    /// <summary>
-    ///     Determines whether a source file belongs to the test project, which
-    ///     must not satisfy production registration requirements.
-    /// </summary>
-    /// <param name="path">The candidate file path.</param>
-    /// <returns><see langword="true" /> when the file lives under the test project.</returns>
-    private static bool IsTestProjectFile(string path)
-    {
-        return path.Contains(
-            $"{Path.DirectorySeparatorChar}SentinelCore.Tests{Path.DirectorySeparatorChar}",
-            StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    ///     Determines whether a source file is an approved exemption from the
-    ///     consumer scan: build output, generated EF Core Power Tools partials,
-    ///     the design-time factory, and scaffolded migrations.
-    /// </summary>
-    /// <param name="path">The candidate file path.</param>
-    /// <returns><see langword="true" /> when the file is exempt from the scan.</returns>
-    private static bool IsExemptFromConsumerScan(string path)
-    {
-        return SourceTreeLocator.IsBuildOutput(path)
-               || path.Contains(
-                   $"{Path.DirectorySeparatorChar}SentinelCore.CaseFlowEngine{Path.DirectorySeparatorChar}Persistence{Path.DirectorySeparatorChar}",
-                   StringComparison.OrdinalIgnoreCase)
-               || path.Contains(
-                   $"{Path.DirectorySeparatorChar}Migrations{Path.DirectorySeparatorChar}",
-                   StringComparison.OrdinalIgnoreCase);
+        Assert.IsTrue(violations.Count == 0, "PL-7 drift: consumers must not capture a DbContext directly.\n" + string.Join(Environment.NewLine, violations));
     }
 }

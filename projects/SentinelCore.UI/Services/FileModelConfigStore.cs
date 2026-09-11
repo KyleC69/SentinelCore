@@ -1,8 +1,8 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         FileModelConfigStore.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
@@ -10,9 +10,6 @@ using System.IO;
 using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
-
-using SentinelCore.Contracts;
-
 
 
 
@@ -32,19 +29,20 @@ namespace SentinelCore.UI.Services;
 /// </summary>
 public sealed class FileModelConfigStore : IModelConfigStore
 {
+
+    private readonly string _filePath;
+
+    private readonly ILogger<FileModelConfigStore> _logger;
+
     /// <summary>
     ///     The file name of the persisted document.
     /// </summary>
     public const string FileName = "model-configuration.json";
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true
-    };
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    private readonly ILogger<FileModelConfigStore> _logger;
 
-    private readonly string _filePath;
+
 
 
 
@@ -54,10 +52,12 @@ public sealed class FileModelConfigStore : IModelConfigStore
     ///     Creates a store persisting to the default application-data location.
     /// </summary>
     /// <param name="logger">The logger for load/save failures.</param>
-    public FileModelConfigStore(ILogger<FileModelConfigStore> logger)
-        : this(logger, null)
+    public FileModelConfigStore(ILogger<FileModelConfigStore> logger) : this(logger, null)
     {
     }
+
+
+
 
 
 
@@ -65,8 +65,8 @@ public sealed class FileModelConfigStore : IModelConfigStore
 
     /// <summary>
     ///     Creates a store persisting to an explicit file path. When
-    /// <paramref name="filePath" /> is <c>null</c>, the default application-data
-    /// location is used.
+    ///     <paramref name="filePath" /> is <c>null</c>, the default application-data
+    ///     location is used.
     /// </summary>
     /// <param name="logger">The logger for load/save failures.</param>
     /// <param name="filePath">Explicit document path, or <c>null</c> for the default location.</param>
@@ -74,11 +74,11 @@ public sealed class FileModelConfigStore : IModelConfigStore
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _filePath = filePath ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "SentinelCore",
-            FileName);
+        _filePath = filePath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SentinelCore", FileName);
     }
+
+
+
 
 
 
@@ -111,6 +111,9 @@ public sealed class FileModelConfigStore : IModelConfigStore
             return null;
         }
     }
+
+
+
 
 
 

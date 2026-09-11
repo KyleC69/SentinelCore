@@ -1,8 +1,8 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         ModelConfigViewModel.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
@@ -14,11 +14,10 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using SentinelCore.Contracts;
-using SentinelCore.Mcp;
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Contracts.Mcp;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
-
 
 
 
@@ -40,24 +39,23 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 {
     private readonly ISentinelAgentCatalog _agentCatalog;
 
+    [ObservableProperty] private ObservableCollection<AgentModelCard> _cards = [];
+
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private bool _isBusy;
+
     private readonly ILogger<ModelConfigViewModel> _logger;
 
-    private readonly IModelConfigStore _store;
+    [ObservableProperty] private string _resultMessage = string.Empty;
 
     private readonly SentinelCoreSettings _settings;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-    private bool _isBusy;
+    [ObservableProperty] private bool _showResult;
 
-    [ObservableProperty]
-    private string _resultMessage = string.Empty;
+    private readonly IModelConfigStore _store;
 
-    [ObservableProperty]
-    private bool _showResult;
 
-    [ObservableProperty]
-    private ObservableCollection<AgentModelCard> _cards = [];
+
 
 
 
@@ -70,11 +68,7 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
     /// <param name="store">The persistence store for the configuration document.</param>
     /// <param name="settingsOptions">The live SentinelCore settings.</param>
     /// <param name="logger">The logger for this view-model.</param>
-    public ModelConfigViewModel(
-        ISentinelAgentCatalog agentCatalog,
-        IModelConfigStore store,
-        IOptions<SentinelCoreSettings> settingsOptions,
-        ILogger<ModelConfigViewModel> logger)
+    public ModelConfigViewModel(ISentinelAgentCatalog agentCatalog, IModelConfigStore store, IOptions<SentinelCoreSettings> settingsOptions, ILogger<ModelConfigViewModel> logger)
     {
         _agentCatalog = agentCatalog ?? throw new ArgumentNullException(nameof(agentCatalog));
         _store = store ?? throw new ArgumentNullException(nameof(store));
@@ -86,11 +80,16 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 
 
 
+
+
+
     /// <summary>
     ///     Gets the supported model providers for the provider combo boxes.
     /// </summary>
-    public IReadOnlyList<ModelProfile.ModelProvider> Providers { get; } =
-        Enum.GetValues<ModelProfile.ModelProvider>().ToList();
+    public IReadOnlyList<ModelProfile.ModelProvider> Providers { get; } = Enum.GetValues<ModelProfile.ModelProvider>().ToList();
+
+
+
 
 
 
@@ -104,10 +103,25 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 
 
 
+
+
+
     public void OnNavigatedTo(object? parameter)
     {
         _ = LoadAsync();
     }
+
+
+
+
+
+
+
+
+    private bool CanSave() => !IsBusy && Cards.Count > 0;
+
+
+
 
 
 
@@ -148,9 +162,6 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 
 
 
-
-
-    private bool CanSave() => !IsBusy && Cards.Count > 0;
 
 
 

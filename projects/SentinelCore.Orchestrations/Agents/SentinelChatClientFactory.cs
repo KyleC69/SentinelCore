@@ -2,11 +2,9 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelChatClientFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
-
-using System.Text.Json;
 
 using Azure;
 using Azure.AI.OpenAI;
@@ -16,22 +14,25 @@ using OllamaSharp;
 using OpenAI;
 using OpenAI.Chat;
 
+using SentinelCore.Contracts.Contracts;
 
 
 
-namespace SentinelCore.Agents;
+
+namespace SentinelCore.Orchestrations.Agents;
 
 
 
 
 
 /// <summary>
-///     Factory for creating <see cref="IChatClient" /> instances from a <see cref="ModelProfile" />.
-///     Library consumers can use this or provide their own <see cref="IChatClient" /> implementation.
+///     Default implementation of <see cref="IChatClientFactory" /> that creates
+///     <see cref="IChatClient" /> instances from a <see cref="ModelProfile" />.
+///     Library consumers can use this or provide their own <see cref="IChatClientFactory" /> implementation.
 /// </summary>
-public static class SentinelChatClientFactory
+public sealed class SentinelChatClientFactory : IChatClientFactory
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true, PropertyNameCaseInsensitive = true };
+    // JsonSerializerOptions kept for potential future use when logging is needed
 
 
 
@@ -40,7 +41,31 @@ public static class SentinelChatClientFactory
 
 
 
-    private static IChatClient CreateAnthropicClient(ModelProfile model)
+    /// <inheritdoc />
+    public IChatClient CreateChatClient(ModelProfile model)
+    {
+        IChatClient baseClient = model.Provider switch
+        {
+                ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
+                ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
+                ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
+                ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
+                ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
+                ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
+                _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
+        };
+
+        return baseClient;
+    }
+
+
+
+
+
+
+
+
+    private static IChatClient CreateAnthropicClient(ModelProfile _)
     {
         throw new NotSupportedException("Anthropic provider not yet implemented. Use OpenAI-compatible endpoint or add Microsoft.Agents.AI.Anthropic package.");
     }
@@ -57,35 +82,6 @@ public static class SentinelChatClientFactory
         AzureOpenAIClient azureClient = new(new Uri(model.Endpoint ?? throw new ArgumentException("Azure OpenAI endpoint required")), new AzureKeyCredential(model.ApiKey ?? throw new ArgumentException("Azure OpenAI API key required")));
         ChatClient? chatClient = azureClient.GetChatClient(model.ModelId ?? throw new ArgumentException("Azure OpenAI model ID required"));
         return chatClient.AsIChatClient();
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Creates an <see cref="IChatClient" /> based on the model profile.
-    ///     Returns the raw provider client without SentinelCore middleware wrappers.
-    /// </summary>
-    /// <param name="model">The model profile containing provider, endpoint, and credentials.</param>
-    /// <returns>A configured <see cref="IChatClient" /> for the specified provider.</returns>
-    public static IChatClient CreateChatClient(ModelProfile model)
-    {
-        IChatClient baseClient = model.Provider switch
-        {
-                ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
-                ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
-                ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
-                ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
-                ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
-                ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
-                _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
-        };
-
-        return baseClient;
     }
 
 
@@ -128,7 +124,7 @@ public static class SentinelChatClientFactory
 
 
 
-    private static IChatClient CreateOnnxClient(ModelProfile model)
+    private static IChatClient CreateOnnxClient(ModelProfile _)
     {
         throw new NotSupportedException("ONNX provider requires Microsoft.Agents.AI.Onnx package. Add the package and implement this method.");
     }

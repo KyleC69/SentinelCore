@@ -1,15 +1,14 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         AgentModelCard.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
 using CommunityToolkit.Mvvm.ComponentModel;
 
-using SentinelCore.Contracts;
-
+using SentinelCore.Contracts.Contracts;
 
 
 
@@ -26,69 +25,54 @@ namespace SentinelCore.UI.Models;
 /// </summary>
 public sealed partial class AgentModelCard : ObservableObject
 {
-    /// <summary>
-    ///     The logical agent name this card configures.
-    /// </summary>
-    public string AgentName { get; }
-
-    /// <summary>
-    ///     The role tier used when no per-agent model is configured.
-    /// </summary>
-    public SentinelCore.Contracts.ModelProfile.ModelProvider? FallbackProvider { get; }
 
     /// <summary>
     ///     Backing field for <see cref="ApiKey" />.
     /// </summary>
-    [ObservableProperty]
-    private string? _apiKey;
+    [ObservableProperty] private string? _apiKey;
 
     /// <summary>
     ///     Backing field for <see cref="Endpoint" />.
     /// </summary>
-    [ObservableProperty]
-    private string _endpoint = string.Empty;
+    [ObservableProperty] private string _endpoint = string.Empty;
 
     /// <summary>
     ///     Backing field for <see cref="IsConfigured" />.
     /// </summary>
-    [ObservableProperty]
-    private bool _isConfigured;
+    [ObservableProperty] private bool _isConfigured;
 
     /// <summary>
     ///     Backing field for <see cref="MaxOutputTokens" />.
     /// </summary>
-    [ObservableProperty]
-    private int _maxOutputTokens = 16000;
+    [ObservableProperty] private int _maxOutputTokens = 16000;
 
     /// <summary>
     ///     Backing field for <see cref="ModelId" />.
     /// </summary>
-    [ObservableProperty]
-    private string _modelId = string.Empty;
+    [ObservableProperty] private string _modelId = string.Empty;
 
     /// <summary>
     ///     Backing field for <see cref="Provider" />.
     /// </summary>
-    [ObservableProperty]
-    private SentinelCore.Contracts.ModelProfile.ModelProvider _provider = SentinelCore.Contracts.ModelProfile.ModelProvider.Ollama;
+    [ObservableProperty] private ModelProfile.ModelProvider _provider = ModelProfile.ModelProvider.Ollama;
 
     /// <summary>
     ///     Backing field for <see cref="Temperature" />.
     /// </summary>
-    [ObservableProperty]
-    private float _temperature = 0.1f;
+    [ObservableProperty] private float _temperature = 0.1f;
 
     /// <summary>
     ///     Backing field for <see cref="TopK" />.
     /// </summary>
-    [ObservableProperty]
-    private int _topK = 1;
+    [ObservableProperty] private int _topK = 1;
 
     /// <summary>
     ///     Backing field for <see cref="TopP" />.
     /// </summary>
-    [ObservableProperty]
-    private float _topP = 0.1f;
+    [ObservableProperty] private float _topP = 0.1f;
+
+
+
 
 
 
@@ -108,13 +92,15 @@ public sealed partial class AgentModelCard : ObservableObject
 
 
 
+
+
+
     /// <summary>
     ///     Creates a card pre-populated from an existing model profile.
     /// </summary>
     /// <param name="agentName">The logical agent name from the catalog.</param>
     /// <param name="profile">The configured model profile, or <c>null</c> for an unconfigured card.</param>
-    public AgentModelCard(string agentName, ModelProfile? profile)
-        : this(agentName)
+    public AgentModelCard(string agentName, ModelProfile? profile) : this(agentName)
     {
         if (profile is null)
         {
@@ -136,6 +122,35 @@ public sealed partial class AgentModelCard : ObservableObject
 
 
 
+
+
+
+    /// <summary>
+    ///     The logical agent name this card configures.
+    /// </summary>
+    public string AgentName { get; }
+
+    /// <summary>
+    ///     The role tier used when no per-agent model is configured.
+    /// </summary>
+    public ModelProfile.ModelProvider? FallbackProvider { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether the card has the minimum fields
+    ///     required to build a model profile.
+    /// </summary>
+    public bool IsComplete
+    {
+        get => !string.IsNullOrWhiteSpace(Endpoint) && !string.IsNullOrWhiteSpace(ModelId);
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Builds a <see cref="ModelProfile" /> from the card's current values.
     /// </summary>
@@ -147,24 +162,6 @@ public sealed partial class AgentModelCard : ObservableObject
             return null;
         }
 
-        return new ModelProfile(
-            Endpoint.Trim(),
-            ModelId.Trim(),
-            Temperature,
-            MaxOutputTokens,
-            topK: TopK,
-            topP: TopP,
-            provider: Provider,
-            apiKey: string.IsNullOrWhiteSpace(ApiKey) ? null : ApiKey);
+        return new ModelProfile(Endpoint.Trim(), ModelId.Trim(), Temperature, MaxOutputTokens, topK: TopK, topP: TopP, provider: Provider, apiKey: string.IsNullOrWhiteSpace(ApiKey) ? null : ApiKey);
     }
-
-
-
-
-
-    /// <summary>
-    ///     Gets a value indicating whether the card has the minimum fields
-    ///     required to build a model profile.
-    /// </summary>
-    public bool IsComplete => !string.IsNullOrWhiteSpace(Endpoint) && !string.IsNullOrWhiteSpace(ModelId);
 }

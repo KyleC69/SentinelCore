@@ -2,20 +2,19 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CreateCaseTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using System.ComponentModel;
 
-using SentinelCore.Cfe;
-using SentinelCore.Cfe.Persistence;
-using SentinelCore.Infrastructure.Persistence;
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.CaseFlow;
 
 
 
 
-namespace SentinelCore.Tools;
+namespace SentinelCore.Orchestrations.Tools;
 
 
 
@@ -26,10 +25,24 @@ public class CaseTool : AITool
 
     private readonly ICaseFlowEngine _engine;
 
+
+
+
+
+
+
+
     public CaseTool(ICaseFlowEngine engine)
     {
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
     }
+
+
+
+
+
+
+
 
     public override string Description { get; } = "A tool for creating a new case in the Sentinel Core platform from the provided signal. " + "The signal should be a string that describes the issue or anomaly that needs to be investigated.";
 

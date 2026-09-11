@@ -2,21 +2,22 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         SignalRepository.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.EntityFrameworkCore;
 
-using SentinelCore.Abstractions;
-using SentinelCore.Cfe;
+using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Cfe.Persistence;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Persistence;
 
 
 
 
-namespace SentinelCore.Infrastructure.Persistence;
+namespace SentinelCore.CaseFlowEngine.Infrastructure.Persistence;
 
 
 

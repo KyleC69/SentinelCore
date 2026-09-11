@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         ISentinelCoreBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 
 
-namespace SentinelCore.DependencyInjection;
+namespace SentinelCore.Contracts.DependencyInjection;
 
 
 

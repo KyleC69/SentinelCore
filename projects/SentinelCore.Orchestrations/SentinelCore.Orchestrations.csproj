@@ -42,6 +42,7 @@
 		<PackageReference Include="System.DirectoryServices.AccountManagement" />
 		<PackageReference Include="System.Management" />
 		<PackageReference Include="System.Management.Automation" />
+		<PackageReference Include="System.Security.Cryptography.Xml" />
 		<PackageReference Include="System.ServiceProcess.ServiceController" />
 	</ItemGroup>
 	<Target Name="CopyBuildOutput" AfterTargets="Build">

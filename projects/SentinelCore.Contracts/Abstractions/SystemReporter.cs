@@ -2,18 +2,19 @@
 // Project:   SentinelCore.Contracts
 // File:         SystemReporter.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Events;
+using SentinelCore.Abstractions;
+using SentinelCore.Contracts.Events;
 
 
 
 
-namespace SentinelCore.Abstractions;
+namespace SentinelCore.Contracts.Abstractions;
 
 
 

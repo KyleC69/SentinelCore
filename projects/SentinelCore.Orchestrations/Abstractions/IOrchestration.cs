@@ -2,16 +2,16 @@
 // Project:   SentinelCore.Orchestrations
 // File:         IOrchestration.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-using SentinelCore.Application;
+using SentinelCore.Orchestrations.Application;
 
 
 
 
-namespace SentinelCore.Abstractions;
+namespace SentinelCore.Orchestrations.Abstractions;
 
 
 

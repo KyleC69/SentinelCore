@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         PercentageWidthConverter.cs
 // Author: Kyle L. Crowder
-// Build Num:  083003
+// Build Num:  091112
 
 
 

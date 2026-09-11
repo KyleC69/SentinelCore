@@ -1,15 +1,14 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         ConfirmationDialog.xaml.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
 using System.Windows;
 
 using SentinelCore.UI.Services;
-
 
 
 
@@ -56,6 +55,9 @@ public partial class ConfirmationDialog : Window
 
 
 
+
+
+
     /// <summary>
     ///     Closes the dialog with a cancelled result.
     /// </summary>
@@ -63,6 +65,9 @@ public partial class ConfirmationDialog : Window
     {
         DialogResult = false;
     }
+
+
+
 
 
 

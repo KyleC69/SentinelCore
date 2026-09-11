@@ -1,15 +1,20 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         IViewLocator.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
 using System.Windows.Controls;
 
 
+
+
 namespace SentinelCore.UI.Services;
+
+
+
 
 
 /// <summary>

@@ -35,3 +35,7 @@ When developing or reviewing code, verify adherence to these key design principl
 - **Single Responsibility**: Each class should have one clear responsibility.
 - **Encapsulation**: Keep implementation details private and expose only necessary public APIs.
 - **Strong Typing**: Use strong typing to ensure that code is self-documenting and to catch errors at compile time.
+
+## Version Pinning
+
+This release is intended to be compatible with Windows 10 and .NET 10 Do Not install .NET 11 packages.

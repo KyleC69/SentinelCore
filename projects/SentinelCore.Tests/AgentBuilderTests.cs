@@ -2,18 +2,13 @@
 // Project:   SentinelCore.Tests
 // File:         AgentBuilderTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-
-
-using Microsoft.Extensions.AI;
-
-
-
-using SentinelCore.Mcp;
-
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Personas;
 using SentinelCore.Tests.TestInfrastructure;
 
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
@@ -208,15 +203,16 @@ public sealed class AgentBuilderTests
 
 
 
+
     private static AgentProfile CreateProfile(AgentRole role, string name, IList<AITool>? tools = null)
     {
         return new AgentProfile
         {
-            Role = role,
-            AgentName = name,
-            Persona = new AgentPersona { Name = name, Instructions = "test instructions", Description = "test description" },
-            Tools = tools ?? [],
-            Model = ModelProfile.Glm5()
+                Role = role,
+                AgentName = name,
+                Persona = new AgentPersona { Name = name, Instructions = "test instructions", Description = "test description" },
+                Tools = tools ?? [],
+                Model = ModelProfile.Glm5()
         };
     }
 }

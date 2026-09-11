@@ -1,12 +1,15 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         INavigationAware.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
 namespace SentinelCore.UI.Services;
+
+
+
 
 
 /// <summary>
@@ -20,6 +23,13 @@ public interface INavigationAware
     ///     Called when navigating away from the page associated with this view-model.
     /// </summary>
     void OnNavigatedFrom();
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Called when navigating to the page associated with this view-model.

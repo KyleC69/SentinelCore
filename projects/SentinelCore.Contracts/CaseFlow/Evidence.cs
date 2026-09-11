@@ -2,16 +2,11 @@
 // Project:   SentinelCore.Contracts
 // File:         Evidence.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-using SentinelCore.Contracts;
-
-
-
-
-namespace SentinelCore.Cfe;
+namespace SentinelCore.Contracts.CaseFlow;
 
 
 

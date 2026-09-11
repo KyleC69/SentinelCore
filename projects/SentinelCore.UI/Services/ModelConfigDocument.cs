@@ -1,15 +1,14 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         ModelConfigDocument.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
 using System.Text.Json.Serialization;
 
-using SentinelCore.Contracts;
-
+using SentinelCore.Contracts.Contracts;
 
 
 
@@ -31,6 +30,5 @@ public sealed class ModelConfigDocument
     ///     Per-agent model profiles keyed by logical agent name.
     /// </summary>
     [JsonPropertyName("agentModels")]
-    public IDictionary<string, ModelProfile> AgentModels { get; set; } =
-        new Dictionary<string, ModelProfile>(StringComparer.OrdinalIgnoreCase);
+    public IDictionary<string, ModelProfile> AgentModels { get; set; } = new Dictionary<string, ModelProfile>(StringComparer.OrdinalIgnoreCase);
 }

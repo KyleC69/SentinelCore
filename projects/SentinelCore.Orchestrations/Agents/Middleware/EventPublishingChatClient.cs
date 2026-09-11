@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         EventPublishingChatClient.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -12,12 +12,12 @@ using System.Text;
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Events;
+using SentinelCore.Contracts.Events;
 
 
 
 
-namespace SentinelCore.Agents.Middleware;
+namespace SentinelCore.Orchestrations.Agents.Middleware;
 
 
 
@@ -111,6 +111,7 @@ public sealed class EventPublishingChatClient : DelegatingChatClient
 
 
 
+
     /// <summary>
     ///     Streams the inner client's updates unchanged while accumulating agent text.
     ///     When the stream completes, the accumulated text and any tool results are
@@ -150,35 +151,6 @@ public sealed class EventPublishingChatClient : DelegatingChatClient
 
 
 
-    /// <summary>
-    ///     Logs and publishes a tool/function-call result produced by the agent.
-    /// </summary>
-    /// <param name="toolResult">The tool result content captured from the response.</param>
-    private void PublishToolResult(FunctionResultContent toolResult)
-    {
-        if (toolResult.Exception is not null)
-        {
-            _logger.LogWarning(toolResult.Exception, "Agent {AgentName} tool call {CallId} failed", _agentName, toolResult.CallId ?? "unknown");
-            _events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(_agentName, $"Tool call {toolResult.CallId} failed: {toolResult.Exception.Message}", ActivityType.Tooling));
-            return;
-        }
-
-        string resultText = toolResult.Result?.ToString() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(resultText))
-        {
-            return;
-        }
-
-        _logger.LogTrace("Agent {AgentName} tool call {CallId} returned {Length} chars", _agentName, toolResult.CallId ?? "unknown", resultText.Length);
-
-        _events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(_agentName, resultText, ActivityType.Tooling));
-    }
-
-
-
-
-
-
 
     /// <summary>
     ///     Publishes text output through the unified <see cref="ISentinelCoreEvents.SentinelOutputEvent" /> channel
@@ -201,5 +173,36 @@ public sealed class EventPublishingChatClient : DelegatingChatClient
         _logger.LogTrace("Publishing agent output for {AgentName}: {Length} chars", _agentName, payload.Length);
 
         _events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(_agentName, payload, activityType));
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Logs and publishes a tool/function-call result produced by the agent.
+    /// </summary>
+    /// <param name="toolResult">The tool result content captured from the response.</param>
+    private void PublishToolResult(FunctionResultContent toolResult)
+    {
+        if (toolResult.Exception is not null)
+        {
+            _logger.LogWarning(toolResult.Exception, "Agent {AgentName} tool call {CallId} failed", _agentName, toolResult.CallId ?? "unknown");
+            _events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(_agentName, $"Tool call {toolResult.CallId} failed: {toolResult.Exception.Message}", ActivityType.Tooling));
+            return;
+        }
+
+        string resultText = toolResult.Result?.ToString() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(resultText))
+        {
+            return;
+        }
+
+        _logger.LogTrace("Agent {AgentName} tool call {CallId} returned {Length} chars", _agentName, toolResult.CallId ?? "unknown", resultText.Length);
+
+        _events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(_agentName, resultText, ActivityType.Tooling));
     }
 }

@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
+
+using System.Text.Json;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -12,23 +14,26 @@ using Microsoft.Extensions.Logging.Console;
 
 using ModelContextProtocol.Authentication;
 
-using SentinelCore.Abstractions;
-using SentinelCore.Agents;
-using SentinelCore.Application;
-using SentinelCore.Cfe;
-using SentinelCore.Events;
-using SentinelCore.Infrastructure.Persistence;
-using SentinelCore.Mcp;
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.CaseFlowEngine.Infrastructure.Persistence;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Contracts.Events;
+using SentinelCore.Contracts.Mcp;
+using SentinelCore.Orchestrations.Abstractions;
+using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Agents.Middleware;
+using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Mcp;
-using SentinelCore.Workflows;
-using SentinelCore.Workflows.Executors;
-
-using System.Text.Json;
-
-
+using SentinelCore.Orchestrations.Orchestrations;
+using SentinelCore.Orchestrations.Rag;
+using SentinelCore.Orchestrations.Workflows;
+using SentinelCore.Orchestrations.Workflows.Executors;
 
 
-namespace SentinelCore.Infrastructure.DependencyInjection;
+
+
+namespace SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 
 
 
@@ -104,9 +109,31 @@ public static class SentinelCoreServiceExtensions
         // Case Flow Engine — owns the entire case lifecycle; registers its own internal repository.
         // Transient so it does not capture scoped/transient persistence services (DbContext, IEvidenceStore)
         // and can be resolved safely from any scope.
-        services.AddTransient<ICaseFlowEngine, CaseFlowEngine>();
+        services.AddTransient<ICaseFlowEngine, CaseFlowEngine.Cfe.CaseFlowEngine>();
         services.AddTransient<IEvidenceStore, EvidenceStore>();
         services.AddTransient<IPatternMemoryStore, PatternMemoryStore>();
+        services.AddTransient<IPatternMatcher, SemanticPatternMatcher>();
+
+        // -- RAG Search Services --
+        // Register RAG search options with defaults from settings
+        services.Configure<RagSearchOptions>(opt =>
+        {
+            if (options.RagSearch != null)
+            {
+                opt.Enabled = options.RagSearch.Enabled;
+                opt.AutoInjectEnabled = options.RagSearch.AutoInjectEnabled;
+                opt.MaxResults = options.RagSearch.MaxResults;
+                opt.RelevanceThreshold = options.RagSearch.RelevanceThreshold;
+                opt.MaxContextSize = options.RagSearch.MaxContextSize;
+                opt.RelevanceKeywords = options.RagSearch.RelevanceKeywords;
+                opt.VectorSearchEnabled = options.RagSearch.VectorSearchEnabled;
+                opt.EnabledForAgentRoles = options.RagSearch.EnabledForAgentRoles;
+                opt.ToolEnabled = options.RagSearch.ToolEnabled;
+                opt.ContextInjectorEnabled = options.RagSearch.ContextInjectorEnabled;
+            }
+        });
+        services.AddSingleton<IRagSearchService, RagSearchService>();
+
         services.AddSingleton<IOrchestrationControl, OrchestrationControl>();
         services.AddTransient<IOrchestration, CustomGroupWorkflow>();
         services.AddTransient<IOrchestration, TheCoreWorkflow>();
@@ -133,9 +160,7 @@ public static class SentinelCoreServiceExtensions
         string registryPath = Environment.GetEnvironmentVariable("SENTINEL_MCP_REGISTRY_PATH") ?? defaultRegistryPath;
         string tokenCachePath = Path.Combine(Path.GetDirectoryName(registryPath)!, "mcp-tokens.bin");
 
-        services.AddSingleton<IMcpServerRegistryStore>(sp => new JsonFileMcpServerRegistryStore(
-            registryPath,
-            sp.GetRequiredService<ILogger<JsonFileMcpServerRegistryStore>>()));
+        services.AddSingleton<IMcpServerRegistryStore>(sp => new JsonFileMcpServerRegistryStore(registryPath, sp.GetRequiredService<ILogger<JsonFileMcpServerRegistryStore>>()));
         services.AddSingleton<ITokenCache>(_ => new DpapiTokenCache(tokenCachePath));
         services.AddSingleton<IMcpConnectionFactory, McpConnectionFactory>();
         services.AddSingleton<IMcpServerRegistry, McpServerRegistry>();
@@ -170,14 +195,11 @@ public static class SentinelCoreServiceExtensions
 
         JsonLoggerOptions jsonOptions = new()
         {
-            MinimumLevel = LogLevel.Trace,
-            Indented = true,
-            Output = JsonLoggerOutput.File,
-            FilePath = "SentinelCore.log"
+                MinimumLevel = LogLevel.Trace, Indented = true, Output = JsonLoggerOutput.File, FilePath = "SentinelCore.log"
 
-            // Or:
-            // Output = JsonLoggerOutput.File,
-            // FilePath = "logs/sentinelcore.json"
+                // Or:
+                // Output = JsonLoggerOutput.File,
+                // FilePath = "logs/sentinelcore.json"
         };
 
 

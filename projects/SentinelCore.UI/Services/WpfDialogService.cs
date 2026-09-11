@@ -1,15 +1,14 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         WpfDialogService.cs
-// Author: Kyle L. Crowler
-// Build Num:  091003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
 using System.Windows;
 
 using SentinelCore.UI.Views;
-
 
 
 
@@ -33,13 +32,9 @@ public sealed class WpfDialogService : IDialogService
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
         ArgumentException.ThrowIfNullOrWhiteSpace(confirmButtonText);
 
-        Window? owner = System.Windows.Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
-            ?? System.Windows.Application.Current?.MainWindow;
+        Window? owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current?.MainWindow;
 
-        ConfirmationDialog dialog = new(title, message, confirmButtonText, isDestructive)
-        {
-            Owner = owner
-        };
+        ConfirmationDialog dialog = new(title, message, confirmButtonText, isDestructive) { Owner = owner };
 
         return dialog.ShowDialog() == true;
     }

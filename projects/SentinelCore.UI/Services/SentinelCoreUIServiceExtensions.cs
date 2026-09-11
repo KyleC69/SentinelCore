@@ -1,18 +1,13 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         SentinelCoreUIServiceExtensions.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
-
-using System.Windows.Controls;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using SentinelCore.Mcp;
-using SentinelCore.UI.Models;
-using SentinelCore.UI.Services;
 using SentinelCore.UI.ViewModels;
 using SentinelCore.UI.Views;
 
@@ -20,6 +15,9 @@ using SentinelCore.UI.Views;
 
 
 namespace SentinelCore.UI.Services;
+
+
+
 
 
 /// <summary>
@@ -63,12 +61,12 @@ public static class SentinelCoreUIServiceExtensions
         // Navigation — ViewLocator holds the ViewModel→Page type map
         Dictionary<string, Type> pageTypeMap = new()
         {
-            [typeof(CoreChatViewModel).FullName!] = typeof(CoreChatPage),
-            [typeof(CaseListViewModel).FullName!] = typeof(CaseListPage),
-            [typeof(CaseDetailViewModel).FullName!] = typeof(CaseDetailPage),
-            [typeof(CreateCaseViewModel).FullName!] = typeof(CreateCasePage),
-            [typeof(McpServersViewModel).FullName!] = typeof(McpServersPage),
-            [typeof(ModelConfigViewModel).FullName!] = typeof(ModelConfigPage)
+                [typeof(CoreChatViewModel).FullName!] = typeof(CoreChatPage),
+                [typeof(CaseListViewModel).FullName!] = typeof(CaseListPage),
+                [typeof(CaseDetailViewModel).FullName!] = typeof(CaseDetailPage),
+                [typeof(CreateCaseViewModel).FullName!] = typeof(CreateCasePage),
+                [typeof(McpServersViewModel).FullName!] = typeof(McpServersPage),
+                [typeof(ModelConfigViewModel).FullName!] = typeof(ModelConfigPage)
         };
 
         services.AddSingleton<IViewLocator>(sp => new ViewLocator(sp, pageTypeMap));

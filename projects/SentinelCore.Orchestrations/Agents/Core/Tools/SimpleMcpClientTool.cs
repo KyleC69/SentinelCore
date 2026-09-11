@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SimpleMcpClientTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
@@ -13,7 +13,7 @@ using System.Text.Json;
 
 
 
-namespace SentinelCore.Agents.Core.Tools;
+namespace SentinelCore.Orchestrations.Agents.Core.Tools;
 
 
 

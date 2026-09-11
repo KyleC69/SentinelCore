@@ -2,11 +2,11 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseFlowEngineBuilderExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-namespace SentinelCore.Infrastructure.DependencyInjection;
+namespace SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection;
 
 
 

@@ -33,7 +33,6 @@
                 <Button
                     Command="{Binding SaveCommand}"
                     Style="{StaticResource AccentButtonStyle}"
-                    Padding="16,8"
                     Margin="0,0,12,0"
                     Content="Save" />
             </StackPanel>
@@ -47,134 +46,137 @@
             <ItemsControl ItemsSource="{Binding Cards}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Expander >
+                        <Expander>
 
 
-                        <Border
-                            Background="{DynamicResource ChatSurface}"
-                            BorderBrush="{DynamicResource ChatBorder}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="20"
-                            Margin="0,0,0,12">
-                            <StackPanel>
-                                <!-- Card header: agent name + configured state -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock
-                                        Grid.Column="0"
-                                        Style="{StaticResource SubtitleText}"
-                                        Margin="0"
-                                        Text="{Binding AgentName}" />
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        VerticalAlignment="Center"
-                                        FontSize="11"
-                                        FontWeight="SemiBold"
-                                        Text="{Binding IsConfigured, Converter={StaticResource BoolToVisibility}, ConverterParameter='Configured'}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="{DynamicResource ChatStatusSuccess}" />
-                                                <Setter Property="Text" Value="Configured" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsConfigured}" Value="False">
-                                                        <Setter Property="Foreground" Value="{DynamicResource ChatStatusWarning}" />
-                                                        <Setter Property="Text" Value="Not configured" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </Grid>
+                            <Border
+                                Background="{DynamicResource ChatSurface}"
+                                BorderBrush="{DynamicResource ChatBorder}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="20"
+                                Margin="0,0,0,12">
+                                <StackPanel>
+                                    <!-- Card header: agent name + configured state -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            Grid.Column="0"
+                                            Style="{StaticResource SubtitleText}"
+                                            Margin="0"
+                                            Text="{Binding AgentName}" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            FontSize="11"
+                                            FontWeight="SemiBold"
+                                            Text="{Binding IsConfigured, Converter={StaticResource BoolToVisibility}, ConverterParameter='Configured'}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground"
+                                                            Value="{DynamicResource ChatStatusSuccess}" />
+                                                    <Setter Property="Text" Value="Configured" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsConfigured}" Value="False">
+                                                            <Setter Property="Foreground"
+                                                                    Value="{DynamicResource ChatStatusWarning}" />
+                                                            <Setter Property="Text" Value="Not configured" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
 
-                                <!-- Provider / model / endpoint -->
-                                <Grid Margin="0,12,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
+                                    <!-- Provider / model / endpoint -->
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
 
-                                    <StackPanel Grid.Row="0" Grid.Column="0">
-                                        <TextBlock Style="{StaticResource BodyText}" Text="Provider" />
-                                        <ComboBox
-                                            ItemsSource="{Binding DataContext.Providers, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
-                                            SelectedItem="{Binding Provider}"
-                                            Style="{StaticResource FormComboBoxStyle}" />
+                                        <StackPanel Grid.Row="0" Grid.Column="0">
+                                            <TextBlock Style="{StaticResource BodyText}" Text="Provider" />
+                                            <ComboBox
+                                                ItemsSource="{Binding DataContext.Providers, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
+                                                SelectedItem="{Binding Provider}"
+                                                Style="{StaticResource FormComboBoxStyle}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="0" Grid.Column="2">
+                                            <TextBlock Style="{StaticResource BodyText}" Text="Model ID" />
+                                            <TextBox
+                                                Text="{Binding ModelId, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource FormTextBoxStyle}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,12,0,0">
+                                            <TextBlock Style="{StaticResource BodyText}" Text="Endpoint" />
+                                            <TextBox
+                                                Text="{Binding Endpoint, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource FormTextBoxStyle}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Tuning parameters -->
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Style="{StaticResource BodyText}" Text="Temperature" />
+                                            <TextBox
+                                                Text="{Binding Temperature, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource FormTextBoxStyle}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Style="{StaticResource BodyText}" Text="Max Output Tokens" />
+                                            <TextBox
+                                                Text="{Binding MaxOutputTokens, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource FormTextBoxStyle}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Style="{StaticResource BodyText}" Text="Top K" />
+                                            <TextBox
+                                                Text="{Binding TopK, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource FormTextBoxStyle}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="6">
+                                            <TextBlock Style="{StaticResource BodyText}" Text="Top P" />
+                                            <TextBox
+                                                Text="{Binding TopP, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource FormTextBoxStyle}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- API key (providers that require auth) -->
+                                    <StackPanel Margin="0,12,0,0">
+                                        <TextBlock Style="{StaticResource BodyText}"
+                                                   Text="API Key (optional — required by OpenAI, Azure OpenAI, GitHub Models, Anthropic)" />
+                                        <PasswordBox
+                                            LostFocus="OnApiKeyLostFocus"
+                                            Tag="{Binding}" />
                                     </StackPanel>
-
-                                    <StackPanel Grid.Row="0" Grid.Column="2">
-                                        <TextBlock Style="{StaticResource BodyText}" Text="Model ID" />
-                                        <TextBox
-                                            Text="{Binding ModelId, UpdateSourceTrigger=PropertyChanged}"
-                                            Style="{StaticResource FormTextBoxStyle}" />
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,12,0,0">
-                                        <TextBlock Style="{StaticResource BodyText}" Text="Endpoint" />
-                                        <TextBox
-                                            Text="{Binding Endpoint, UpdateSourceTrigger=PropertyChanged}"
-                                            Style="{StaticResource FormTextBoxStyle}" />
-                                    </StackPanel>
-                                </Grid>
-
-                                <!-- Tuning parameters -->
-                                <Grid Margin="0,12,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="16" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Style="{StaticResource BodyText}" Text="Temperature" />
-                                        <TextBox
-                                            Text="{Binding Temperature, UpdateSourceTrigger=PropertyChanged}"
-                                            Style="{StaticResource FormTextBoxStyle}" />
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Style="{StaticResource BodyText}" Text="Max Output Tokens" />
-                                        <TextBox
-                                            Text="{Binding MaxOutputTokens, UpdateSourceTrigger=PropertyChanged}"
-                                            Style="{StaticResource FormTextBoxStyle}" />
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="4">
-                                        <TextBlock Style="{StaticResource BodyText}" Text="Top K" />
-                                        <TextBox
-                                            Text="{Binding TopK, UpdateSourceTrigger=PropertyChanged}"
-                                            Style="{StaticResource FormTextBoxStyle}" />
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="6">
-                                        <TextBlock Style="{StaticResource BodyText}" Text="Top P" />
-                                        <TextBox
-                                            Text="{Binding TopP, UpdateSourceTrigger=PropertyChanged}"
-                                            Style="{StaticResource FormTextBoxStyle}" />
-                                    </StackPanel>
-                                </Grid>
-
-                                <!-- API key (providers that require auth) -->
-                                <StackPanel Margin="0,12,0,0">
-                                    <TextBlock Style="{StaticResource BodyText}" Text="API Key (optional — required by OpenAI, Azure OpenAI, GitHub Models, Anthropic)" />
-                                    <PasswordBox
-                                        LostFocus="OnApiKeyLostFocus"
-                                        Tag="{Binding}" />
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
+                            </Border>
                         </Expander>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

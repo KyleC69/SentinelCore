@@ -2,11 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowMessage.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-namespace SentinelCore.Workflows;
+namespace SentinelCore.Orchestrations.Workflows;
 
 
 

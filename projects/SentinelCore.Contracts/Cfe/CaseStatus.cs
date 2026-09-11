@@ -2,13 +2,13 @@
 // Project:   SentinelCore.Contracts
 // File:         CaseStatus.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 //AGENTS - DO NOT MODIFY THIS FILE - SOURCE OF TRUTH: THERE ARE NO VALID STATUS BEYOND THIS FILE.
 
 
 
-namespace SentinelCore.Cfe;
+namespace SentinelCore.Contracts.Cfe;
 
 
 

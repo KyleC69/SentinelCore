@@ -2,18 +2,19 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfileBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Extensions.Options;
 
 using SentinelCore.Abstractions;
+using SentinelCore.Contracts.Contracts;
 
 
 
 
-namespace SentinelCore.Agents;
+namespace SentinelCore.Orchestrations.Agents;
 
 
 
@@ -165,38 +166,6 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
 
-    /// <summary>
-    ///     Attempts to resolve the model profile configured for a logical agent name.
-    ///     Resolution order: per-agent entry in <see cref="SentinelCoreSettings.AgentModels" />,
-    ///     then the agent's role tier. Returns <c>null</c> when the agent is unconfigured.
-    /// </summary>
-    /// <param name="agentName">The logical agent name.</param>
-    /// <param name="role">The agent's role, used for the tier fallback.</param>
-    /// <returns>The configured model profile, or <c>null</c> when the agent is unconfigured.</returns>
-    public ModelProfile? TryGetModel(string agentName, AgentRole role)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
-
-        if (_options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent))
-        {
-            return perAgent;
-        }
-
-        return role switch
-        {
-            AgentRole.Core => _options.DefaultModel,
-            AgentRole.Manager => _options.ManagerModel ?? _options.DefaultModel,
-            AgentRole.Utility => _options.DefaultUtilityModel,
-            _ => _options.DefaultModel
-        };
-    }
-
-
-
-
-
-
-
 
     /// <summary>
     ///     Builds an <see cref="AgentProfile" /> using settings from the SentinelCore configuration or system defaults. This
@@ -276,14 +245,45 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
         profile.AgentId = agentName;
         profile.Instructions = "";
         // No hardcoded fallback — the factory gate rejects unconfigured agents.
-        profile.Model = _options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent)
-            ? perAgent
-            : null;
+        profile.Model = _options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent) ? perAgent : null;
 
 
 
 
 
         return profile;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Attempts to resolve the model profile configured for a logical agent name.
+    ///     Resolution order: per-agent entry in <see cref="SentinelCoreSettings.AgentModels" />,
+    ///     then the agent's role tier. Returns <c>null</c> when the agent is unconfigured.
+    /// </summary>
+    /// <param name="agentName">The logical agent name.</param>
+    /// <param name="role">The agent's role, used for the tier fallback.</param>
+    /// <returns>The configured model profile, or <c>null</c> when the agent is unconfigured.</returns>
+    public ModelProfile? TryGetModel(string agentName, AgentRole role)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
+
+        if (_options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent))
+        {
+            return perAgent;
+        }
+
+        return role switch
+        {
+                AgentRole.Core => _options.DefaultModel,
+                AgentRole.Manager => _options.ManagerModel ?? _options.DefaultModel,
+                AgentRole.Utility => _options.DefaultUtilityModel,
+                _ => _options.DefaultModel
+        };
     }
 }

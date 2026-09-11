@@ -1,8 +1,8 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         CaseDetailViewModel.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
@@ -11,14 +11,18 @@ using CommunityToolkit.Mvvm.Input;
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Cfe;
-using SentinelCore.Contracts;
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.CaseFlow;
+using SentinelCore.Contracts.Cfe;
 using SentinelCore.UI.Services;
 
 
 
 
 namespace SentinelCore.UI.ViewModels;
+
+
+
 
 
 /// <summary>
@@ -28,6 +32,12 @@ namespace SentinelCore.UI.ViewModels;
 /// </summary>
 public sealed partial class CaseDetailViewModel : ObservableObject, INavigationAware
 {
+
+    /// <summary>
+    ///     Gets the statuses the looked-up case may legally advance to.
+    /// </summary>
+    [ObservableProperty] private IReadOnlyList<CaseStatus> _allowedTransitions = [];
+
     private readonly ICaseFlowEngine _caseFlowEngine;
 
     [ObservableProperty] private string _caseIdText = string.Empty;
@@ -38,11 +48,14 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
 
     [ObservableProperty] private string _resultMessage = string.Empty;
 
-    [ObservableProperty] private bool _showResult;
-
     [ObservableProperty] private CaseStatus? _selectedTargetStatus;
 
+    [ObservableProperty] private bool _showResult;
+
     [ObservableProperty] private string _statusInfo = string.Empty;
+
+
+
 
 
 
@@ -63,6 +76,9 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
 
 
 
+
+
+
     /// <summary>
     ///     Available case statuses for the advance target combo box. Populated with
     ///     the legal transitions for the looked-up case's current status; falls back
@@ -70,11 +86,8 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
     /// </summary>
     public IReadOnlyList<CaseStatus> AvailableStatuses { get; } = Enum.GetValues<CaseStatus>().ToList();
 
-    /// <summary>
-    ///     Gets the statuses the looked-up case may legally advance to.
-    /// </summary>
-    [ObservableProperty]
-    private IReadOnlyList<CaseStatus> _allowedTransitions = [];
+
+
 
 
 
@@ -83,6 +96,9 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
     public void OnNavigatedFrom()
     {
     }
+
+
+
 
 
 
@@ -102,6 +118,9 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
             _ = LookupCaseAsync();
         }
     }
+
+
+
 
 
 
@@ -152,7 +171,13 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
 
 
 
+
+
+
     private bool CanAdvanceCase() => !IsBusy && !string.IsNullOrWhiteSpace(CaseIdText) && SelectedTargetStatus is not null;
+
+
+
 
 
 
@@ -168,6 +193,9 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
         ShowResult = false;
         AllowedTransitions = [];
     }
+
+
+
 
 
 

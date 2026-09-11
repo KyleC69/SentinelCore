@@ -2,18 +2,18 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PersonaRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using JetBrains.Annotations;
 
-using SentinelCore.Abstractions;
+using SentinelCore.Orchestrations.Abstractions;
 
 
 
 
-namespace SentinelCore.Personas;
+namespace SentinelCore.Orchestrations.Personas;
 
 
 
@@ -31,39 +31,39 @@ public static class PersonaRegistry
 {
     private static readonly Dictionary<PersonaType, AgentPersona> Personas = new()
     {
-            { PersonaType.TheArchitect, SentinelCore.Personas.Personas.TheArchitect },
-            { PersonaType.TheEngineer, SentinelCore.Personas.Personas.TheEngineer },
-            { PersonaType.TheAnalyst, SentinelCore.Personas.Personas.TheAnalyst },
-            { PersonaType.TheDesigner, SentinelCore.Personas.Personas.TheDesigner },
-            { PersonaType.TheManager, SentinelCore.Personas.Personas.TheManager },
-            { PersonaType.TheConsultant, SentinelCore.Personas.Personas.TheConsultant },
-            { PersonaType.TheStrategist, SentinelCore.Personas.Personas.TheStrategist },
-            { PersonaType.TheVisionary, SentinelCore.Personas.Personas.TheVisionary },
-            { PersonaType.TheInnovator, SentinelCore.Personas.Personas.TheInnovator },
-            { PersonaType.TheLeader, SentinelCore.Personas.Personas.TheLeader },
-            { PersonaType.TheMentor, SentinelCore.Personas.Personas.TheMentor },
-            { PersonaType.TheCoach, SentinelCore.Personas.Personas.TheCoach },
-            { PersonaType.TheAdvisor, SentinelCore.Personas.Personas.TheAdvisor },
-            { PersonaType.TheFacilitator, SentinelCore.Personas.Personas.TheFacilitator },
-            { PersonaType.TheProblemSolver, SentinelCore.Personas.Personas.TheProblemSolver },
-            { PersonaType.TheDecisionMaker, SentinelCore.Personas.Personas.TheDecisionMaker },
-            { PersonaType.TheCommunicator, SentinelCore.Personas.Personas.TheCommunicator },
-            { PersonaType.TheCollaborator, SentinelCore.Personas.Personas.TheCollaborator },
-            { PersonaType.TheNegotiator, SentinelCore.Personas.Personas.TheNegotiator },
-            { PersonaType.TheInfluencer, SentinelCore.Personas.Personas.TheInfluencer },
-            { PersonaType.ThePlanner, SentinelCore.Personas.Personas.ThePlanner },
-            { PersonaType.TheOrganizer, SentinelCore.Personas.Personas.TheOrganizer },
-            { PersonaType.TheResearcher, SentinelCore.Personas.Personas.TheResearcher },
-            { PersonaType.TheEvaluator, SentinelCore.Personas.Personas.TheEvaluator },
-            { PersonaType.TheImplementer, SentinelCore.Personas.Personas.TheImplementer },
-            { PersonaType.TheTester, SentinelCore.Personas.Personas.TheTester },
-            { PersonaType.TheMaintainer, SentinelCore.Personas.Personas.TheMaintainer },
-            { PersonaType.TheSupporter, SentinelCore.Personas.Personas.TheSupporter },
-            { PersonaType.TheTrainer, SentinelCore.Personas.Personas.TheTrainer },
-            { PersonaType.TheEducator, SentinelCore.Personas.Personas.TheEducator },
-            { PersonaType.TheMotivator, SentinelCore.Personas.Personas.TheMotivator },
-            { PersonaType.TheInspirer, SentinelCore.Personas.Personas.TheInspirer },
-            { PersonaType.TheCritic, SentinelCore.Personas.Personas.TheCritic }
+            { PersonaType.TheArchitect, SentinelCore.Orchestrations.Personas.Personas.TheArchitect },
+            { PersonaType.TheEngineer, SentinelCore.Orchestrations.Personas.Personas.TheEngineer },
+            { PersonaType.TheAnalyst, SentinelCore.Orchestrations.Personas.Personas.TheAnalyst },
+            { PersonaType.TheDesigner, SentinelCore.Orchestrations.Personas.Personas.TheDesigner },
+            { PersonaType.TheManager, SentinelCore.Orchestrations.Personas.Personas.TheManager },
+            { PersonaType.TheConsultant, SentinelCore.Orchestrations.Personas.Personas.TheConsultant },
+            { PersonaType.TheStrategist, SentinelCore.Orchestrations.Personas.Personas.TheStrategist },
+            { PersonaType.TheVisionary, SentinelCore.Orchestrations.Personas.Personas.TheVisionary },
+            { PersonaType.TheInnovator, SentinelCore.Orchestrations.Personas.Personas.TheInnovator },
+            { PersonaType.TheLeader, SentinelCore.Orchestrations.Personas.Personas.TheLeader },
+            { PersonaType.TheMentor, SentinelCore.Orchestrations.Personas.Personas.TheMentor },
+            { PersonaType.TheCoach, SentinelCore.Orchestrations.Personas.Personas.TheCoach },
+            { PersonaType.TheAdvisor, SentinelCore.Orchestrations.Personas.Personas.TheAdvisor },
+            { PersonaType.TheFacilitator, SentinelCore.Orchestrations.Personas.Personas.TheFacilitator },
+            { PersonaType.TheProblemSolver, SentinelCore.Orchestrations.Personas.Personas.TheProblemSolver },
+            { PersonaType.TheDecisionMaker, SentinelCore.Orchestrations.Personas.Personas.TheDecisionMaker },
+            { PersonaType.TheCommunicator, SentinelCore.Orchestrations.Personas.Personas.TheCommunicator },
+            { PersonaType.TheCollaborator, SentinelCore.Orchestrations.Personas.Personas.TheCollaborator },
+            { PersonaType.TheNegotiator, SentinelCore.Orchestrations.Personas.Personas.TheNegotiator },
+            { PersonaType.TheInfluencer, SentinelCore.Orchestrations.Personas.Personas.TheInfluencer },
+            { PersonaType.ThePlanner, SentinelCore.Orchestrations.Personas.Personas.ThePlanner },
+            { PersonaType.TheOrganizer, SentinelCore.Orchestrations.Personas.Personas.TheOrganizer },
+            { PersonaType.TheResearcher, SentinelCore.Orchestrations.Personas.Personas.TheResearcher },
+            { PersonaType.TheEvaluator, SentinelCore.Orchestrations.Personas.Personas.TheEvaluator },
+            { PersonaType.TheImplementer, SentinelCore.Orchestrations.Personas.Personas.TheImplementer },
+            { PersonaType.TheTester, SentinelCore.Orchestrations.Personas.Personas.TheTester },
+            { PersonaType.TheMaintainer, SentinelCore.Orchestrations.Personas.Personas.TheMaintainer },
+            { PersonaType.TheSupporter, SentinelCore.Orchestrations.Personas.Personas.TheSupporter },
+            { PersonaType.TheTrainer, SentinelCore.Orchestrations.Personas.Personas.TheTrainer },
+            { PersonaType.TheEducator, SentinelCore.Orchestrations.Personas.Personas.TheEducator },
+            { PersonaType.TheMotivator, SentinelCore.Orchestrations.Personas.Personas.TheMotivator },
+            { PersonaType.TheInspirer, SentinelCore.Orchestrations.Personas.Personas.TheInspirer },
+            { PersonaType.TheCritic, SentinelCore.Orchestrations.Personas.Personas.TheCritic }
     };
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CaseListPage.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  083003
+// Build Num:  091112
 
 
 
@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 
 using SentinelCore.UI.ViewModels;
+
 
 
 
@@ -32,12 +33,18 @@ public partial class CaseListPage : Page
 
 
 
+
+
+
     public CaseListPage(CaseListViewModel viewModel)
     {
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         InitializeComponent();
         DataContext = _viewModel;
     }
+
+
+
 
 
 
@@ -50,6 +57,9 @@ public partial class CaseListPage : Page
             _viewModel.OpenCaseDetailCommand.Execute(null);
         }
     }
+
+
+
 
 
 

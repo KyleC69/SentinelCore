@@ -2,18 +2,18 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         PatternMemory.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Data.SqlTypes;
 
-using SentinelCore.Contracts;
+using SentinelCore.Contracts.CaseFlow;
 
 
 
 
-namespace SentinelCore.Cfe;
+namespace SentinelCore.CaseFlowEngine.Cfe;
 
 
 

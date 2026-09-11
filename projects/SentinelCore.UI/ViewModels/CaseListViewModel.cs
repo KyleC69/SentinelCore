@@ -1,8 +1,8 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         CaseListViewModel.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
@@ -13,8 +13,9 @@ using CommunityToolkit.Mvvm.Input;
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Cfe;
-using SentinelCore.Contracts;
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.CaseFlow;
+using SentinelCore.Contracts.Cfe;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
 
@@ -22,6 +23,9 @@ using SentinelCore.UI.Services;
 
 
 namespace SentinelCore.UI.ViewModels;
+
+
+
 
 
 /// <summary>
@@ -61,6 +65,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 
 
 
+
+
+
     /// <summary>
     ///     Creates a new <see cref="CaseListViewModel" /> with required dependencies.
     /// </summary>
@@ -78,6 +85,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 
 
 
+
+
+
     /// <summary>
     ///     Available case statuses for the filter combo box.
     /// </summary>
@@ -87,9 +97,15 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 
 
 
+
+
+
     public void OnNavigatedFrom()
     {
     }
+
+
+
 
 
 
@@ -104,6 +120,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 
 
 
+
+
+
     [RelayCommand]
     private void ClearFilter()
     {
@@ -112,6 +131,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
         DetailCases.Clear();
         DrillDownHeader = string.Empty;
     }
+
+
+
 
 
 
@@ -159,6 +181,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 
 
 
+
+
+
     /// <summary>
     ///     Handles double-click on a summary row to drill down into that status level.
     /// </summary>
@@ -170,6 +195,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
             await DrillDownAsync(SelectedCase.Status);
         }
     }
+
+
+
 
 
 
@@ -191,6 +219,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 
 
 
+
+
+
     [RelayCommand]
     private async Task GoBackToSummaryAsync()
     {
@@ -199,6 +230,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
         DrillDownHeader = string.Empty;
         await LoadCasesAsync();
     }
+
+
+
 
 
 
@@ -235,6 +269,9 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
             IsLoading = false;
         }
     }
+
+
+
 
 
 

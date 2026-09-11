@@ -2,18 +2,19 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Personas;
+using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Personas;
 
 
 
 
-namespace SentinelCore.Agents;
+namespace SentinelCore.Orchestrations.Agents;
 
 
 

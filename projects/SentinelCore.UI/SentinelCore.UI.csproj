@@ -15,7 +15,6 @@
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Jetbrains.Annotations" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
   </ItemGroup>
 
   <ItemGroup>

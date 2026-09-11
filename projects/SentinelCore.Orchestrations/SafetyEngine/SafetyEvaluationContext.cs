@@ -2,11 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyEvaluationContext.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-namespace SentinelCore.SafetyEngine;
+namespace SentinelCore.Orchestrations.SafetyEngine;
 
 
 
@@ -19,9 +19,15 @@ namespace SentinelCore.SafetyEngine;
 public sealed class SafetyEvaluationContext
 {
 
-    public SafetyEvaluationContext(IReadOnlyList<ChatMessage> messages)
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="SafetyEvaluationContext" />.
+    /// </summary>
+    /// <param name="messages">The chat messages that form the prompt being evaluated.</param>
+    /// <param name="agentName">Optional agent name for agent-specific rules like rate limiting.</param>
+    public SafetyEvaluationContext(IReadOnlyList<ChatMessage> messages, string? agentName = null)
     {
         Messages = messages;
+        AgentName = agentName;
         Metadata = new Dictionary<string, object>();
     }
 
@@ -33,11 +39,16 @@ public sealed class SafetyEvaluationContext
 
 
     /// <summary>
+    ///     Optional agent name for rules that need agent-specific context (e.g., rate limiting).
+    /// </summary>
+    public string? AgentName { get; }
+
+    /// <summary>
     ///     Convenience property: extracts the combined text content from all messages.
     /// </summary>
     public string CombinedText
     {
-        get => string.Join("\n", Messages.Where(m => m.Text is not null).Select(m => m.Text));
+        get => string.Join("\n", Messages.Select(m => m.Text));
     }
 
     /// <summary>The chat messages that form the prompt being evaluated.</summary>

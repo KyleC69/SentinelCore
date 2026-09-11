@@ -2,21 +2,23 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseFlowEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
+using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Cfe.Persistence;
-using SentinelCore.Contracts;
+using SentinelCore.Contracts.CaseFlow;
+using SentinelCore.Contracts.Cfe;
 using SentinelCore.Persistence;
-using SentinelCore.RemoteKB.Persistence;
 
 
 
 
-namespace SentinelCore.Cfe;
+namespace SentinelCore.CaseFlowEngine.Cfe;
 
 
 
@@ -65,12 +67,43 @@ public interface ICaseFlowEngine
 
 
     /// <summary>
+    ///     Returns the statuses a case in the given status may legally transition to.
+    /// </summary>
+    /// <param name="status">The current status of the case.</param>
+    /// <returns>A read-only list of the statuses reachable from <paramref name="status" />.</returns>
+    IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status);
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns the case with the given business identifier, or <c>null</c> when no
+    ///     matching case exists.
+    /// </summary>
+    /// <param name="caseId">The business identifier of the case.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The matching case, or <c>null</c> when not found.</returns>
+    Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Returns the number of cases currently in the specified <paramref name="status" />.
     /// </summary>
     /// <param name="status">The case status to count.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The count of cases matching the given status.</returns>
     Task<int> GetCaseCountByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default);
+
 
 
 
@@ -85,34 +118,6 @@ public interface ICaseFlowEngine
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A read-only dictionary mapping each case status to its case count.</returns>
     Task<IReadOnlyDictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default);
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Returns the case with the given business identifier, or <c>null</c> when no
-    /// matching case exists.
-    /// </summary>
-    /// <param name="caseId">The business identifier of the case.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The matching case, or <c>null</c> when not found.</returns>
-    Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken = default);
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Returns the statuses a case in the given status may legally transition to.
-    /// </summary>
-    /// <param name="status">The current status of the case.</param>
-    /// <returns>A read-only list of the statuses reachable from <paramref name="status" />.</returns>
-    IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status);
 
 
 
@@ -153,17 +158,17 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     private static readonly Dictionary<CaseStatus, HashSet<CaseStatus>> AllowedTransitions = new()
     {
-        [CaseStatus.Open] = [CaseStatus.Analysis, CaseStatus.Cancelled],
-        [CaseStatus.Analysis] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Cancelled],
-        [CaseStatus.Investigation] = [CaseStatus.Review, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
-        [CaseStatus.Review] = [CaseStatus.Complete, CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Cancelled],
-        [CaseStatus.AwaitingInput] = [CaseStatus.Investigation, CaseStatus.Escalated, CaseStatus.Cancelled],
-        [CaseStatus.Escalated] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Alerted, CaseStatus.Cancelled],
-        [CaseStatus.Alerted] = [CaseStatus.Escalated, CaseStatus.Blocked, CaseStatus.Cancelled],
-        [CaseStatus.Blocked] = [CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
-        [CaseStatus.Complete] = [CaseStatus.Closed],
-        [CaseStatus.Cancelled] = [CaseStatus.Closed],
-        [CaseStatus.Closed] = []
+            [CaseStatus.Open] = [CaseStatus.Analysis, CaseStatus.Cancelled],
+            [CaseStatus.Analysis] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Cancelled],
+            [CaseStatus.Investigation] = [CaseStatus.Review, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
+            [CaseStatus.Review] = [CaseStatus.Complete, CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Cancelled],
+            [CaseStatus.AwaitingInput] = [CaseStatus.Investigation, CaseStatus.Escalated, CaseStatus.Cancelled],
+            [CaseStatus.Escalated] = [CaseStatus.Investigation, CaseStatus.AwaitingInput, CaseStatus.Blocked, CaseStatus.Alerted, CaseStatus.Cancelled],
+            [CaseStatus.Alerted] = [CaseStatus.Escalated, CaseStatus.Blocked, CaseStatus.Cancelled],
+            [CaseStatus.Blocked] = [CaseStatus.AwaitingInput, CaseStatus.Escalated, CaseStatus.Alerted, CaseStatus.Cancelled],
+            [CaseStatus.Complete] = [CaseStatus.Closed],
+            [CaseStatus.Cancelled] = [CaseStatus.Closed],
+            [CaseStatus.Closed] = []
     };
 
 
@@ -201,9 +206,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         // 1. Retrieve the current case
-        CaseEntity? entity = await db.CaseEntities
-                .FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken)
-                .ConfigureAwait(false);
+        CaseEntity? entity = await db.CaseEntities.FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken).ConfigureAwait(false);
 
         if (entity is null)
         {
@@ -246,7 +249,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     public Guid CreateCase(Signal rawSignal, CancellationToken cancellationToken = default)
     {
         using SentinelCoreDBContext db = _dbContextFactory.CreateDbContext();
-        using var transaction = db.Database.BeginTransaction();
+        using IDbContextTransaction transaction = db.Database.BeginTransaction();
 
         //Save the signal first so we can grab this records identifier and use it in the case.
         SignalEntity ent = rawSignal.ToEntity();
@@ -254,7 +257,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
         db.SaveChanges();
 
         //Now the case.
-        CaseEntity caseent = new CaseEntity { InitiatingSignal = ent.SignalId, CaseId = Guid.NewGuid(), Status = (int)CaseStatus.Open };
+        CaseEntity caseent = new() { InitiatingSignal = ent.SignalId, CaseId = Guid.NewGuid(), Status = (int)CaseStatus.Open };
         db.CaseEntities.Add(caseent);
         db.SaveChanges();
 
@@ -303,56 +306,15 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
     /// <summary>
-    ///     Returns the number of cases currently in the specified <paramref name="status" />.
+    ///     Returns the statuses a case in the given status may legally transition to.
     /// </summary>
-    /// <param name="status">The case status to count.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The count of cases matching the given status.</returns>
-    public async Task<int> GetCaseCountByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default)
+    /// <param name="status">The current status of the case.</param>
+    /// <returns>A read-only list of the statuses reachable from <paramref name="status" />.</returns>
+    public IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status)
     {
-        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        return await db.CaseEntities.Where(d => d.Status == (int)status).CountAsync(cancellationToken);
+        return AllowedTransitions.TryGetValue(status, out HashSet<CaseStatus>? allowed) ? allowed.ToList() : [];
     }
 
-
-
-
-
-
-
-    /// <summary>
-    ///     Returns the count of cases in every status in a single grouped query.
-    ///     Statuses with no cases are included with a count of zero.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A read-only dictionary mapping each case status to its case count.</returns>
-    public async Task<IReadOnlyDictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default)
-    {
-        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-
-        Dictionary<CaseStatus, int> counts = Enum.GetValues<CaseStatus>()
-            .ToDictionary(status => status, _ => 0);
-
-        List<StatusCount> grouped = await db.CaseEntities
-            .GroupBy(c => c.Status)
-            .Select(g => new StatusCount(g.Key, g.Count()))
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        foreach (StatusCount group in grouped)
-        {
-            counts[(CaseStatus)group.Status] = group.Count;
-        }
-
-        return counts;
-    }
-
-    /// <summary>
-    ///     A single grouped count row: the raw status ordinal and its case count.
-    /// </summary>
-    /// <param name="Status">The raw database status ordinal.</param>
-    /// <param name="Count">The number of cases in that status.</param>
-    private sealed record StatusCount(int Status, int Count);
 
 
 
@@ -370,10 +332,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     public async Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken = default)
     {
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        CaseEntity? entity = await db.CaseEntities
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken)
-                .ConfigureAwait(false);
+        CaseEntity? entity = await db.CaseEntities.AsNoTracking().FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken).ConfigureAwait(false);
 
         return entity?.ToCase();
     }
@@ -384,16 +343,43 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
 
+
     /// <summary>
-    ///     Returns the statuses a case in the given status may legally transition to.
+    ///     Returns the number of cases currently in the specified <paramref name="status" />.
     /// </summary>
-    /// <param name="status">The current status of the case.</param>
-    /// <returns>A read-only list of the statuses reachable from <paramref name="status" />.</returns>
-    public IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status)
+    /// <param name="status">The case status to count.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The count of cases matching the given status.</returns>
+    public async Task<int> GetCaseCountByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default)
     {
-        return AllowedTransitions.TryGetValue(status, out HashSet<CaseStatus>? allowed)
-            ? allowed.ToList()
-            : [];
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.CaseEntities.Where(d => d.Status == (int)status).CountAsync(cancellationToken);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns the count of cases in every status in a single grouped query.
+    ///     Statuses with no cases are included with a count of zero.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A read-only dictionary mapping each case status to its case count.</returns>
+    public async Task<IReadOnlyDictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default)
+    {
+        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        Dictionary<CaseStatus, int> counts = Enum.GetValues<CaseStatus>().ToDictionary(status => status, _ => 0);
+
+        List<StatusCount> grouped = await db.CaseEntities.GroupBy(c => c.Status).Select(g => new StatusCount(g.Key, g.Count())).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (StatusCount group in grouped) counts[(CaseStatus)group.Status] = group.Count;
+
+        return counts;
     }
 
 
@@ -446,7 +432,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     private async Task<Guid> CreateCaseWithSignalAsync(Signal signal, Case caseRecord, CancellationToken cancellationToken)
     {
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         //Save the signal first so we can grab this records identifier and use it in the case.
         SignalEntity ent = signal.ToEntity();
@@ -477,9 +463,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     private async Task UpdateAsync(Case caseRecord, CancellationToken cancellationToken)
     {
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        CaseEntity? tracked = await db.CaseEntities
-                .FirstOrDefaultAsync(c => c.CaseId == caseRecord.CaseId, cancellationToken)
-                .ConfigureAwait(false);
+        CaseEntity? tracked = await db.CaseEntities.FirstOrDefaultAsync(c => c.CaseId == caseRecord.CaseId, cancellationToken).ConfigureAwait(false);
 
         if (tracked is null)
         {
@@ -490,6 +474,10 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
         tracked.UpdatedAt = caseRecord.UpdatedAt;
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
+
+
+
+
 
 
 
@@ -514,4 +502,18 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
             throw new InvalidOperationException($"Transition from '{from}' to '{to}' is not allowed. " + $"Allowed transitions from '{from}': [{string.Join(", ", allowed)}].");
         }
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     A single grouped count row: the raw status ordinal and its case count.
+    /// </summary>
+    /// <param name="Status">The raw database status ordinal.</param>
+    /// <param name="Count">The number of cases in that status.</param>
+    private sealed record StatusCount(int Status, int Count);
 }

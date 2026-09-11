@@ -1,17 +1,20 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         ViewLocator.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
 using System.Windows.Controls;
 
-using Microsoft.Extensions.DependencyInjection;
+
 
 
 namespace SentinelCore.UI.Services;
+
+
+
 
 
 /// <summary>
@@ -21,8 +24,14 @@ namespace SentinelCore.UI.Services;
 /// </summary>
 public sealed class ViewLocator : IViewLocator
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly Dictionary<string, Type> _pageTypeMap;
+    private readonly IServiceProvider _serviceProvider;
+
+
+
+
+
+
 
 
     /// <summary>
@@ -40,11 +49,16 @@ public sealed class ViewLocator : IViewLocator
     }
 
 
-   /// <summary>
-   /// 
-   /// </summary>
-   /// <param name="pageKey"></param>
-   /// <returns></returns>
+
+
+
+
+
+
+    /// <summary>
+    /// </summary>
+    /// <param name="pageKey"></param>
+    /// <returns></returns>
     public Page? ResolvePage(string pageKey)
     {
         if (string.IsNullOrWhiteSpace(pageKey) || !_pageTypeMap.TryGetValue(pageKey, out Type? pageType))

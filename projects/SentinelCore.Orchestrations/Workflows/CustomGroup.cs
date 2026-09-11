@@ -2,18 +2,19 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CustomGroup.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-using SentinelCore.Abstractions;
-using SentinelCore.Agents;
-using SentinelCore.Application;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Orchestrations.Abstractions;
+using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Application;
 
 
 
 
-namespace SentinelCore.Workflows;
+namespace SentinelCore.Orchestrations.Workflows;
 
 
 

@@ -2,11 +2,11 @@
 // Project:   SentinelCore.Contracts
 // File:         ISentinelCoreEvents.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-namespace SentinelCore.Events;
+namespace SentinelCore.Contracts.Events;
 
 
 

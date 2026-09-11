@@ -2,11 +2,12 @@
 // Project:   SentinelCore.UI
 // File:         INavigationService.cs
 // Author: Kyle L. Crowder
-// Build Num:  083003
+// Build Num:  091112
 
 
 
 using System.Windows.Controls;
+
 
 
 
@@ -25,18 +26,17 @@ public interface INavigationService
 {
 
     /// <summary>
-    ///     Raised after a page change to allow shell elements (e.g. the
-    ///     nav bar) to update their highlighted state.
-    /// </summary>
-    event EventHandler<string>? Navigated;
-
-
-    /// <summary>
     ///     Binds the service to the shell's <see cref="Frame" />. Must be
     ///     called once before the first <see cref="NavigateTo" />.
     /// </summary>
     /// <param name="shellFrame">The main content frame of the shell window.</param>
     void Initialize(Frame shellFrame);
+
+
+
+
+
+
 
 
     /// <summary>
@@ -49,4 +49,17 @@ public interface INavigationService
     /// <param name="parameter">Optional parameter passed to <c>OnNavigatedTo</c>.</param>
     /// <returns>True when navigation occurred.</returns>
     bool NavigateTo(string? pageKey, object? parameter = null);
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Raised after a page change to allow shell elements (e.g. the
+    ///     nav bar) to update their highlighted state.
+    /// </summary>
+    event EventHandler<string>? Navigated;
 }

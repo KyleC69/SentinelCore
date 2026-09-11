@@ -1,8 +1,8 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         CreateCaseViewModel.cs
-// Author: Kyle L. Crowler
-// Build Num:  083003
+// Author: Kyle L. Crowder
+// Build Num:  091112
 
 
 
@@ -11,13 +11,17 @@ using CommunityToolkit.Mvvm.Input;
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Cfe;
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.UI.Services;
 
 
 
 
 namespace SentinelCore.UI.ViewModels;
+
+
+
 
 
 /// <summary>
@@ -44,6 +48,9 @@ public sealed partial class CreateCaseViewModel : ObservableObject, INavigationA
 
 
 
+
+
+
     /// <summary>
     ///     Creates a new <see cref="CreateCaseViewModel" /> with required dependencies.
     /// </summary>
@@ -59,9 +66,15 @@ public sealed partial class CreateCaseViewModel : ObservableObject, INavigationA
 
 
 
+
+
+
     public void OnNavigatedFrom()
     {
     }
+
+
+
 
 
 
@@ -80,7 +93,13 @@ public sealed partial class CreateCaseViewModel : ObservableObject, INavigationA
 
 
 
+
+
+
     private bool CanCreateCase() => !IsBusy && !string.IsNullOrWhiteSpace(Description) && !string.IsNullOrWhiteSpace(SignalSource);
+
+
+
 
 
 
@@ -115,6 +134,9 @@ public sealed partial class CreateCaseViewModel : ObservableObject, INavigationA
             CreateCaseCommand.NotifyCanExecuteChanged();
         }
     }
+
+
+
 
 
 

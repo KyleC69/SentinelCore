@@ -2,13 +2,14 @@
 // Project:   SentinelCore.UI
 // File:         CaseDetailPage.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  083003
+// Build Num:  091112
 
 
 
 using System.Windows.Controls;
 
 using SentinelCore.UI.ViewModels;
+
 
 
 

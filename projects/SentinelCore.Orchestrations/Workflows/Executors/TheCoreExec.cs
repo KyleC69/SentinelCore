@@ -2,18 +2,18 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-using SentinelCore.Abstractions;
+using SentinelCore.Contracts.Abstractions;
 
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 
 
 
-namespace SentinelCore.Workflows.Executors;
+namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 

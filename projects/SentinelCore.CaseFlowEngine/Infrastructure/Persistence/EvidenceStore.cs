@@ -2,20 +2,20 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         EvidenceStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
 using Microsoft.EntityFrameworkCore;
 
-using SentinelCore.Abstractions;
-using SentinelCore.Cfe;
 using SentinelCore.Cfe.Persistence;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.CaseFlow;
 
 
 
 
-namespace SentinelCore.Infrastructure.Persistence;
+namespace SentinelCore.CaseFlowEngine.Infrastructure.Persistence;
 
 
 
@@ -107,22 +107,19 @@ public sealed class EvidenceStore : IEvidenceStore
 
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
-        List<EvidenceEntity> entities = await db.EvidenceEntities
-                .AsNoTracking()
-                .Where(e => db.CaseEntities.Any(c => c.CaseId == caseIdGuid && c.EvidenceId == e.EvidenceId))
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
+        List<EvidenceEntity> entities = await db.EvidenceEntities.AsNoTracking().Where(e => db.CaseEntities.Any(c => c.CaseId == caseIdGuid && c.EvidenceId == e.EvidenceId)).ToListAsync(cancellationToken).ConfigureAwait(false);
 
         return entities.Select(e => new Evidence
-        {
-                Id = e.Id,
-                EvidenceId = e.EvidenceId,
-                Type = e.Type,
-                Source = e.Source,
-                ContentJson = e.ContentJson,
-                Provenance = e.Provenance,
-                Timestamp = e.Timestamp
-        }).ToList();
+                {
+                        Id = e.Id,
+                        EvidenceId = e.EvidenceId,
+                        Type = e.Type,
+                        Source = e.Source,
+                        ContentJson = e.ContentJson,
+                        Provenance = e.Provenance,
+                        Timestamp = e.Timestamp
+                })
+                .ToList();
     }
 
 

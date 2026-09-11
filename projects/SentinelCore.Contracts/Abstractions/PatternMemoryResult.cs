@@ -2,11 +2,11 @@
 // Project:   SentinelCore.Contracts
 // File:         PatternMemoryResult.cs
 // Author: Kyle L. Crowder
-// Build Num:  082808
+// Build Num:  091112
 
 
 
-namespace SentinelCore.Abstractions;
+namespace SentinelCore.Contracts.Abstractions;
 
 
 
