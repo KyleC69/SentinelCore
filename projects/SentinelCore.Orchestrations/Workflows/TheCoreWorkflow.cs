@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
@@ -18,7 +18,6 @@ using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Application;
-using SentinelCore.Orchestrations.SafetyEngine;
 using SentinelCore.Orchestrations.Workflows.Executors;
 
 
@@ -61,10 +60,13 @@ namespace SentinelCore.Orchestrations.Workflows;
 public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 {
     private readonly ILoggerFactory _Factory;
+
     private readonly ISentinelAgentFactory _agentFactory;
-    private readonly IAgentProfileBuilder _agentSpecBuilder;
+
+    //  private readonly IAgentProfileBuilder _agentSpecBuilder;
     private readonly ISentinelCoreEvents _events;
     private readonly IServiceProvider _provider;
+    private CancellationToken token = new();
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true, PropertyNameCaseInsensitive = true };
 
 
@@ -80,7 +82,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// <param name="agentSpecBuilder">
     ///     An instance of <see cref="IAgentProfileBuilder" /> used to build agent profiles.
     /// </param>
-    /// <param name="execfactory"></param>
     /// <param name="systemReporter">
     ///     An instance of <see cref="ISystemReporter" /> used for reporting system-level events or errors.
     /// </param>
@@ -89,6 +90,12 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// </param>
     /// <param name="agentFactory">
     ///     An instance of <see cref="ISentinelAgentFactory" /> used to create agents for the workflow.
+    /// </param>
+    /// <param name="factory">
+    ///     An instance of <see cref="ILoggerFactory" /> used to create loggers.
+    /// </param>
+    /// <param name="provider">
+    ///     An instance of <see cref="IServiceProvider" /> used to resolve service dependencies.
     /// </param>
     /// <exception cref="ArgumentNullException">
     ///     Thrown if any of the provided parameters are <c>null</c>.
@@ -101,7 +108,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         Throw.IfNull(agentFactory);
         Throw.IfNull(factory);
         Throw.IfNull(provider);
-        _agentSpecBuilder = agentSpecBuilder;
         _events = events;
         _agentFactory = agentFactory;
         _Factory = factory;
@@ -120,14 +126,17 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
     /// <summary>
-    ///     Constructs and returns the workflow for the current orchestration.
+    ///     Asynchronously builds and returns the workflow for the current orchestration.
     /// </summary>
     /// <returns>
-    ///     An instance of <see cref="Workflow" /> representing the constructed workflow.
+    ///     A <see cref="Workflow" /> instance representing the constructed workflow.
     /// </returns>
     /// <remarks>
-    ///     This method defines the core logic for building the workflow specific to this orchestration.
+    ///     This method is designed to define and construct the workflow logic specific to this orchestration.
     /// </remarks>
+    /// <exception cref="Exception">
+    ///     An exception may be thrown if the workflow construction fails.
+    /// </exception>
     public async Task<Workflow> BuildWorkflow()
     {
         // ── Compose the Outer parent workflow ──────────────────────────────────────
@@ -140,125 +149,102 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // ── Build agents ───────────────────────────────────────────────────────────
 
 
-        AgentProfile classiferprofile = _agentSpecBuilder.BuildAgentSpec("Classifier", AgentRole.Utility);
-        classiferprofile.Instructions = """
-                                        You are acting as an expert Systems and Software Engineer in an AI controlled investigation platform.
-                                        You will be given information that may be from automated telemetry, anomaly detectors or in the form of natural speech from an end-user.
-                                        This is known as a signal in this application and can indicate Operating System problems or hardware errors, Event logs, performance counters etc.
-                                        You main task is to understand the user intent and to formulate a hypothesis on the source of signal.
 
-                                        You must respond with a JSON object matching the SignalHypothesis schema:
+        string classiferInstructions = """
+                                       You are acting as an expert Systems and Software Engineer in an AI controlled investigation platform.
+                                       You will be given information that may be from automated telemetry, anomaly detectors or in the form of natural speech from an end-user.
+                                       This is known as a signal in this application and can indicate Operating System problems or hardware errors, Event logs, performance counters etc.
+                                       You main task is to understand the user intent and to formulate a hypothesis on the source of signal.
 
-                                        {
-                                            "category": "The affected subsystem",
-                                            "hypothesis": "Your hypothesis here",
-                                            "initialConfidenceScore": 0.0-1.0,
-                                            "nextStep": "One of: RedAlert, Investigate, MoreInformationRequired, EscalateToHumanOperator, or DirectAnswer",
-                                            "reasoning": "Explain the driving factors in your decisions"
-                                        }
+                                       You must respond with a JSON object matching the SignalHypothesis schema:
 
-                                        Output ONLY valid JSON. Do not include any text before or after the JSON object.
-                                        Do not wrap in fenced code blocks(```)
+                                       {
+                                           "category": "The affected subsystem",
+                                           "hypothesis": "Your hypothesis here",
+                                           "initialConfidenceScore": 0.0-1.0,
+                                           "nextStep": "One of: RedAlert, Investigate, MoreInformationRequired, EscalateToHumanOperator, or DirectAnswer",
+                                           "reasoning": "Explain the driving factors in your decisions"
+                                       }
 
-                                        Rules for nextStep:
+                                       Output ONLY valid JSON. Do not include any text before or after the JSON object.
+                                       Do not wrap in fenced code blocks(```)
 
-                                        - If the signal indicates catastrophic hardware or software failure is imminent, choose RedAlert.
-                                        - If the signal is ambiguous, choose MoreInformationRequired.
-                                        - If the signal is a question about the system environment or status, choose Investigate.
-                                        - If the signal contains procedural instructions (e.g., check logs, scan drivers, query WMI), you must choose DirectAnswer
-                                        - All other cases: choose Investigate and provide a reasonable hypothesis about what the signal may indicate. The category can be the subsystem affected.
-                                        - Do NOT wrap response in fence blocks
-                                        """;
+                                       Rules for nextStep:
 
-        classiferprofile.ResponseFormat = ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema(typeof(SignalHypothesis)));
+                                       - If the signal indicates catastrophic hardware or software failure is imminent, choose RedAlert.
+                                       - If the signal is ambiguous, choose MoreInformationRequired.
+                                       - If the signal is a question about the system environment or status, choose Investigate.
+                                       - If the signal contains procedural instructions (e.g., check logs, scan drivers, query WMI), you must choose DirectAnswer
+                                       - All other cases: choose Investigate and provide a reasonable hypothesis about what the signal may indicate. The category can be the subsystem affected.
+                                       - Do NOT wrap response in fence blocks
+                                       """;
 
 
 
-        AgentProfile coreprofile = _agentSpecBuilder.BuildAgentSpec("TheCore", AgentRole.Core);
-        coreprofile.ResponseFormat = ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema(typeof(CoreDirective)));
-        coreprofile.Instructions = """
-                                    You are Sentinel Core.
-                                   Your only job is to produce a structured directive for the MAG Manager.
-                                   You must not produce diagnostic steps, procedures, subsystem names, or evidence requests.
-                                   You must not describe how to investigate.
-                                   You must not suggest tools or methods.
-                                   You must not infer system state without evidence.
-                                   You must not fabricate facts.
 
-                                   You must output exactly one object with the following fields:
+        string coreprofileInstructions = """
+                                          You are Sentinel Core.
+                                         Your only job is to produce a structured directive for the MAG Manager.
+                                         You must not produce diagnostic steps, procedures, subsystem names, or evidence requests.
+                                         You must not describe how to investigate.
+                                         You must not suggest tools or methods.
+                                         You must not infer system state without evidence.
+                                         You must not fabricate facts.
 
-                                   Hypothesis — your best explanation of the signal
+                                         You must output exactly one object with the following fields:
 
-                                   Intent — the purpose of the MAG team’s work
+                                         Hypothesis — your best explanation of the signal
 
-                                   Type — the classification of the task
+                                         Intent — the purpose of the MAG team’s work
 
-                                   Scope — the breadth of the investigation
+                                         Type — the classification of the task
 
-                                   Urgency — the priority level
+                                         Scope — the breadth of the investigation
 
-                                   Notes — optional contextual hints
+                                         Urgency — the priority level
 
-                                   If the user request is procedural (e.g., “show errors in last 24 hours”), set Type = Procedural and do not generate a hypothesis.
-                                   If the request is investigative, generate a hypothesis and set Type = Investigative.
-                                   If the request is contextual (e.g., “what is the system load?”), set Type = Contextual.
+                                         Notes — optional contextual hints
 
-                                   You must not output anything except the structured directive object.
-                                   No prose.
-                                   No explanations.
-                                   No reasoning paragraphs.
-                                   No narrative.
-                                   Only the object.
+                                         If the user request is procedural (e.g., “show errors in last 24 hours”), set Type = Procedural and do not generate a hypothesis.
+                                         If the request is investigative, generate a hypothesis and set Type = Investigative.
+                                         If the request is contextual (e.g., “what is the system load?”), set Type = Contextual.
 
-                                   """;
+                                         You must not output anything except the structured directive object.
+                                         No prose.
+                                         No explanations.
+                                         No reasoning paragraphs.
+                                         No narrative.
+                                         Only the object.
+
+                                         """;
+        AIAgent theCore = await _agentFactory.CreateAgentAsync("TheCore", coreprofileInstructions, token, ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema(typeof(CoreDirective))));
+
+        AIAgent classifierAgent = await _agentFactory.CreateAgentAsync("Classifier", classiferInstructions, token, ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema(typeof(SignalHypothesis))));
 
         _reporter.ReportInfo("Agent profiles constructed....");
 
-        // Agent factory is still messy but is flexible enough to allow proper assignment of model tuning params
-        // Customizable models, preset personas, Response format and system prompt config during creation.
-        // The core client is wrapped with loggers, event publishing agent, safetyware and middleware.
 
-        AIAgent safetyAgent = await _agentFactory.BuildFromProfileAsync(_agentSpecBuilder.BuildAgentSpec("SafetyAgent", AgentRole.Utility)).ConfigureAwait(false);
-        AIAgent SafeAI = await BuildAgentAsync().ConfigureAwait(false);
-        AIAgent theCore = await _agentFactory.BuildFromProfileAsync(coreprofile).ConfigureAwait(false);
-        AIAgent classifier = await _agentFactory.BuildFromProfileAsync(classiferprofile).ConfigureAwait(false);
 
-        // TEMPORARILY CREATED HERE UNTIL BETTER PLACEMENT IS ESTABLISHED - goal is to tie session app life-cycle
+        AIAgent safetyAgent = await _agentFactory.CreateAgentAsync("SafetyAgent").ConfigureAwait(false);
+
+        // AIAgent SafeAI = await BuildAgentAsync().ConfigureAwait(false);
+
+        //  AIAgent theCore = await _agentFactory.BuildFromProfileAsync(coreprofile).ConfigureAwait(false);
+
+        //   AIAgent classifier = await _agentFactory.BuildFromProfileAsync(classiferprofile).ConfigureAwait(false);
+
+
         AgentSession session = await theCore.CreateSessionAsync().ConfigureAwait(false);
 
         // ── Construct NON-Agent executors ────────────────────────────────────────────────────
         //
         //Pull the executors out of DI using factory -------------------------------------------------
 
-        AIAgentHostOptions options = new() { EmitAgentUpdateEvents = true, EmitAgentResponseEvents = true, ReassignOtherAgentsAsUsers = true, ForwardIncomingMessages = false };
-        SafetyExecutor safetyExecutor = ActivatorUtilities.CreateInstance<SafetyExecutor>(_provider);
-
-        EscalatedExecutor escalatedExecutor = ActivatorUtilities.CreateInstance<EscalatedExecutor>(_provider);
-
-        WhiteListExecutor whiteList = ActivatorUtilities.CreateInstance<WhiteListExecutor>(_provider);
-
-        PatternCheckExecutor patternCheck = ActivatorUtilities.CreateInstance<PatternCheckExecutor>(_provider);
-
-        HumanOperatorExecutor humanOperator = ActivatorUtilities.CreateInstance<HumanOperatorExecutor>(_provider);
-
-        InvestigationExecutor investigationExecutor = ActivatorUtilities.CreateInstance<InvestigationExecutor>(_provider);
-
-        VerifyEvidenceExecutor validateEvidence = ActivatorUtilities.CreateInstance<VerifyEvidenceExecutor>(_provider);
-
-        DirectAnswerExecutor directAnswerExecutor = ActivatorUtilities.CreateInstance<DirectAnswerExecutor>(_provider);
-
-
-        NewCaseExecutor newCase = ActivatorUtilities.CreateInstance<NewCaseExecutor>(_provider);
-
-        AggregationExecutor aggregator = ActivatorUtilities.CreateInstance<AggregationExecutor>(_provider);
-
-        MoreInformationExecutor moreinfo = ActivatorUtilities.CreateInstance<MoreInformationExecutor>(_provider);
-
-        CriticalAlert critical = ActivatorUtilities.CreateInstance<CriticalAlert>(_provider);
-
-        LoggingExecutor logger = ActivatorUtilities.CreateInstance<LoggingExecutor>(_provider);
-
-        CaseGenExec caseGen = ActivatorUtilities.CreateInstance<CaseGenExec>(_provider);
+        (SafetyExecutor safetyExecutor, EscalatedExecutor escalatedExecutor, WhiteListExecutor whiteList,
+                PatternCheckExecutor patternCheck, HumanOperatorExecutor humanOperator,
+                VerifyEvidenceExecutor validateEvidence, DirectAnswerExecutor directAnswerExecutor,
+                NewCaseExecutor newCase, AggregationExecutor aggregator, MoreInformationExecutor moreinfo,
+                CriticalAlert critical, LoggingExecutor logger, CaseGenExec caseGen) = InitializeExecutors();
 
         //Wrapped executors --------------
 
@@ -266,13 +252,13 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         ExecutorBinding evidenceBinding = evidence.BindAsExecutor("EvidenceCollection");
 
         //Agent safety valve
-        ExecutorBinding seer = SafeAI.BindAsExecutor();
+        ExecutorBinding seer = safetyAgent.BindAsExecutor();
 
         // NOTE: Have not been able to use agents BindAsExecutor() method to fire correctly something in the message handling is failing.
         // Agents wrapped in derived Executors <see cref="Executor" /> are able to operate correctly
         // ── create agent executors, the classifier as the entry-point executor ───────────────────────────────
 
-        ClassifierAgentExec classifiedExec = new(classifier);
+        ClassifierAgentExec classifiedExec = new(classifierAgent);
         TheCoreExec coreExec = new(theCore, session, _reporter);
 
         // ── Compose the switch-based routing graph ─────────────────────────────────
@@ -280,8 +266,8 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         WorkflowBuilder builder = new(patternCheck); // performs initial basic checks on signal(message)
 
         builder.AddEdge(patternCheck, whiteList); //Checks signal against operator created whitelist. benign issues user has chosen to ignore.
-        builder.AddEdge(whiteList, caseGen, GetCommand(CommandValue.CASEGEN)); //Special pipeline for quickly generating cases from current event logs etc.
-        builder.AddEdge(whiteList, classifiedExec, GetCommand(CommandValue.OTHER)); // Agent classification router - route when NOT CASEGEN
+        builder.AddEdge(whiteList, safetyAgent); // Safety agent
+        builder.AddEdge(safetyAgent, classifiedExec); // Agent classification router - route when NOT CASEGEN
 
         builder.AddSwitch(classifiedExec, switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), newCase) // open new case and move next
                 .AddCase(GetCondition(NextStep.RedAlert), critical) // Hardware failure critical error, impending catastrophe
@@ -377,35 +363,10 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
 
-    private async Task<AIAgent> BuildAgentAsync()
-    {
-        // The SafetyAgent model is owned by the Model Configuration page — the
-        // builder resolves the per-agent entry (Utility tier as secondary source)
-        // and the factory gates the build when it is unconfigured.
-        AgentProfile agentProfile = _agentSpecBuilder.BuildAgentSpec("SafetyAgent", AgentRole.Utility);
-        agentProfile.Instructions = "You are a helpful agent.";
-        SafetyEngineOptions opt = new();
-
-
-        List<ISafetyRule> rules = SentinelAgentFactory.CreateSafetyRules();
-        AIAgent agent = await _agentFactory.BuildFromProfileAsync(agentProfile);
-        agent.AsBuilder().UseSafetyEngine(rules, _Factory.CreateLogger<SafetyEngineAgent>(), opt).Build();
-
-        return agent;
-
-    }
-
-
-
-
-
-
-
-
     /// <summary>
     ///     Builds the Magentic investigation sub-workflow.
     ///     <para>
-    ///         This sub-workflow consists of a managing agent (<see cref="AgentRole.Manager" />)
+    ///         This sub-workflow consists of a managing agent preset.
     ///         and three utility agents. The manager coordinates the utility agents and aggregates
     ///         their results. When the sub-workflow completes, results flow back to the
     ///         parent workflow for further processing.
@@ -416,146 +377,96 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     {
         // ── Build agents for the Magentic sub-workflow ──────────────────────────────
         // AIAgent manager = _agentFactory.BuildFromProfile(
-        AgentProfile managerpro = _agentSpecBuilder.BuildAgentSpec("Manager", AgentRole.Manager);
-        managerpro.Instructions = """
-                                  You are the MAG Manager.
-                                  Your job is to convert a CoreDirective into one or more InvestigationSteps.
-                                  You must not generate hypotheses.
-                                  You must not generate reasoning.
-                                  You must not interpret evidence.
-                                  You must not modify the hypothesis.
-                                  You must not fabricate facts.
 
-                                  You must:
+        string managerInstructions = """
+                                     You are the MAG Manager.
+                                     Your job is to convert a CoreDirective into one or more InvestigationSteps.
+                                     You must not generate hypotheses.
+                                     You must not generate reasoning.
+                                     You must not interpret evidence.
+                                     You must not modify the hypothesis.
+                                     You must not fabricate facts.
 
-                                  Read the CoreDirective fields (Intent, Type, Scope, Urgency, Hypothesis.Category).
+                                     You must:
 
-                                  Select the correct MAG Worker based on its declared capabilities.
+                                     Read the CoreDirective fields (Intent, Type, Scope, Urgency, Hypothesis.Category).
 
-                                  Create an InvestigationStep for each action you assign.
+                                     Select the correct MAG Worker based on its declared capabilities.
 
-                                  Populate: Timestamp, Agent, Action, Input.
+                                     Create an InvestigationStep for each action you assign.
 
-                                  Send the task to the selected worker.
+                                     Populate: Timestamp, Agent, Action, Input.
 
-                                  Receive the worker’s Output, Evidence, and ConfidenceDelta.
+                                     Send the task to the selected worker.
 
-                                  Insert these into the InvestigationStep.
+                                     Receive the worker’s Output, Evidence, and ConfidenceDelta.
 
-                                  Append the step to the InvestigationLedger.
+                                     Insert these into the InvestigationStep.
 
-                                  You must not:
+                                     Append the step to the InvestigationLedger.
 
-                                  Use TheCore’s reasoning for routing.
+                                     You must not:
 
-                                  Use worker reasoning to modify the directive.
+                                     Use TheCore’s reasoning for routing.
 
-                                  Add your own reasoning.
+                                     Use worker reasoning to modify the directive.
 
-                                  Suggest diagnostic steps.
+                                     Add your own reasoning.
 
-                                  Suggest subsystems.
+                                     Suggest diagnostic steps.
 
-                                  Suggest tools.
+                                     Suggest subsystems.
 
-                                  You must route tasks based ONLY on:
+                                     Suggest tools.
 
-                                  DirectiveType
+                                     You must route tasks based ONLY on:
 
-                                  DirectiveScope
+                                     DirectiveType
 
-                                  DirectiveIntent
+                                     DirectiveScope
 
-                                  Hypothesis.Category
+                                     DirectiveIntent
 
-                                  Worker capabilities
+                                     Hypothesis.Category
 
-                                  You must output only InvestigationSteps.
-                                  No narrative.
-                                  No prose.
-                                  No explanations.
-                                  Only structured steps.
+                                     Worker capabilities
 
-                                  """;
-        managerpro.ResponseFormat = ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema(typeof(InvestigationStep)));
-        AIAgent manager = await _agentFactory.BuildFromProfileAsync(managerpro);
+                                     You must output only InvestigationSteps.
+                                     No narrative.
+                                     No prose.
+                                     No explanations.
+                                     Only structured steps.
 
-        //Generate a baseline profile with guided defaults
-        AgentProfile prof = _agentSpecBuilder.BuildAgentSpec("Worker1", AgentRole.Utility);
+                                     """;
+
+        AIAgent managerpro = await _agentFactory.CreateAgentAsync("Manager", managerInstructions, token, ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema(typeof(InvestigationStep))));
+
 
         //Customize the profile before creating the agent
-        prof.Instructions = """
-                            You are a MAG Worker.
-                            Your job is to execute a single task assigned by the MAG Manager.
-                            You must not generate hypotheses.
-                            You must not modify the directive.
-                            You must not interpret the directive.
-                            You must not fabricate facts.
+        string workerInstructions = """
+                                    You are a Windows Operating System expert. You are part of a multi-agent investigation team. You will receive tasks from the MAG Manager.
+                                    Each task will contain an action to perform and input data. Your job is to execute the action using your expertise and tools, and return the results along with any evidence you gather.
 
-                            You must:
+                                    """;
 
-                            Perform the action assigned by the manager using your toolbelt.
-
-                            Produce Output (raw results from tools).
-
-                            Produce Evidence (structured property/value/condition items).
-
-                            Produce ConfidenceDelta (based on evidence relevance).
-
-                            You must not:
-
-                            Suggest additional steps.
-
-                            Suggest subsystems.
-
-                            Suggest tools.
-
-                            Produce narrative reasoning beyond what is needed to explain evidence.
-
-                            Modify the hypothesis.
-
-                            Modify the directive.
-
-                            Your output must contain:
-
-                            Output (object)
-
-                            Evidence (list of EvidenceItem or dictionary)
-
-                            ConfidenceDelta (double)
-
-                            You must output only the response object.
-                            No prose.
-                            No narrative.
-                            No explanations.
-                            """;
-
-        AIAgent utility1 = await _agentFactory.BuildFromProfileAsync(prof);
+        AIAgent utility1 = await _agentFactory.CreateAgentAsync("Worker1", workerInstructions, token);
 
 
-        //Copy profile to new copy and modify
-        AgentProfile prof2 = prof;
-        prof2.AgentId = "worker2";
-        prof2.AgentName = "Worker2";
-        AIAgent utility2 = await _agentFactory.BuildFromProfileAsync(prof2);
+        AIAgent utility2 = await _agentFactory.CreateAgentAsync("Worker2", workerInstructions, token);
 
 
-        AgentProfile prof3 = prof2;
-        prof3.AgentId = "worker3";
-        prof3.AgentName = "Worker3";
-        AIAgent utility3 = await _agentFactory.BuildFromProfileAsync(prof3);
+        AIAgent utility3 = await _agentFactory.CreateAgentAsync("Worker3", workerInstructions, token);
 
 
-        //  AIAgent aggregator = _agentFactory.BuildFromProfile(_agentSpecBuilder.BuildAgentSpec("Aggregator", AgentRole.Utility));
 
 
         // ── Bind the manager as the entry-point executor ────────────────────────────
-        AIAgentHostOptions managerOptions = new() { EmitAgentUpdateEvents = true, EmitAgentResponseEvents = true, ReassignOtherAgentsAsUsers = true, ForwardIncomingMessages = true };
+        //  AIAgentHostOptions managerOptions = new() { EmitAgentUpdateEvents = true, EmitAgentResponseEvents = true, ReassignOtherAgentsAsUsers = true, ForwardIncomingMessages = true };
 
-        ExecutorBinding managerBinding = manager.BindAsExecutor(managerOptions);
+        // ExecutorBinding managerBinding = managerpro.BindAsExecutor(managerOptions);
 
         // ── Compose the sub-workflow graph ─────────────────────────────────────────
-        Workflow subWorkflow = new MagenticWorkflowBuilder(manager).AddParticipants(utility1, utility2, utility3).WithMaxResets(3).WithMaxRounds(3).WithMaxStalls(2).RequirePlanSignoff(false).WithDescription("Magnetic sub-workflow for collecting evidence to support theCore's hypothesis of the signal").WithName("EvidenceCollection").Build();
+        Workflow subWorkflow = new MagenticWorkflowBuilder(managerpro).AddParticipants(utility1, utility2, utility3).WithMaxResets(3).WithMaxRounds(3).WithMaxStalls(2).RequirePlanSignoff(false).WithDescription("Magnetic sub-workflow for collecting evidence to support theCore's hypothesis of the signal").WithName("EvidenceCollection").Build();
         return subWorkflow;
     }
 
@@ -624,6 +535,48 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     private static Func<object?, bool> GetCondition(NextStep expectedDecision)
     {
         return detectionResult => detectionResult is CoreRoutingDecision result && result.NextStep == expectedDecision;
+    }
+
+
+
+
+
+
+
+
+    private (SafetyExecutor safetyExecutor, EscalatedExecutor escalatedExecutor, WhiteListExecutor whiteList, PatternCheckExecutor patternCheck, HumanOperatorExecutor humanOperator, VerifyEvidenceExecutor validateEvidence, DirectAnswerExecutor directAnswerExecutor, NewCaseExecutor newCase, AggregationExecutor aggregator, MoreInformationExecutor moreinfo, CriticalAlert critical, LoggingExecutor logger, CaseGenExec caseGen) InitializeExecutors()
+    {
+
+        AIAgentHostOptions options = new() { EmitAgentUpdateEvents = true, EmitAgentResponseEvents = true, ReassignOtherAgentsAsUsers = true, ForwardIncomingMessages = false };
+        SafetyExecutor safetyExecutor = ActivatorUtilities.CreateInstance<SafetyExecutor>(_provider);
+
+        EscalatedExecutor escalatedExecutor = ActivatorUtilities.CreateInstance<EscalatedExecutor>(_provider);
+
+        WhiteListExecutor whiteList = ActivatorUtilities.CreateInstance<WhiteListExecutor>(_provider);
+
+        PatternCheckExecutor patternCheck = ActivatorUtilities.CreateInstance<PatternCheckExecutor>(_provider);
+
+        HumanOperatorExecutor humanOperator = ActivatorUtilities.CreateInstance<HumanOperatorExecutor>(_provider);
+
+        InvestigationExecutor investigationExecutor = ActivatorUtilities.CreateInstance<InvestigationExecutor>(_provider);
+
+        VerifyEvidenceExecutor validateEvidence = ActivatorUtilities.CreateInstance<VerifyEvidenceExecutor>(_provider);
+
+        DirectAnswerExecutor directAnswerExecutor = ActivatorUtilities.CreateInstance<DirectAnswerExecutor>(_provider);
+
+
+        NewCaseExecutor newCase = ActivatorUtilities.CreateInstance<NewCaseExecutor>(_provider);
+
+        AggregationExecutor aggregator = ActivatorUtilities.CreateInstance<AggregationExecutor>(_provider);
+
+        MoreInformationExecutor moreinfo = ActivatorUtilities.CreateInstance<MoreInformationExecutor>(_provider);
+
+        CriticalAlert critical = ActivatorUtilities.CreateInstance<CriticalAlert>(_provider);
+
+        LoggingExecutor logger = ActivatorUtilities.CreateInstance<LoggingExecutor>(_provider);
+
+        CaseGenExec caseGen = ActivatorUtilities.CreateInstance<CaseGenExec>(_provider);
+        return (safetyExecutor, escalatedExecutor, whiteList, patternCheck, humanOperator, validateEvidence, directAnswerExecutor, newCase, aggregator, moreinfo, critical, logger, caseGen);
     }
 
 

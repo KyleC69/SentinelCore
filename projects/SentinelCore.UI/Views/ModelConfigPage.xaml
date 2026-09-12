@@ -91,6 +91,15 @@
                                         </TextBlock>
                                     </Grid>
 
+                                    <!-- Alias selector -->
+                                    <StackPanel Margin="0,12,0,0">
+                                        <TextBlock Style="{StaticResource BodyText}" Text="Alias" />
+                                        <ComboBox
+                                            ItemsSource="{Binding DataContext.AvailableAliases, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"
+                                            SelectedItem="{Binding Alias}"
+                                            Style="{StaticResource FormComboBoxStyle}" />
+                                    </StackPanel>
+
                                     <!-- Provider / model / endpoint -->
                                     <Grid Margin="0,12,0,0">
                                         <Grid.ColumnDefinitions>

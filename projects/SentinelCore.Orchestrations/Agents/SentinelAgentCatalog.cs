@@ -2,17 +2,16 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentCatalog.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
 using SentinelCore.Contracts.Mcp;
-using SentinelCore.Orchestrations.Agents;
 
 
 
 
-namespace SentinelCore.Orchestrations.Mcp;
+namespace SentinelCore.Orchestrations.Agents;
 
 
 
@@ -39,13 +38,17 @@ public sealed class SentinelAgentCatalog : ISentinelAgentCatalog
 
 
 
-    /// <inheritdoc />
+    /// <summary>
+    ///     Represents the built-in AI Agents in the application.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public Task<IReadOnlyList<string>> GetAgentNamesAsync(CancellationToken cancellationToken = default)
     {
         // Names are intentionally stable and match the names used when building profiles in
-        // TheCoreWorkflow and the CoreChat agent. Add new entries here when new agent roles
+        // TheCoreWorkflow and the TheCore agent. Add new entries here when new agents
         // or workflow agents are introduced.
-        IReadOnlyList<string> names = new[] { "CoreChat", "Classifier", "TheCore", "SafetyAgent", "Manager", "Worker1", "Worker2", "Worker3", "CaseGenerator" };
+        IReadOnlyList<string> names = new[] { "TheCore", "Manager", "Worker1", "Worker2", "Worker3", "Classifier", "SafetyAgent" };
 
         return Task.FromResult(names);
     }

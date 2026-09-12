@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         ModelProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
@@ -25,7 +25,7 @@ namespace SentinelCore.Contracts.Contracts;
 public sealed class ModelProfile
 {
 
-    public ModelProfile(string endpoint, string modelId, float? temperature, int? maxOutputTokens = 16000, int topK = 1, float topP = .1f, ModelProvider provider = ModelProvider.Ollama, string? apiKey = null, string? modelPath = null, string? executionProvider = null)
+    public ModelProfile(string endpoint, string modelId, float? temperature, int? maxOutputTokens = 16000, int topK = 1, float topP = .1f, ModelProvider provider = ModelProvider.Ollama, string? apiKey = null, string? modelPath = null, string? executionProvider = null, string? alias = null)
     {
         Throw.IfNull(endpoint);
         Throw.IfNull(modelId);
@@ -40,6 +40,7 @@ public sealed class ModelProfile
         ApiKey = apiKey;
         ModelPath = modelPath;
         ExecutionProvider = executionProvider;
+        Alias = alias;
     }
 
 
@@ -57,8 +58,11 @@ public sealed class ModelProfile
 
 
 
-
-
+    /// <summary>
+    ///     A unique name used as a pointer to assign the same model configuration to multiple agents.
+    ///     When <c>null</c> or empty, the consuming agent uses its own agent name as the alias.
+    /// </summary>
+    public string? Alias { get; set; }
 
     /// <summary>
     ///     API key for providers that require authentication (OpenAI, Azure OpenAI, GitHub Models, Anthropic).
@@ -112,42 +116,6 @@ public sealed class ModelProfile
     /// </summary>
     public float TopP { get; set; }
 
-
-
-
-
-
-
-
-    //Development use only. These are not intended to be used in production, but rather to provide a convenient way to create model profiles for testing and development.
-    public static ModelProfile Glm5()
-    {
-        return new ModelProfile("http://127.0.0.1:11111", "glm-5.1:cloud", 0.1f, 14000, 1, .3f);
-    }
-
-
-
-
-
-
-
-
-    public static ModelProfile Gpt120()
-    {
-        return new ModelProfile("http://127.0.0.1:11111", "gemma4", 0.1f, 14000, 1, .3f);
-    }
-
-
-
-
-
-
-
-
-    public static ModelProfile Gpt20()
-    {
-        return new ModelProfile("http://127.0.0.1:11111", "gpt-oss:20b-cloud", 0.1f, 14000, 1, .3f);
-    }
 
 
 

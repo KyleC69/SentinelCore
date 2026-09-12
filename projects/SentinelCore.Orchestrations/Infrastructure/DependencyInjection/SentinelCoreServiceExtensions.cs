@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
@@ -22,6 +22,7 @@ using SentinelCore.Contracts.Events;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Mcp;
@@ -137,11 +138,12 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<IOrchestrationControl, OrchestrationControl>();
         services.AddTransient<IOrchestration, CustomGroupWorkflow>();
         services.AddTransient<IOrchestration, TheCoreWorkflow>();
-        //services.AddTransient<IClipboardService>();
+        services.AddTransient<IChatClientFactory, SentinelChatClientFactory>();
         services.AddTransient<CaseGenExec>();
         services.AddTransient<CustomGroupWorkflow>();
         services.AddTransient<ICaseGenerator, CaseGenerator>();
         services.AddSingleton<ISentinelCoreEvents, SentinelCoreEvents>();
+        services.AddSingleton<IAgentPresetProvider, AgentPresetProvider>();
         services.AddSingleton<IAgentProfileBuilder, AgentProfileBuilder>();
         services.AddSingleton<ISystemReporter, SystemReporter>();
         services.AddSingleton<ISentinelWorkflowExecution, SentinelWorkflowExecution>();

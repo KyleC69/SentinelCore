@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
@@ -93,7 +93,11 @@ public partial class App : Application
         // Model configuration is owned by the Model Configuration page — loaded
         // from the persisted document. There is no hardcoded fallback: agents
         // without configuration are gated at the factory.
-        SentinelCoreSettings sentinelSettings = new() { SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty, TraceEnabled = true, TraceLogLevel = LogLevel.Trace, OrchestrationType = OrchestrationType.TheCore };
+        SentinelCoreSettings sentinelSettings = new()
+        {
+                //TODO: Isolate Caseflow engine db configuration to make module optional. Keep seams to case flow engine clean.
+                SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty, TraceEnabled = true, TraceLogLevel = LogLevel.Trace, OrchestrationType = OrchestrationType.TheCore
+        };
 
         // Seed per-agent models from the persisted configuration document so the
         // first orchestration after startup uses the user's saved configuration.
@@ -201,6 +205,10 @@ public partial class App : Application
 
 
 
+    /// <summary>
+    ///     Writes startup exception details to the startup error log.
+    /// </summary>
+    /// <param name="ex">The exception to log.</param>
     private static void LogStartupException(Exception ex)
     {
         string logPath = Path.Combine(AppContext.BaseDirectory, "SentinelCoreHost-startup-errors.log");
@@ -225,6 +233,11 @@ public partial class App : Application
 
 
 
+    /// <summary>
+    ///     Handles the current application domain's unhandled exception.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">Provides data for the unhandled exception.</param>
     private static void OnCurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         if (e.ExceptionObject is Exception ex)
@@ -240,6 +253,11 @@ public partial class App : Application
 
 
 
+    /// <summary>
+    ///     Handles an unhandled exception raised on the UI dispatcher.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The event data for the unhandled dispatcher exception.</param>
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         ILogger<App>? logger = _host?.Services.GetService<ILogger<App>>();
@@ -273,6 +291,11 @@ public partial class App : Application
 
 
 
+    /// <summary>
+    ///     Initializes application-wide exception handling and starts the application during startup.
+    /// </summary>
+    /// <param name="sender">The source of the startup event.</param>
+    /// <param name="e">The startup event data.</param>
     private async void OnStartup(object? sender, StartupEventArgs e)
     {
 
@@ -312,6 +335,11 @@ public partial class App : Application
 
 
 
+    /// <summary>
+    ///     Logs an unobserved task exception and marks it as observed.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The event data that contains the unobserved exception.</param>
     private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
         LogStartupException(e.Exception);
@@ -325,6 +353,19 @@ public partial class App : Application
 
 
 
+    /// <summary>
+    ///     Initializes the application host and validates required startup configuration.
+    /// </summary>
+    /// <remarks>
+    ///     The host is created with default configuration, the application base path is set, services
+    ///     and logging are configured, and the host is started once.
+    /// </remarks>
+    /// <param name="e">The startup event arguments used to initialize the host.</param>
+    /// <returns>A task that represents the asynchronous startup operation.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the required SENTINEL_CORE or REMOTEKB environment variables
+    ///     are missing.
+    /// </exception>
     private async Task StartApplicationAsync(StartupEventArgs e)
     {
         // Startup breadcrumb — visible in the VS Output window.
@@ -366,8 +407,23 @@ public partial class App : Application
 
 
     /// <summary>
-    ///     Starts the <see cref="IHost" /> exactly once.
+    ///     Starts the <see cref="IHost" /> exactly once to ensure the application host is initialized and running.
     /// </summary>
+    /// <param name="cancellationToken">
+    ///     A <see cref="CancellationToken" /> that can be used to cancel the asynchronous operation.
+    /// </param>
+    /// <remarks>
+    ///     This method ensures that the host is started only once, even if called multiple times.
+    ///     If the host has already been started, the method returns immediately.
+    ///     If the host fails to start, the <see cref="InvalidOperationException" /> is thrown.
+    ///     Once the host is started, the application's main window is displayed.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown if the <see cref="IHost" /> instance is null or if the host fails to start.
+    /// </exception>
+    /// <returns>
+    ///     A <see cref="Task" /> representing the asynchronous operation.
+    /// </returns>
     private async Task StartHostOnceAsync(CancellationToken cancellationToken = default)
     {
         if (_hostStarted)

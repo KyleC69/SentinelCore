@@ -2,12 +2,14 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelChatClientFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
 using Azure;
 using Azure.AI.OpenAI;
+
+using Microsoft.Extensions.Logging;
 
 using OllamaSharp;
 
@@ -41,18 +43,40 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
 
 
 
+    public SentinelChatClientFactory(ILoggerFactory loggerFactory)
+    {
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+        LoggerFactory = loggerFactory;
+    }
+
+
+
+
+
+
+
+
+    private static ILoggerFactory LoggerFactory { get; set; }
+
+
+
+
+
+
+
+
     /// <inheritdoc />
     public IChatClient CreateChatClient(ModelProfile model)
     {
         IChatClient baseClient = model.Provider switch
         {
-                ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
-                ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
-                ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
-                ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
-                ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
-                ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
-                _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
+            ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
+            ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
+            ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
+            ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
+            ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
+            ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
+            _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
         };
 
         return baseClient;
@@ -110,11 +134,11 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
         OllamaApiClient client = new(new Uri(model.Endpoint ?? "http://127.0.0.1:11434"), model.ModelId ?? "gemma4");
         client.SelectedModel = model.ModelId ?? "gemma4";
 
+        IChatClient b = new LoggingChatClient(client, LoggerFactory.CreateLogger(nameof(SentinelChatClientFactory)));
 
 
 
-
-        return client;
+        return b;
     }
 
 

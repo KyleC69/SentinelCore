@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
@@ -32,12 +32,6 @@ namespace SentinelCore.Orchestrations.Agents;
 ///         Additionally, other orchestrations are available for various industries or use cases, offering greater
 ///         flexibility
 ///         and customization for agents, tools, and instructions.
-///     </para>
-///     <para>
-///         The <see cref="AgentRole" /> defines presets for the agent's position (e.g., manager, critic, worker) within an
-///         orchestration.
-///         It is not the sole determinant of an agent's configuration but controls the base model, tools, and instructions
-///         specifically for 'TheCore' orchestration agents.
 ///     </para>
 ///     <para>
 ///         The <see cref="Persona" /> provides unique personality characteristics to the agent. It is not an instruction
@@ -74,8 +68,13 @@ public sealed record AgentProfile
     public Func<ChatClientAgent, ILoggerFactory, AIAgent>? BuildAgent { get; init; }
 
     /// <summary>
-    ///     ///     The instructions for the agent. Default empty, set at runtime
+    ///     Gets or sets the instructions that guide the behavior of the agent.
     /// </summary>
+    /// <remarks>
+    ///     These instructions are used to define the agent's operational context and behavior.
+    ///     They can be customized during the agent's profile creation or updated dynamically
+    ///     to adapt to specific tasks or scenarios.
+    /// </remarks>
     public string Instructions { get; set; } = string.Empty;
 
     /// <summary>
@@ -98,14 +97,6 @@ public sealed record AgentProfile
     ///     for structured output. When <c>null</c>, no structured output format is applied.
     /// </summary>
     public ChatResponseFormat? ResponseFormat { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the role assigned to the agent.
-    /// </summary>
-    /// <remarks>
-    ///     The role determines the responsibilities and permissions of the agent within the system.
-    /// </remarks>
-    public AgentRole Role { get; set; }
 
     /// <summary>
     ///     The list of tools available to the agent. Default empty, set at runtime

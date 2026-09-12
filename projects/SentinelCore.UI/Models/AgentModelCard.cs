@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         AgentModelCard.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
@@ -25,6 +25,12 @@ namespace SentinelCore.UI.Models;
 /// </summary>
 public sealed partial class AgentModelCard : ObservableObject
 {
+    
+    
+    /// <summary>
+    ///     Backing field for <see cref="Alias" />.
+    /// </summary>
+    [ObservableProperty] private string _alias = string.Empty;
 
     /// <summary>
     ///     Backing field for <see cref="ApiKey" />.
@@ -86,6 +92,7 @@ public sealed partial class AgentModelCard : ObservableObject
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
         AgentName = agentName;
+        Alias = agentName;
     }
 
 
@@ -107,6 +114,7 @@ public sealed partial class AgentModelCard : ObservableObject
             return;
         }
 
+        Alias = string.IsNullOrWhiteSpace(profile.Alias) ? agentName : profile.Alias;
         Provider = profile.Provider;
         Endpoint = profile.Endpoint ?? string.Empty;
         ModelId = profile.ModelId ?? string.Empty;
@@ -125,6 +133,9 @@ public sealed partial class AgentModelCard : ObservableObject
 
 
 
+
+
+    
     /// <summary>
     ///     The logical agent name this card configures.
     /// </summary>
@@ -162,6 +173,6 @@ public sealed partial class AgentModelCard : ObservableObject
             return null;
         }
 
-        return new ModelProfile(Endpoint.Trim(), ModelId.Trim(), Temperature, MaxOutputTokens, topK: TopK, topP: TopP, provider: Provider, apiKey: string.IsNullOrWhiteSpace(ApiKey) ? null : ApiKey);
+        return new ModelProfile(Endpoint.Trim(), ModelId.Trim(), Temperature, MaxOutputTokens, topK: TopK, topP: TopP, provider: Provider, apiKey: string.IsNullOrWhiteSpace(ApiKey) ? null : ApiKey, alias: string.IsNullOrWhiteSpace(Alias) ? null : Alias.Trim());
     }
 }

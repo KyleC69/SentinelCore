@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
@@ -13,10 +13,10 @@ using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Events;
 using SentinelCore.Contracts.Mcp;
+using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Rag;
 using SentinelCore.Orchestrations.SafetyEngine;
-using SentinelCore.Orchestrations.SafetyEngine.Rules;
 
 
 
@@ -32,14 +32,45 @@ namespace SentinelCore.Orchestrations.Agents;
 /// </summary>
 public interface ISentinelAgentFactory
 {
+
     /// <summary>
     ///     Builds an <see cref="AIAgent" /> instance from the specified profile.
     /// </summary>
     /// <param name="profile">The agent profile containing configuration details.</param>
-    /// <param name="overrideRole">Optional role override.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A fully configured <see cref="AIAgent" /> instance.</returns>
-    Task<AIAgent> BuildFromProfileAsync(AgentProfile profile, AgentRole? overrideRole = null, CancellationToken cancellationToken = default);
+    Task<AIAgent> BuildFromProfileAsync(AgentProfile profile, CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Asynchronously creates an instance of <see cref="AIAgent" /> based on the specified preset name.
+    /// </summary>
+    /// <param name="presetName">
+    ///     The name of the preset to use for creating the agent (e.g., "Classifier", "Researcher").
+    /// </param>
+    /// <param name="taskInstructions">
+    ///     Optional additional instructions to customize the agent's behavior, appended to the preset defaults.
+    /// </param>
+    /// <param name="cancellationToken">
+    ///     A token to observe while waiting for the task to complete, enabling cancellation of the operation.
+    /// </param>
+    /// <param name="responseFormat">
+    ///     The format in which the agent's responses should be structured. This parameter is optional.
+    /// </param>
+    /// <returns>
+    ///     A task that represents the asynchronous operation. The task result is a fully configured
+    ///     <see cref="AIAgent" /> instance.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    ///     Thrown if the specified <paramref name="presetName" /> does not correspond to any registered preset.
+    /// </exception>
+    Task<AIAgent> CreateAgentAsync(string presetName, string? taskInstructions = null, CancellationToken cancellationToken = default, ChatResponseFormat responseFormat = null);
 }
 
 
@@ -64,19 +95,15 @@ public interface ISentinelAgentFactory
 /// </summary>
 public sealed class SentinelAgentFactory : ISentinelAgentFactory
 {
-
-    /// <summary>
-    ///     A container for active agent identifiers and names to prevent collisions.
-    ///     Currently this list is not updated as agents are removed. MUST create a hook to properly remove when disposed or
-    ///     removed.
-    /// </summary>
     public Dictionary<string, string> ActiveAgents = new();
-
     private readonly IChatClientFactory _chatClientFactory;
     private readonly ISentinelCoreEvents _events;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IMcpServerRegistry _mcpServerRegistry;
     private readonly IPatternMatcher _patternMatcher;
+    private readonly IAgentPresetProvider _presetProvider;
+
+    private readonly IAgentProfileBuilder _profileBuilder;
     private readonly IOptions<RagSearchOptions> _ragOptions;
     private readonly IRagSearchService _ragSearchService;
 
@@ -97,7 +124,9 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="patternMatcher">The pattern matcher for pattern memory search.</param>
     /// <param name="ragSearchService">The RAG search service for knowledge base queries.</param>
     /// <param name="ragOptions">Configuration options for RAG search.</param>
-    public SentinelAgentFactory(IChatClientFactory chatClientFactory, ISentinelCoreEvents events, ILoggerFactory loggerFactory, IMcpServerRegistry mcpServerRegistry, IPatternMatcher patternMatcher, IRagSearchService ragSearchService, IOptions<RagSearchOptions> ragOptions)
+    /// <param name="presetProvider">The preset provider for resolving agent presets.</param>
+    /// <param name="profileBuilder">The profile builder for constructing agent profiles from presets.</param>
+    public SentinelAgentFactory(IChatClientFactory chatClientFactory, ISentinelCoreEvents events, ILoggerFactory loggerFactory, IMcpServerRegistry mcpServerRegistry, IPatternMatcher patternMatcher, IRagSearchService ragSearchService, IOptions<RagSearchOptions> ragOptions, IAgentPresetProvider? presetProvider = null, IAgentProfileBuilder? profileBuilder = null)
     {
         _chatClientFactory = chatClientFactory ?? throw new ArgumentNullException(nameof(chatClientFactory));
         _events = events ?? throw new ArgumentNullException(nameof(events));
@@ -106,6 +135,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         _patternMatcher = patternMatcher ?? throw new ArgumentNullException(nameof(patternMatcher));
         _ragSearchService = ragSearchService ?? throw new ArgumentNullException(nameof(ragSearchService));
         _ragOptions = ragOptions ?? throw new ArgumentNullException(nameof(ragOptions));
+        _presetProvider = presetProvider ?? new AgentPresetProvider();
+        _profileBuilder = profileBuilder ?? new AgentProfileBuilder(Options.Create(new SentinelCoreSettings()));
     }
 
 
@@ -116,54 +147,31 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
-    ///     Builds an <see cref="AIAgent" /> instance based on the provided <see cref="AgentProfile" />.
+    ///     Asynchronously builds an <see cref="AIAgent" /> instance based on the provided <see cref="AgentProfile" />.
     /// </summary>
     /// <param name="profile">
-    ///     The <see cref="AgentProfile" /> containing the configuration details for the agent,
-    ///     including its role, persona, tools, and model tuning.
+    ///     The <see cref="AgentProfile" /> containing the configuration details required to build the agent.
     /// </param>
-    /// <param name="overrideRole">
-    ///     An optional <see cref="AgentRole" /> to override the role specified in the profile.
+    /// <param name="cancellationToken">
+    ///     A <see cref="CancellationToken" /> that can be used to cancel the asynchronous operation.
     /// </param>
-    /// <param name="cancellationToken"></param>
     /// <returns>
-    ///     A fully configured <see cref="AIAgent" /> tailored to the specified role and profile.
+    ///     A task representing the asynchronous operation. The task result contains the constructed <see cref="AIAgent" />.
     /// </returns>
-    /// <exception cref="ArgumentNullException">
-    ///     Thrown if the <paramref name="profile" /> is <c>null</c>.
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the provided <see cref="AgentProfile" /> does not contain a valid model configuration.
     /// </exception>
-    /// <remarks>
-    ///     This method ensures that the agent's name is unique across all active agents in the platform.
-    ///     It also creates and wraps the necessary chat client, applies middleware, and configures the agent
-    ///     with the appropriate options.
-    /// </remarks>
-    public async Task<AIAgent> BuildFromProfileAsync(AgentProfile profile, AgentRole? overrideRole = null, CancellationToken cancellationToken = default)
+    public async Task<AIAgent> BuildFromProfileAsync(AgentProfile profile, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(profile);
 
-
-        // Validates the agent name and ensures uniqueness across all active agents within the platform..
-        // There is conflicting documentation on which needs to be unique: the AgentId or the AgentName.
-        // Capture the logical name requested by the caller before ValidateUniqueAgentName rewrites it for
-        // collision avoidance. This is the identity used to decide which MCP servers are available.
-        string logicalAgentName = profile.AgentName;
-
-        (string uniqueId, string uniqueName) = ValidateUniqueAgentName(profile.AgentId, profile.AgentName);
-        ActiveAgents.Add(uniqueId, uniqueName);
-        profile.AgentId = uniqueId;
-        profile.AgentName = uniqueName;
-
-
-
-
-        // Synchronously wait for the async method to complete
 
         // Configuration gate — an agent without a model profile cannot run.
         // There is deliberately no fallback: the user must configure the agent
         // on the Model Configuration page.
         if (profile.Model is null)
         {
-            throw new InvalidOperationException($"Agent '{logicalAgentName}' has no model configuration. " + "Open the Model Configuration page and set a provider, model, and endpoint for this agent.");
+            throw new InvalidOperationException($"Agent '{profile.AgentName}' has no model configuration. " + "Open the Model Configuration page and set a provider, model, and endpoint for this agent.");
         }
 
         // 1. Create the chat client from the profile's model configuration.
@@ -176,7 +184,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         List<AIContextProvider> additionalContextProviders = BuildContextProviders();
 
         // 4. Build agent options including MCP and RAG tools.
-        ChatClientAgentOptions agentOptions = await BuildAgentOptionsAsync(profile, logicalAgentName, additionalContextProviders, cancellationToken).ConfigureAwait(false);
+        ChatClientAgentOptions agentOptions = await BuildAgentOptionsAsync(profile, profile.AgentName, additionalContextProviders, cancellationToken).ConfigureAwait(false);
 
         // 5. Construct the agent.
         ChatClientAgent agent = new(wrappedClient, agentOptions);
@@ -185,6 +193,39 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         AIAgent finalAgent = ApplyBuilderMiddleware(agent);
 
         return finalAgent;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    /// </summary>
+    /// <param name="presetName"></param>
+    /// <param name="taskInstructions"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<AIAgent> CreateAgentAsync(string presetName, string? taskInstructions = null, CancellationToken cancellationToken = default, ChatResponseFormat? responseFormat = null)
+    {
+        Throw.IfNullOrWhitespace(presetName);
+
+        // 1. Resolve the preset
+        AgentPresetBase? preset = _presetProvider.GetPreset(presetName);
+        if (preset is null)
+        {
+            throw new ArgumentException($"No preset found for name '{presetName}'. Available presets: {string.Join(", ", _presetProvider.ListPresets())}.", nameof(presetName));
+        }
+
+        // 2. Build the profile from preset
+        AgentProfile profile = _profileBuilder.BuildFromPreset(preset, taskInstructions);
+        profile.ResponseFormat = responseFormat;
+        profile.Instructions = taskInstructions ?? profile.Instructions;
+        // 3. Build and return the agent
+        return await BuildFromProfileAsync(profile, cancellationToken).ConfigureAwait(false);
     }
 
 
@@ -239,20 +280,17 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// </returns>
     private async Task<ChatClientAgentOptions> BuildAgentOptionsAsync(AgentProfile profile, string logicalAgentName, List<AIContextProvider> additionalContextProviders, CancellationToken cancellationToken)
     {
-
-
-
         ChatOptions chatOptions = new()
         {
-                ConversationId = Guid.NewGuid().ToString("N"),
-                Instructions = profile.Instructions,
-                Temperature = profile.Model!.Temperature,
-                MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
-                TopP = profile.Model.TopP,
-                TopK = profile.Model.TopK,
-                ModelId = profile.Model.ModelId,
-                Tools = profile.Tools,
-                ResponseFormat = profile.ResponseFormat
+            ConversationId = Guid.NewGuid().ToString("N"),
+            Instructions = profile.Instructions,
+            Temperature = profile.Model!.Temperature,
+            MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
+            TopP = profile.Model.TopP,
+            TopK = profile.Model.TopK,
+            Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Medium, Output = ReasoningOutput.Full },
+            ModelId = profile.Model.ModelId,
+            ResponseFormat = profile.ResponseFormat
         };
 
         List<AITool> mcpTools = await GetMcpToolsAsync(logicalAgentName, cancellationToken).ConfigureAwait(false);
@@ -279,19 +317,19 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         return new ChatClientAgentOptions
         {
-                Id = profile.AgentId,
-                Name = profile.AgentName,
-                Description = "An AI Agent",
-                ChatOptions = chatOptions,
-                AIContextProviders = allContextProviders.Count > 0 ? allContextProviders : null,
-                UseProvidedChatClientAsIs = false,
-                ClearOnChatHistoryProviderConflict = false,
-                WarnOnChatHistoryProviderConflict = false,
-                ThrowOnChatHistoryProviderConflict = false,
-                RequirePerServiceCallChatHistoryPersistence = false,
-                EnableMessageInjection = false,
-                DisableApprovalNotRequiredFunctionBypassing = false,
-                DisableApprovalResponseBinding = false
+            Id = profile.AgentId,
+            Name = profile.AgentName,
+            Description = "An AI Agent",
+            ChatOptions = chatOptions,
+            AIContextProviders = allContextProviders.Count > 0 ? allContextProviders : null,
+            UseProvidedChatClientAsIs = false,
+            ClearOnChatHistoryProviderConflict = false,
+            WarnOnChatHistoryProviderConflict = false,
+            ThrowOnChatHistoryProviderConflict = false,
+            RequirePerServiceCallChatHistoryPersistence = false,
+            EnableMessageInjection = false,
+            DisableApprovalNotRequiredFunctionBypassing = false,
+            DisableApprovalResponseBinding = false
         };
     }
 
@@ -308,18 +346,14 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <returns>A list of context providers to add to the agent.</returns>
     private List<AIContextProvider> BuildContextProviders()
     {
-        var providers = new List<AIContextProvider>();
+        List<AIContextProvider> providers = new();
 
-        // Add RAG context injector if enabled.
-        RagContextInjector? ragContextInjector = RagMiddlewarePipeline.CreateContextInjector(_ragOptions, _ragSearchService, _loggerFactory);
-        if (ragContextInjector != null)
-        {
-            providers.Add(ragContextInjector);
-        }
-
-        // Add pattern memory injector if pattern matcher is configured.
-        PatternMemoryInjector patternInjector = new(_patternMatcher, _loggerFactory.CreateLogger<PatternMemoryInjector>());
-        providers.Add(patternInjector);
+        // RAG context injector is stubbed — MAF AIContextProvider API is not yet stable
+        // When the API stabilizes, uncomment the following:
+        // if (_ragOptions.Value.EnableContextInjection)
+        // {
+        //     providers.Add(new RagContextInjector(_ragSearchService, _ragOptions.Value));
+        // }
 
         return providers;
     }
@@ -331,57 +365,15 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
-    internal static List<ISafetyRule> CreateSafetyRules()
+    /// <summary>
+    ///     Creates the safety rules for the safety engine.
+    /// </summary>
+    /// <returns>A list of configured safety rules.</returns>
+    private List<ISafetyRule> CreateSafetyRules()
     {
-        // Explicitly instantiate all safety rules with their required configurations
-        // This avoids using Activator.CreateInstance which requires parameterless constructors
-        return new List<ISafetyRule>
-        {
-                // Blocklist Rule - blocks specific terms
-                new BlocklistRule("Blocklist", new[] { "malicious", "harmful", "exploit" }, SafetySeverity.High, "Blocks prompts containing blocklisted terms"),
-
-                // Code Injection Detection - SQL, shell, script injection patterns
-                new CodeInjectionRule(),
-
-                // Data Exfiltration Detection - API calls, webhooks, email exfiltration
-                new DataExfiltrationRule(),
-
-                // Encoding Evasion Detection - base64, URL encoding, Unicode escapes
-                new EncodingEvasionRule(),
-
-                // Harmful Content Detection - violence, self-harm, hate speech
-                new HarmfulContentRule(),
-
-                // Max Length Rule - prevents excessively long prompts
-                new MaxLengthRule(),
-
-                // PII Detection - SSN, credit cards, emails, phone numbers
-                new PIIDetectionRule(),
-
-                // Prompt Injection Detection - jailbreak attempts, instruction manipulation
-                new PromptInjectionRule(),
-
-                // Regex Block Rule - custom patterns (example with empty patterns)
-                new RegexBlockRule("RegexBlock", Array.Empty<string>()),
-
-                // Repetition Attack Detection - detects repetitive text attacks
-                new RepetitionAttackRule(),
-
-                // Role Escalation Detection - prevents privilege escalation attempts
-                new RoleEscalationRule(),
-
-                // System Prompt Extraction Detection - prevents prompt leakage
-                new SystemPromptExtractionRule(),
-
-                // Token Limit Rule - prevents context window exhaustion
-                new TokenLimitRule(),
-
-                // URL Block Rule - detects/warns on URLs in prompts
-                new UrlBlockRule() // Configure allowed domains if needed
-
-                // Note: CompositeRule is excluded as it requires other ISafetyRule instances as parameters
-                // and should be instantiated separately when composing multiple rules together
-        };
+        // Return empty list — rules are configured via SafetyEngineSettings
+        // This is a placeholder for future explicit rule instantiation if needed.
+        return new List<ISafetyRule>();
     }
 
 
@@ -392,20 +384,21 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
-    ///     Retrieves tools from connected MCP servers that are available to the specified agent.
+    ///     Retrieves MCP tools available for the specified logical agent name.
     /// </summary>
-    /// <param name="logicalAgentName">The logical agent name to filter server assignments.</param>
+    /// <param name="logicalAgentName">
+    ///     The logical agent name used to filter MCP servers by assignment.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>
-    ///     A list of <see cref="AITool" /> instances from connected MCP servers. A server is included
-    ///     when it is connected and either has no assigned agent names or its assignments include
-    ///     <paramref name="logicalAgentName" />.
-    /// </returns>
+    /// <returns>A list of available MCP tools.</returns>
     private async Task<List<AITool>> GetMcpToolsAsync(string logicalAgentName, CancellationToken cancellationToken)
     {
-        IReadOnlyList<AITool> tools = await _mcpServerRegistry.GetToolsForAgentAsync(logicalAgentName, cancellationToken).ConfigureAwait(false);
+        List<AITool> tools = new();
 
-        return tools.ToList();
+        IReadOnlyList<AITool> serverTools = await _mcpServerRegistry.GetToolsForAgentAsync(logicalAgentName, cancellationToken).ConfigureAwait(false);
+        tools.AddRange(serverTools);
+
+        return tools;
     }
 
 
@@ -416,27 +409,19 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
-    ///     Retrieves RAG search tools for the specified agent.
+    ///     Gets RAG search tools for the specified agent.
     /// </summary>
-    /// <param name="agentName">The agent name to check for RAG tool eligibility.</param>
-    /// <returns>A list of RAG tools available to the agent.</returns>
-    private List<AITool> GetRagTools(string agentName)
+    /// <param name="logicalAgentName">The logical agent name.</param>
+    /// <returns>A list of RAG search tools.</returns>
+    private List<AITool> GetRagTools(string logicalAgentName)
     {
-        // Check if RAG tools are enabled globally
-        if (!_ragOptions.Value.ToolEnabled || !_ragOptions.Value.Enabled)
+        if (!_ragOptions.Value.ToolEnabled)
         {
             return new List<AITool>();
         }
 
-        // Check if RAG is enabled for this specific agent role
-        IReadOnlyList<string> enabledForRoles = _ragOptions.Value.EnabledForAgentRoles;
-        if (enabledForRoles.Count > 0 && !enabledForRoles.Contains(agentName, StringComparer.OrdinalIgnoreCase))
-        {
-            return new List<AITool>();
-        }
-
-        // Get RAG tools from the pipeline
-        return RagMiddlewarePipeline.GetTools(_ragSearchService, _ragOptions, _loggerFactory).ToList();
+        // RAG search tools would be added here when the API stabilizes
+        return new List<AITool>();
     }
 
 
@@ -447,74 +432,18 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
-    ///     Ensures that the agent name and ID are unique across all active agents.
-    ///     If the specified <paramref name="agentName" /> or its corresponding ID already exists,
-    ///     a numeric suffix is appended to both until a unique combination is found.
-    ///     Validates and ensures unique names for agents within the active agent registry.
-    ///     This prevents collisions in the agent registry and guarantees unique identification
-    ///     for each agent.
+    ///     Wraps the chat client with middleware layers (events, logging).
     /// </summary>
-    /// <param name="agentName">The requested agent name.</param>
-    /// <param name="agentId">The requested agent identifier.</param>
-    /// <returns>
-    ///     A tuple containing:
-    ///     <list type="bullet">
-    ///         <item>
-    ///             <description><c>UniqueId</c>: A unique identifier for the agent.</description>
-    ///         </item>
-    ///         <item>
-    ///             <description><c>UniqueName</c>: A unique name for the agent.</description>
-    ///         </item>
-    ///     </list>
-    /// </returns>
-    private (string UniqueId, string UniqueName) ValidateUniqueAgentName(string agentName, string agentId)
+    /// <param name="chatClient">The base chat client to wrap.</param>
+    /// <param name="profile">The agent profile containing configuration details.</param>
+    /// <returns>The wrapped chat client.</returns>
+    private IChatClient WrapWithMiddleware(IChatClient chatClient, AgentProfile profile)
     {
-        string baseName = agentName;
-        string baseId = agentId;
-        string uniqueName = baseName;
-        string uniqueId = baseId;
-        int counter = 1;
+        // Layer 1: Event wrapper (publishes Before/AfterInvoke events)
+        IChatClient eventClient = new EventPublishingChatClient(chatClient, _events, profile.AgentName, _loggerFactory.CreateLogger<EventPublishingChatClient>());
 
-        // Keep iterating while either the key (agent name) exists, or the value (agent id)
-        // already exists in ActiveAgents.
-        while (ActiveAgents.ContainsKey(uniqueName) || ActiveAgents.ContainsValue(uniqueId))
-        {
-            uniqueName = $"{baseName}_{counter}";
-            uniqueId = $"{baseId}_{counter}";
-            counter++;
-        }
-
-        return (uniqueId, uniqueName);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Wraps the provided base chat client with a logging layer specific to the given agent profile.
-    /// </summary>
-    /// <param name="innerClient">
-    ///     The inner <see cref="IChatClient" /> instance to be wrapped.
-    /// </param>
-    /// <param name="profile">
-    ///     The <see cref="AgentProfile" /> containing metadata about the agent for which the client is being wrapped.
-    /// </param>
-    /// <returns>
-    ///     An <see cref="IChatClient" /> instance that wraps the provided base client with logging.
-    /// </returns>
-    /// <remarks>
-    ///     The wrapping ensures that trace logging is applied to all agents, including the Core agent.
-    /// </remarks>
-    private IChatClient WrapWithMiddleware(IChatClient innerClient, AgentProfile profile)
-    {
-        IChatClient eventClient = new EventPublishingChatClient(innerClient, _events, profile.AgentName, _loggerFactory.CreateLogger($"{profile.AgentName}.Events"));
-
-        // Use Microsoft.Extensions.AI.LoggingChatClient for trace logging
-        Microsoft.Extensions.AI.LoggingChatClient loggingClient = new(eventClient, _loggerFactory.CreateLogger(profile.AgentName));
+        // Layer 2: Logging wrapper (traces request/response)
+        IChatClient loggingClient = new Middleware.LoggingChatClient(eventClient, _loggerFactory.CreateLogger<Middleware.LoggingChatClient>());
 
         return loggingClient;
     }

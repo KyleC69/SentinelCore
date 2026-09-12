@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         ModelConfigViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
@@ -39,7 +39,8 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 {
     private readonly ISentinelAgentCatalog _agentCatalog;
 
-    [ObservableProperty] private ObservableCollection<AgentModelCard> _cards = [];
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private ObservableCollection<AgentModelCard> _cards = [];
 
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _isBusy;
@@ -87,6 +88,12 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
     ///     Gets the supported model providers for the provider combo boxes.
     /// </summary>
     public IReadOnlyList<ModelProfile.ModelProvider> Providers { get; } = Enum.GetValues<ModelProfile.ModelProvider>().ToList();
+
+    /// <summary>
+    ///     Gets the unique agent names from <see cref="ISentinelAgentCatalog" /> that can be selected
+    ///     as an alias for any agent model card.
+    /// </summary>
+    public IReadOnlyList<string> AvailableAliases { get; private set; } = Array.Empty<string>();
 
 
 
@@ -137,6 +144,7 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
         try
         {
             IReadOnlyList<string> agents = await _agentCatalog.GetAgentNamesAsync().ConfigureAwait(false);
+            AvailableAliases = agents;
 
             List<AgentModelCard> cards = [];
             foreach (string agent in agents)

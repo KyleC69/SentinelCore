@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         CapturingAgentBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  091112
+// Build Num:  091200
 
 
 
@@ -65,11 +65,13 @@ public sealed class CapturingAgentBuilder : ISentinelAgentFactory
 
 
 
-    public Task<AIAgent> BuildFromProfileAsync([NotNull] AgentProfile profile, AgentRole? overrideRole = null, CancellationToken cancellationToken = default)
+    /// <summary>
+    ///     Asserts that exactly one spec was captured and returns it.
+    /// </summary>
+    public AgentProfile AssertSingleSpec()
     {
-        ArgumentNullException.ThrowIfNull(profile);
-        CapturedSpecs.Add(profile);
-        return Task.FromResult(_stubAgent);
+        Assert.AreEqual(1, CapturedSpecs.Count, "Expected exactly one AgentProfile to be built.");
+        return CapturedSpecs[0];
     }
 
 
@@ -79,13 +81,11 @@ public sealed class CapturingAgentBuilder : ISentinelAgentFactory
 
 
 
-    /// <summary>
-    ///     Asserts that exactly one spec was captured and returns it.
-    /// </summary>
-    public AgentProfile AssertSingleSpec()
+    public Task<AIAgent> BuildFromProfileAsync([NotNull] AgentProfile profile, AgentRole? overrideRole = null, CancellationToken cancellationToken = default)
     {
-        Assert.AreEqual(1, CapturedSpecs.Count, "Expected exactly one AgentProfile to be built.");
-        return CapturedSpecs[0];
+        ArgumentNullException.ThrowIfNull(profile);
+        CapturedSpecs.Add(profile);
+        return Task.FromResult(_stubAgent);
     }
 
 
