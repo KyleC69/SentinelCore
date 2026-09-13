@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         ModelProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -53,6 +53,9 @@ public sealed class ModelProfile
     public ModelProfile()
     {
     }
+
+
+
 
 
 
@@ -115,10 +118,6 @@ public sealed class ModelProfile
     ///     Top-p (nucleus) sampling parameter.
     /// </summary>
     public float TopP { get; set; }
-
-
-
-
 
 
 

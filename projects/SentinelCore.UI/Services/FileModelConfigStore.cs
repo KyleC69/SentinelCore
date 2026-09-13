@@ -2,14 +2,14 @@
 // Project:   SentinelCore.UI
 // File:         FileModelConfigStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
+
+using Microsoft.Extensions.Logging;
 
 using System.IO;
 using System.Text.Json;
-
-using Microsoft.Extensions.Logging;
 
 
 
@@ -74,7 +74,7 @@ public sealed class FileModelConfigStore : IModelConfigStore
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _filePath = filePath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SentinelCore", FileName);
+        _filePath = filePath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", FileName);
     }
 
 

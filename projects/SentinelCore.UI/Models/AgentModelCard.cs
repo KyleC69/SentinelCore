@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         AgentModelCard.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -25,8 +25,8 @@ namespace SentinelCore.UI.Models;
 /// </summary>
 public sealed partial class AgentModelCard : ObservableObject
 {
-    
-    
+
+
     /// <summary>
     ///     Backing field for <see cref="Alias" />.
     /// </summary>
@@ -133,9 +133,6 @@ public sealed partial class AgentModelCard : ObservableObject
 
 
 
-
-
-    
     /// <summary>
     ///     The logical agent name this card configures.
     /// </summary>

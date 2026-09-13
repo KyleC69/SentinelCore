@@ -2,15 +2,9 @@
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
-
-using System.IO;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Windows;
-using System.Windows.Threading;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,6 +22,12 @@ using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 using SentinelCore.RemoteKB.Persistence;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
+
+using System.IO;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Threading;
 
 
 
@@ -95,8 +95,11 @@ public partial class App : Application
         // without configuration are gated at the factory.
         SentinelCoreSettings sentinelSettings = new()
         {
-                //TODO: Isolate Caseflow engine db configuration to make module optional. Keep seams to case flow engine clean.
-                SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty, TraceEnabled = true, TraceLogLevel = LogLevel.Trace, OrchestrationType = OrchestrationType.TheCore
+            //TODO: Isolate Caseflow engine db configuration to make module optional. Keep seams to case flow engine clean.
+            SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
+            TraceEnabled = true,
+            TraceLogLevel = LogLevel.Trace,
+            OrchestrationType = OrchestrationType.TheCore
         };
 
         // Seed per-agent models from the persisted configuration document so the
@@ -392,6 +395,7 @@ public partial class App : Application
                     // WinExe has no attached console — Debug output surfaces in the VS Output window.
                     logging.AddDebug();
                     logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }; });
+                    logging.AddFileLogger();
                     logging.SetMinimumLevel(LogLevel.Trace);
                 })
                 .Build();

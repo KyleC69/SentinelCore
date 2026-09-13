@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorRegistration.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -43,7 +43,6 @@ public static class ExecutorRegistrations
         services.AddTransient<DirectAnswerExecutor>();
         services.AddTransient<AggregationExecutor>();
         services.AddTransient<CriticalAlert>();
-        services.AddTransient<PersistTask>();
         services.AddTransient<PersistEvidence>();
         services.AddTransient<LoggingExecutor>();
 

@@ -1,8 +1,13 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
-// File:         AgentExecutor.cs
+// File:         ClassifierAgentExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
+
+
+
+using System.Diagnostics;
+
 
 
 
@@ -12,12 +17,13 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
-public class ClassifierAgentExec(AIAgent agent) : Executor<ChatMessage, SignalHypothesis>("ClassifierExec")
+public sealed class ClassifierAgentExec(AIAgent agent) : Executor<ChatMessage, SignalHypothesis>("ClassifierExec")
 {
 
     /// <summary>
     ///     Handles the processing of a <see cref="ChatMessage" /> within the workflow context
     ///     and returns a <see cref="SignalHypothesis" /> as the result.
+    ///     This is where TheCore processes the signal and generates the initial hypothesis.
     /// </summary>
     /// <param name="message">
     ///     The <see cref="ChatMessage" /> to be processed by the agent.
@@ -40,12 +46,22 @@ public class ClassifierAgentExec(AIAgent agent) : Executor<ChatMessage, SignalHy
     /// </remarks>
     public override async ValueTask<SignalHypothesis> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = new())
     {
+        AgentResponse<SignalHypothesis> response = null!;
         string json = "";
-        AgentResponse<SignalHypothesis> response = await agent.RunAsync<SignalHypothesis>(message, cancellationToken: cancellationToken).ConfigureAwait(false);
-        if (response.Text.StartsWith("```json"))
+        try
         {
+            response = await agent.RunAsync<SignalHypothesis>(message, cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (response.Text.StartsWith("```json"))
+            {
 
-            json = response.Text.TrimStart("```json").TrimEnd("```").ToString();
+                json = response.Text.TrimStart("```json").TrimEnd("```").ToString();
+            }
+
+        }
+        catch (Exception e)
+        {
+            //log and go
+            Debug.Print(e.Message);
         }
 
         // Saves the value in a special shared state bag so it may be shared with all actors in the workflow.

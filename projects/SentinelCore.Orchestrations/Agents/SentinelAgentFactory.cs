@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -282,15 +282,15 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     {
         ChatOptions chatOptions = new()
         {
-            ConversationId = Guid.NewGuid().ToString("N"),
-            Instructions = profile.Instructions,
-            Temperature = profile.Model!.Temperature,
-            MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
-            TopP = profile.Model.TopP,
-            TopK = profile.Model.TopK,
-            Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Medium, Output = ReasoningOutput.Full },
-            ModelId = profile.Model.ModelId,
-            ResponseFormat = profile.ResponseFormat
+                ConversationId = Guid.NewGuid().ToString("N"),
+                Instructions = profile.Instructions,
+                Temperature = profile.Model!.Temperature,
+                MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
+                TopP = profile.Model.TopP,
+                TopK = profile.Model.TopK,
+                Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Medium, Output = ReasoningOutput.Full },
+                ModelId = profile.Model.ModelId,
+                ResponseFormat = profile.ResponseFormat
         };
 
         List<AITool> mcpTools = await GetMcpToolsAsync(logicalAgentName, cancellationToken).ConfigureAwait(false);
@@ -317,19 +317,19 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         return new ChatClientAgentOptions
         {
-            Id = profile.AgentId,
-            Name = profile.AgentName,
-            Description = "An AI Agent",
-            ChatOptions = chatOptions,
-            AIContextProviders = allContextProviders.Count > 0 ? allContextProviders : null,
-            UseProvidedChatClientAsIs = false,
-            ClearOnChatHistoryProviderConflict = false,
-            WarnOnChatHistoryProviderConflict = false,
-            ThrowOnChatHistoryProviderConflict = false,
-            RequirePerServiceCallChatHistoryPersistence = false,
-            EnableMessageInjection = false,
-            DisableApprovalNotRequiredFunctionBypassing = false,
-            DisableApprovalResponseBinding = false
+                Id = profile.AgentId,
+                Name = profile.AgentName,
+                Description = "An AI Agent",
+                ChatOptions = chatOptions,
+                AIContextProviders = allContextProviders.Count > 0 ? allContextProviders : null,
+                UseProvidedChatClientAsIs = false,
+                ClearOnChatHistoryProviderConflict = false,
+                WarnOnChatHistoryProviderConflict = false,
+                ThrowOnChatHistoryProviderConflict = false,
+                RequirePerServiceCallChatHistoryPersistence = false,
+                EnableMessageInjection = false,
+                DisableApprovalNotRequiredFunctionBypassing = false,
+                DisableApprovalResponseBinding = false
         };
     }
 
@@ -443,7 +443,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         IChatClient eventClient = new EventPublishingChatClient(chatClient, _events, profile.AgentName, _loggerFactory.CreateLogger<EventPublishingChatClient>());
 
         // Layer 2: Logging wrapper (traces request/response)
-        IChatClient loggingClient = new Middleware.LoggingChatClient(eventClient, _loggerFactory.CreateLogger<Middleware.LoggingChatClient>());
+        IChatClient loggingClient = new LoggingChatClient(eventClient, _loggerFactory.CreateLogger("InnerClientLogger"));
 
         return loggingClient;
     }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WhiteListExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -24,7 +24,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     not on the whitelist
 ///     It must flow through normal pathways, If it is on the list It will be logged and the flow terminated.
 /// </summary>
-public sealed partial class WhiteListExecutor : Executor
+public sealed partial class WhiteListExecutor : Executor<ChatMessage, SuppressionDecision>
 {
     private readonly ISystemReporter _reporter;
 
@@ -35,7 +35,7 @@ public sealed partial class WhiteListExecutor : Executor
 
 
 
-    public WhiteListExecutor(ISystemReporter reporter) : base("Whitelist")
+    public WhiteListExecutor(ISystemReporter reporter) : base("WhitelistExecutor")
     {
         _reporter = reporter;
     }
@@ -57,7 +57,7 @@ public sealed partial class WhiteListExecutor : Executor
     /// <param name="ct"></param>
     /// <returns></returns>
     [MessageHandler]
-    public async ValueTask<SuppressionDecision> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct = default)
+    public override async ValueTask<SuppressionDecision> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct = default)
     {
         _reporter.ReportInfo("Starting whitelist executor...");
 

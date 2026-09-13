@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CustomGroup.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -85,6 +85,19 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
         Console.WriteLine(response.Text);
 
         return new WorkflowExecutionResult([new ChatMessage(ChatRole.Assistant, response.Text)], eventLog: []);
+    }
+
+
+
+
+
+
+
+
+    /// <inheritdoc />
+    public Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
     }
 
 

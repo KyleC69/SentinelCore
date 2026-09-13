@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         ModelConfigViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -85,15 +85,17 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 
 
     /// <summary>
-    ///     Gets the supported model providers for the provider combo boxes.
-    /// </summary>
-    public IReadOnlyList<ModelProfile.ModelProvider> Providers { get; } = Enum.GetValues<ModelProfile.ModelProvider>().ToList();
-
-    /// <summary>
     ///     Gets the unique agent names from <see cref="ISentinelAgentCatalog" /> that can be selected
     ///     as an alias for any agent model card.
     /// </summary>
     public IReadOnlyList<string> AvailableAliases { get; private set; } = Array.Empty<string>();
+
+
+
+    /// <summary>
+    ///     Gets the supported model providers for the provider combo boxes.
+    /// </summary>
+    public IReadOnlyList<ModelProfile.ModelProvider> Providers { get; } = Enum.GetValues<ModelProfile.ModelProvider>().ToList();
 
 
 

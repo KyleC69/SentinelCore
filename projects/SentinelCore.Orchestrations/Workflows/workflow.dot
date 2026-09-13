@@ -1,0 +1,21 @@
+digraph TheCoreFlow {
+  rankdir=TB;
+
+  PatternCheck -> SafetyAgent;
+  SafetyAgent -> Classifier;
+
+  Classifier -> NewCase   [label="Investigate"];
+  Classifier -> Critical  [label="RedAlert"];
+  Classifier -> MoreInfo  [label="MoreInfo"];
+  Classifier -> HumanOp   [label="Escalate"];
+  Classifier -> DirectAns [label="DirectAnswer"];
+  Classifier -> NewCase   [label="Default"];
+
+  Critical -> HumanOp;
+  MoreInfo -> HumanOp;
+
+  NewCase -> Core;
+  Core -> Evidence;
+  Evidence -> Aggregate;
+  Aggregate -> Core;
+}

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         TestOptions.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -53,13 +53,13 @@ public static class TestOptions
     /// </summary>
     public static IOptions<SentinelCoreSettings> Create(SentinelCoreSettings? settings = null)
     {
-        settings ??= new SentinelCoreSettings { DefaultModel = ModelProfile.Glm5(), ManagerModel = ModelProfile.Gpt120(), DefaultUtilityModel = ModelProfile.Gpt20() };
+        settings ??= new SentinelCoreSettings { DefaultModel = new ModelProfile("http://default", "default-model", 0.1f) };
 
         // Seed per-agent entries for the catalog agents so builds resolve without
         // relying on role tiers — mirroring a fully configured Model Configuration page.
         foreach (string agent in CatalogAgents)
         {
-            settings.AgentModels[agent] = agent is "Manager" ? ModelProfile.Gpt120() : ModelProfile.Glm5();
+            settings.AgentModels[agent] = new ModelProfile("http://test", $"test-model-{agent.ToLowerInvariant()}", 0.1f);
         }
 
         return Options.Create(settings);

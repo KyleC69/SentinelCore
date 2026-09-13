@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyEngineAgentBuilderExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -48,7 +48,7 @@ public static class SafetyEngineAgentBuilderExtensions
 
         SafetyEngineAgent engine = new(rules, logger, options);
 
-        return builder.Use((messages, session, options2, innerAgent, cancellationToken) => engine.InterceptRunAsync(messages, session, options2, innerAgent, cancellationToken), (messages, session, options2, innerAgent, cancellationToken) => engine.InterceptRunStreamingAsync(messages, session, options2, innerAgent, cancellationToken));
+        return builder.Use((messages, session, options2, innerAgent, cancellationToken) => engine.InterceptRunAsync(messages, options2, innerAgent, cancellationToken), (messages, session, options2, innerAgent, cancellationToken) => engine.InterceptRunStreamingAsync(messages, session, options2, innerAgent, cancellationToken));
     }
 
 

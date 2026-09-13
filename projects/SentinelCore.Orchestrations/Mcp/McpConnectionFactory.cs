@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpConnectionFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -65,9 +65,9 @@ public sealed class McpConnectionFactory : IMcpConnectionFactory
 
         IClientTransport transport = definition.TransportType switch
         {
-            McpServerTransportType.Stdio => CreateStdioTransport(definition),
-            McpServerTransportType.Http => CreateHttpTransport(definition),
-            _ => throw new InvalidOperationException($"Unsupported MCP transport type: {definition.TransportType}.")
+                McpServerTransportType.Stdio => CreateStdioTransport(definition),
+                McpServerTransportType.Http => CreateHttpTransport(definition),
+                _ => throw new InvalidOperationException($"Unsupported MCP transport type: {definition.TransportType}.")
         };
 
         McpClientOptions clientOptions = new() { ClientInfo = new() { Name = "SentinelCore", Version = "1.0.0" } };
@@ -155,11 +155,11 @@ public sealed class McpConnectionFactory : IMcpConnectionFactory
 
         StdioClientTransportOptions options = new()
         {
-            Command = definition.CommandOrEndpoint,
-            Arguments = definition.Arguments?.ToList(),
-            WorkingDirectory = definition.WorkingDirectory,
-            EnvironmentVariables = environment.ToDictionary(static e => e.Key, static e => (string?)e.Value),
-            Name = definition.DisplayName ?? definition.Id
+                Command = definition.CommandOrEndpoint,
+                Arguments = definition.Arguments?.ToList(),
+                WorkingDirectory = definition.WorkingDirectory,
+                EnvironmentVariables = environment.ToDictionary(static e => e.Key, static e => (string?)e.Value),
+                Name = definition.DisplayName ?? definition.Id
         };
 
         return new StdioClientTransport(options, _loggerFactory);

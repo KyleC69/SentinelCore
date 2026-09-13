@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         NewCaseExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -23,7 +23,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 /// <summary>
 ///     NON-Agent
-///     An executor starts new case and publishes the CaseId to the context for other executors and also to UI/loggers
+///     This executor starts new case and publishes the CaseId to the context for other executors and also to UI/loggers
 ///     As a case moves through the pipeline the non-agent executors build onto the case currently being investigated
 ///     Each step is focused, clean, and deliberate. clear separation enforced
 /// </summary>
@@ -57,7 +57,7 @@ public sealed class NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter rep
             await context.QueueStateUpdateAsync(WorkFlowStateKeys.CASE_ID, caseId, SharedState, token).ConfigureAwait(false);
             await context.QueueStateUpdateAsync(WorkFlowStateKeys.SIGNAL_HYPOTHESIS, message, SharedState, token).ConfigureAwait(false);
 
-            await context.YieldOutputAsync(message).ConfigureAwait(false); //Bubble caseid to output
+            await context.YieldOutputAsync(message, token).ConfigureAwait(false); //Bubble caseid to output
 
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyEngineAgent.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -183,20 +183,15 @@ public sealed class SafetyEngineAgent
     /// <param name="innerAgent">The inner agent to forward to if allowed.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The agent response, either a blocked response or the inner agent's response.</returns>
-    public async Task<AgentResponse> InterceptRunAsync(IEnumerable<ChatMessage> messages,
-            AgentSession? session, //throwing null all of a sudden. cause unknown
-            AgentRunOptions? options,
-            AIAgent innerAgent,
-            CancellationToken cancellationToken)
+    public async Task<AgentResponse> InterceptRunAsync(IEnumerable<ChatMessage> messages, AgentRunOptions? options, AIAgent innerAgent, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(options);
 
         IList<ChatMessage> messageList = messages as IList<ChatMessage> ?? messages.ToList();
         SafetyEvaluationContext context = new((IReadOnlyList<ChatMessage>)messageList);
 
         SafetyEvaluationResult evaluationResult = await EvaluateRulesAsync(context, cancellationToken);
-
+        AgentSession session = null!;
         // Attach the evaluation result to options AdditionalProperties so callers can inspect it.
         options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
         options.AdditionalProperties[EvaluationResultKey] = evaluationResult;

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentPresetProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -90,7 +90,7 @@ public sealed class AgentPresetProvider : IAgentPresetProvider
                 new ManagerPreset(),
                 new Worker1Preset(),
                 new Worker2Preset(),
-                new Worker3Preset(),
+                new Worker3Preset()
         ];
 
         _presets = new Dictionary<string, AgentPresetBase>(StringComparer.OrdinalIgnoreCase);

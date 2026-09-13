@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AggregationExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -26,7 +26,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 public class AggregationExecutor(ISystemReporter reporter) : Executor<ChatMessage, ChatMessage>("Aggregator")
 {
 
-    public override async ValueTask<ChatMessage> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken token)
+    public override async ValueTask<ChatMessage> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellation)
     {
         StringBuilder responseBuilder = new();
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         DirectAnswerExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091200
+// Build Num:  091300
 
 
 
@@ -20,6 +20,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 /// <summary>
 ///     Executor that runs TheCore for direct answers (CanAnswerDirectly, PatternMatch,
 ///     IsNoise, MoreInformationRequired routes).
+///     May or may not be used - hold for decision
 /// </summary>
 public sealed class DirectAnswerExecutor(ICaseGenerator caseGenerator) : Executor<string, string>("DirectAnswer")
 {
