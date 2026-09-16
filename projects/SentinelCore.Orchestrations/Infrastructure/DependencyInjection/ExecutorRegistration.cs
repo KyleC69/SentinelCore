@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorRegistration.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -34,7 +34,6 @@ public static class ExecutorRegistrations
         services.AddTransient<ClarificationExecutor>();
         services.AddTransient<MoreInformationExecutor>();
         services.AddTransient<EscalatedExecutor>();
-        services.AddTransient<InvestigationExecutor>();
         services.AddTransient<PatternCheckExecutor>();
         services.AddTransient<SafetyExecutor>();
         services.AddTransient<VerifyEvidenceExecutor>();

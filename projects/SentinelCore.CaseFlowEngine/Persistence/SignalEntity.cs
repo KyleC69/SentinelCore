@@ -24,7 +24,7 @@ public partial class SignalEntity
     [Required]
     public string Source { get; set; }
 
-    public DateTimeOffset Timestamp { get; set; }
+    public DateTime FirstSeen { get; set; }
 
     public string Notes { get; set; }
 }

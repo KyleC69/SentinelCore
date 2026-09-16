@@ -15,7 +15,7 @@
 		<Literal>
 		  <ID>ClassName</ID>
 		  <ToolTip>Name of the executor class (without the "Executor" suffix if you prefer to include it manually)</ToolTip>
-		  <Default>MoreInformationExecutor</Default>
+		  <Default>SentinelExecutor</Default>
 		</Literal>
 		<Literal>
 		  <ID>StepName</ID>
@@ -37,32 +37,13 @@
 		  <ToolTip>The parameter name for the incoming message in HandleAsync</ToolTip>
 		  <Default>message</Default>
 		</Literal>
-		<Literal>
-		  <ID>FileName</ID>
-		  <ToolTip>The file name (used in the header comment)</ToolTip>
-		  <Default>MoreInformationExecutor.cs</Default>
-		</Literal>
-		<Literal>
-		  <ID>BuildNum</ID>
-		  <ToolTip>Build number for the header comment</ToolTip>
-		  <Default>072720</Default>
-		</Literal>
+
 	  </Declarations>
-	  <Code Language="csharp"><![CDATA[// Solution: SentinelCore
-// Project:   SentinelCore.Orchestrations
-// File:         $FileName$
-// Author: Kyle L. Crowder
-// Build Num:  $BuildNum$
-
-
+	  <Code Language="csharp"><![CDATA[
 
 namespace SentinelCore.Workflows.Executors;
 
-
-
-
-
-public partial class $ClassName$() : Executor<$InputType$, $OutputType$>("$StepName$")
+public partial class $ClassName$(ISystemReporter reporter) : Executor<$InputType$, $OutputType$>("$StepName$")
 {
 
 

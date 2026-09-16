@@ -17,8 +17,11 @@ Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combine
     Some unexpected enhancements were implemented that change the application in a huge way.
     Sentinel Core now has MCP support. Knowledge and tools can be added live giving this forensic platform a completely different purpose. Sentinel Core ships with the Windows troubleshooting toolkit (MCP Server) other toolkits may be purchased for various  other domains and purposes such as enterprise toolkit which has tools for SQL Server,
 
-    The deluxe edition also has selectable orchestration patterns, 12 different orchestrations are available to attack a task.
+    Deluxe Edition:
+    This will include selectable preset orchestration patterns, that opens the platform to a whole new level of investigation or collaboration.
     There is magnetic group, cooperative group, adversarial group, group hand-off to name a few. Paired up with the personas each agent in the group can have a slightly different perspective, giving a brainstorming session a powerful twist.
+
+    Plans are underway to introduce do-it-yourself orchestration patterns. This will allow you to create your own orchestration pattern and have it run in the system. This is a huge feature that will allow you to assemble agents in a workflow of your own design. This will be a paid feature and will be available in the deluxe edition only. 
 
 ---
 
@@ -26,7 +29,7 @@ Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combine
 
 |           Feature            |                                                                               Description                                                                                | Status |
 | :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: |
-|      RAG Knowledge Base      |                                                     Vectorized indexing of remote or on-site resources for injected or on-demand retrieval.                                                       |  75%   |
+|      RAG Knowledge Base      |                                                     Vector index of remote or on-site resources for live Q&A or context injected or on-demand search &retrieval.                                                       |  75%   |
 |  Multi-agent Orchestration   |                                          Several orchestrated agents perform investigation tasks as collective and adversaries. (Deluxe)                                           |   ✅   |
 |        Pattern Memory        |                               Global searchable case history & resolution knowledgebase enables instant resolution when a similar signal has been seen before                                |  50%   |
 | Signal-driven Investigations |                                 Submit a natural-language prompt, event log error, or automated anomaly alert the let the AI investigate                                 |   ✅   |
@@ -44,7 +47,7 @@ Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combine
 - **Multi-agent orchestration** — TheCore agent is at the heart and handles main reasoning and long term context memory. Several supportive agents are used for short term workload and pure decision gating. Nested workflows and executors keeps logic modular and easy to debug. Isolated core keeps main context clean and reduces model latency and increases over all reasoning accuracy. Design breaks up workload to allow for smaller local models to perform targeted tasks and not prone to stall.
 - **Air-gapped capable** — Ollama local model endpoint allows for fully air-gapped operation. No internet connection is required to run the system. All models and tools can be run locally.
 - **Versatile Design** - Pluggable RAG knowledge base allows system to shift focus to any domain, medical, fabrication, manufacturing etc. RAG features vector indexing summaries of remote resources and pulling remote data only when needed and relevant to task.
-- **RAG Knowledge Base** — Vectorized indexing of remote resources for on-demand retrieval. Only retrieves when needed. Local db only contains minimal metadata and the searchable vectors, could be a summary or snippet from entire doc/page. You only store locally your vectors and where the page/doc lives in the wild if you need it. No need to ingest entire websites or document stores. Can also use MCP servers as knowledge source for RAG system.
+- **RAG Knowledge Base** — Vector index of remote resources for on-demand retrieval. Only retrieves when needed. Local db only contains minimal metadata and the searchable vectors, could be a summary or snippet from entire doc/page. You only store locally your vectors and where the page/doc lives in the wild if you need it. No need to ingest entire websites or document stores. Can also use MCP servers as knowledge source for RAG system.
 - **Pattern memory** — Vectorized case history & resolutions enables instant resolution when a similar signal has been seen before.
 - **Signal-driven investigations** — Submit a natural-language prompt, event log error, or automated anomaly alert the let the AI investigate
 - **Deterministic case lifecycle** — 11-state state machine with safety gating ensures no case transitions without validation

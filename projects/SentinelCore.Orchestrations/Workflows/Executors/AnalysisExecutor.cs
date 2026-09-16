@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AnalysisExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -21,7 +21,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 /// <summary>
 ///     Executor that runs the Analysis &amp; Grading group-concurrent sub-workflow.
 /// </summary>
-public partial class AnalysisExecutor : Executor
+public partial class AnalysisExecutor(ISystemReporter reporter) : Executor<ChatMessage, ChatMessage>("AnalysisExecutor")
 {
     private readonly ISentinelCoreEvents _events;
     private readonly ISystemReporter _reporter;
@@ -32,22 +32,7 @@ public partial class AnalysisExecutor : Executor
 
 
 
-
-    public AnalysisExecutor(ISentinelCoreEvents events, ISystemReporter reporter) : base("AnalysisExecutor")
-    {
-        _events = events;
-        _reporter = reporter;
-    }
-
-
-
-
-
-
-
-
-    [MessageHandler]
-    public async ValueTask<string> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken)
+    public override async ValueTask<ChatMessage> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
     {
 
 
@@ -78,8 +63,11 @@ public partial class AnalysisExecutor : Executor
                 }
             }
         */
-        _events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(nameof(AnalysisExecutor), "AnalysisExecutor: Analysis & Grading completed.", ActivityType.System));
 
-        return ""; // resultBuilder.ToString();
+        return message; // resultBuilder.ToString();
     }
+
+
+
+
 }

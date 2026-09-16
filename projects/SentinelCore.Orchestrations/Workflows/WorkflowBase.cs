@@ -2,12 +2,13 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowBase.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
 using System.Text;
 
+using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Abstractions;
 
 
@@ -248,20 +249,20 @@ public class WorkflowBase
     {
         return evt switch
         {
-                WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
-                AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
-                AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
-                SubworkflowErrorEvent subworkflowError => FormateSubWorkflowErrorEvent(subworkflowError),
-                WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
-                WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
-                WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
-                ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
-                ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
-                ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
-                SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
-                SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
-                RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
-                _ => $"Unknown event type: {evt.GetType().Name}"
+            WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
+            AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
+            AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
+            SubworkflowErrorEvent subworkflowError => FormateSubWorkflowErrorEvent(subworkflowError),
+            WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
+            WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
+            WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
+            ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
+            ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
+            ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
+            SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
+            SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
+            RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
+            _ => $"Unknown event type: {evt.GetType().Name}"
         };
     }
 
@@ -275,7 +276,7 @@ public class WorkflowBase
     public string ProcessEvent(WorkflowEvent evt)
     {
         // Validate the event
-        ArgumentNullException.ThrowIfNull(evt);
+        Throw.IfNull(evt);
 
         if (evt is SubworkflowErrorEvent subError)
         {

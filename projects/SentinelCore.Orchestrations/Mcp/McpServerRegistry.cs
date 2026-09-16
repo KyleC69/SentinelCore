@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -85,7 +85,11 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+    /// <summary>
+    /// </summary>
+    /// <param name="agentName"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(agentName);

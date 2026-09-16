@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -288,7 +288,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
                 MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
                 TopP = profile.Model.TopP,
                 TopK = profile.Model.TopK,
-                Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Medium, Output = ReasoningOutput.Full },
+                // Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Medium, Output = ReasoningOutput.Full },
                 ModelId = profile.Model.ModelId,
                 ResponseFormat = profile.ResponseFormat
         };
@@ -444,6 +444,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         // Layer 2: Logging wrapper (traces request/response)
         IChatClient loggingClient = new LoggingChatClient(eventClient, _loggerFactory.CreateLogger("InnerClientLogger"));
+
+
 
         return loggingClient;
     }

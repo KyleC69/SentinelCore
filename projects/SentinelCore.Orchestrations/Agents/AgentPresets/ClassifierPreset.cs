@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ClassifierPreset.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -36,6 +36,9 @@ public sealed record ClassifierPreset : AgentPresetBase
                You are a classifier agent that analyzes incoming signals and routes them to appropriate handlers.
                Evaluate the input against known categories and provide a classification with confidence.
                When classification is uncertain, indicate ambiguity and suggest alternative categories.
+               Return ONLY valid JSON that matches the SignalHypothesis shape.
+               Do not include markdown fences, prose, explanations, or any text before/after the JSON object.
+               The first character of your response must be '{' and the last character must be '}'.
                """;
     }
 

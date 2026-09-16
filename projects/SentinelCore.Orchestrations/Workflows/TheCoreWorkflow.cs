@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091419
 
 
+
+using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
 
@@ -16,8 +18,6 @@ using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Workflows.Executors;
-
-using System.Text.Json;
 
 
 
@@ -207,31 +207,23 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     A task representing the asynchronous operation, which upon completion provides a
     ///     <see cref="WorkflowExecutionResult" />.
     /// </returns>
-    /// <remarks>
-    ///     This method builds the workflow, executes it in a streaming manner, and processes events emitted during execution.
-    /// </remarks>
     public async Task<WorkflowExecutionResult?> ExecuteAsync(ChatMessage message, CancellationToken cancellationToken)
     {
         Throw.IfNull(message);
-
         this.ResetEventAccumulators();
-
-        Workflow workflow = await BuildWorkflow().ConfigureAwait(false);
-
-        Run result = await InProcessExecution.RunAsync(workflow, message, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        List<ChatMessage>? outputMessages = null;
-        foreach (WorkflowEvent evt in result.NewEvents)
+        try
         {
-            this.ProcessEvent(evt);
-
-            if (evt is WorkflowOutputEvent outputEvt && outputEvt.Is<List<ChatMessage>>())
-            {
-                outputMessages = outputEvt.As<List<ChatMessage>>();
-            }
+            Workflow workflow = await BuildWorkflowAsync().ConfigureAwait(false);
+            ValidateWorkflow(workflow);
+            StreamingRun result = await ExecuteWorkflowAsync(workflow, message, cancellationToken).ConfigureAwait(false);
+            ValidateStreamingRun(result);
+            return await ProcessWorkflowEventsAsync(result, cancellationToken).ConfigureAwait(false);
         }
-
-        return outputMessages is not null ? new WorkflowExecutionResult(outputMessages, eventLog: []) : null;
+        catch (Exception ex)
+        {
+            HandleExecutionException(ex);
+            throw new SentinelCoreExecutionException("Failed to execute the workflow.", ex);
+        }
     }
 
 
@@ -244,6 +236,8 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// <summary>
     ///     Initializes agents and other resources required for workflow execution.
     ///     Should be called once before any calls to <see cref="ExecuteAsync" />.
+    ///     //TODO: Consider making this method idempotent or handling re-initialization gracefully. Run on startup of the
+    ///     application or orchestration service.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown if initialization has already completed.</exception>
@@ -328,6 +322,32 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
 
+    private async Task<Workflow> BuildWorkflowAsync()
+    {
+        Workflow? workflow = await BuildWorkflow().ConfigureAwait(false);
+        return workflow ?? throw new InvalidOperationException("Workflow could not be built.");
+    }
+
+
+
+
+
+
+
+
+    private async Task<StreamingRun> ExecuteWorkflowAsync(Workflow workflow, ChatMessage message, CancellationToken cancellationToken)
+    {
+        StreamingRun? result = await InProcessExecution.RunStreamingAsync(workflow, message, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return result ?? throw new InvalidOperationException("StreamingRun result is null.");
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Creates a condition function that evaluates whether the provided detection result
     ///     matches the expected next step decision.
@@ -337,6 +357,88 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     private static Func<object?, bool> GetCondition(NextStep expectedDecision)
     {
         return detectionResult => detectionResult is SignalHypothesis result && result.NextStep == expectedDecision;
+    }
+
+
+
+
+
+
+
+
+    private void HandleExecutionException(Exception ex)
+    {
+        _reporter.ReportError(ex, "An exception occurred during workflow execution.");
+    }
+
+
+
+
+
+
+
+
+    private async Task<WorkflowExecutionResult?> ProcessWorkflowEventsAsync(StreamingRun result, CancellationToken cancellationToken)
+    {
+        List<ChatMessage>? outputMessages = new();
+        try
+        {
+            await foreach (WorkflowEvent evt in result.WatchStreamAsync(cancellationToken).ConfigureAwait(false))
+            {
+                this.ProcessEvent(evt);
+                if (evt is WorkflowOutputEvent outputEvt && outputEvt.Is<List<ChatMessage>>())
+                {
+                    outputMessages ??= new List<ChatMessage>();
+                }
+            }
+        }
+        catch (Exception streamEx)
+        {
+            _reporter.ReportError(streamEx, "An error occurred while processing the event stream.");
+            throw;
+        }
+
+        return outputMessages.Count > 0 ? new WorkflowExecutionResult(outputMessages, new WorkflowOutputEvent(outputMessages, "TheCoreExecution")) : null;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Validates the specified StreamingRun.
+    /// </summary>
+    /// <param name="result">The StreamingRun to validate.</param>
+    /// <exception cref="InvalidOperationException">Thrown if result is null.</exception>
+    private static void ValidateStreamingRun(StreamingRun result)
+    {
+        if (result == null)
+        {
+            throw new InvalidOperationException("StreamingRun result is null.");
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Validates that the provided Workflow instance is not null.
+    /// </summary>
+    /// <param name="workflow">The Workflow to validate.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the workflow is null and cannot be built.</exception>
+    private static void ValidateWorkflow(Workflow workflow)
+    {
+        if (workflow == null)
+        {
+            throw new InvalidOperationException("Workflow could not be built.");
+        }
     }
 
 

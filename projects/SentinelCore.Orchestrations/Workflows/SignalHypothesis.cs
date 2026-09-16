@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SignalHypothesis.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -26,8 +26,8 @@ public sealed class SignalHypothesis
     /// <summary>
     ///     The affected subsystem or category identified by the classifier.
     /// </summary>
-    [JsonPropertyName("category")]
-    public string? Category { get; set; }
+    [JsonPropertyName("subSystem")]
+    public string? SubSystem { get; set; }
 
     /// <summary>
     ///     The classifier's hypothesis about the nature of the signal.
@@ -38,8 +38,8 @@ public sealed class SignalHypothesis
     /// <summary>
     ///     Confidence score between 0.0 and 1.0 indicating the classifier's certainty.
     /// </summary>
-    [JsonPropertyName("initialConfidenceScore")]
-    public double InitialConfidenceScore { get; set; }
+    [JsonPropertyName("confidenceScore")]
+    public double ConfidenceScore { get; set; }
 
     /// <summary>
     ///     The recommended next step based on the signal classification.
@@ -51,8 +51,8 @@ public sealed class SignalHypothesis
     /// <summary>
     ///     Original prompt/signal that was classified.
     /// </summary>
-    [JsonPropertyName("ogprompt")]
-    public string OGPrompt { get; set; } = string.Empty;
+    [JsonPropertyName("origPrompt")]
+    public string OrigPrompt { get; set; } = string.Empty;
 
     /// <summary>
     ///     Models justification for decisions made by the classifier.

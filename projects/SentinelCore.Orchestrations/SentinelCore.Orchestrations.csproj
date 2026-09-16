@@ -42,8 +42,8 @@
 		<PackageReference Include="System.DirectoryServices.AccountManagement" />
 		<PackageReference Include="System.Management" />
 		<PackageReference Include="System.Management.Automation" />
-		<PackageReference Include="System.Security.Cryptography.Xml" />
 		<PackageReference Include="System.ServiceProcess.ServiceController" />
+		<PackageReference Include="System.Security.Cryptography.Xml" />
 	</ItemGroup>
 	<Target Name="CopyBuildOutput" AfterTargets="Build">
 		<Message Text="Copying build output..." Importance="High" />

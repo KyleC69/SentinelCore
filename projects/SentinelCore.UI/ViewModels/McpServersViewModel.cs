@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         McpServersViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -725,7 +725,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
         try
         {
-            await _registry.RemoveAsync(SelectedServer.Id, token).ConfigureAwait(false);
+            await _registry.RemoveAsync(SelectedServer.Id, token);
             _logger.LogInformation("Removed MCP server {ServerId} via UI", SelectedServer.Id);
             SelectedServer = null;
             ResultMessage = "Server removed.";
@@ -818,7 +818,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
         try
         {
-            await _registry.StartAsync(SelectedServer.Id, token).ConfigureAwait(false);
+            await _registry.StartAsync(SelectedServer.Id, token);
             _logger.LogInformation("Started MCP server {ServerId} via UI", SelectedServer.Id);
             ResultMessage = $"Server '{SelectedServer.DisplayName}' started.";
             ShowResult = true;

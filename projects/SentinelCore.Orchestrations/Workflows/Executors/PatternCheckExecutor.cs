@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PatternCheckExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -21,9 +21,8 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     Performs a search in pattern memory for similar signals that may have been solved before
 ///     Will prepend relevant information that may help initial hypothesis
 /// </summary>
-public sealed class PatternCheckExecutor : Executor<ChatMessage, ChatMessage>
+public sealed class PatternCheckExecutor(ISystemReporter reporter) : Executor<ChatMessage, ChatMessage>("PatternCheckExecutor")
 {
-    private readonly ISystemReporter _reporter;
 
 
 
@@ -32,10 +31,6 @@ public sealed class PatternCheckExecutor : Executor<ChatMessage, ChatMessage>
 
 
 
-    public PatternCheckExecutor(ISystemReporter reporter) : base("PatternCheckExecutor")
-    {
-        _reporter = reporter;
-    }
 
 
 
@@ -46,10 +41,10 @@ public sealed class PatternCheckExecutor : Executor<ChatMessage, ChatMessage>
 
     public override async ValueTask<ChatMessage> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken token)
     {
-        _reporter.ReportInfo("Starting pattern check executor");
+        reporter.ReportInfo("Starting pattern check executor");
 
 
-        _reporter.ReportInfo("Saving initial message to context");
+        reporter.ReportInfo("Saving initial message to context");
         await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message.Text, "SharedState", token).ConfigureAwait(false);
 
         // Example implementation: Log the received message and return it

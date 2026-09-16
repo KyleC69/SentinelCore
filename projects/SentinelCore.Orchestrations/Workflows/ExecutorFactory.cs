@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -74,20 +74,19 @@ internal sealed class ExecutorFactory
     {
         return new ExecutorCollection
         {
-                SafetyExecutor = Create<SafetyExecutor>(),
-                EscalatedExecutor = Create<EscalatedExecutor>(),
-                WhiteListExecutor = Create<WhiteListExecutor>(),
-                PatternCheckExecutor = Create<PatternCheckExecutor>(),
-                HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
-                InvestigationExecutor = Create<InvestigationExecutor>(),
-                VerifyEvidenceExecutor = Create<VerifyEvidenceExecutor>(),
-                DirectAnswerExecutor = Create<DirectAnswerExecutor>(),
-                NewCaseExecutor = Create<NewCaseExecutor>(),
-                AggregationExecutor = Create<AggregationExecutor>(),
-                MoreInformationExecutor = Create<MoreInformationExecutor>(),
-                CriticalAlert = Create<CriticalAlert>(),
-                LoggingExecutor = Create<LoggingExecutor>(),
-                CaseGenExecutor = Create<CaseGenExec>()
+            SafetyExecutor = Create<SafetyExecutor>(),
+            EscalatedExecutor = Create<EscalatedExecutor>(),
+            WhiteListExecutor = Create<WhiteListExecutor>(),
+            PatternCheckExecutor = Create<PatternCheckExecutor>(),
+            HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
+            VerifyEvidenceExecutor = Create<VerifyEvidenceExecutor>(),
+            DirectAnswerExecutor = Create<DirectAnswerExecutor>(),
+            NewCaseExecutor = Create<NewCaseExecutor>(),
+            AggregationExecutor = Create<AggregationExecutor>(),
+            MoreInformationExecutor = Create<MoreInformationExecutor>(),
+            CriticalAlert = Create<CriticalAlert>(),
+            LoggingExecutor = Create<LoggingExecutor>(),
+            CaseGenExecutor = Create<CaseGenExec>()
         };
     }
 }
@@ -107,7 +106,6 @@ internal sealed class ExecutorCollection
     public required DirectAnswerExecutor DirectAnswerExecutor { get; init; }
     public required EscalatedExecutor EscalatedExecutor { get; init; }
     public required HumanOperatorExecutor HumanOperatorExecutor { get; init; }
-    public required InvestigationExecutor InvestigationExecutor { get; init; }
     public required LoggingExecutor LoggingExecutor { get; init; }
     public required MoreInformationExecutor MoreInformationExecutor { get; init; }
     public required NewCaseExecutor NewCaseExecutor { get; init; }

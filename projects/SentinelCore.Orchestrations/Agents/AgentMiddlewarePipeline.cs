@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentMiddlewarePipeline.cs
 // Author: Kyle L. Crowder
-// Build Num:  091300
+// Build Num:  091418
 
 
 
@@ -31,11 +31,12 @@ public sealed class AgentMiddlewarePipeline
     /// </summary>
     public static readonly AgentMiddlewarePipeline Core = new()
     {
-            UseLogging = true,
-            UseEvents = true,
-            UseSafety = true,
-            UsePatternMemory = true,
-            UseNullSafety = true
+        UseLogging = true,
+        UseEvents = true,
+        UseSafety = true,
+        UsePatternMemory = true,
+        UseNullSafety = true,
+        UseDiagnostics = true
     };
 
     /// <summary>
@@ -43,11 +44,12 @@ public sealed class AgentMiddlewarePipeline
     /// </summary>
     public static readonly AgentMiddlewarePipeline Default = new()
     {
-            UseLogging = true,
-            UseEvents = true,
-            UseSafety = true,
-            UsePatternMemory = false,
-            UseNullSafety = false
+        UseLogging = true,
+        UseEvents = true,
+        UseSafety = true,
+        UsePatternMemory = false,
+        UseNullSafety = false,
+        UseDiagnostics = true
     };
 
     /// <summary>
@@ -55,11 +57,12 @@ public sealed class AgentMiddlewarePipeline
     /// </summary>
     public static readonly AgentMiddlewarePipeline Domain = new()
     {
-            UseLogging = true,
-            UseEvents = true,
-            UseSafety = true,
-            UsePatternMemory = false,
-            UseNullSafety = false
+        UseLogging = true,
+        UseEvents = true,
+        UseSafety = true,
+        UsePatternMemory = false,
+        UseNullSafety = false,
+        UseDiagnostics = true
     };
 
     /// <summary>
@@ -67,11 +70,12 @@ public sealed class AgentMiddlewarePipeline
     /// </summary>
     public static readonly AgentMiddlewarePipeline Manager = new()
     {
-            UseLogging = true,
-            UseEvents = true,
-            UseSafety = false,
-            UsePatternMemory = false,
-            UseNullSafety = false
+        UseLogging = true,
+        UseEvents = true,
+        UseSafety = false,
+        UsePatternMemory = false,
+        UseNullSafety = false,
+        UseDiagnostics = true
     };
 
     /// <summary>
@@ -79,11 +83,12 @@ public sealed class AgentMiddlewarePipeline
     /// </summary>
     public static readonly AgentMiddlewarePipeline Minimal = new()
     {
-            UseLogging = true,
-            UseEvents = false,
-            UseSafety = false,
-            UsePatternMemory = false,
-            UseNullSafety = false
+        UseLogging = true,
+        UseEvents = false,
+        UseSafety = false,
+        UsePatternMemory = false,
+        UseNullSafety = false,
+        UseDiagnostics = true
     };
 
     /// <summary>
@@ -112,4 +117,12 @@ public sealed class AgentMiddlewarePipeline
     ///     Enable model output safety/cleaning via <c>ModelNoiseSafety</c> wrapper.
     /// </summary>
     public bool UseSafety { get; init; }
+
+
+    /// <summary>
+    /// Enable collection of diagnostic traces for the agent pipeline.
+    /// </summary>
+    /// <remarks>When enabled, the component emits additional traces and internal state snapshots. Assigned at
+    /// object initialization and immutable thereafter.</remarks>
+    public bool UseDiagnostics { get; init; }
 }

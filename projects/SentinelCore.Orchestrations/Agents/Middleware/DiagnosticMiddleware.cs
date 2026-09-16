@@ -1,17 +1,11 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
-// File:         WorkflowMessage.cs
+// File:         DiagnosticMiddleware.cs
 // Author: Kyle L. Crowder
 // Build Num:  091418
 
 
 
-namespace SentinelCore.Orchestrations.Workflows;
-
-
-
-
-
-public class WorkflowMessage
+public class Class1
 {
 }

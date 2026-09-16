@@ -4,6 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
+using JetBrains.Annotations;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace SentinelCore.Cfe.Persistence;
@@ -40,4 +43,5 @@ public partial class CaseEntity
     public string Remediation { get; set; }
 
     public int? PatternMemoryId { get; set; }
+    [CanBeNull] public string Notes { get; set; }
 }
