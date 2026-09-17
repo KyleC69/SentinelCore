@@ -44,6 +44,7 @@ public static class ExecutorRegistrations
         services.AddTransient<CriticalAlert>();
         services.AddTransient<PersistEvidence>();
         services.AddTransient<LoggingExecutor>();
+        services.AddTransient<DirectAnswerExecutor>();
 
         return services;
     }

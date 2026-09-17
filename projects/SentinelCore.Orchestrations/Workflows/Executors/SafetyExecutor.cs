@@ -70,7 +70,7 @@ public sealed class SafetyExecutor : Executor<ChatMessage, ChatMessage>
 
 
 
-    /// <inheritdoc />
+ 
     public override async ValueTask<ChatMessage> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         _reporter.ReportInfo("Starting Safety filter");

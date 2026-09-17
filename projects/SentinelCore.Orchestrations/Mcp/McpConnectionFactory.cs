@@ -58,7 +58,7 @@ public sealed class McpConnectionFactory : IMcpConnectionFactory
 
 
 
-    /// <inheritdoc />
+ 
     public async Task<McpClient> ConnectAsync(McpServerDefinition definition, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definition);

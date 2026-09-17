@@ -137,7 +137,14 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Builds an agent profile from a preset when one exists; otherwise creates a default profile and applies any
+    /// overrides.
+    /// </summary>
+    /// <param name="agentName">The agent name used to resolve a preset or create the default profile.</param>
+    /// <param name="taskInstructions">The last layer of instructions of the 3 layer instruction set.</param>
+    /// <param name="personaOverride">Optional persona to apply to the generated profile.</param>
+    /// <returns>The generated agent profile.</returns>
     public AgentProfile BuildAgentSpec(string agentName, string? taskInstructions = null, AgentPersona? personaOverride = null)
     {
         // Try to get a preset for this agent name
@@ -149,10 +156,6 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
         // No preset found - build with minimal defaults
         AgentProfile profile = BuildDefaultAgentSpec(agentName);
-        if (taskInstructions != null)
-        {
-            profile.Instructions = taskInstructions;
-        }
 
         if (personaOverride != null)
         {
@@ -169,15 +172,15 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
 
-    /// <inheritdoc />
+
     public AgentProfile BuildFromPreset(AgentPresetBase preset, string? taskInstructions = null, AgentPersona? personaOverride = null)
     {
         Throw.IfNull(preset);
 
-        AgentProfile profile = new() { AgentName = preset.AgentName, AgentId = preset.AgentName, Instructions = preset.GetInstructions(taskInstructions) };
+        AgentProfile profile = new() { AgentName = preset.AgentName, AgentId = preset.AgentName };
 
         // Apply persona: explicit override wins, otherwise use preset default
-        profile.Persona = personaOverride ?? preset.GetDefaultPersona();
+        profile.Persona = personaOverride ?? preset.GetDefaultPersona();// Personas are disabled by default.
 
         // Model configuration comes from settings
         profile.Model = TryGetModel(preset.AgentName);
@@ -192,7 +195,7 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
 
-    /// <inheritdoc />
+
     public ModelProfile? TryGetModel(string agentName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
@@ -233,7 +236,7 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
     private AgentProfile BuildDefaultAgentSpec(string agentName)
     {
-        AgentProfile profile = new() { AgentName = agentName, AgentId = agentName, Instructions = string.Empty };
+        AgentProfile profile = new() { AgentName = agentName, AgentId = agentName };
 
         // No hardcoded fallback — the factory gate rejects unconfigured agents.
         profile.Model = _options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent) ? perAgent : null;

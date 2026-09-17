@@ -480,37 +480,37 @@ public sealed class McpServerRegistryTests
 
 
 
-        /// <inheritdoc />
+     
         public override Task<ClientCompletionDetails> Completion
         {
             get => Task.FromResult(new ClientCompletionDetails());
         }
 
-        /// <inheritdoc />
+     
         public override string? NegotiatedProtocolVersion
         {
             get => null;
         }
 
-        /// <inheritdoc />
+     
         public override ServerCapabilities ServerCapabilities
         {
             get => new();
         }
 
-        /// <inheritdoc />
+     
         public override Implementation ServerInfo
         {
             get => new() { Name = "fake-server", Version = "1.0" };
         }
 
-        /// <inheritdoc />
+     
         public override string? ServerInstructions
         {
             get => null;
         }
 
-        /// <inheritdoc />
+     
         public override string? SessionId
         {
             get => null;
@@ -523,7 +523,7 @@ public sealed class McpServerRegistryTests
 
 
 
-        /// <inheritdoc />
+     
         public override ValueTask DisposeAsync()
         {
             return ValueTask.CompletedTask;
@@ -536,7 +536,7 @@ public sealed class McpServerRegistryTests
 
 
 
-        /// <inheritdoc />
+     
         public override IAsyncDisposable RegisterNotificationHandler(string method, Func<JsonRpcNotification, CancellationToken, ValueTask> handler)
         {
             return new NullAsyncDisposable();
@@ -549,7 +549,7 @@ public sealed class McpServerRegistryTests
 
 
 
-        /// <inheritdoc />
+     
         public override ValueTask<IDictionary<string, InputResponse>> ResolveInputRequestsAsync(IDictionary<string, InputRequest> inputRequests, CancellationToken cancellationToken)
         {
             return ValueTask.FromResult<IDictionary<string, InputResponse>>(new Dictionary<string, InputResponse>());
@@ -562,7 +562,7 @@ public sealed class McpServerRegistryTests
 
 
 
-        /// <inheritdoc />
+     
         public override Task SendMessageAsync(JsonRpcMessage message, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
@@ -575,7 +575,7 @@ public sealed class McpServerRegistryTests
 
 
 
-        /// <inheritdoc />
+     
         public override Task<JsonRpcResponse> SendRequestAsync(JsonRpcRequest request, CancellationToken cancellationToken = default)
         {
             JsonRpcResponse response = new() { Id = request.Id, Result = BuildToolsListResult() };
@@ -616,7 +616,7 @@ public sealed class McpServerRegistryTests
     /// </summary>
     private sealed class NullAsyncDisposable : IAsyncDisposable
     {
-        /// <inheritdoc />
+     
         public ValueTask DisposeAsync()
         {
             return ValueTask.CompletedTask;

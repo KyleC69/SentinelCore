@@ -64,7 +64,7 @@ public sealed class RagSearchService : IRagSearchService
 
 
 
-    /// <inheritdoc />
+ 
     public Task<bool> HasIndexedContentAsync(CancellationToken cancellationToken = default)
     {
         lock (_indexLock)
@@ -80,7 +80,7 @@ public sealed class RagSearchService : IRagSearchService
 
 
 
-    /// <inheritdoc />
+ 
     public Task IndexDocumentAsync(string id, string title, string content, string? source = null, IReadOnlyDictionary<string, string>? metadata = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -154,7 +154,7 @@ public sealed class RagSearchService : IRagSearchService
 
 
 
-    /// <inheritdoc />
+ 
     public async Task<IReadOnlyList<RagSearchResult>> SearchAsync(string query, int maxResults = 5, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -192,7 +192,7 @@ public sealed class RagSearchService : IRagSearchService
 
 
 
-    /// <inheritdoc />
+ 
     public Task<IReadOnlyList<RagSearchResult>> SearchByEmbeddingAsync(float[] embedding, int maxResults = 5, CancellationToken cancellationToken = default)
     {
         if (!_options.VectorSearchEnabled)

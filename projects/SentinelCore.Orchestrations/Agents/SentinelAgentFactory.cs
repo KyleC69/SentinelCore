@@ -1,8 +1,8 @@
-// Solution: SentinelCore
+﻿// Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  091522
 
 
 
@@ -15,8 +15,10 @@ using SentinelCore.Contracts.Events;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
+using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Rag;
 using SentinelCore.Orchestrations.SafetyEngine;
+using SentinelCore.Orchestrations.Workflows;
 
 
 
@@ -203,6 +205,9 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
+    ///     This is the single source of agent creation. It takes a preset name and optional task instructions,
+    ///     resolves the preset, builds the agent profile, and constructs the agent.
+    ///     NOTE: This method is the only entry point for creating agents from presets. All other agent creation methods should funnel through this one. Do not create other forms of creation unless justified with ADR
     /// </summary>
     /// <param name="presetName"></param>
     /// <param name="taskInstructions"></param>
@@ -211,20 +216,15 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <exception cref="ArgumentException"></exception>
     public async Task<AIAgent> CreateAgentAsync(string presetName, string? taskInstructions = null, CancellationToken cancellationToken = default, ChatResponseFormat? responseFormat = null)
     {
+        // Validate input
         Throw.IfNullOrWhitespace(presetName);
-
-        // 1. Resolve the preset
-        AgentPresetBase? preset = _presetProvider.GetPreset(presetName);
-        if (preset is null)
-        {
-            throw new ArgumentException($"No preset found for name '{presetName}'. Available presets: {string.Join(", ", _presetProvider.ListPresets())}.", nameof(presetName));
-        }
-
-        // 2. Build the profile from preset
-        AgentProfile profile = _profileBuilder.BuildFromPreset(preset, taskInstructions);
-        profile.ResponseFormat = responseFormat;
-        profile.Instructions = taskInstructions ?? profile.Instructions;
-        // 3. Build and return the agent
+        // Prepare model instructions
+        ChatMessages modelInstructions = CreateModelInstructions(presetName, taskInstructions);
+        // Resolve the preset
+        AgentPresetBase preset = ResolvePreset(presetName);
+        // Build the agent profile
+        AgentProfile profile = BuildAgentProfile(preset, taskInstructions, responseFormat, modelInstructions);
+        // Build and return the agent
         return await BuildFromProfileAsync(profile, cancellationToken).ConfigureAwait(false);
     }
 
@@ -280,17 +280,20 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// </returns>
     private async Task<ChatClientAgentOptions> BuildAgentOptionsAsync(AgentProfile profile, string logicalAgentName, List<AIContextProvider> additionalContextProviders, CancellationToken cancellationToken)
     {
+        var roleInstructions = AgentInstructionConstants.GetAgentPresetInstructions(logicalAgentName);
         ChatOptions chatOptions = new()
         {
-                ConversationId = Guid.NewGuid().ToString("N"),
-                Instructions = profile.Instructions,
-                Temperature = profile.Model!.Temperature,
-                MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
-                TopP = profile.Model.TopP,
-                TopK = profile.Model.TopK,
-                // Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Medium, Output = ReasoningOutput.Full },
-                ModelId = profile.Model.ModelId,
-                ResponseFormat = profile.ResponseFormat
+
+            ConversationId = Guid.NewGuid().ToString("N"),
+            Instructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S + "\n\n" + roleInstructions,
+
+            Temperature = profile.Model!.Temperature,
+            MaxOutputTokens = profile.Model.MaxOutputTokens ?? 16000,
+            TopP = profile.Model.TopP,
+            TopK = profile.Model.TopK,
+            // Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Medium, Output = ReasoningOutput.Full },
+            ModelId = profile.Model.ModelId,
+            ResponseFormat = profile.ResponseFormat
         };
 
         List<AITool> mcpTools = await GetMcpToolsAsync(logicalAgentName, cancellationToken).ConfigureAwait(false);
@@ -317,20 +320,47 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         return new ChatClientAgentOptions
         {
-                Id = profile.AgentId,
-                Name = profile.AgentName,
-                Description = "An AI Agent",
-                ChatOptions = chatOptions,
-                AIContextProviders = allContextProviders.Count > 0 ? allContextProviders : null,
-                UseProvidedChatClientAsIs = false,
-                ClearOnChatHistoryProviderConflict = false,
-                WarnOnChatHistoryProviderConflict = false,
-                ThrowOnChatHistoryProviderConflict = false,
-                RequirePerServiceCallChatHistoryPersistence = false,
-                EnableMessageInjection = false,
-                DisableApprovalNotRequiredFunctionBypassing = false,
-                DisableApprovalResponseBinding = false
+            Id = profile.AgentId,
+            Name = profile.AgentName,
+            Description = "An AI Agent",
+            ChatOptions = chatOptions,
+            AIContextProviders = allContextProviders.Count > 0 ? allContextProviders : null,
+            UseProvidedChatClientAsIs = false,
+            ClearOnChatHistoryProviderConflict = false,
+            WarnOnChatHistoryProviderConflict = false,
+            ThrowOnChatHistoryProviderConflict = true,
+            RequirePerServiceCallChatHistoryPersistence = false,
+            EnableMessageInjection = false,
+            DisableApprovalNotRequiredFunctionBypassing = false,
+            DisableApprovalResponseBinding = false
         };
+    }
+
+
+
+
+
+
+
+
+    private AgentProfile BuildAgentProfile(AgentPresetBase preset, string? taskInstructions, ChatResponseFormat? responseFormat, ChatMessages modelInstructions)
+    {
+
+
+        // Build the agent profile from the preset and task instructions, Both AgentId and AgentName are required.
+        // Some internals use name and other use ID, ensure both are set for consistency.
+        AgentProfile profile = _profileBuilder.BuildFromPreset(preset, taskInstructions);
+        if (string.IsNullOrEmpty(profile.AgentName) || string.IsNullOrWhiteSpace(profile.AgentId))
+        {
+            throw new InvalidOperationException($"Preset '{preset.GetType().Name}' did not provide a valid AgentName.");
+        }
+        if (string.IsNullOrWhiteSpace(profile.AgentId))
+        {
+            throw new InvalidOperationException($"Preset '{preset.GetType().Name}' did not provide a valid AgentId.");
+        }
+        profile.ResponseFormat = responseFormat;
+        profile.ModelInstructions = modelInstructions;
+        return profile;
     }
 
 
@@ -356,6 +386,46 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         // }
 
         return providers;
+    }
+
+
+
+
+
+
+
+    /// <summary>
+    /// Creates a collection of system instruction messages for a model by layering the platform domain, the specified
+    /// preset's instructions, and optional task instructions.
+    /// </summary>
+    /// <remarks>Empty or whitespace preset or task instructions are ignored. Preset instructions are obtained
+    /// via AgentInstructionConstants.GetAgentPresetInstructions and all entries are added as system messages to
+    /// preserve directive priority.</remarks>
+    /// <param name="presetName">Agent preset name whose instructions are retrieved and included if present.</param>
+    /// <param name="taskInstructions">Optional task-specific instructions appended as the highest-priority system message.</param>
+    /// <returns>A ChatMessages instance containing the assembled system messages in order: platform domain, preset instructions
+    /// (if any), then task instructions (if any).</returns>
+    private static ChatMessages CreateModelInstructions(string presetName, string? taskInstructions)
+    {
+        ChatMessages modelInstructions = new();
+
+        // Layer 1: Base (Lowest) - Shared with each agent
+        modelInstructions.AddSystemMessage(AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S);
+
+        // Layer 2: Preset (Middle) - Per-agent preset instruction
+        string presetInstructions = AgentInstructionConstants.GetAgentPresetInstructions(presetName);
+        if (!string.IsNullOrWhiteSpace(presetInstructions))
+        {
+            modelInstructions.AddSystemMessage(presetInstructions);
+        }
+
+        // Layer 3: Task (Topmost) - Optional task instructions passed at agent build call
+        if (!string.IsNullOrWhiteSpace(taskInstructions))
+        {
+            modelInstructions.AddSystemMessage(taskInstructions);
+        }
+
+        return modelInstructions;
     }
 
 
@@ -422,6 +492,25 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         // RAG search tools would be added here when the API stabilizes
         return new List<AITool>();
+    }
+
+
+
+
+
+
+
+
+    private AgentPresetBase ResolvePreset(string presetName)
+    {
+        AgentPresetBase? preset = _presetProvider.GetPreset(presetName);
+        if (preset is null)
+        {
+            string availablePresets = string.Join(", ", _presetProvider.ListPresets());
+            throw new ArgumentException($"No preset found for name '{presetName}'. Available presets: {availablePresets}.", nameof(presetName));
+        }
+
+        return preset;
     }
 
 

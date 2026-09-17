@@ -33,11 +33,6 @@ public abstract record AgentPresetBase
     public abstract string AgentName { get; }
 
     /// <summary>
-    ///     Gets the default instructions for the agent.
-    /// </summary>
-    public abstract string DefaultInstructions { get; }
-
-    /// <summary>
     ///     Gets the default persona type, or <c>null</c> if no persona should be applied.
     /// </summary>
     public virtual PersonaType? DefaultPersona

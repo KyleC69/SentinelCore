@@ -24,7 +24,7 @@ namespace SentinelCore.Tests.TestInfrastructure;
 public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 {
 
-    /// <inheritdoc />
+ 
     public Task<McpServerInfo?> GetAsync(string serverId, CancellationToken cancellationToken = default) =>
             Task.FromResult<McpServerInfo?>(null);
 
@@ -35,7 +35,7 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<AITool>>([]);
 
@@ -46,7 +46,7 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<McpServerInfo>>([]);
 
@@ -57,7 +57,7 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public Task RegisterAsync(McpServerDefinition definition, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
@@ -68,7 +68,7 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public Task RemoveAsync(string serverId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
@@ -79,7 +79,7 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public Task StartAsync(string serverId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
@@ -90,7 +90,7 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public Task StopAsync(string serverId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
@@ -101,7 +101,7 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public Task UpdateAssignmentsAsync(string serverId, IReadOnlyList<string> assignedAgentNames, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 }

@@ -26,18 +26,24 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     exceptions via the reporter, and propagates errors after reporting.
 /// </remarks>
 /// <param name="reporter">An ISystemReporter used to log informational messages and errors during execution.</param>
-public class GenerateHypothesisAgentExec(ISystemReporter reporter) : Executor<ChatMessage, SignalHypothesis>("GenerateHypothesis")
+public class GenerateHypothesisAgentExec(AIAgent agent, ISystemReporter reporter) : Executor<ChatMessage, SignalHypothesis>("GenerateHypothesis")
 {
 
 
-    public override ValueTask<SignalHypothesis> HandleAsync(ChatMessage input, IWorkflowContext context, CancellationToken cancellationToken = new())
+
+    public override async ValueTask<SignalHypothesis> HandleAsync(ChatMessage input, IWorkflowContext context, CancellationToken cancellationToken = new())
     {
         try
         {
             reporter.ReportInfo("Starting HandleAsync in GenerateHypothesisAgentExec");
             Throw.IfNull(nameof(input));
 
-            // Simulate some processing logic
+            //Shape prompt
+
+
+
+            // Simulate some processing logic,
+            var response = await agent.RunAsync(input, null, null, cancellationToken);
 
         }
         catch (Exception ex)

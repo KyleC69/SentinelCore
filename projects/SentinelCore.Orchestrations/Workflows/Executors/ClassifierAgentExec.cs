@@ -6,7 +6,7 @@
 
 
 
-using System.Diagnostics;
+using SentinelCore.Contracts.Abstractions;
 
 
 
@@ -17,8 +17,10 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
-public sealed class ClassifierAgentExec(AIAgent agent) : Executor<ChatMessage, SignalHypothesis>("ClassifierExec")
+public sealed class ClassifierAgentExec(AIAgent agent, ISystemReporter reporter) : Executor<ChatMessage, SignalHypothesis>("ClassifierExec")
 {
+
+
 
     /// <summary>
     ///     Handles the processing of a <see cref="ChatMessage" /> within the main investigation workflow.
@@ -57,39 +59,42 @@ public sealed class ClassifierAgentExec(AIAgent agent) : Executor<ChatMessage, S
     /// </remarks>
     public override async ValueTask<SignalHypothesis> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = new())
     {
+        reporter.ReportInfo("Starting classifier handler");
         AgentResponse<SignalHypothesis>? response = null;
 
-        string json = "";
+        await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message.Text, "SharedState", cancellationToken).ConfigureAwait(false);
         try
         {
             response = await agent.RunAsync<SignalHypothesis>(message, cancellationToken: cancellationToken).ConfigureAwait(false);
-            if (response.Text.StartsWith("```json"))
-            {
-                json = response.Text.Replace("```json", "").Replace("```", "").Trim();
-            }
-
-
-
 
             if (response == null)
             {
                 throw new InvalidOperationException("Agent response is null.");
             }
+            //copy results into new instance
+            SignalHypothesis returnObj = response.Result;
+            returnObj.OrigPrompt = message.Text;
 
+            //add original prompt to return obj
+            response.Result.OrigPrompt = message.Text;
 
-
-
+            return returnObj;
         }
         catch (Exception e)
         {
             //log and go
-            Debug.Print(e.Message);
+            reporter.ReportError(e, e.Message);
         }
 
-        // Saves the value in a special shared state bag so it may be shared with all actors in the workflow.
-        await context.QueueStateUpdateAsync(WorkFlowStateKeys.SIGNAL_HYPOTHESIS, json, "SharedState", cancellationToken).ConfigureAwait(false);
+        return new SignalHypothesis();
 
-        // An invalid json response will cause the Result prop to throw, validate before using.
-        return response.Result;
+
     }
+
+
+
+
+
+
+
 }

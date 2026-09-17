@@ -88,11 +88,24 @@ public partial class CoreChatPage : Page
     /// <summary>
     ///     Scrolls the feed to the newest message whenever the collection changes.
     /// </summary>
+    /// <summary>
+    /// Handles changes to the Messages collection. When items are added,
+    /// schedules a deferred scroll to the newest message so layout and
+    /// the ItemContainerGenerator complete before calling ScrollIntoView.
+    /// </summary>
+    /// <param name="sender">The collection raising the event.</param>
+    /// <param name="e">The collection change arguments.</param>
     private void OnMessagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.Action is NotifyCollectionChangedAction.Add)
         {
-            ScrollToBottom();
+            // Post the scroll to the dispatcher at Background priority so the
+            // collection-change processing and layout pass complete before we
+            // call ScrollIntoView. This avoids ItemContainerGenerator
+            // inconsistencies when virtualization/layout are still updating.
+            MessagesListBox.Dispatcher.InvokeAsync(
+                ScrollToBottom,
+                System.Windows.Threading.DispatcherPriority.Background);
         }
     }
 

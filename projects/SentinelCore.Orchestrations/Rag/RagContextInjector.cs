@@ -60,7 +60,7 @@ public sealed class RagContextInjector : MessageAIContextProvider
 
 
 
-    /// <inheritdoc />
+ 
     protected override async ValueTask<AIContext> ProvideAIContextAsync(AIContextProvider.InvokingContext context, CancellationToken cancellationToken = default)
     {
         // TODO: Implement RAG context injection when MAF context API is stable
@@ -82,7 +82,7 @@ public sealed class RagContextInjector : MessageAIContextProvider
 
 
 
-    /// <inheritdoc />
+ 
     protected override async ValueTask<IEnumerable<ChatMessage>> ProvideMessagesAsync(InvokingContext context, CancellationToken cancellationToken = default)
     {
         // TODO: Implement RAG message injection when MAF context API is stable

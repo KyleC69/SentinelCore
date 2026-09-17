@@ -2,13 +2,13 @@
 
 **Advanced Agentic Investigation Platform for Windows**
 
-![SignalFound](assets/SignalFound.png)
+![SignalFound](assets/signalfound.png)
 
 Sentinel Core is a multi-agent AI investigation platform that learns from every case and interaction to accelerate future resolutions. It takes a signal — a prompt, an event log error, an anomaly alert — and orchestrates a team of AI agents to investigate, gather evidence, and deliver a diagnosis with remediation steps.
 
-Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combines deterministic case lifecycle management, safety-gated state transitions, pattern memory, and 35+ agent personas to deliver accurate, auditable investigations on Windows systems. Explore the power of MAF and versatility with this application using multi-agents, RAG, context enriching, workflows, executors, multi-provider flexibility. NOTE: MAF is still under development.
+Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combines deterministic case lifecycle management, a rule-based safety engine, pattern memory, and 33 registered agent personas to deliver accurate, auditable investigations on Windows systems. Explore the power of MAF and versatility with this application using multi-agents, RAG, context enriching, workflows, executors, multi-provider flexibility. NOTE: MAF is still under development.
 
-## **RELEASE DATE:** I am expecting to release v1.0 by the end of the month. I expect to have all the features implemented, they may not be fully polished yet, but I should have both editions done, regular and deluxe done by October 1st.
+## **RELEASE DATE:** I am expecting to release v1.0 by the end of the month. I expect to have all the features implemented, they may not be fully polished yet, but I should have both editions done, regular and deluxe done by October 1st
 
 ---
 
@@ -21,7 +21,7 @@ Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combine
     This will include selectable preset orchestration patterns, that opens the platform to a whole new level of investigation or collaboration.
     There is magnetic group, cooperative group, adversarial group, group hand-off to name a few. Paired up with the personas each agent in the group can have a slightly different perspective, giving a brainstorming session a powerful twist.
 
-    Plans are underway to introduce do-it-yourself orchestration patterns. This will allow you to create your own orchestration pattern and have it run in the system. This is a huge feature that will allow you to assemble agents in a workflow of your own design. This will be a paid feature and will be available in the deluxe edition only. 
+    Plans are underway to introduce do-it-yourself orchestration patterns. This will allow you to create your own orchestration pattern and have it run in the system. This is a huge feature that will allow you to assemble agents in a workflow of your own design. This will be a paid feature and will be available in the deluxe edition only.
 
 ---
 
@@ -29,33 +29,33 @@ Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combine
 
 |           Feature            |                                                                               Description                                                                                | Status |
 | :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----: |
-|      RAG Knowledge Base      |                                                     Vector index of remote or on-site resources for live Q&A or context injected or on-demand search &retrieval.                                                       |  75%   |
-|  Multi-agent Orchestration   |                                          Several orchestrated agents perform investigation tasks as collective and adversaries. (Deluxe)                                           |   ✅   |
-|        Pattern Memory        |                               Global searchable case history & resolution knowledgebase enables instant resolution when a similar signal has been seen before                                |  50%   |
+|      RAG Knowledge Base      |                                                     Keyword/fuzzy search over an in-memory index with an on-demand retrieval tool and context injector; vector search is stubbed pending an embedding provider.                                                       |  60%   |
+|  Multi-agent Orchestration   |                                          `TheCoreWorkflow` routes signals through executors and delegates evidence gathering to a Magentic sub-workflow (Manager + 3 Workers).                                           |   ✅   |
+|        Pattern Memory        |                               `IPatternMemoryStore` persists vectorized case patterns; `SemanticPatternMatcher` currently matches by keyword (vector search stubbed).                                |  50%   |
 | Signal-driven Investigations |                                 Submit a natural-language prompt, event log error, or automated anomaly alert the let the AI investigate                                 |   ✅   |
-| Deterministic Case Lifecycle |                                         11-state state machine with safety gating ensures no case transitions without validation                                         |   ✅   |
-|        Safety Engine         |                            `ISafetyMiddleware` gates every state transition; hosts can inject custom rules to block, allow, or modify actions                            |   ✅   |
-|      35+ Agent Personas      |                                             Slightly different perspectives produce richer debate and more accurate results (Deluxe)                                             |   ✅   |
-|            Tools             |                                                    80+ tools for Windows system interrogation packaged as MCP server                                                     |  100%   |
-|         MCP Support          | Pluggable design allows system to shift focus to any domain, medical, fabrication, manufacturing etc. by switching knowledge sources and toolsets that act as the hands. |  85%   |
-|        LLM providers         |                  Support for various LLM providers including Ollama (local), OpenAI, Azure OpenAI, GitHub Models, Anthropic, ONNX, or Foundry endpoints                  |   ✅   |
+| Deterministic Case Lifecycle |                                         `CaseStatus` defines 12 statuses; 11 participate in the `AllowedTransitions` table enforced by `CaseFlowEngine`.                                         |   ✅   |
+|        Safety Engine         |                            Rule-based `ISafetyRule` pipeline (18 rules) applied to agents via `UseSafetyEngine()`; the case-transition gate in `AdvanceCaseAsync` is currently disabled.                            |  60%   |
+|       Agent Personas         |                                             33 personas registered in `PersonaRegistry`; 36 persona definitions available.                                             |   ✅   |
+|            Tools             |                                                    Windows diagnostic tools moved out of the library into a separate MCP server; the library retains `CaseTool` and the MCP client tools.                                                     |  100%  |
+|         MCP Support          | Pluggable design allows system to shift focus to any domain, medical, fabrication, manufacturing etc. by switching knowledge sources and toolsets that act as the hands. |   ✅   |
+|        LLM providers         |                  Ollama, OpenAI, Azure OpenAI, and GitHub Models are implemented. Anthropic, ONNX, Foundry, and Azure are declared but not yet implemented.                  |   ✅   |
 
 ---
 
-# Feature Details
+## Feature Details
 
 - **Multi-agent orchestration** — TheCore agent is at the heart and handles main reasoning and long term context memory. Several supportive agents are used for short term workload and pure decision gating. Nested workflows and executors keeps logic modular and easy to debug. Isolated core keeps main context clean and reduces model latency and increases over all reasoning accuracy. Design breaks up workload to allow for smaller local models to perform targeted tasks and not prone to stall.
 - **Air-gapped capable** — Ollama local model endpoint allows for fully air-gapped operation. No internet connection is required to run the system. All models and tools can be run locally.
-- **Versatile Design** - Pluggable RAG knowledge base allows system to shift focus to any domain, medical, fabrication, manufacturing etc. RAG features vector indexing summaries of remote resources and pulling remote data only when needed and relevant to task.
-- **RAG Knowledge Base** — Vector index of remote resources for on-demand retrieval. Only retrieves when needed. Local db only contains minimal metadata and the searchable vectors, could be a summary or snippet from entire doc/page. You only store locally your vectors and where the page/doc lives in the wild if you need it. No need to ingest entire websites or document stores. Can also use MCP servers as knowledge source for RAG system.
-- **Pattern memory** — Vectorized case history & resolutions enables instant resolution when a similar signal has been seen before.
+- **Versatile Design** - Pluggable RAG knowledge base allows system to shift focus to any domain, medical, fabrication, manufacturing etc. RAG features keyword search over an in-memory index with an on-demand retrieval tool; vector indexing is stubbed pending an embedding provider.
+- **RAG Knowledge Base** — On-demand retrieval through `RagSearchTool` plus optional context injection. The local database stores only minimal metadata and searchable vectors — a summary or snippet from an entire doc/page — along with where the page/doc lives in the wild. No need to ingest entire websites or document stores. MCP servers can also act as a knowledge source.
+- **Pattern memory** — `IPatternMemoryStore` persists vectorized case history and resolutions so a similar signal can be recognized quickly. `SemanticPatternMatcher` currently matches by keyword; vector similarity search is stubbed.
 - **Signal-driven investigations** — Submit a natural-language prompt, event log error, or automated anomaly alert the let the AI investigate
-- **Deterministic case lifecycle** — 11-state state machine with safety gating ensures no case transitions without validation
-- **Safety engine** — `ISafetyMiddleware` gates every state transition; hosts can inject custom rules to block, allow, or modify actions
-- **35+ agent personas** — Slightly different perspectives produce richer debate and more accurate results
-- **80+ Windows diagnostic tools** — Registry, WMI, Event Log, Defender, Hyper-V, Firewall, and more
+- **Deterministic case lifecycle** — `CaseStatus` defines 12 statuses; 11 participate in the `AllowedTransitions` table enforced by `CaseFlowEngine`
+- **Safety engine** — Rule-based `ISafetyRule` pipeline (18 rules) applied to agents through `UseSafetyEngine()`; hosts can supply their own rules
+- **33 agent personas** — Slightly different perspectives produce richer debate and more accurate results
+- **Windows diagnostic tools** — Registry, WMI, Event Log, Defender, Hyper-V, Firewall, and more, now delivered through a separate MCP server
 - **Always-on persistence** — EF Core with SQL Server stores cases, evidence, signals, and pattern memory
-- **Model flexibility** — Ollama (local), OpenAI, Azure OpenAI, GitHub Models, Anthropic, ONNX, or Foundry endpoints
+- **Model flexibility** — Ollama (local), OpenAI, Azure OpenAI, and GitHub Models are implemented; Anthropic, ONNX, Foundry, and Azure are declared
 - **Minimal host integration** — One extension method, one settings class, event handlers — you're running
 
 - **NEW** Tools moved to MCP Local server project for easier management and system flexibility - server can be deployed to other targets
@@ -65,23 +65,23 @@ Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combine
 ## Architecture
 
 ┌──────────────────────────────────────────────────────────────────────┐
-│ SentinelCoreHost (WPF) │
+│ SentinelCore.UI (WPF) │
 │ Calls AddSentinelCore(), subscribes to ISentinelCoreEvents │
 └──────────────────────────────┬───────────────────────────────────────┘
 │
 ┌──────────────────────────────▼───────────────────────────────────────┐
 │ SentinelCore.Orchestrations (DI wiring) │
-│ AgentBuilder · SentinelAgentFactory · TheCoreWorkflow │
-│ MagneticOrchestration · Executors · ToolRegistry · Events │
+│ AgentProfileBuilder · SentinelAgentFactory · TheCoreWorkflow │
+│ Magentic sub-workflow · Executors · SafetyEngine · MCP · Events │
 ├──────────────────────────────────────────────────────────────────────┤
 │ SentinelCore.CaseFlowEngine (lifecycle) │
-│ CaseFlowEngine · CaseRepository · EvidenceStore · PatternMemory │
+│ CaseFlowEngine · EvidenceStore · PatternMemoryStore · SignalRepository │
 ├──────────────────────────────────────────────────────────────────────┤
 │ SentinelCore.Contracts (zero dependencies) │
-│ ICaseFlowEngine · ICaseRepository · IEvidenceStore · IPatternStore │
-│ ISafetyMiddleware · SafetyContext · SafetyVerdict · CaseStatus │
-│ Signal · Case · Evidence · SentinelCoreSettings · ModelProfile │
-│ ISentinelCoreEvents · ActivityType · OrchestrationType │
+│ ICaseFlowEngine · IEvidenceStore · IPatternMemoryStore │
+│ ISignalRepository · ISystemReporter · CaseStatus · Case · Signal │
+│ SentinelCoreSettings · ModelProfile · ISentinelCoreEvents │
+│ ActivityType · OrchestrationType · MCP contracts │
 └──────────────────────────────────────────────────────────────────────┘
 
 ### Dependency Rules (Immutable)
@@ -91,7 +91,7 @@ Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combine
 | **Contracts is zero-dependency**                         | Only NuGet packages — no project references |
 | **CaseFlowEngine depends on Contracts only**             | Never references Orchestrations             |
 | **Orchestrations depends on Contracts + CaseFlowEngine** | Wires everything together via DI            |
-| **Host depends on all three**                            | Composes the final application              |
+| **UI depends on all three**                              | Composition root for the WPF application    |
 
 ---
 
@@ -102,6 +102,7 @@ The `CaseFlowEngine` is the **single owner** of case state. No agent, orchestrat
 ```mermaid
 stateDiagram-v2
     [*] --> Open : CreateCaseAsync(signal)
+    note right of Open : Initialized is a queue state with no outgoing transitions
     Open --> Analysis
     Open --> Cancelled
 
@@ -147,7 +148,7 @@ stateDiagram-v2
     Closed --> [*]
 ```
 
-Every transition is validated against the `AllowedTransitions` dictionary and gated by `ISafetyMiddleware.Evaluate()`. If the safety verdict is `Blocked`, the case is forced to `CaseStatus.Blocked` regardless of the requested target state.
+Every transition is validated against the `AllowedTransitions` dictionary in `CaseFlowEngine`. `CaseStatus.Initialized` is a queue state for cases that have been created but not yet handed to the workflow; it has no outgoing transitions in the table. The safety gate inside `AdvanceCaseAsync` is currently commented out — the `ISafetyMiddleware`/`SafetyVerdict` types it referenced no longer exist. Safety is enforced today by the rule-based `ISafetyRule` pipeline applied to agents.
 
 ---
 
@@ -156,28 +157,29 @@ Every transition is validated against the `AllowedTransitions` dictionary and ga
 ```
 Signal
   ↓
-TheCore (initial hypothesis + classification)
+PatternCheckExecutor (pattern memory lookup)
   ↓
-  ├── IsNoise        → dismiss
-  ├── CanAnswerDirectly → direct answer
-  ├── PatternMatch   → instant resolution from memory
-  ├── MoreInformationRequired → ask user
-  ├── Investigate    → Magnetic Orchestration
-  │     ↓
-  │   Manager dispatches Domain Agents (workers)
-  │     ↓
-  │   Aggregator cleans evidence
-  │     ↓
-  │   Analysis Group (critic + reviewer)
-  │     ↓
-  │   Safety Gate
-  │     ↓
-  │   TheCore (final diagnosis + remediation)
-  │     ↓
-  │   Persist to DB
-  ├── EscalateToHuman → human operator
-  └── RedAlert        → critical alert
+SafetyExecutor (ISafetyRule pipeline)
+  ↓
+ClassifierAgentExec (SignalHypothesis + NextStep)
+  ↓
+  ├── Investigate            → NewCaseExecutor
+  ├── RedAlert               → CriticalAlert
+  ├── MoreInformationRequired→ MoreInformationExecutor
+  ├── EscalateToHumanOperator→ HumanOperatorExecutor
+  ├── DirectAnswer           → DirectAnswerExecutor
+  └── (default)              → NewCaseExecutor
+        ↓
+      TheCoreExec (persistent Core session)
+        ↓
+      EvidenceCollection sub-workflow (Magentic: Manager + Worker1/2/3)
+        ↓
+      AggregationExecutor
+        ↓
+      TheCoreExec (loop — final diagnosis + remediation)
 ```
+
+The routing graph is composed in `TheCoreWorkflow.BuildWorkflow()` using `WorkflowBuilder` with a switch on `SignalHypothesis.NextStep`. The evidence-gathering sub-workflow is built with `MagenticWorkflowBuilder` (max 3 resets, 3 rounds, 2 stalls, plan sign-off not required) and bound as the `EvidenceCollection` executor.
 
 ---
 
@@ -188,10 +190,11 @@ TheCore (initial hypothesis + classification)
 - **.NET 10 SDK** (net10.0-windows target)
 - **SQL Server** (local or remote) for persistence
 - **Ollama** (or another model endpoint) for local AI inference
+- **Environment variables** — `SENTINEL_CORE` (case-flow database connection string) and `REMOTEKB` (remote knowledge-base connection string). The WPF host fails fast at startup when either is missing.
 
 ### 1. Configure Settings
 
-Create a `SentinelCoreSettings` instance with your model and database configuration:
+Create a `SentinelCoreSettings` instance with your model and database configuration. Model profiles are keyed per logical agent name in `AgentModels`; an agent with no entry falls back to its role tier, and an agent with no configuration anywhere fails the factory gate with a descriptive error.
 
 ```csharp
 var settings = new SentinelCoreSettings
@@ -199,7 +202,21 @@ var settings = new SentinelCoreSettings
     // SQL Server connection string (required — persistence is always-on)
     SqlConnectionString = "Server=.;Database=SentinelCore;Integrated Security=true;TrustServerCertificate=true",
 
-    // Model configuration
+    // Per-agent model profiles keyed by logical agent name
+    // ("TheCore", "Classifier", "SafetyAgent", "Manager", "Worker1".."Worker3")
+    AgentModels = new Dictionary<string, ModelProfile>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["TheCore"] = new ModelProfile(
+            endpoint: "http://127.0.0.1:11434",
+            modelId: "llama3.2",
+            temperature: 0.2f,
+            maxOutputTokens: 16000,
+            topK: 1,
+            topP: 0.1f,
+            provider: ModelProfile.ModelProvider.Ollama)
+    },
+
+    // Fallback model used when no specialized model is configured
     DefaultModel = new ModelProfile(
         endpoint: "http://127.0.0.1:11434",
         modelId: "llama3.2",
@@ -207,8 +224,9 @@ var settings = new SentinelCoreSettings
         maxOutputTokens: 16000,
         topK: 1,
         topP: 0.1f,
-        provider: ModelProvider.Ollama),
+        provider: ModelProfile.ModelProvider.Ollama),
 
+    // Utility model for worker/utility agents
     DefaultUtilityModel = new ModelProfile(
         endpoint: "http://127.0.0.1:11434",
         modelId: "llama3.2",
@@ -216,10 +234,19 @@ var settings = new SentinelCoreSettings
         maxOutputTokens: 12000,
         topK: 1,
         topP: 0.3f,
-        provider: ModelProvider.Ollama),
+        provider: ModelProfile.ModelProvider.Ollama),
+
+    // Model for the Magentic Manager agent (falls back to DefaultModel)
+    ManagerModel = null,
 
     // Orchestration type
     OrchestrationType = OrchestrationType.TheCore,
+
+    // Optional: RAG search configuration (null disables RAG)
+    RagSearch = RagSearchOptions.Default,
+
+    // Optional: safety engine configuration
+    SafetyEngine = new SafetyEngineSettings { IsEnabled = true },
 
     // Optional: enable trace logging
     TraceEnabled = true,
@@ -240,19 +267,28 @@ This registers **all** SentinelCore services unconditionally:
 | Service                      | Lifetime  | Description                                      |
 | ---------------------------- | --------- | ------------------------------------------------ |
 | `ICaseFlowEngine`            | Transient | Case lifecycle state machine                     |
-| `ICaseRepository`            | Transient | Case persistence (internal to CFE)               |
 | `IEvidenceStore`             | Transient | Evidence storage                                 |
 | `IPatternMemoryStore`        | Transient | Pattern memory (vector search)                   |
-| `ISafetyMiddleware`          | Singleton | Safety gate (defaults to `NullSafetyMiddleware`) |
+| `IPatternMatcher`            | Transient | Semantic pattern matcher (keyword-based today)   |
+| `IRagSearchService`          | Singleton | RAG search service                               |
 | `ISentinelCoreEvents`        | Singleton | Event hub for UI integration                     |
-| `IAgentProfileBuilder`       | Singleton | Agent specification factory                      |
+| `IAgentProfileBuilder`       | Singleton | Agent profile factory                            |
+| `IAgentPresetProvider`       | Singleton | Agent preset registry                            |
 | `ISystemReporter`            | Singleton | Error/info reporting                             |
 | `ISentinelWorkflowExecution` | Singleton | Workflow execution engine                        |
 | `TheCoreWorkflow`            | Singleton | Main investigation workflow                      |
 | `ISentinelAgentFactory`      | Singleton | Agent construction pipeline                      |
 | `IOrchestrationFactory`      | Singleton | Orchestration type factory                       |
-| `MagneticOrchestration`      | Singleton | Multi-agent orchestration                        |
-| `SentinelCoreDBContext`      | Scoped    | EF Core DbContext                                |
+| `IOrchestrationControl`      | Singleton | Entry point to start an orchestration            |
+| `MagneticOrchestration`      | Singleton | Magnetic orchestration helper                    |
+| `IMcpServerRegistry`         | Singleton | MCP server registry                              |
+| `IMcpServerRegistryStore`    | Singleton | MCP registry persistence (JSON file)             |
+| `IMcpConnectionFactory`      | Singleton | MCP client connection factory                    |
+| `ISentinelAgentCatalog`      | Singleton | Logical agent name catalog                       |
+| `McpServerRegistryInitializer` | Hosted  | Loads persisted MCP servers at startup           |
+| Executors                    | Transient | All workflow executors                           |
+
+> **Note:** `AddSentinelCore` does **not** register a `DbContext` factory. The composition root must call `services.AddDbContextFactory<SentinelCoreDBContext>(...)` (and `AddDbContextFactory<SentinelRAGDBContext>(...)` for the remote KB) — see pattern-lock PL-7. Without it, persistence consumers fail activation with an `IDbContextFactory` error.
 
 ### 3. Subscribe to Events
 
@@ -283,37 +319,54 @@ await orchestrationControl.InitializeOrchestrationAsync(
 
 ---
 
-## Optional: Custom Safety Middleware
+## Optional: Custom Safety Rules
 
-The default `NullSafetyMiddleware` allows all transitions. To enforce custom rules:
+Safety is enforced by a composable rule pipeline. Implement `ISafetyRule` and apply it to an agent with the `UseSafetyEngine()` builder extension:
 
 ```csharp
-public class MySafetyMiddleware : ISafetyMiddleware
+public sealed class BusinessHoursRule : ISafetyRule
 {
-    public SafetyVerdict Evaluate(SafetyContext context)
-    {
-        // Block high-risk operations outside business hours
-        if (context.CaseId is not null && IsOutsideBusinessHours())
-            return SafetyVerdict.Blocked;
+    public string Name => "BusinessHours";
+    public string Description => "Blocks high-risk operations outside business hours.";
 
-        return SafetyVerdict.Allowed;
+    public Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(IsOutsideBusinessHours()
+            ? SafetyRuleResult.Block(Name, SafetySeverity.High, "Outside approved operating hours.")
+            : SafetyRuleResult.Allow(Name));
     }
 }
 
-// Register before AddSentinelCore or replace after:
-services.AddSingleton<ISafetyMiddleware, MySafetyMiddleware>();
+// Apply to an agent pipeline:
+AIAgent safeAgent = agent.AsBuilder()
+    .UseSafetyEngine(new[] { new BusinessHoursRule() }, loggerFactory.CreateLogger<SafetyEngineAgent>())
+    .Build();
 ```
+
+`SafetyEngineSettings` on `SentinelCoreSettings` controls the engine: `IsEnabled`, `StopOnFirstBlock`, `TreatRuleErrorsAsBlocks`, `EnableRateLimiting`, `MaxRequestsPerMinute`, `EnableOutputSanitization`, `CustomBlocklistTerms`, `CustomBlocklistPatterns`, and `BlockedResponseMessage`.
+
+> **Note:** `SentinelAgentFactory.CreateSafetyRules()` currently returns an empty rule list, so the safety engine is wired but inert until rules are supplied.
 
 ---
 
-## Optional: Investigation Control
+## Optional: MCP Servers
 
-To enable advanced case management with pattern memory and investigation control:
+MCP servers are registered at runtime and their tools are injected into agents by `SentinelAgentFactory`. Definitions persist to `%APPDATA%\SentinelCore\mcp-servers.json` (override with `SENTINEL_MCP_REGISTRY_PATH`); OAuth tokens are cached DPAPI-encrypted in `mcp-tokens.bin`.
 
 ```csharp
-services.AddSentinelCore(settings)
-        .AddInvestigationControl();
+var registry = serviceProvider.GetRequiredService<IMcpServerRegistry>();
+
+await registry.RegisterAsync(new McpServerDefinition(
+    id: "windows-toolkit",
+    displayName: "Windows Troubleshooting Toolkit",
+    transportType: McpServerTransportType.Stdio,
+    commandOrEndpoint: "SentinelCore.Mcp.Windows",
+    assignedAgentNames: []));   // empty = available to every agent
+
+await registry.StartAsync("windows-toolkit", cancellationToken);
 ```
+
+A server with an empty `AssignedAgentNames` list is available to all agents; otherwise only the listed logical agent names receive its tools. The WPF host exposes this through the **MCP Servers** page.
 
 ---
 
@@ -322,58 +375,85 @@ services.AddSentinelCore(settings)
 ```
 projects/
 ├── SentinelCore.Contracts/          # Zero-dependency shared abstractions
-│   ├── Abstractions/                # ICaseRepository, IEvidenceStore, IPatternMemoryStore,
-│   │                                # ISystemReporter, ISignalRepository, Throw
-│   ├── CaseFlow/                    # ICaseFlowEngine, Case, CaseStatus, Signal, Evidence
+│   ├── Abstractions/                # IEvidenceStore, IPatternMemoryStore, ISignalRepository,
+│   │                                # ISystemReporter, PatternMemoryResult, Throw
+│   ├── CaseFlow/                    # Case, Signal, Evidence, InvestigationPlan,
+│   │                                # InvestigationPlanStep, Resolution
+│   ├── Cfe/                         # CaseStatus
 │   ├── Contracts/                   # SentinelCoreSettings, ModelProfile, OrchestrationType
 │   ├── DependencyInjection/         # ISentinelCoreBuilder
-│   ├── Events/                      # ISentinelCoreEvents, ActivityType, SentinelOutputEventArgs
-│   └── SafetyEngine/                # ISafetyMiddleware, SafetyContext, SafetyVerdict,
-│                                    # NullSafetyMiddleware
+│   ├── Events/                      # ISentinelCoreEvents, SentinelCoreEvents, ActivityType,
+│   │                                # SentinelOutputEventArgs, OrchestrationActivityArgs
+│   └── Mcp/                         # IMcpServerRegistry, IMcpServerRegistryStore,
+│                                    # ISentinelAgentCatalog, McpServerDefinition, McpServerInfo,
+│                                    # McpServerStatus, McpServerTransportType, McpOAuthSettings
 │
 ├── SentinelCore.CaseFlowEngine/     # Case lifecycle, persistence, pattern memory
-│   ├── CaseFlow/                    # CaseFlowEngine (state machine)
+│   ├── Cfe/                         # CaseFlowEngine (state machine), PatternMemory
 │   ├── Infrastructure/
-│   │   ├── DependencyInjection/     # AddInvestigationControl builder extension
-│   │   └── Persistence/             # CaseRepository, EvidenceStore, PatternMemoryStore,
-│   │                                # SignalRepository, DatabaseInitializer
+│   │   ├── DependencyInjection/     # CaseFlowEngineBuilderExtensions
+│   │   └── Persistence/             # EvidenceStore, PatternMemoryStore, SignalRepository,
+│   │                                # DatabaseInitializer (obsolete)
 │   ├── Migrations/                  # EF Core SQL Server migrations
-│   └── Persistence/                 # SentinelCoreDBContext, entity types
+│   └── Persistence/                 # SentinelCoreDBContext, SentinelRAGDBContext, entity types
 │
-├── SentinelCore.Orchestrations/     # Agent construction, orchestration, tools, DI
-│   ├── Abstractions/                # IOrchestration, IOrchestrationControl
-│   ├── Agents/                      # AgentBuilder, AgentProfile, AgentRole,
-│   │                                # SentinelAgentFactory, SentinelChatClientFactory,
-│   │                                # AgentMiddlewarePipeline, TheCoreRunner
-│   │   └── Middleware/              # EventPublishingChatClient, PatternMemoryInjector
+├── SentinelCore.Orchestrations/     # Agent construction, orchestration, safety, MCP, DI
+│   ├── Abstractions/                # IOrchestration, IOrchestrationControl, IAgentPersona
+│   ├── Agents/                      # AgentProfile, AgentProfileBuilder, SentinelAgentFactory,
+│   │                                # SentinelChatClientFactory, SentinelAgentCatalog,
+│   │                                # AgentMiddlewarePipeline, CaseGenerator
+│   │   ├── AgentPresets/            # CoreChat, Classifier, TheCore, SafetyAgent, Manager,
+│   │   │                            # Worker1-3 presets, MiddlewareFlags, ModelTier
+│   │   ├── Core/Tools/              # MsDocsMcpServerTool, SimpleMcpClientTool
+│   │   ├── Middleware/              # EventPublishingChatClient, PatternMemoryInjector,
+│   │   │                            # SemanticPatternMatcher, DiagnosticMiddleware,
+│   │   │                            # ExceptionHandlingMiddleware
+│   │   └── Models/                  # Ledger, CoreDirective, InvestigationStep, EvidenceItem
 │   ├── Application/                 # OrchestrationControl, OrchestrationFactory,
-│   │                                # SentinelWorkflowExecution, ToolRegistry
+│   │                                # SentinelWorkflowExecution, WorkflowExecutionResult
 │   ├── Exceptions/                  # SentinelCaseEngineException, SentinelCoreModelException,
 │   │                                # SentinelCorePlatformException, SentinelOrchestrationException
-│   ├── Factories/                   # (reserved)
 │   ├── Infrastructure/DependencyInjection/
 │   │                                # SentinelCoreServiceExtensions (AddSentinelCore),
 │   │                                # SentinelCoreBuilder, ExecutorRegistration
+│   ├── Mcp/                         # McpServerRegistry, McpConnectionFactory,
+│   │                                # JsonFileMcpServerRegistryStore, DpapiTokenCache,
+│   │                                # LoopbackOAuthCallbackHandler, McpServerRegistryInitializer
 │   ├── Orchestrations/              # MagneticOrchestration, ApprovalBasedManager
-│   ├── Personas/                    # PersonaRegistry (35+ personas)
-│   ├── Tools/                       # 40+ Windows diagnostic AITools
-│   │   └── Interop/                 # WMI, PowerShell, Registry interop helpers
-│   └── Workflows/                   # TheCoreWorkflow, CoreRoutingDecision,
-│       │                            # SignalHypothesis, WorkflowBase, WorkflowMessage
-│       └── Executors/               # NewCase, Investigation, Analysis, Safety,
-│                                        PatternCheck, Aggregation, Clarification,
-│                                        Escalated, CriticalAlert, DirectAnswer,
-│                                        IsNoise, WhiteList, VerifyEvidence,
-│                                        HumanOperator, CaseUpdate, Logging, Persist,
-│                                        SubWorkflow, TheCoreExec, AgentExecutor
+│   ├── Personas/                    # PersonaRegistry (33 registered personas)
+│   ├── Rag/                         # IRagSearchService, RagSearchService, RagSearchTool,
+│   │                                # RagContextInjector, RagMiddlewarePipeline
+│   ├── SafetyEngine/                # ISafetyRule, SafetyEngineAgent, SafetyRuleEngine,
+│   │                                # SafetyEvaluationContext, SafetyRuleResult, SafetySeverity
+│   │   └── Rules/                   # 18 ISafetyRule implementations
+│   ├── Tools/                       # CaseTool, ToolResult
+│   └── Workflows/                   # TheCoreWorkflow, CustomGroupWorkflow, WorkflowBase,
+│       │                            # CoreRoutingDecision, SignalHypothesis, ExecutorFactory,
+│       │                            # AgentInstructionConstants
+│       └── Executors/               # PatternCheck, Safety, ClassifierAgent, TheCore,
+│                                    # NewCase, Aggregation, Analysis, Clarification,
+│                                    # MoreInformation, Escalated, CriticalAlert,
+│                                    # DirectAnswer, WhiteList, VerifyEvidence,
+│                                    # HumanOperator, CaseUpdate, Logging, PersistEvidence,
+│                                    # CaseGen, GenerateHypothesisAgent
 │
-├── SentinelCore.Tests/              # Unit and integration tests
+├── SentinelCore.Tests/              # MSTest + Moq unit and architecture tests
+│   ├── Architecture/                # DbContextPatternLockTests, PersistenceRegistrationTests
+│   └── TestInfrastructure/          # FakeChatClient, FakeMcpServerRegistry, EventCapture
 │
-└── SentinelCoreHost/               # WPF host application
-    ├── App.xaml.cs                  # Host composition root
-    ├── ViewModels/                  # MVVM view models
-    ├── Views/                       # WPF views
-    └── Converters/                  # JSON logger, UI converters
+├── SentinelCore.UI/                 # WPF host application (composition root)
+│   ├── App.xaml.cs                  # Host composition root, DI wiring, lifecycle
+│   ├── MainWindow.xaml              # Shell with top navigation tabs
+│   ├── ViewModels/                  # CoreChat, CaseList, CaseDetail, CreateCase,
+│   │                                # McpServers, ModelConfig
+│   ├── Views/                       # Matching WPF pages
+│   ├── Services/                    # Navigation, dispatcher, dialog, clipboard,
+│   │                                # model config store/gate, file logger
+│   ├── Models/                      # AppConfig, AgentModelCard, CaseRow, McpServerRow
+│   ├── Converters/                  # UI value converters
+│   └── Styles/                      # ChatBrushes, CaseStyles
+│
+└── SentinelCoreService/             # .NET Framework 4.8 Windows service host (scaffold)
 ```
 
 ---
@@ -385,78 +465,87 @@ projects/
 | Type                         | Description                                                            |
 | ---------------------------- | ---------------------------------------------------------------------- |
 | `ICaseFlowEngine`            | Owns the case lifecycle. Create cases and advance status.              |
-| `ICaseRepository`            | Internal persistence for case records. Use `ICaseFlowEngine` instead.  |
 | `IEvidenceStore`             | Append and retrieve evidence items for a case.                         |
 | `IPatternMemoryStore`        | Store and search vectorized case patterns.                             |
-| `ISafetyMiddleware`          | Evaluate `SafetyContext` → `SafetyVerdict` (Allowed/Blocked/Modified). |
+| `ISignalRepository`          | Persist and retrieve signals.                                          |
 | `ISentinelCoreEvents`        | Event hub for UI integration (output, errors, orchestration).          |
 | `ISystemReporter`            | Report errors, warnings, and info to logging + event stream.           |
-| `IOrchestrationControl`      | Entry point to start an orchestration from a signal.                   |
-| `ISentinelWorkflowExecution` | Execute a `Workflow` with event capture.                               |
-| `IAgentProfileBuilder`       | Build `AgentProfile` specs by role and name.                           |
-| `ISentinelAgentFactory`      | Construct `AIAgent` instances from profiles.                           |
-| `IOrchestrationFactory`      | Create `IOrchestration` instances by `OrchestrationType`.              |
+| `IMcpServerRegistry`         | Register, start, stop, and query MCP servers; resolve per-agent tools. |
+| `IMcpServerRegistryStore`    | Persistence abstraction for MCP server definitions.                    |
+| `ISentinelAgentCatalog`      | Lists the logical agent names used by the platform.                    |
+| `ISentinelCoreBuilder`       | Configures optional SentinelCore modules during host startup.          |
+| `CaseStatus`                 | The 12 case lifecycle statuses.                                        |
+| `SentinelCoreSettings`       | All configurable runtime options passed to `AddSentinelCore`.          |
+| `ModelProfile`               | Model endpoint and tuning parameters for a single agent.               |
 
 ### Case Flow (`SentinelCore.CaseFlowEngine`)
 
 | Type                    | Description                                                                         |
 | ----------------------- | ----------------------------------------------------------------------------------- |
-| `CaseFlowEngine`        | Default `ICaseFlowEngine` implementation. Validates transitions, gates with safety. |
-| `CaseRepository`        | EF Core implementation of `ICaseRepository`.                                        |
+| `CaseFlowEngine`        | Default `ICaseFlowEngine` implementation. Validates transitions against `AllowedTransitions`. |
 | `EvidenceStore`         | EF Core implementation of `IEvidenceStore`.                                         |
 | `PatternMemoryStore`    | EF Core implementation of `IPatternMemoryStore`.                                    |
 | `SignalRepository`      | EF Core implementation of `ISignalRepository`.                                      |
-| `DatabaseInitializer`   | `IHostedService` that runs EF Core migrations on startup.                           |
-| `SentinelCoreDBContext` | EF Core DbContext for SQL Server persistence.                                       |
+| `DatabaseInitializer`   | `IHostedService` for schema initialization — marked `[Obsolete]` in favor of a SQL project. |
+| `SentinelCoreDBContext` | EF Core DbContext for case-flow persistence.                                        |
+| `SentinelRAGDBContext`  | EF Core DbContext for the remote knowledge base (`RemoteSources`, `SourceDocs`).    |
 
-### Safety Engine (`SentinelCore.SafetyEngine`) -- stubs/hooks only, design TBD
+### Safety Engine (`SentinelCore.Orchestrations.SafetyEngine`)
 
-| Type                   | Description                                                                                                |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `ISafetyMiddleware`    | Evaluate a `SafetyContext` and return a `SafetyVerdict`.                                                   |
-| `SafetyContext`        | Carries `CaseId`, `FunctionCall`, `FunctionResult`, `Message`, `MutatingToolNames`, `RegisteredToolNames`. |
-| `SafetyVerdict`        | `Allowed`, `Blocked`, or `Modified`.                                                                       |
-| `NullSafetyMiddleware` | Default pass-through — always returns `Allowed`.                                                           |
+| Type                       | Description                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| `ISafetyRule`              | A self-contained, stateless rule that evaluates a prompt for safety concerns.   |
+| `SafetyRuleEngine`         | Evaluates multiple rules sequentially and aggregates their results.             |
+| `SafetyEngineAgent`        | Middleware agent that intercepts prompts before they reach the model.           |
+| `SafetyEvaluationContext`  | The prompt messages and metadata passed to each rule.                           |
+| `SafetyRuleResult`         | The outcome of a single rule evaluation.                                        |
+| `SafetySeverity`           | Severity level used to decide whether to stop evaluating further rules.         |
+| `SafetyEngineOptions`      | `StopOnFirstBlock`, `TreatRuleErrorsAsBlocks`, `BlockedResponseMessage`.        |
+| `Rules/*`                  | 18 built-in rules (prompt injection, PII, data exfiltration, rate limit, etc.). |
 
-### Orchestration (`SentinelCore.Orchestrations`) -- (Single pattern version)
-
-The platform is built around selectable varying patterns for many use cases.
-\*\* Extra patterns have been removed from the Forensics Edition
+### Orchestration (`SentinelCore.Orchestrations`)
 
 | Type                      | Description                                                                   |
-| ------------------------- | ----------------------------------------------------------------------------- | -------------------------------------- |
-| `TheCoreWorkflow`         | Main investigation workflow with signal classification and routing.           |
-| `MagneticOrchestration`   | Multi-agent orchestration: Manager dispatches Domain Agents.                  | -- reduced to mag workflow             |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `TheCoreWorkflow`         | Main investigation workflow with signal classification and switch routing.    |
+| `CustomGroupWorkflow`     | Isolated harness for testing agents and workflows outside the main pipeline.  |
+| `MagneticOrchestration`   | Magnetic orchestration helper handed a list of investigation tasks.           |
 | `OrchestrationControl`    | `IOrchestrationControl` implementation — starts an orchestration.             |
-| `OrchestrationFactory`    | Creates `IOrchestration` instances by `OrchestrationType`.                    | -- Expansion to add orchestrations     |
+| `OrchestrationFactory`    | Creates `IOrchestration` instances by `OrchestrationType`.                    |
 | `SentinelAgentFactory`    | Builds `AIAgent` from `AgentProfile` with full middleware pipeline.           |
-| `AgentBuilder`            | Constructs agents with logging, events, safety, and pattern memory.           |
-| `AgentProfile`            | Immutable specification for agent construction (model, tools, persona, role). |
-| `AgentRole`               | `Core`, `Manager`, or `Utility`.                                              | -- Phasing out in favor of profile     |
-| `AgentMiddlewarePipeline` | Predefined middleware stacks: Core, Default, Domain, Manager, Minimal.        | -- RAG/KB indexing/specialty knowledge |
-| `ToolRegistry`            | Maps 40+ Windows diagnostic tools to domain categories.                       | --- Read-only system interrogaters     |
+| `AgentProfile`            | Immutable specification for agent construction (model, tools, persona).       |
+| `AgentProfileBuilder`     | Builds `AgentProfile` instances from presets or configuration.                |
+| `AgentPresetBase`         | Base record for named agent presets (instructions, persona, middleware, tier).|
+| `AgentMiddlewarePipeline` | Predefined middleware stacks: Core, Default, Domain, Manager, Minimal.        |
+| `MiddlewareFlags`         | Flags enum: Safety, PatternMemory, Rag, Events, Logging, and combinations.    |
+| `SentinelWorkflowExecution` | Universal workflow execution engine with streaming event capture.           |
+| `McpServerRegistry`       | Runtime registry of MCP servers with per-agent tool resolution.               |
+| `RagSearchService`        | Keyword/fuzzy RAG search with a vector-search interface stub.                 |
+| `PersonaRegistry`         | 33 registered personas mapped to `PersonaType`.                               |
+| `CaseTool`                | `AITool` for creating a new case from a natural-language signal.              |
 
 ---
 
 ## Model Providers
 
-SentinelCore supports multiple model providers via `ModelProfile`:
+SentinelCore supports multiple model providers via `ModelProfile.ModelProvider`:
 
-| Provider       | Endpoint Example                        | Notes                                                     |
+| Provider       | Endpoint Example                        | Status                                                    |
 | -------------- | --------------------------------------- | --------------------------------------------------------- |
-| `Ollama`       | `http://127.0.0.1:11434`                | Local/cloud inference, air-gapped capable                 |
-| `OpenAI`       | `https://api.openai.com/v1`             | Requires `ApiKey`                                         |
-| `AzureOpenAI`  | `https://<resource>.openai.azure.com`   | Requires `ApiKey`                                         |
-| `GitHubModels` | `https://models.inference.ai.azure.com` | Requires `ApiKey`                                         |
-| `Anthropic`    | —                                       | Planned (not yet implemented)                             |
-| `Foundry`      | —                                       | Azure AI Foundry                                          |
-| `ONNX`         | Local file path                         | On-device inference via `ModelPath` + `ExecutionProvider` |
+| `Ollama`       | `http://127.0.0.1:11434`                | Implemented — local/cloud inference, air-gapped capable   |
+| `OpenAI`       | `https://api.openai.com/v1`             | Implemented — requires `ApiKey`                           |
+| `AzureOpenAI`  | `https://<resource>.openai.azure.com`   | Implemented — requires `ApiKey`                           |
+| `GitHubModels` | `https://models.inference.ai.azure.com` | Implemented — requires `ApiKey`                           |
+| `Anthropic`    | —                                       | Declared — throws `NotSupportedException`                 |
+| `Foundry`      | —                                       | Declared — not handled by the factory switch              |
+| `Azure`        | —                                       | Declared — not handled by the factory switch              |
+| `OnnxRuntime`  | Local file path                         | Declared — throws `NotSupportedException`                 |
 
 ---
 
 ## Agent Personas
 
-35+ built-in personas give agents distinct perspectives for richer debate and more accurate results:
+33 personas are registered in `PersonaRegistry` (36 persona definitions exist in the `Personas` class; `TheDotnetExpert`, `TheDomainInvestigator`, and `TheAggregator` are defined but not registered).
 These have been crafted to only alter a point of view, not restrict any system or user instruction.
 This eliminates stale group debates, encourages variations in thinking patterns, paired with TopN and temperature you get a clean
 separation of ideas and an actual group discussion that can produced inventive and powerful variations with the same model accross the board.
@@ -466,18 +555,21 @@ separation of ideas and an actual group discussion that can produced inventive a
 | Leadership    | TheArchitect, TheLeader, TheManager, TheStrategist, TheVisionary                                      |
 | Analysis      | TheAnalyst, TheResearcher, TheEvaluator, TheCritic                                                    |
 | Building      | TheEngineer, TheDesigner, TheInnovator, TheImplementer                                                |
-| Communication | TheCommunicator, TheCollaborator, TheNegotiator, TheInfluencer, TheAdvisor                            |
+| Communication | TheCommunicator, TheCollaborator, TheNegotiator, TheInfluencer, TheAdvisor, TheConsultant             |
 | Support       | TheMentor, TheCoach, TheFacilitator, TheSupporter, TheTrainer, TheEducator, TheMotivator, TheInspirer |
 | Operations    | ThePlanner, TheOrganizer, TheTester, TheMaintainer, TheProblemSolver, TheDecisionMaker                |
+| System        | TheCore, TheWorker                                                                                    |
 
 ---
 
-## Windows Diagnostic Tools -- Forensics edition focus --
+## Windows Diagnostic Tools — delivered through MCP
 
 Send it logs overnight and come in the next day with a list of remediation steps
 to fix what it found. Tools are exploratory only, operator applies fixes.
 
-40+ read-only AITools organized by domain:
+The Windows diagnostic tools are no longer part of this repository — they have moved into a separate MCP server project so they can be managed and deployed independently. The library itself now ships only `CaseTool` (case creation) plus the MCP client tools (`MsDocsMcpServerTool`, `SimpleMcpClientTool`). Tools reach agents through `IMcpServerRegistry.GetToolsForAgentAsync()`.
+
+The domain surface map below describes the Windows configuration domains the toolkit covers (see [docs/DomainToolChart.md](docs/DomainToolChart.md) for the authoritative list):
 
 | Domain   | Tools                                                                              |
 | -------- | ---------------------------------------------------------------------------------- |
@@ -487,6 +579,8 @@ to fix what it found. Tools are exploratory only, operator applies fixes.
 | Hardware | Battery, Display, PnP Devices, Sensors, Hyper-V                                    |
 | Software | Installed Apps, Browser Config, Fonts, Search Indexing, Scheduled Tasks            |
 | User     | Local Accounts, Group Policy, Notifications, Accessibility, Shell Explorer         |
+
+See [docs/DomainToolChart.md](docs/DomainToolChart.md) for the full domain → API mapping.
 
 ---
 
@@ -523,10 +617,11 @@ public interface ISentinelCoreEvents
 | `SentinelCoreModelException`     | Errors directly attributable to the AI model        |
 | `SentinelCorePlatformException`  | Fatal platform errors requiring immediate attention |
 | `SentinelOrchestrationException` | Errors during orchestration execution               |
+| `SentinelCoreExecutionException` | Workflow execution failures (wraps the inner cause) |
 
 ---
 
-## Database -- Forecsics edition requires database
+## Database
 
 This edition combines several context enriching strategies to give the models domain specific information for whatever environment you choose to use the platform for.
 
@@ -535,9 +630,14 @@ You only store locally your vectors and where the page/doc lives in the wild if 
 Pattern match middleware - vector indexes are created from resovled cases and are searched first to speed up repeat cases. This builds up over time and is specific to your environment.
 A preset knowledge base of case histories can be installed to get the ball rolling. Or you can just give it directions like "examine the system to identify problems." Sentinel Core dispatches the workers to examine the system.
 
-SentinelCore uses **EF Core with SQL Server** for persistence. The database is initialized automatically via `DatabaseInitializer` (an `IHostedService` that runs migrations on startup).
+SentinelCore uses **EF Core with SQL Server** for persistence. Two contexts are registered by the composition root:
 
-**Tables:** `CaseEntities`, `SignalEntities`, `EvidenceEntities`, `InvestigationPlanEntities`, `InvestigationPlanStepsEntities`, `PatternMemoryEntities`, `ResolutionEntities`
+| Context                 | Connection variable | Tables                                                                                                                              |
+| ----------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `SentinelCoreDBContext` | `SENTINEL_CORE`     | `CaseEntity`, `SignalEntity`, `EvidenceEntity`, `InvestigationPlanStepsEntity`, `PatternMemoryEntity`, `ResolutionEntity`            |
+| `SentinelRAGDBContext`  | `REMOTEKB`          | `RemoteSources`, `SourceDocs`                                                                                                       |
+
+`DatabaseInitializer` exists as an `IHostedService` but is marked `[Obsolete]` in favor of a SQL project (`*.sqlproj`); it is not registered by `AddSentinelCore`.
 
 ---
 
@@ -546,6 +646,26 @@ SentinelCore uses **EF Core with SQL Server** for persistence. The database is i
 ```bash
 dotnet test projects/SentinelCore.Tests/SentinelCore.Tests.csproj
 ```
+
+The test project uses MSTest 4.3.3 with Moq 4.20.72 and includes architecture tests (`DbContextPatternLockTests`, `PersistenceRegistrationTests`) that enforce pattern-lock rules.
+
+---
+
+## Documentation
+
+| Document                                                             | Contents                                          |
+| -------------------------------------------------------------------- | ------------------------------------------------- |
+| [docs/SolutionArchitecture.md](docs/SolutionArchitecture.md)         | Full architecture overview                        |
+| [docs/ContractsComponent.md](docs/ContractsComponent.md)             | Contracts layer details                           |
+| [docs/OrchestrationComponent.md](docs/OrchestrationComponent.md)     | Orchestration layer details                       |
+| [docs/CaseFlowEngineComponent.md](docs/CaseFlowEngineComponent.md)   | Case flow engine details                          |
+| [docs/SafetyRailsComponent.md](docs/SafetyRailsComponent.md)         | Safety engine details                             |
+| [docs/McpServerRegistryComponent.md](docs/McpServerRegistryComponent.md) | MCP server registry details                   |
+| [docs/PersistenceComponent.md](docs/PersistenceComponent.md)         | Persistence layer details                         |
+| [docs/MemoryLayerComponent.md](docs/MemoryLayerComponent.md)         | Pattern memory details                            |
+| [docs/DomainToolChart.md](docs/DomainToolChart.md)                   | Domain → API mapping chart                        |
+| [architecture/pattern-lock.md](architecture/pattern-lock.md)         | Authoritative architectural patterns and rules    |
+| [docs/ProjectTerminology.md](docs/ProjectTerminology.md)             | Canonical terminology                             |
 
 ---
 

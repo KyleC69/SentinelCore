@@ -80,13 +80,14 @@ internal sealed class ExecutorFactory
             PatternCheckExecutor = Create<PatternCheckExecutor>(),
             HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
             VerifyEvidenceExecutor = Create<VerifyEvidenceExecutor>(),
-            DirectAnswerExecutor = Create<DirectAnswerExecutor>(),
+
             NewCaseExecutor = Create<NewCaseExecutor>(),
             AggregationExecutor = Create<AggregationExecutor>(),
             MoreInformationExecutor = Create<MoreInformationExecutor>(),
             CriticalAlert = Create<CriticalAlert>(),
             LoggingExecutor = Create<LoggingExecutor>(),
-            CaseGenExecutor = Create<CaseGenExec>()
+            CaseGenExecutor = Create<CaseGenExec>(),
+
         };
     }
 }
@@ -103,7 +104,6 @@ internal sealed class ExecutorCollection
     public required AggregationExecutor AggregationExecutor { get; init; }
     public required CaseGenExec CaseGenExecutor { get; init; }
     public required CriticalAlert CriticalAlert { get; init; }
-    public required DirectAnswerExecutor DirectAnswerExecutor { get; init; }
     public required EscalatedExecutor EscalatedExecutor { get; init; }
     public required HumanOperatorExecutor HumanOperatorExecutor { get; init; }
     public required LoggingExecutor LoggingExecutor { get; init; }

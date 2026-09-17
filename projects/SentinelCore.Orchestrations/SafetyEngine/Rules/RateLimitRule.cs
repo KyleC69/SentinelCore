@@ -91,7 +91,7 @@ public sealed class RateLimitRule : ISafetyRule
 
 
 
-    /// <inheritdoc />
+ 
     public string Description { get; }
 
 
@@ -101,7 +101,7 @@ public sealed class RateLimitRule : ISafetyRule
 
 
 
-    /// <inheritdoc />
+ 
     public Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
         // Use agent name from context if available, otherwise use a default bucket
@@ -130,7 +130,7 @@ public sealed class RateLimitRule : ISafetyRule
 
 
 
-    /// <inheritdoc />
+ 
     public string Name { get; }
 
 

@@ -65,7 +65,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public Task<McpServerInfo?> GetAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
@@ -135,7 +135,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default)
     {
         IReadOnlyList<McpServerInfo> infos = _entries.Values.Select(e => e.ToInfo()).ToList().AsReadOnly();
@@ -150,7 +150,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public async Task RegisterAsync(McpServerDefinition definition, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definition);
@@ -173,7 +173,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public async Task RemoveAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
@@ -193,7 +193,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-    /// <inheritdoc />
+ 
     public async Task StartAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);

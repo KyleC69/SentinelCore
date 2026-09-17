@@ -35,7 +35,7 @@ public sealed class WpfDispatcherService : IDispatcherService
 
 
 
-    /// <inheritdoc />
+ 
     public bool CheckAccess()
     {
         return Dispatcher.CheckAccess();
@@ -48,7 +48,7 @@ public sealed class WpfDispatcherService : IDispatcherService
 
 
 
-    /// <inheritdoc />
+ 
     public void Invoke(Action action)
     {
         ArgumentNullException.ThrowIfNull(action);
@@ -62,7 +62,7 @@ public sealed class WpfDispatcherService : IDispatcherService
 
 
 
-    /// <inheritdoc />
+ 
     public Task InvokeAsync(Action action)
     {
         ArgumentNullException.ThrowIfNull(action);
@@ -76,7 +76,7 @@ public sealed class WpfDispatcherService : IDispatcherService
 
 
 
-    /// <inheritdoc />
+ 
     public async Task InvokeAsync(Func<Task> func)
     {
         ArgumentNullException.ThrowIfNull(func);

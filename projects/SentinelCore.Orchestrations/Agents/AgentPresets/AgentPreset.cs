@@ -4,13 +4,6 @@
 // Author: Kyle L. Crowder
 // Build Num:  091418
 
-
-
-using SentinelCore.Orchestrations.Personas;
-
-
-
-
 namespace SentinelCore.Orchestrations.Agents.AgentPresets;
 
 
@@ -27,16 +20,18 @@ public abstract class AgentPreset
     ///     Gets the unique name of this agent.
     /// </summary>
     public abstract string AgentName { get; }
-
     /// <summary>
-    ///     Gets the default instructions for this agent.
+    /// Unique, stable identifier for the agent.
     /// </summary>
-    public abstract string DefaultInstructions { get; }
+    /// <remarks>Must be a non-empty, stable value for the agent's lifetime and suitable for lookup and event
+    /// routing. Should be globally unique (for example, a GUID or a qualified name).</remarks>
+    public abstract string AgentId { get; }
 
-    /// <summary>
-    ///     Gets the default persona for this agent, or null for none.
-    /// </summary>
-    public virtual AgentPersona? DefaultPersona { get; } = null;
+
+
+
+
+
 
     /// <summary>
     ///     Gets the role tier for model resolution (Core, Manager, Utility).

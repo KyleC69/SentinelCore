@@ -9,6 +9,7 @@
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Personas;
 
 
@@ -53,8 +54,20 @@ public sealed record AgentProfile
     ///     </para>
     /// </summary>
     public IList<AIContextProvider> AIContextProviders { get; set; } = new List<AIContextProvider>();
-
+    /// <summary>
+    /// Gets or sets the unique identifier for the agent.
+    /// </summary>
+    /// <value>
+    /// A <see cref="string"/> representing the unique identifier of the agent.
+    /// </value>
     public string AgentId { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the name of the agent.
+    /// BOTH AgentId and AgentName are required for the agent to be valid.
+    /// </summary>
+    /// <value>
+    /// A <see cref="string"/> representing the name of the agent.
+    /// </value>
     public string AgentName { get; set; } = string.Empty;
 
     /// <summary>
@@ -68,14 +81,15 @@ public sealed record AgentProfile
     public Func<ChatClientAgent, ILoggerFactory, AIAgent>? BuildAgent { get; init; }
 
     /// <summary>
-    ///     Gets or sets the instructions that guide the behavior of the agent.
+    ///     Gets or sets the model-specific instructions for the agent.
+    ///     These instructions are represented as a collection of <see cref="ChatMessage" /> objects
+    ///     and define the contextual guidelines or directives for the agent's behavior.
+    ///     <para>
+    ///         This property replaces the deprecated <see cref="Instructions" /> property and provides
+    ///         a more structured approach to managing agent instructions.
+    ///     </para>
     /// </summary>
-    /// <remarks>
-    ///     These instructions are used to define the agent's operational context and behavior.
-    ///     They can be customized during the agent's profile creation or updated dynamically
-    ///     to adapt to specific tasks or scenarios.
-    /// </remarks>
-    public string Instructions { get; set; } = string.Empty;
+    public ChatMessages ModelInstructions { get; set; } = new ChatMessages();
 
     /// <summary>
     ///     The model profile for this agent. <c>null</c> means the agent is not
@@ -102,4 +116,8 @@ public sealed record AgentProfile
     ///     The list of tools available to the agent. Default empty, set at runtime
     /// </summary>
     public IList<AITool> Tools { get; set; } = new List<AITool>();
+    /// <summary>
+    /// Not used see constants file
+    /// </summary>
+    public string Instructions { get; set; }
 }

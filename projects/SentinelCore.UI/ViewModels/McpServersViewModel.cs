@@ -174,7 +174,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
 
 
-    /// <inheritdoc />
+ 
     public void Dispose()
     {
         if (_disposed)
@@ -221,7 +221,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
 
 
-    /// <inheritdoc />
+ 
     public void OnNavigatedTo(object? parameter)
     {
         _ = LoadAsync(_lifecycleCts.Token);

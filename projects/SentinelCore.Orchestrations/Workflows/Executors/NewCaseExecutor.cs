@@ -100,6 +100,6 @@ public sealed class NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter rep
 
     private bool IsHypothesisValid(SignalHypothesis hypo)
     {
-        return !string.IsNullOrWhiteSpace(hypo.Category) && !string.IsNullOrWhiteSpace(hypo.Hypothesis) && !string.IsNullOrWhiteSpace(hypo.Reasoning) && hypo.InitialConfidenceScore > 0;
+        return !string.IsNullOrWhiteSpace(hypo.SubSystem) && !string.IsNullOrWhiteSpace(hypo.Hypothesis) && !string.IsNullOrWhiteSpace(hypo.Reasoning) && hypo.ConfidenceScore > 0;
     }
 }

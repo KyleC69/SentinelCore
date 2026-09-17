@@ -84,7 +84,7 @@ public sealed class FileModelConfigStore : IModelConfigStore
 
 
 
-    /// <inheritdoc />
+ 
     public ModelConfigDocument? Load()
     {
         try
@@ -119,7 +119,7 @@ public sealed class FileModelConfigStore : IModelConfigStore
 
 
 
-    /// <inheritdoc />
+ 
     public void Save(ModelConfigDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);

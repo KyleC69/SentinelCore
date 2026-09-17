@@ -57,7 +57,7 @@ public sealed class McpServerRegistryInitializer : IHostedService
 
 
 
-    /// <inheritdoc />
+ 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (_registry is McpServerRegistry serverRegistry)
@@ -78,7 +78,7 @@ public sealed class McpServerRegistryInitializer : IHostedService
 
 
 
-    /// <inheritdoc />
+ 
     public Task StopAsync(CancellationToken cancellationToken)
     {
         return Task.CompletedTask;

@@ -26,7 +26,7 @@ namespace SentinelCore.UI.Services;
 /// </summary>
 public sealed class WpfFolderBrowserService : IFolderBrowserService
 {
-    /// <inheritdoc />
+ 
     public string? BrowseFolder(string title, string initialDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(title);

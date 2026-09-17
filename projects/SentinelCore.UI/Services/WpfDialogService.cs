@@ -25,7 +25,7 @@ namespace SentinelCore.UI.Services;
 /// </summary>
 public sealed class WpfDialogService : IDialogService
 {
-    /// <inheritdoc />
+ 
     public bool Confirm(string title, string message, string confirmButtonText, bool isDestructive)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(title);

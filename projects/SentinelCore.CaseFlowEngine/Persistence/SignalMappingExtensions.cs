@@ -39,7 +39,7 @@ public static class SignalMappingExtensions
                 SignalId = signal.SignalId,
                 SignalText = signal.SignalText,
                 Source = signal.Source,
-                Timestamp = signal.Timestamp
+                FirstSeen = signal.Timestamp
         };
     }
 }

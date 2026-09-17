@@ -45,6 +45,10 @@
 		<PackageReference Include="System.ServiceProcess.ServiceController" />
 		<PackageReference Include="System.Security.Cryptography.Xml" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Providers\" />
+	</ItemGroup>
 	<Target Name="CopyBuildOutput" AfterTargets="Build">
 		<Message Text="Copying build output..." Importance="High" />
 		<Copy SourceFiles="$(TargetDir)$(ProjectName).dll;$(TargetDir)$(ProjectName).pdb" DestinationFolder="F:\Builds\$(ProjectName)" SkipUnchangedFiles="true" />

@@ -232,10 +232,10 @@ public class WorkflowBase
 
 
 
-    private string FormateSubWorkflowErrorEvent(SubworkflowErrorEvent subworkflowError)
+    private string FormatSubWorkflowErrorEvent(SubworkflowErrorEvent subworkflowError)
     {
         // No meaningful error string is currently available; return an empty string to avoid null.
-        return string.Empty;
+        return $"SubWorkflow error: {subworkflowError.SubworkflowId}, Error: {subworkflowError.Data}";
     }
 
 
@@ -252,7 +252,7 @@ public class WorkflowBase
             WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
             AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
             AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
-            SubworkflowErrorEvent subworkflowError => FormateSubWorkflowErrorEvent(subworkflowError),
+            SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
             WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
             WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
             WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),

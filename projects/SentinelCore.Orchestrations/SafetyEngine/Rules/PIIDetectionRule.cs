@@ -93,7 +93,7 @@ public sealed class PIIDetectionRule : ISafetyRule
 
 
 
-    /// <inheritdoc />
+ 
     public string Description { get; }
 
 
@@ -103,7 +103,7 @@ public sealed class PIIDetectionRule : ISafetyRule
 
 
 
-    /// <inheritdoc />
+ 
     public Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
         string text = context.CombinedText;
@@ -131,6 +131,6 @@ public sealed class PIIDetectionRule : ISafetyRule
 
 
 
-    /// <inheritdoc />
+ 
     public string Name { get; }
 }

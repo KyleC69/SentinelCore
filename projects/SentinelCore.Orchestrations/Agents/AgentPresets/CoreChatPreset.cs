@@ -23,35 +23,28 @@ namespace SentinelCore.Orchestrations.Agents.AgentPresets;
 /// </summary>
 public sealed record CoreChatPreset : AgentPresetBase
 {
-    /// <inheritdoc />
+
     public override string AgentName
     {
         get => "CoreChat";
     }
 
-    /// <inheritdoc />
-    public override string DefaultInstructions
-    {
-        get => """
-               You are CoreChat, the primary reasoning agent in the SentinelCore platform.
-               You handle direct user interactions and coordinate with other agents to fulfill requests.
-               Be thorough, accurate, and helpful. Escalate complex tasks to the appropriate specialized agents.
-               """;
-    }
 
-    /// <inheritdoc />
+
+
+
     public override PersonaType? DefaultPersona
     {
         get => PersonaType.TheAdvisor;
     }
 
-    /// <inheritdoc />
+
     public override MiddlewareFlags MiddlewareFlags
     {
         get => MiddlewareFlags.Core | MiddlewareFlags.Rag;
     }
 
-    /// <inheritdoc />
+
     public override ModelTier Tier
     {
         get => ModelTier.Core;

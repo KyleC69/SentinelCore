@@ -6,6 +6,7 @@
 
 
 
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 
@@ -32,7 +33,7 @@ public sealed class SignalHypothesis
     /// <summary>
     ///     The classifier's hypothesis about the nature of the signal.
     /// </summary>
-    [JsonPropertyName("hypothesis")]
+    [JsonPropertyName("hypothesis")][Description("What do you think the signal is trying to indicate? What is the root cause for the signal.")]
     public string? Hypothesis { get; set; }
 
     /// <summary>
@@ -57,6 +58,6 @@ public sealed class SignalHypothesis
     /// <summary>
     ///     Models justification for decisions made by the classifier.
     /// </summary>
-    [JsonPropertyName("reasoning")]
+    [JsonPropertyName("reasoning")][Description("The reason behind your choice for next step")]
     public string? Reasoning { get; set; }
 }

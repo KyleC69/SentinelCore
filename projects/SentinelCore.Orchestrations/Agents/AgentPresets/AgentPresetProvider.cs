@@ -107,7 +107,7 @@ public sealed class AgentPresetProvider : IAgentPresetProvider
 
 
 
-    /// <inheritdoc />
+
     public IReadOnlyList<AgentPresetBase> GetAllPresets()
     {
         return _presets.Values.ToList().AsReadOnly();
@@ -120,7 +120,7 @@ public sealed class AgentPresetProvider : IAgentPresetProvider
 
 
 
-    /// <inheritdoc />
+
     public AgentPresetBase? GetPreset(string agentName)
     {
         return _presets.TryGetValue(agentName, out AgentPresetBase? preset) ? preset : null;
@@ -133,7 +133,7 @@ public sealed class AgentPresetProvider : IAgentPresetProvider
 
 
 
-    /// <inheritdoc />
+
     public IReadOnlyList<string> ListPresets()
     {
         return _presets.Keys.ToList().AsReadOnly();
@@ -169,23 +169,4 @@ public static class AgentPresetExtensions
 
 
 
-
-
-    /// <summary>
-    ///     Gets the instruction string for this preset.
-    /// </summary>
-    /// <param name="preset">The agent preset.</param>
-    /// <param name="taskInstructions">
-    ///     Optional task-specific instructions to append or replace defaults.
-    /// </param>
-    /// <returns>The complete instructions string.</returns>
-    public static string GetInstructions(this AgentPresetBase preset, string? taskInstructions = null)
-    {
-        if (string.IsNullOrWhiteSpace(taskInstructions))
-        {
-            return preset.DefaultInstructions;
-        }
-
-        return $"{preset.DefaultInstructions}\n\n## Task-Specific Instructions\n{taskInstructions}";
-    }
 }

@@ -59,7 +59,7 @@ public sealed class NavigationService : INavigationService
 
 
 
-    /// <inheritdoc />
+ 
     public void Initialize(Frame shellFrame)
     {
         _shellFrame = shellFrame;
@@ -72,7 +72,7 @@ public sealed class NavigationService : INavigationService
 
 
 
-    /// <inheritdoc />
+ 
     public bool NavigateTo(string? pageKey, object? parameter = null)
     {
         if (_shellFrame is null || string.IsNullOrWhiteSpace(pageKey))

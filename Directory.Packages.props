@@ -7,7 +7,7 @@
     <PackageVersion Include="Microsoft.Agents.AI" Version="1.21.0" />
     <PackageVersion Include="Microsoft.Agents.AI.Abstractions" Version="1.21.0" />
     <PackageVersion Include="Microsoft.Agents.AI.Harness" Version="1.21.0" />
-    <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="1.19.0-alpha.260822.1" />
+    <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="1.21.0-alpha.260911.1" />
     <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.21.0" />
     <PackageVersion Include="Microsoft.Agents.AI.Workflows.Generators" Version="1.21.0" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.0-preview2.26190.5" />
@@ -25,7 +25,7 @@
     <PackageVersion Include="System.DirectoryServices.AccountManagement" Version="10.0.0" />
     <PackageVersion Include="System.Management.Automation" Version="7.6.4" />
     <PackageVersion Include="TaskScheduler" Version="2.11.0" />
-    <PackageVersion Include="ModelContextProtocol" Version="2.1.0" />
+    <PackageVersion Include="ModelContextProtocol" Version="2.2.0" />
   </ItemGroup>
   <!-- Microsoft.Extensions packages -->
   <ItemGroup>
@@ -57,6 +57,8 @@
     <PackageVersion Include="MSTest.TestAdapter" Version="4.2.3" />
     <PackageVersion Include="MSTest.TestFramework" Version="4.2.3" />
     <PackageVersion Include="MSTest" Version="4.2.3" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
   </ItemGroup>
   <!-- Other packages -->
   <ItemGroup>

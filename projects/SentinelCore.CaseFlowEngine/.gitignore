@@ -12,7 +12,7 @@
 *.user
 *.userosscache
 *.sln.docstates
-*.dbmdl
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -34,6 +34,11 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+
+
+
+[Mm]igrations
+
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -480,8 +485,3 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
-/projects/SentinelCore/SentinelCore.sqlproj
-/projects/SentinelCore.CaseFlowEngine/.env
-/projects/SentinelCore.CaseFlowEngine/dab-build.cmd
-/projects/SentinelCore.CaseFlowEngine/dab-options.json
-/projects/SentinelCore.CaseFlowEngine/efpt.config.json

@@ -94,7 +94,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-    /// <inheritdoc />
+ 
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;

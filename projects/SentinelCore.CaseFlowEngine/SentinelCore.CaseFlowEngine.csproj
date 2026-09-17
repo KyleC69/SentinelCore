@@ -7,11 +7,7 @@
 	  <RootNamespace>SentinelCore.CaseFlowEngine</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Abstractions\**" />
-    <EmbeddedResource Remove="Abstractions\**" />
-    <None Remove="Abstractions\**" />
-  </ItemGroup>
+
 
   <ItemGroup>
 	<InternalsVisibleTo Include="SentinelCore.Tests" />

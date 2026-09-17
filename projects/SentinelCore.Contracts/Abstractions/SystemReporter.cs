@@ -28,8 +28,8 @@ namespace SentinelCore.Contracts.Abstractions;
 /// </summary>
 public sealed class SystemReporter : ISystemReporter
 {
-    private readonly ILogger<SystemReporter> _logger;
-    private readonly ISentinelCoreEvents _publisher;
+    private ILogger _logger;
+    private ISentinelCoreEvents _publisher;
 
 
 
@@ -43,11 +43,11 @@ public sealed class SystemReporter : ISystemReporter
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="publisher">The SentinelCore event hub.</param>
-    public SystemReporter(ILogger<SystemReporter> logger, ISentinelCoreEvents publisher)
+    public SystemReporter(ILoggerFactory factory, ISentinelCoreEvents publisher)
     {
-        Throw.IfNull(logger);
+        Throw.IfNull(factory);
         Throw.IfNull(publisher);
-        _logger = logger;
+        _logger = factory.CreateLogger("SystemReporter");
         _publisher = publisher;
     }
 
@@ -64,7 +64,7 @@ public sealed class SystemReporter : ISystemReporter
     /// <param name="message">The debug message to log.</param>
     public void DebugMsg(string message)
     {
-        _logger.LogDebug(message);
+        _logger.LogDebug("[DEBUG] {Message}", message);
     }
 
 
@@ -89,7 +89,7 @@ public sealed class SystemReporter : ISystemReporter
         }
         else
         {
-            _logger.LogError(ex, "{Message}", message ?? ex.Message);
+            _logger.LogError(ex, "[ERROR] {Message}", message ?? ex.Message);
             _publisher.RaiseError(message ?? ex.Message, ex);
         }
     }
@@ -107,13 +107,9 @@ public sealed class SystemReporter : ISystemReporter
     /// <param name="message">The informational message.</param>
     public void ReportInfo(string message)
     {
-        _logger.LogInformation(message);
+        _logger.LogInformation("[INFO] " + message);
         _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
     }
-
-
-
-
 
 
 
@@ -125,7 +121,7 @@ public sealed class SystemReporter : ISystemReporter
     /// <param name="ex">An optional exception associated with the warning.</param>
     public void ReportWarning(string message, Exception? ex = null)
     {
-        _logger.LogWarning(ex, "{Message}", message);
+        _logger.LogWarning(ex, "[WARNING] {Message}", message);
         _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
     }
 }

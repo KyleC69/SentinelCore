@@ -1,6 +1,6 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
-// File:         ManagerPreset.cs
+// File:         ClassifierPreset.cs
 // Author: Kyle L. Crowder
 // Build Num:  091418
 
@@ -11,18 +11,16 @@ namespace SentinelCore.Orchestrations.Agents.AgentPresets;
 
 
 /// <summary>
-///     Preset configuration for the Manager agent.
-///     Handles workflow management and coordination of task agents.
+///     Preset configuration for the Classifier agent.
+///     Responsible for routing and classifying incoming signals or requests.
 /// </summary>
-public sealed record ManagerPreset : AgentPresetBase
+public sealed record DirectAnswerPreset : AgentPresetBase
 {
 
     public override string AgentName
     {
-        get => "Manager";
+        get => "DirectAnswer";
     }
-
-
 
 
 
@@ -30,12 +28,12 @@ public sealed record ManagerPreset : AgentPresetBase
 
     public override MiddlewareFlags MiddlewareFlags
     {
-        get => MiddlewareFlags.Manager;
+        get => MiddlewareFlags.Utility;
     }
 
 
     public override ModelTier Tier
     {
-        get => ModelTier.Manager;
+        get => ModelTier.Utility;
     }
 }
