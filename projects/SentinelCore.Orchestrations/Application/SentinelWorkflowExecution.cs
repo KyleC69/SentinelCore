@@ -184,7 +184,7 @@ public sealed class SentinelWorkflowExecution : ISentinelWorkflowExecution
         }
         catch (Exception ex)
         {
-            _systemReporter.ReportError(ex, $"{phaseLabel}: Workflow execution failed.");
+            _systemReporter.ReportError($"{phaseLabel}: Workflow execution failed.", ex);
             _eventing.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(phaseLabel, $"{phaseLabel}: Workflow execution failed — {ex.Message}", ActivityType.System));
             throw;
         }
@@ -293,13 +293,13 @@ public sealed class SentinelWorkflowExecution : ISentinelWorkflowExecution
                 break;
 
             case WorkflowErrorEvent errorEvent:
-                _systemReporter.ReportError(errorEvent.Exception ?? new InvalidOperationException($"{phaseLabel} workflow error."), $"{phaseLabel} workflow failed.");
+                _systemReporter.ReportError($"{phaseLabel} workflow failed.", errorEvent.Exception ?? new InvalidOperationException($"{phaseLabel} workflow error."));
                 eventLog.Add(new WorkflowEventEntry(WorkflowEventType.Error, phaseLabel, errorEvent.Exception != null ? errorEvent.Exception.Message : "Unknown error"));
                 break;
 
             case ExecutorFailedEvent executorFailed:
                 string failedMessage = $"Executor '{executorFailed.ExecutorId}' failed: {executorFailed.Data}";
-                _systemReporter.ReportError(new InvalidOperationException(failedMessage), $"Executor '{executorFailed.ExecutorId}' failed in {phaseLabel}.");
+                _systemReporter.ReportError($"Executor '{executorFailed.ExecutorId}' failed in {phaseLabel}.", new InvalidOperationException(failedMessage));
                 eventLog.Add(new WorkflowEventEntry(WorkflowEventType.ExecutorFailed, executorFailed.ExecutorId, failedMessage));
                 break;
 

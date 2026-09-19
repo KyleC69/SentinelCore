@@ -33,9 +33,9 @@ public interface ISystemReporter
     /// <summary>
     ///     Reports an error to the logging pipeline and the host UI event stream.
     /// </summary>
-    /// <param name="ex">The exception that occurred.</param>
     /// <param name="message">An optional descriptive message.</param>
-    void ReportError(Exception? ex, string? message = null);
+    /// <param name="ex">The exception that occurred.</param>
+    void ReportError(string message, Exception? ex = null);
 
 
 

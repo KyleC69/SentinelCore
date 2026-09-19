@@ -17,11 +17,11 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
-internal sealed class CriticalAlert(ICaseFlowEngine flowEngine) : Executor<string, string>("CriticalError")
+internal sealed class CriticalAlert(ICaseFlowEngine flowEngine) : Executor<SignalHypothesis, string>("CriticalError")
 {
 
-    public override ValueTask<string> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = new())
+    public override ValueTask<string> HandleAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken = new())
     {
-        return default;
+        throw new NotImplementedException();
     }
 }

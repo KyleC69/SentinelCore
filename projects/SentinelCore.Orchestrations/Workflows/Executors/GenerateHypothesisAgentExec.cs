@@ -52,7 +52,7 @@ public class GenerateHypothesisAgentExec(AIAgent agent, ISystemReporter reporter
             Console.WriteLine($"[CRITICAL WORKFLOW ERROR] Failed at {this.ToString()}");
             Console.WriteLine($"Exception Type: {ex.GetType().Name}");
             Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-            reporter.ReportError(ex, "An error occurred in HandleAsync of GenerateHypothesisAgentExec");
+            reporter.ReportError("An error occurred in HandleAsync of GenerateHypothesisAgentExec", ex);
             throw;
         }
 

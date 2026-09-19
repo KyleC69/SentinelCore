@@ -158,7 +158,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         ClassifierAgentExec classifierExec = new(_classifierAgent, _reporter);
         TheCoreExec sentinelCoreExec = new(_sentinelCoreAgent, _sentinelCoreSession, _reporter);
-        DirectAnswerExecutor directAnswerAgentExec = new(_classifierAgent, _reporter);
+        DirectAnswerExecutor directAnswerAgentExec = new(_sentinelCoreAgent, _reporter);
 
 
 
@@ -182,7 +182,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // ------- RedAlert Branch -------------------------
         builder.AddEdge(executors.CriticalAlert, executors.HumanOperatorExecutor)
 
-                // -- ------- MoreInformation Branch -------------------------               
+                // -- ------- MoreInformation Branch -------------------------
                 .AddEdge(executors.MoreInformationExecutor, executors.HumanOperatorExecutor)
 
                 // --------- EscalateToHumanOperator Branch -------------------------
@@ -198,10 +198,9 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
                 .WithDescription("The main investigation and case management workflow");
 
         Workflow flow = builder.Build();
-
-        VisualizeWorkflow(flow);
-
         return Task.FromResult(flow);
+
+
     }
 
 
@@ -427,7 +426,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
     private void HandleExecutionException(Exception ex)
     {
-        _reporter.ReportError(ex, "An exception occurred during workflow execution.");
+        _reporter.ReportError("An exception occurred during workflow execution.", ex);
     }
 
 

@@ -51,7 +51,7 @@ internal sealed class CaseGenExec(ICaseGenerator generator, ISystemReporter repo
         }
         catch (Exception ex)
         {
-            reporter.ReportError(ex, "CaseGenExec failed to generate case.");
+            reporter.ReportError("CaseGenExec failed to generate case.", ex);
             return "Failed to generate a case and had to exit the workflow. Please check the logs for more information.";
         }
     }

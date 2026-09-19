@@ -6,6 +6,8 @@
 
 
 
+using System.Diagnostics.CodeAnalysis;
+
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Abstractions;
@@ -65,6 +67,7 @@ public sealed class SystemReporter : ISystemReporter
     public void DebugMsg(string message)
     {
         _logger.LogDebug("[DEBUG] {Message}", message);
+        _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
     }
 
 
@@ -77,21 +80,13 @@ public sealed class SystemReporter : ISystemReporter
     /// <summary>
     ///     Reports an error to the logging pipeline and the host UI event stream.
     /// </summary>
+    /// <param name="message">A descriptive message.</param>
     /// <param name="ex">The exception that occurred.</param>
-    /// <param name="message">An optional descriptive message.</param>
-    public void ReportError(Exception? ex, string? message = null)
+    public void ReportError([NotNull] string message, Exception? ex = null)
     {
-        // Guard against a null exception; log a generic message if ex is null.
-        if (ex is null)
-        {
-            _logger.LogError(message ?? "An error occurred.");
-            _publisher.RaiseError(message ?? "An error occurred.", new Exception(message ?? "An error occurred."));
-        }
-        else
-        {
-            _logger.LogError(ex, "[ERROR] {Message}", message ?? ex.Message);
-            _publisher.RaiseError(message ?? ex.Message, ex);
-        }
+
+        _logger.LogError(ex, "[ERROR] {Message}", message ?? ex.Message);
+        _publisher.RaiseError(message ?? ex.Message, ex);
     }
 
 

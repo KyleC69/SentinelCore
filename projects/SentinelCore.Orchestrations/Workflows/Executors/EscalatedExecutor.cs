@@ -12,7 +12,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
-internal sealed class EscalatedExecutor() : Executor<string, string>("EscalatedExecutor")
+internal sealed class EscalatedExecutor() : Executor<SignalHypothesis, string>("EscalatedExecutor")
 {
 
     /// <summary>Initialize the executor with a unique identifier</summary>
@@ -29,23 +29,7 @@ internal sealed class EscalatedExecutor() : Executor<string, string>("EscalatedE
 
 
 
-    /// <summary>
-    ///     Configures the protocol by setting up routes and declaring the message types used for sending and yielding
-    ///     output.
-    /// </summary>
-    /// <remarks>
-    ///     This method serves as the primary entry point for protocol configuration. It integrates route
-    ///     setup and message type declarations. For backward compatibility, it is currently invoked from the
-    ///     RouteBuilder.
-    /// </remarks>
-    /// <returns>
-    ///     An instance of <see cref="T:Microsoft.Agents.AI.Workflows.ExecutorProtocol" /> that represents the fully
-    ///     configured protocol.
-    /// </returns>
-    protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder protocolBuilder)
-    {
-        return protocolBuilder;
-    }
+
 
 
 
@@ -71,8 +55,8 @@ internal sealed class EscalatedExecutor() : Executor<string, string>("EscalatedE
     ///     This method is overridden to provide custom handling logic for messages within the workflow.
     ///     Ensure that the implementation is thread-safe if the executor is declared as cross-run shareable.
     /// </remarks>
-    public override ValueTask<string> HandleAsync(string message, IWorkflowContext context, CancellationToken cancellationToken = new())
+    public override ValueTask<string> HandleAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken = new())
     {
-        return default;
+        throw new NotImplementedException();
     }
 }

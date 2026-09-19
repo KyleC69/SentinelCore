@@ -57,7 +57,7 @@ internal class TheCoreExec(AIAgent agent, AgentSession session, ISystemReporter 
         catch (Exception ex)
         {
             // Report the error
-            reporter.ReportError(ex, "An error occurred while handling the SignalHypothesis.");
+            reporter.ReportError("An error occurred while handling the SignalHypothesis.", ex);
             throw;
         }
     }

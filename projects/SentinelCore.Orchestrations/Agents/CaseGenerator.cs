@@ -194,7 +194,7 @@ public class CaseGenerator : ICaseGenerator, IDisposable
         catch (Exception ex)
         {
 
-            _reporter.ReportError(ex, "An error occured running case creation sprint.");
+            _reporter.ReportError("An error occured running case creation sprint.", ex);
 
             return ex.Message;
 

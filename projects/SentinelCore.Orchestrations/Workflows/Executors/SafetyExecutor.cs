@@ -108,7 +108,7 @@ public sealed class SafetyExecutor : Executor<ChatMessage, ChatMessage>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during safety evaluation");
-            _reporter.ReportError(ex, "Safety evaluation error");
+            _reporter.ReportError("Safety evaluation error", ex);
         }
 
         _reporter.ReportInfo("Leaving safety exec");

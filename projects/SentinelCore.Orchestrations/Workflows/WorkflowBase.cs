@@ -280,7 +280,7 @@ public class WorkflowBase
 
         if (evt is SubworkflowErrorEvent subError)
         {
-            _reporter.ReportError(subError.Exception, $"Sub-workflow '{subError.SubworkflowId}' failed: {subError.Data}");
+            _reporter.ReportError($"Sub-workflow '{subError.SubworkflowId}' failed: {subError.Data}", subError.Exception);
         }
 
         // Buffer streaming update chunks; they are reported as part of the complete message

@@ -64,7 +64,7 @@ public sealed class NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter rep
         }
         catch (Exception e)
         {
-            reporter.ReportError(e, $"Failure during new case creation executor: {Id}");
+            reporter.ReportError($"Failure during new case creation executor: {Id}", e);
 
         }
 
@@ -86,7 +86,7 @@ public sealed class NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter rep
         // Update the case status to "Failed" and append notes
         // To get to this point we have gone through several data validation steps, we should bump this up to ops for review if we get an error.
         await caseEng.AdvanceCaseAsync(Guid.Empty, CaseStatus.AwaitingInput, CancellationToken.None).ConfigureAwait(false);
-        reporter.ReportError(new SentinelCaseEngineException("Failure during model output verification"), "Failed llm validation");
+        reporter.ReportError("Failed llm validation", new SentinelCaseEngineException("Failure during model output verification"));
 
         // Optionally, you can add more logic here to log additional details or perform other actions
     }

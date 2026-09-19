@@ -390,7 +390,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     {
         StatusMessage = $"Agent: {args.AgentName} {args.Message}";
 
-        AddToMessages(new ChatMessage(ChatRole.Assistant, args.Message));
+
     }
 
 

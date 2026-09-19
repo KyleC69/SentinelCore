@@ -83,7 +83,7 @@ public sealed class ClassifierAgentExec(AIAgent agent, ISystemReporter reporter)
         catch (Exception e)
         {
             //log and go
-            reporter.ReportError(e, e.Message);
+            reporter.ReportError(e.Message, e);
         }
 
         return new SignalHypothesis();

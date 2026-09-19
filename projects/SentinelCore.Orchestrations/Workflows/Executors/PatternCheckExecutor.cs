@@ -37,7 +37,8 @@ public sealed class PatternCheckExecutor(ISystemReporter reporter) : Executor<Ch
 
 
 
-
+    //Intentionally pass the message through to the next executor, as this is a check and not a transformation
+    // Not fully implemented, but this is a placeholder for future pattern matching logic
 
     public override async ValueTask<ChatMessage> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken token)
     {
