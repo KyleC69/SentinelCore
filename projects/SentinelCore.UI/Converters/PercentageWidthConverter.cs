@@ -25,7 +25,7 @@ namespace SentinelCore.UI.Converters;
 [ValueConversion(typeof(double), typeof(double))]
 public sealed class PercentageWidthConverter : IValueConverter
 {
-    public object Convert(object value, Type? targetType, object parameter, CultureInfo? culture)
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is double width && double.IsFinite(width) && width > 0)
         {
@@ -44,7 +44,7 @@ public sealed class PercentageWidthConverter : IValueConverter
 
 
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         throw new NotSupportedException($"{nameof(PercentageWidthConverter)} is a one-way converter.");
     }

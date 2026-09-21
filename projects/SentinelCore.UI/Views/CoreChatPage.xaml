@@ -8,8 +8,10 @@
     xmlns:mdvctrl="clr-namespace:MarkdownViewer.Wpf.Controls;assembly=MarkdownViewer.Wpf"
     xmlns:converters="clr-namespace:SentinelCore.UI.Converters"
     xmlns:models="clr-namespace:Microsoft.Extensions.AI;assembly=Microsoft.Extensions.AI.Abstractions"
+    xmlns:viewModels="clr-namespace:SentinelCore.UI.ViewModels"
     mc:Ignorable="d"
     d:DesignHeight="700" d:DesignWidth="900"
+    d:DataContext="{d:DesignInstance viewModels:CoreChatViewModel}"
     Background="{DynamicResource ChatBackground}"
     FontFamily="Segoe UI">
 

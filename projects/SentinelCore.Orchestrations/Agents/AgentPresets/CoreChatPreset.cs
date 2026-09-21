@@ -4,13 +4,6 @@
 // Author: Kyle L. Crowder
 // Build Num:  091418
 
-
-
-using SentinelCore.Orchestrations.Personas;
-
-
-
-
 namespace SentinelCore.Orchestrations.Agents.AgentPresets;
 
 
@@ -30,13 +23,6 @@ public sealed record CoreChatPreset : AgentPresetBase
     }
 
 
-
-
-
-    public override PersonaType? DefaultPersona
-    {
-        get => PersonaType.TheAdvisor;
-    }
 
 
     public override MiddlewareFlags MiddlewareFlags

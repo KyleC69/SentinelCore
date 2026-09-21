@@ -4,8 +4,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:viewModels="clr-namespace:SentinelCore.UI.ViewModels"
     mc:Ignorable="d"
     d:DesignHeight="700" d:DesignWidth="900"
+    d:DataContext="{d:DesignInstance viewModels:McpServersViewModel}"
     Background="{DynamicResource ChatBackground}"
     FontFamily="Segoe UI">
 
@@ -178,7 +180,7 @@
                                    Text="Assigned Agents (leave all unchecked for every agent)" />
                         <ItemsControl ItemsSource="{Binding NewServerAgentAssignments}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate d:DataType="viewModels:AgentAssignmentRow">
                                     <CheckBox Content="{Binding AgentName}"
                                               IsChecked="{Binding IsAssigned, Mode=TwoWay}"
                                               Margin="0,2,16,2" />
@@ -220,7 +222,7 @@
                                         Width="260" />
                     <DataGridTemplateColumn Header="Status" Width="110">
                         <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
+                            <DataTemplate d:DataType="viewModels:McpServerRow">
                                 <StackPanel Orientation="Horizontal">
                                     <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
                                         <Ellipse.Style>
@@ -279,7 +281,7 @@
                     <ItemsControl ItemsSource="{Binding SelectedServerAgentAssignments}"
                                   Margin="0,10,0,0">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate d:DataType="viewModels:AgentAssignmentRow">
                                 <CheckBox Content="{Binding AgentName}"
                                           IsChecked="{Binding IsAssigned, Mode=TwoWay}"
                                           Margin="0,2,16,2" />

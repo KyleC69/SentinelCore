@@ -35,10 +35,6 @@ public interface IAgentProfileBuilder
     ///     If a preset exists for the agent name, it will be used to populate defaults.
     /// </summary>
     /// <param name="agentName">The name of the agent to be created.</param>
-    /// <param name="taskInstructions">Optional task-specific instructions to customize the agent's behavior.</param>
-    /// <param name="personaOverride">Optional persona to override the preset default.</param>
-    /// <returns>An <see cref="AgentProfile" /> instance containing the configuration for the agent.</returns>
-    AgentProfile BuildAgentSpec(string agentName, string? taskInstructions = null, AgentPersona? personaOverride = null);
 
 
 
@@ -55,7 +51,7 @@ public interface IAgentProfileBuilder
     /// <param name="taskInstructions">Optional task-specific instructions to append to defaults.</param>
     /// <param name="personaOverride">Optional persona to override the preset default.</param>
     /// <returns>An <see cref="AgentProfile" /> configured from the preset.</returns>
-    AgentProfile BuildFromPreset(AgentPresetBase preset, string? taskInstructions = null, AgentPersona? personaOverride = null);
+    AgentProfile BuildFromPreset(AgentPresetBase preset);
 
 
 
@@ -240,6 +236,25 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
         // No hardcoded fallback — the factory gate rejects unconfigured agents.
         profile.Model = _options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent) ? perAgent : null;
+
+        return profile;
+    }
+
+
+
+
+
+
+
+
+    public AgentProfile BuildFromPreset(AgentPresetBase preset)
+    {
+        Throw.IfNull(preset);
+
+        AgentProfile profile = new() { AgentName = preset.AgentName, AgentId = preset.AgentName };
+
+        // Model configuration comes from settings
+        profile.Model = TryGetModel(preset.AgentName);
 
         return profile;
     }

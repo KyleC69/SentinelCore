@@ -7,9 +7,6 @@
 
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
-using Newtonsoft.Json;
 
 using SentinelCore.Orchestrations.Workflows.Executors;
 
@@ -28,7 +25,6 @@ namespace SentinelCore.Orchestrations.Workflows;
 /// </summary>
 internal sealed class ExecutorFactory
 {
-    private readonly ILoggerFactory _loggerFactory;
     private readonly IServiceProvider _serviceProvider;
 
 
@@ -38,10 +34,9 @@ internal sealed class ExecutorFactory
 
 
 
-    public ExecutorFactory(IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
+    public ExecutorFactory(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
     }
 
 
@@ -109,5 +104,5 @@ internal sealed class ExecutorCollection
     public required PatternCheckExecutor PatternCheckExecutor { get; init; }
     public required SafetyExecutor SafetyExecutor { get; init; }
     public required PersistEvidence PersistEvidenceExecutor { get; init; }
-    public TerminateWorkflow TerminateWorkflow { get; internal set; }
+    public required TerminateWorkflow TerminateWorkflow { get; init; }
 }

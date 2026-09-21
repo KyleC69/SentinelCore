@@ -15,7 +15,7 @@ namespace SentinelCore.Orchestrations.SafetyEngine;
 /// <summary>
 ///     Configuration options for the <see cref="SafetyEngineAgent" />.
 /// </summary>
-public sealed class SafetyEngineOptions
+public sealed record SafetyEngineOptions
 {
 
     /// <summary>

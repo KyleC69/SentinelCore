@@ -19,7 +19,7 @@ namespace SentinelCore.UI.Services;
 
 /// <summary>
 ///     WPF implementation of <see cref="IClipboardService" /> that delegates
-///     to <see cref="Clipboard.SetText" />.
+///     to <see cref="Clipboard.SetText(string)" />.
 /// </summary>
 public sealed class WpfClipboardService : IClipboardService
 {

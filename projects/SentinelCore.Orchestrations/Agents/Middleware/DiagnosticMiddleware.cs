@@ -6,6 +6,8 @@
 
 
 
-public class Class1
+namespace SentinelCore.Orchestrations.Agents.Middleware;
+
+public class DiagnosticMiddleware
 {
 }

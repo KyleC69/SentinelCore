@@ -6,11 +6,8 @@
 
 
 
-using System.Diagnostics.CodeAnalysis;
-
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Events;
 
 
@@ -43,14 +40,14 @@ public sealed class SystemReporter : ISystemReporter
     /// <summary>
     ///     Initializes a new instance of the <see cref="SystemReporter" /> class.
     /// </summary>
-    /// <param name="logger">The logger.</param>
+    /// <param name="factory">The logger factory.</param>
     /// <param name="publisher">The SentinelCore event hub.</param>
     public SystemReporter(ILoggerFactory factory, ISentinelCoreEvents publisher)
     {
-        Throw.IfNull(factory);
-        Throw.IfNull(publisher);
+        ArgumentNullException.ThrowIfNull(factory);
+
         _logger = factory.CreateLogger("SystemReporter");
-        _publisher = publisher;
+        _publisher = publisher ?? throw new ArgumentException(nameof(publisher));
     }
 
 
@@ -82,11 +79,11 @@ public sealed class SystemReporter : ISystemReporter
     /// </summary>
     /// <param name="message">A descriptive message.</param>
     /// <param name="ex">The exception that occurred.</param>
-    public void ReportError([NotNull] string message, Exception? ex = null)
+    public void ReportError(string? message, Exception? ex = null)
     {
-
-        _logger.LogError(ex, "[ERROR] {Message}", message ?? ex.Message);
-        _publisher.RaiseError(message ?? ex.Message, ex);
+        string finalMessage = message ?? ex?.Message ?? "An unspecified error occurred.";
+        _logger.LogError(ex, "[ERROR] {Message}", finalMessage);
+        _publisher.RaiseError(finalMessage, ex ?? new Exception(finalMessage));
     }
 
 
@@ -105,6 +102,10 @@ public sealed class SystemReporter : ISystemReporter
         _logger.LogInformation("[INFO] " + message);
         _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
     }
+
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         CoreChatPage.xaml.cs
 // Author: Kyle L. Crowder
@@ -8,7 +8,6 @@
 
 using System.Collections.Specialized;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 using SentinelCore.UI.ViewModels;
@@ -25,11 +24,11 @@ namespace SentinelCore.UI.Views;
 /// <summary>
 ///     Code-behind for the chat page.
 ///     Responsibilities scoped to this file:
-///     • ViewModel wiring and DataContext assignment
-///     • Auto-scroll to the latest message as items arrive
-///     • Enter-to-send keyboard shortcut
+///     � ViewModel wiring and DataContext assignment
+///     � Auto-scroll to the latest message as items arrive
+///     � Enter-to-send keyboard shortcut
 /// </summary>
-public partial class CoreChatPage : Page
+public partial class CoreChatPage
 {
     private readonly CoreChatViewModel _viewModel;
 
@@ -63,7 +62,7 @@ public partial class CoreChatPage : Page
 
 
     /// <summary>
-    ///     Enter → send.  Shift+Enter → natural newline (handled by TextBox).
+    ///     Enter ? send.  Shift+Enter ? natural newline (handled by TextBox).
     ///     Setting e.Handled = true prevents the TextBox from inserting a newline.
     /// </summary>
     private void InputBox_KeyDown(object? sender, KeyEventArgs e)

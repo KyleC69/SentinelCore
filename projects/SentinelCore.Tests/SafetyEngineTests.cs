@@ -50,10 +50,10 @@ public sealed class SafetyEngineAgentTests
         SafetyEvaluationResult result = await agent.EvaluateRulesAsync(ctx, CancellationToken.None);
 
         // Assert
-        Assert.True(result.IsAllowed);
-        Assert.Equal(SafetySeverity.None, result.HighestSeverity);
-        Assert.Contains(result.RuleResults, r => r.RuleName == "r1");
-        Assert.Contains(result.RuleResults, r => r.RuleName == "r2");
+        Assert.IsTrue(result.IsAllowed);
+        Assert.AreEqual(SafetySeverity.None, result.HighestSeverity);
+        Assert.IsTrue(result.RuleResults.Any(r => r.RuleName == "r1"));
+        Assert.IsTrue(result.RuleResults.Any(r => r.RuleName == "r2"));
     }
 
     [TestMethod]
@@ -80,10 +80,10 @@ public sealed class SafetyEngineAgentTests
         SafetyEvaluationResult result = await agent.EvaluateRulesAsync(ctx, CancellationToken.None);
 
         // Assert
-        Assert.False(result.IsAllowed);
-        Assert.NotNull(result.BlockingResult);
-        Assert.Equal("blocker", result.BlockingResult!.RuleName);
-        Assert.False(secondExecuted, "Second rule should not have been executed because StopOnFirstBlock == true");
+        Assert.IsFalse(result.IsAllowed);
+        Assert.IsNotNull(result.BlockingResult);
+        Assert.AreEqual("blocker", result.BlockingResult!.RuleName);
+        Assert.IsFalse(secondExecuted, "Second rule should not have been executed because StopOnFirstBlock == true");
     }
 
     [TestMethod]
@@ -105,10 +105,10 @@ public sealed class SafetyEngineAgentTests
         SafetyEvaluationResult result = await agent.EvaluateRulesAsync(ctx, CancellationToken.None);
 
         // Assert
-        Assert.False(result.IsAllowed);
-        Assert.NotNull(result.BlockingResult);
-        Assert.Equal("exploder", result.BlockingResult!.RuleName);
-        Assert.Contains("Rule evaluation failed", result.BlockingResult.Reason);
+        Assert.IsFalse(result.IsAllowed);
+        Assert.IsNotNull(result.BlockingResult);
+        Assert.AreEqual("exploder", result.BlockingResult!.RuleName);
+        Assert.IsTrue(result.BlockingResult.Reason.Contains("Rule evaluation failed"));
     }
 
     [TestMethod]
@@ -126,8 +126,8 @@ public sealed class SafetyEngineAgentTests
         AgentResponse resp = agent.CreateBlockedResponse(eval);
 
         // Assert - message content should contain the custom message
-        Assert.NotNull(resp);
-        Assert.Contains(customMsg, resp.Message.Content);
+        Assert.IsNotNull(resp);
+        Assert.IsTrue(resp.Text.Contains(customMsg));
     }
 
     [TestMethod]
@@ -143,7 +143,7 @@ public sealed class SafetyEngineAgentTests
         AgentResponseUpdate update = agent.CreateBlockedResponseUpdate(eval);
 
         // Assert
-        Assert.Equal(ChatRole.Assistant, update.Role);
-        Assert.Contains("Request blocked by safety policy", update.Content);
+        Assert.AreEqual(ChatRole.Assistant, update.Role);
+        Assert.IsTrue(update.Text.Contains("Request blocked by safety policy"));
     }
 }

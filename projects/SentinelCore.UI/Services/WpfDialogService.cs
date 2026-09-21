@@ -34,7 +34,7 @@ public sealed class WpfDialogService : IDialogService
 
         Window? owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current?.MainWindow;
 
-        ConfirmationDialog dialog = new(title, message, confirmButtonText, isDestructive) { Owner = owner };
+        ConfirmationDialog dialog = new(title, message, confirmButtonText, isDestructive) { Owner = owner! };
 
         return dialog.ShowDialog() == true;
     }

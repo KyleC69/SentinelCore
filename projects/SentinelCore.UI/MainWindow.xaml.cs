@@ -6,8 +6,6 @@
 
 
 
-using System.Windows;
-
 using SentinelCore.UI.Services;
 using SentinelCore.UI.ViewModels;
 
@@ -25,7 +23,7 @@ namespace SentinelCore.UI;
 ///     Hosts a top navigation bar and a <see cref="System.Windows.Controls.Frame" /> that
 ///     navigates to feature pages through <see cref="INavigationService" />.
 /// </summary>
-public partial class MainWindow : Window
+public partial class MainWindow
 {
 
     /// <summary>
@@ -52,7 +50,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
-        _navigationService.Initialize(MainFrame);
+        _navigationService.Initialize(MainFrame!);
 
         // Tabs navigate on check; the navigation service reports back so the
         // checked tab always mirrors the actual page (case list → detail is

@@ -18,18 +18,36 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 /// <summary>
-///     This will check the signal against the operators whitelist. This will be stored in DB and vector searchable.
-///     A list of environmentally acceptable signals that should be ignored. This list is populated only by end user as a means of silencing benign signals.
-///     If the signal is  not on the whitelist
-///     It must flow through normal pathways, If it is on the list It will be logged and the flow terminated.
+///     Checks the signal against the operator's whitelist. This will be stored in DB and vector searchable.
+///     A list of environmentally acceptable signals that should be ignored. This list is populated only by end user
+///     as a means of silencing benign signals. If the signal is not on the whitelist, it must flow through normal pathways.
+///     If it is on the list, it will be logged and the flow terminated.
 /// </summary>
-public sealed partial class WhiteListExecutor : Executor<ChatMessage, SuppressionDecision>
+[YieldsOutput(typeof(SuppressionDecision))]
+public sealed partial class WhiteListExecutor : Executor
 {
     private readonly ISystemReporter _reporter;
 
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="WhiteListExecutor" /> class.
+    /// </summary>
+    /// <param name="reporter">The system reporter for logging.</param>
     public WhiteListExecutor(ISystemReporter reporter) : base("WhitelistExecutor")
     {
-        _reporter = reporter;
+        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
+        Name = Id;
     }
 
 
@@ -40,15 +58,76 @@ public sealed partial class WhiteListExecutor : Executor<ChatMessage, Suppressio
 
 
     /// <summary>
-    ///     ///     This will check the signal against the operators whitelist This will do vector search in database
-    ///
+    ///     Main executor entry point called by the MAF dispatcher.
+    ///     Provides uniform cross-cutting concerns: logging, null validation,
+    ///     cooperative cancellation propagation, and structured error handling.
     /// </summary>
-    /// <param name="message"></param>
-    /// <param name="context"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
+    /// <param name="message">The input message to process.</param>
+    /// <param name="context">The workflow context for shared-state updates and output yielding.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <returns>A <see cref="SuppressionDecision" /> indicating whether the signal should be suppressed.</returns>
     [MessageHandler]
-    public override async ValueTask<SuppressionDecision> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct = default)
+    public async ValueTask<SuppressionDecision> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct = default)
+    {
+        // --- Status: Executor start ---
+        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(ChatMessage).Name}");
+
+        // --- Null validation ---
+        if (message is null)
+        {
+            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(SuppressionDecision)}.");
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(SuppressionDecision)}."), ct).ConfigureAwait(false);
+            return CreateFallbackResult();
+        }
+
+        try
+        {
+            // --- Status: Begin processing ---
+            _reporter.ReportInfo($"[{Name}] Processing message...");
+
+            SuppressionDecision result = await ProcessMessageAsync(message, context, ct).ConfigureAwait(false);
+
+            if (result is null)
+            {
+                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(SuppressionDecision)}.");
+                result = CreateFallbackResult();
+            }
+
+            // --- Status: Final output ---
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(SuppressionDecision)}");
+
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            // Cooperative cancellation must propagate — never swallow it.
+            _reporter.ReportInfo($"[{Name}] Execution canceled.");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // --- Robust error handling ---
+            _reporter.ReportError($"[{Name}] Exception: {ex.Message}", ex);
+
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), ct).ConfigureAwait(false);
+
+            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(SuppressionDecision)} due to error.");
+
+            return CreateFallbackResult();
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Core processing logic: checks the signal against the operator's whitelist.
+    /// </summary>
+    private async ValueTask<SuppressionDecision> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct)
     {
         _reporter.ReportInfo("Starting whitelist executor...");
 
@@ -65,22 +144,45 @@ public sealed partial class WhiteListExecutor : Executor<ChatMessage, Suppressio
             results.Prompt = message.Text;
         }
 
-        await context.SendMessageAsync(results, cancellationToken: ct); //send the results to the next executor in the workflow
+        await context.SendMessageAsync(results, cancellationToken: ct).ConfigureAwait(false);
         return results;
-
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private SuppressionDecision CreateFallbackResult() => new() { Command = CommandValue.OTHER, Prompt = string.Empty, Suppress = false };
 }
 
 
 
 
 
+/// <summary>
+///     Represents a decision about whether a signal should be suppressed.
+/// </summary>
 public class SuppressionDecision
 {
+    /// <summary>
+    ///     Gets or sets the command value indicating the type of signal.
+    /// </summary>
     public CommandValue Command { get; set; }
 
-    // Initialise to avoid CS8618.
+    /// <summary>
+    ///     Gets or sets the prompt text extracted from the signal.
+    /// </summary>
     public string Prompt { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Gets or sets whether the signal should be suppressed.
+    /// </summary>
     public bool Suppress { get; set; }
 }
 
@@ -88,7 +190,18 @@ public class SuppressionDecision
 
 
 
+/// <summary>
+///     Enumerates the possible command values for signal classification.
+/// </summary>
 public enum CommandValue
 {
-    CASEGEN, OTHER
+    /// <summary>
+    ///     Indicates a case generation command.
+    /// </summary>
+    CASEGEN,
+
+    /// <summary>
+    ///     Indicates any other command type.
+    /// </summary>
+    OTHER
 }

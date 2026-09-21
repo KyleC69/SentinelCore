@@ -65,7 +65,7 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
-        List<PatternMemoryEntity> entities = await db.PatternMemoryEntities.AsNoTracking().Where(p => p.CaseId == caseRecordId).ToListAsync(cancellationToken).ConfigureAwait(false);
+        List<PatternMemoryEntity> entities = await db.PatternMemoryEntities!.AsNoTracking().Where(p => p.CaseId == caseRecordId).ToListAsync(cancellationToken).ConfigureAwait(false);
 
         return entities.Select(ToResult).ToList();
     }
@@ -91,7 +91,7 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
-        List<PatternMemoryEntity> entities = await db.PatternMemoryEntities.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+        List<PatternMemoryEntity> entities = await db.PatternMemoryEntities!.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
 
         return entities.Select(ToResult).Select(r => (Result: r, Score: CosineSimilarity(embedding, r.SignalEmbedding ?? []))).Where(x => x.Score > 0).OrderByDescending(x => x.Score).Take(topK).Select(x => x.Result).ToList();
     }
@@ -129,7 +129,7 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
             Timestamp = DateTime.Now
         };
 
-        db.PatternMemoryEntities.Add(entity);
+        db.PatternMemoryEntities!.Add(entity);
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -185,7 +185,7 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
         {
             CaseId = e.CaseId,
             PatternId = e.PatternId,
-            Summary = e.Summary,
+            Summary = e.Summary!,
             SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
             SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
             Timestamp = e.Timestamp

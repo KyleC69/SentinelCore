@@ -28,11 +28,6 @@ public sealed class RagSearchService : IRagSearchService
 {
     private readonly List<RagSearchResult> _inMemoryIndex = new();
     private readonly object _indexLock = new();
-#pragma warning disable S1144 // Unused private field
-#pragma warning disable S1144 // Unused private field
-    private bool _isInitialized;
-#pragma warning restore S1144
-#pragma warning restore S1144
     private readonly ILogger<RagSearchService> _logger;
     private readonly RagSearchOptions _options;
 
@@ -101,7 +96,6 @@ public sealed class RagSearchService : IRagSearchService
             RagSearchResult result = new(Id: id, Title: title, Content: content, Source: source, RelevanceScore: 1.0, Metadata: metadata);
 
             _inMemoryIndex.Add(result);
-            _isInitialized = true;
         }
 
         _logger.LogDebug("Indexed document: {Id}, Title: {Title}", id, title);
@@ -138,10 +132,13 @@ public sealed class RagSearchService : IRagSearchService
 
         // If no keywords match and we have indexed content, do a quick search to check
         // if there are any potential matches
-        if (_inMemoryIndex.Count > 0)
+        lock (_indexLock)
         {
-            List<RagSearchResult> results = PerformKeywordSearch(query, 1);
-            return results.Count > 0 && results[0].RelevanceScore >= _options.RelevanceThreshold;
+            if (_inMemoryIndex.Count > 0)
+            {
+                List<RagSearchResult> results = PerformKeywordSearch(query, 1);
+                return results.Count > 0 && results[0].RelevanceScore >= _options.RelevanceThreshold;
+            }
         }
 
         return false;

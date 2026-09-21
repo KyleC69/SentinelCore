@@ -119,5 +119,6 @@ public sealed record AgentProfile
     /// <summary>
     /// Not used see constants file
     /// </summary>
-    public string Instructions { get; set; }
+    [Obsolete("Being removed from agent construction in favor of per-agent usage function. Agents are reusable and need different instructions. To be generated from constants and added at RunAsync call.")]
+    public string Instructions { get; set; } = string.Empty;
 }

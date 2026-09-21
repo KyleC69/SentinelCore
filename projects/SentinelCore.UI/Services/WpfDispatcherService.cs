@@ -66,7 +66,7 @@ public sealed class WpfDispatcherService : IDispatcherService
     public Task InvokeAsync(Action action)
     {
         ArgumentNullException.ThrowIfNull(action);
-        return Dispatcher.InvokeAsync(action).Task;
+        return Dispatcher.InvokeAsync(action).Task!;
     }
 
 
@@ -84,9 +84,9 @@ public sealed class WpfDispatcherService : IDispatcherService
         // Run the async function on the dispatcher and await the returned
         // DispatcherOperation<Task> directly (it exposes GetAwaiter), then
         // await the inner task so completion propagates to the caller.
-        System.Windows.Threading.DispatcherOperation<Task> operation = Dispatcher.InvokeAsync(func);
+        System.Windows.Threading.DispatcherOperation<Task> operation = Dispatcher.InvokeAsync(func)!;
 
-        Task inner = await operation.Task.ConfigureAwait(false);
+        Task inner = await operation.Task!.ConfigureAwait(false);
         await inner.ConfigureAwait(false);
     }
 }

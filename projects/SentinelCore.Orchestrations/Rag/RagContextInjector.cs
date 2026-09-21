@@ -90,8 +90,6 @@ public sealed class RagContextInjector : MessageAIContextProvider
 
         return await base.ProvideMessagesAsync(context, cancellationToken).ConfigureAwait(false);
     }
-#pragma warning disable S1144 // Unused private field - reserved for future implementation
     private readonly IRagSearchService _searchService;
     private readonly RagSearchOptions _options;
-#pragma warning restore S1144
 }

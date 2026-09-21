@@ -296,3 +296,83 @@ List/count UIs must use the single grouped query
 `GetCaseCountByStatusAsync` per status. Case lookups use
 `GetCaseByIdAsync`; advance-target lists use `GetAllowedTransitions` so the UI
 only ever offers legal lifecycle transitions.
+
+## PL-9: Workflow Executor Convention
+
+**Status:** Locked · **Date:** 2026-09-21 · **Enforced by:** `ExecutorTemplate.cs`
+
+All workflow executors in `SentinelCore.Orchestrations.Workflows.Executors` must
+follow the convention pattern defined in `ExecutorTemplate.cs`. There is **no
+abstract base class** — the pattern is enforced by convention and compile-time
+attributes, not by inheritance.
+
+### Mandatory attributes
+
+Every executor class **must** carry these MAF source-generator attributes for
+compile-time validation:
+
+| Attribute | Purpose | Where |
+| ----------- | --------- | ------- |
+| `[YieldsOutput(typeof(TOut))]` | Declares the output type so the MAF source generator validates that the workflow graph wires this executor's output to a compatible input. | On the class declaration. Add one per output type if the executor yields multiple types. |
+| `[MessageHandler]` | Marks the handler method as the MAF dispatch entry point. The source generator uses this to build routing tables. | On the handler method (e.g., `HandleChatMessageAsync`). |
+| `partial` keyword | Required by the MAF source generator for any class that carries `[YieldsOutput]` or `[MessageHandler]`. | On the class declaration. |
+
+### Class declaration pattern
+
+Every executor **must** extend `Executor` (non-generic, no type parameters). The
+`[YieldsOutput]` and `[MessageHandler]` attributes provide the type information that
+the generic `Executor<TIn, TOut>` base class previously carried.
+
+```csharp
+// ✅ Locked: non-generic Executor with attributes
+[YieldsOutput(typeof(SignalHypothesis))]
+public sealed partial class MyExecutor : Executor
+{
+    [MessageHandler]
+    public async ValueTask<SignalHypothesis> HandleSignalHypothesisAsync(
+        SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    { ... }
+}
+
+// ❌ Drift: generic Executor with type params
+public sealed partial class MyExecutor : Executor<SignalHypothesis, SignalHypothesis>
+{
+    public override ValueTask<SignalHypothesis> HandleAsync(...) { ... }
+}
+```
+
+### Handler method naming
+
+The handler method **must** follow the `Handle{TIn}Async` naming convention:
+
+| Input type | Handler method name |
+| ----------- | --------------------- |
+| `ChatMessage` | `HandleChatMessageAsync` |
+| `SignalHypothesis` | `HandleSignalHypothesisAsync` |
+| `string` | `HandleStringAsync` |
+
+The handler method **must NOT** be `override`. The MAF source generator produces
+the `HandleAsync` override automatically from the `[MessageHandler]` attribute.
+
+### Constructor pattern
+
+Every executor **must** use a conventional constructor (not a primary constructor).
+Primary constructors cause issues with the MAF source generator.
+
+```csharp
+// ✅ Locked: conventional constructor
+public sealed partial class MyExecutor : Executor
+{
+    private readonly ISystemReporter _reporter;
+    public string Name { get; init; }
+
+    public MyExecutor(ISystemReporter reporter) : base("MyExecutor")
+    {
+        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
+        Name = Id;
+    }
+}
+
+// ❌ Drift: primary constructor
+public sealed partial class MyExecutor(ISystemReporter reporter) : Executor<ChatMessage, SignalHypothesis>("MyExecutor")
+```

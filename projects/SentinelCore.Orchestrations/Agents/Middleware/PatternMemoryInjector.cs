@@ -24,17 +24,6 @@ namespace SentinelCore.Orchestrations.Agents.Middleware;
 public sealed class PatternMemoryInjector : MessageAIContextProvider
 {
     private readonly ILogger<PatternMemoryInjector> _logger;
-    // TODO: Remove pragma when pattern matching is fully implemented
-#pragma warning disable S1144 // Unused private field - reserved for future pattern matching implementation
-    private readonly IPatternMatcher _patternMatcher;
-#pragma warning restore S1144
-
-
-
-
-
-
-
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="PatternMemoryInjector" /> class.
@@ -46,7 +35,6 @@ public sealed class PatternMemoryInjector : MessageAIContextProvider
         ArgumentNullException.ThrowIfNull(patternMatcher);
         ArgumentNullException.ThrowIfNull(logger);
 
-        _patternMatcher = patternMatcher;
         _logger = logger;
     }
 

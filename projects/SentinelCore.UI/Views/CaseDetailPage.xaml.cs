@@ -6,8 +6,6 @@
 
 
 
-using System.Windows.Controls;
-
 using SentinelCore.UI.ViewModels;
 
 
@@ -23,7 +21,7 @@ namespace SentinelCore.UI.Views;
 ///     Code-behind for the Case Detail page.
 ///     Responsibilities scoped to this file: ViewModel wiring.
 /// </summary>
-public partial class CaseDetailPage : Page
+public partial class CaseDetailPage
 {
     /// <summary>
     ///     Creates the page and binds the provided view-model.

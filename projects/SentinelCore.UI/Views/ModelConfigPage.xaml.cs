@@ -26,17 +26,8 @@ namespace SentinelCore.UI.Views;
 ///     Responsibilities scoped to this file: ViewModel wiring and pushing the
 ///     PasswordBox value into the card (PasswordBox.Password is not bindable).
 /// </summary>
-public partial class ModelConfigPage : Page
+public partial class ModelConfigPage
 {
-    private readonly ModelConfigViewModel _viewModel;
-
-
-
-
-
-
-
-
     /// <summary>
     ///     Creates the page and binds the provided view-model.
     /// </summary>
@@ -44,9 +35,9 @@ public partial class ModelConfigPage : Page
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="viewModel" /> is <c>null</c>.</exception>
     public ModelConfigPage(ModelConfigViewModel? viewModel)
     {
-        _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+        ModelConfigViewModel vm = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         InitializeComponent();
-        DataContext = _viewModel;
+        DataContext = vm;
     }
 
 

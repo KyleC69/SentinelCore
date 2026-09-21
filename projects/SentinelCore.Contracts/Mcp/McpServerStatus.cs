@@ -34,7 +34,7 @@ public enum McpServerStatus
     Connected,
 
     /// <summary>
-    ///     The last connection attempt failed. The error is captured in <see cref="McpServerInfo.LastError" /& gt;.
+    ///     The last connection attempt failed. The error is captured in <see cref="McpServerInfo.LastError" />.
     /// </summary>
     Error
 }

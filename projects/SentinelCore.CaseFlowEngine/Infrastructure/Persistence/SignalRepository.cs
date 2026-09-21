@@ -66,7 +66,7 @@ public sealed class SignalRepository : ISignalRepository
 
         SignalEntity entity = signal.ToEntity();
 
-        db.SignalEntities.Add(entity);
+        db.SignalEntities!.Add(entity);
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return entity.Id;
     }

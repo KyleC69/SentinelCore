@@ -131,7 +131,7 @@ public sealed class SafetyEngineSettings
     public int MaxRequestsPerMinute { get; set; } = 100;
 
     /// <summary>
-    ///     Whether to stop evaluating rules as soon as one returns <see cref="SafetySeverity.High" /> or higher.
+    ///     Whether to stop evaluating rules as soon as one returns High severity or higher.
     /// </summary>
     public bool StopOnFirstBlock { get; set; } = true;
 

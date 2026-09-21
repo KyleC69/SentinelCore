@@ -27,7 +27,7 @@ internal class FileLoggerServiceStore : ILogger
     private static readonly string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", "SentinelCore.log");
 
 
-    public IDisposable BeginScope<TState>(TState state) => null;
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
 
     public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
@@ -39,7 +39,7 @@ internal class FileLoggerServiceStore : ILogger
 
 
 
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel))
             return;

@@ -56,15 +56,7 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
 
 
 
-    private static ILoggerFactory LoggerFactory { get; set; }
-
-
-
-
-
-
-
-
+    private static ILoggerFactory? LoggerFactory { get; set; }
 
     public IChatClient CreateChatClient(ModelProfile model)
     {
@@ -105,7 +97,7 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
     {
         AzureOpenAIClient azureClient = new(new Uri(model.Endpoint ?? throw new ArgumentException("Azure OpenAI endpoint required")), new AzureKeyCredential(model.ApiKey ?? throw new ArgumentException("Azure OpenAI API key required")));
         ChatClient? chatClient = azureClient.GetChatClient(model.ModelId ?? throw new ArgumentException("Azure OpenAI model ID required"));
-        return chatClient.AsIChatClient();
+        return chatClient.AsIChatClient()!;
     }
 
 
@@ -119,7 +111,7 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
     {
         OpenAIClient client = new(new System.ClientModel.ApiKeyCredential(model.ApiKey ?? throw new ArgumentException("GitHub token required")), new OpenAIClientOptions { Endpoint = new Uri(model.Endpoint ?? "https://models.inference.ai.azure.com") });
         ChatClient? chatClient = client.GetChatClient(model.ModelId ?? throw new ArgumentException("GitHub model ID required"));
-        return chatClient.AsIChatClient();
+        return chatClient.AsIChatClient()!;
     }
 
 
@@ -160,6 +152,6 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
     {
         OpenAIClient client = new(model.ApiKey ?? throw new ArgumentException("OpenAI API key required"));
         ChatClient? chatClient = client.GetChatClient(model.ModelId ?? throw new ArgumentException("OpenAI model ID required"));
-        return chatClient.AsIChatClient();
+        return chatClient.AsIChatClient()!;
     }
 }

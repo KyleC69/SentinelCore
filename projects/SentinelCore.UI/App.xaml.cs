@@ -44,7 +44,7 @@ namespace SentinelCore.UI;
 ///     Wires the <see cref="IHost" /> container, registers all services,
 ///     and manages application lifecycle including graceful shutdown.
 /// </summary>
-public partial class App : Application
+public partial class App
 {
     private IHost? _host;
 
@@ -123,7 +123,7 @@ public partial class App : Application
         services.AddCaseFlowEngine();
 
         // UI layer — services, ViewModels, Views, and navigation
-        services.AddSentinelCoreUI();
+        services.AddSentinelCoreUi();
 
         // Model configuration gate — evaluates catalog agents against the live settings.
         services.AddSingleton<IModelConfigGate>(sp => new ModelConfigGate(sp.GetRequiredService<ISentinelAgentCatalog>(), sp.GetRequiredService<IAgentProfileBuilder>(), sp.GetRequiredService<IOptions<SentinelCoreSettings>>().Value));
@@ -271,10 +271,10 @@ public partial class App : Application
         ILogger<App>? logger = _host?.Services.GetService<ILogger<App>>();
         if (logger != null)
         {
-            LogUnhandledUiException(logger, e.Exception);
+            LogUnhandledUiException(logger, e.Exception!);
         }
 
-        LogStartupException(e.Exception);
+        LogStartupException(e.Exception!);
         MessageBox.Show($"Unhandled dispatcher exception:\n\n{e.Exception}", "SentinelCore Error", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
@@ -454,7 +454,7 @@ public partial class App : Application
         }
 
         // Show the main window after the host is running
-        Current.Dispatcher.Invoke(() =>
+        Current!.Dispatcher.Invoke(() =>
         {
             MainWindow = new MainWindow(_host.Services.GetRequiredService<INavigationService>());
             MainWindow.Show();

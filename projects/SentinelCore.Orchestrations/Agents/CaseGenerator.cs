@@ -58,16 +58,9 @@ public class CaseGenerator : ICaseGenerator, IDisposable
     private McpClient _client = null!;
     private readonly ICaseFlowEngine _engine;
     private readonly ILoggerFactory _factory;
-    private readonly IOptions<SentinelCoreSettings> _options;
     private readonly IAgentProfileBuilder _profileBuilder;
 
     private readonly ISystemReporter _reporter;
-
-
-
-
-
-
 
 
     public CaseGenerator(ILoggerFactory factory, ICaseFlowEngine engine, ISystemReporter reporter, ISentinelAgentFactory agentFactory, IAgentProfileBuilder profileBuilder, IOptions<SentinelCoreSettings> settings)
@@ -75,12 +68,8 @@ public class CaseGenerator : ICaseGenerator, IDisposable
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
         _profileBuilder = profileBuilder ?? throw new ArgumentNullException(nameof(profileBuilder));
-        _options = settings;
         _engine = engine;
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
-
-
-
     }
 
 
@@ -116,7 +105,7 @@ public class CaseGenerator : ICaseGenerator, IDisposable
 
 
         // Build a profile for the CaseGenerator agent.
-        AgentProfile profile = _profileBuilder.BuildAgentSpec("CaseGenerator");
+        AgentProfile profile = null;
         var mcpTools = await GetMcpToolsAsync().ConfigureAwait(false);
         CaseTool caseTool = new(_engine);
 
@@ -161,14 +150,13 @@ public class CaseGenerator : ICaseGenerator, IDisposable
     public void Dispose()
     {
         _factory.Dispose();
-        IDisposable? clientDisposable = _client as IDisposable;
-        if (!ReferenceEquals(clientDisposable, null))
+        if (_client is IDisposable disposable)
         {
-            clientDisposable.Dispose();
+            disposable.Dispose();
         }
         else
         {
-            _ = _client?.DisposeAsync().AsTask();
+            _ = _client.DisposeAsync().AsTask();
         }
     }
 

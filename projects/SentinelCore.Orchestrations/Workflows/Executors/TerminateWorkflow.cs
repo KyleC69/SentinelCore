@@ -23,9 +23,12 @@ public partial class TerminateWorkflow : Executor
 
 
 
+
+
     /// <summary>
     /// Gracefully exit workflow and return any final messages.
     /// </summary>
+    /// <param name="message"></param>
     /// <param name="context"></param>
     /// <param name="token"></param>
     /// <returns></returns>
@@ -41,7 +44,7 @@ public partial class TerminateWorkflow : Executor
 
 
         }
-        catch (OperationCanceledException e)
+        catch (OperationCanceledException)
         {
            _reporter.ReportWarning("Workflow cancelled by user");
 

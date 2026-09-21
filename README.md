@@ -17,6 +17,8 @@ Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combine
     Some unexpected enhancements were implemented that change the application in a huge way.
     Sentinel Core now has MCP support. Knowledge and tools can be added live giving this forensic platform a completely different purpose. Sentinel Core ships with the Windows troubleshooting toolkit (MCP Server) other toolkits may be purchased for various  other domains and purposes such as enterprise toolkit which has tools for SQL Server,
 
+    **Prompt Security Module** Implementing a prompt provenance validation module to verify source of all messages external and internally generated to secure the pipeline and to keep the context pure.
+
     Deluxe Edition:
     This will include selectable preset orchestration patterns, that opens the platform to a whole new level of investigation or collaboration.
     There is magnetic group, cooperative group, adversarial group, group hand-off to name a few. Paired up with the personas each agent in the group can have a slightly different perspective, giving a brainstorming session a powerful twist.

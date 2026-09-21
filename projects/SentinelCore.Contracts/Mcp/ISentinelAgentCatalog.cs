@@ -24,7 +24,7 @@ public interface ISentinelAgentCatalog
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
     ///     A task that resolves to a read-only list of logical agent names.
-    ///     The names must match the names used by <see cref="SentinelCore.Orchestrations.Agents.SentinelAgentFactory" />.
+    ///     The names must match the names used by the agent factory.
     /// </returns>
     Task<IReadOnlyList<string>> GetAgentNamesAsync(CancellationToken cancellationToken = default);
 }

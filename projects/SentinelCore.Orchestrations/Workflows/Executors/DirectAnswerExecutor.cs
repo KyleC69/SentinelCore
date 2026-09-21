@@ -16,6 +16,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
+
 /// <summary>
 /// Executes a direct-answer workflow step by invoking an AIAgent to produce a textual response, reporting progress and
 /// returning the agent's text output.
@@ -26,13 +27,55 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 /// <remarks>On failure, exceptions are reported to the reporter and a user-visible fallback message is yielded;
 /// cancellation is re-thrown so cooperative cancellation propagates. The executor calls agent.RunAsync
 /// to obtain an AgentResponse and yields the resulting text to the workflow via IWorkflowContext.YieldOutputAsync.</remarks>
-/// <param name="agent">Model-backed AIAgent used to generate the answer for the workflow step.</param>
-/// <param name="reporter">ISystemReporter used to emit informational and error reports during execution.</param>
 [YieldsOutput(typeof(ChatMessage))]
-public partial class DirectAnswerExecutor(AIAgent agent, AgentSession session ,ISystemReporter reporter) : Executor("DirectAnswer")
+public sealed partial class DirectAnswerExecutor : Executor
 {
+    private readonly AIAgent _agent;
+    private readonly AgentSession _session;
+    private readonly ISystemReporter _reporter;
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="DirectAnswerExecutor" /> class.
+    /// </summary>
+    /// <param name="agent">Model-backed AIAgent used to generate the answer for the workflow step.</param>
+    /// <param name="session">The persistent agent session for conversational consistency.</param>
+    /// <param name="reporter">ISystemReporter used to emit informational and error reports during execution.</param>
+    public DirectAnswerExecutor(AIAgent agent, AgentSession session, ISystemReporter reporter) : base("DirectAnswer")
+    {
+        _agent = agent ?? throw new ArgumentNullException(nameof(agent));
+        _session = session ?? throw new ArgumentNullException(nameof(session));
+        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
+        Name = Id;
+    }
+
+
+
+
+
+
+
+
     //TODO: We need to bring in TheCore agent, and it's session, this agent interaction needs recall in future for conversational consistency
     //Agent creation need to be moved to allow the customization of the agent inside the executor
+
+
+
+
+
+
+
 
     /// <summary>
     /// Handles the direct answer workflow step by invoking an AIAgent to produce a textual response.
@@ -52,7 +95,7 @@ public partial class DirectAnswerExecutor(AIAgent agent, AgentSession session ,I
     {
         try
         {
-            reporter.ReportInfo("Starting HandleAsync in DirectAnswerExecutor");
+            _reporter.ReportInfo("Starting HandleAsync in DirectAnswerExecutor");
 
 
             // If the prompt did not carry forward on the hypothesis, recover it from
@@ -61,27 +104,26 @@ public partial class DirectAnswerExecutor(AIAgent agent, AgentSession session ,I
             if (string.IsNullOrWhiteSpace(prompt))
             {
                 prompt = await context.ReadStateAsync<string>(WorkFlowStateKeys.PROMPT, "SharedState", cancellationToken).ConfigureAwait(false) ?? string.Empty;
-
             }
 
             if (string.IsNullOrWhiteSpace(prompt))
             {
                 // Nothing to ask the agent — fail soft with a user-visible message.
-                reporter.ReportWarning("DirectAnswerExecutor had no prompt on the hypothesis or in shared state.");
+                _reporter.ReportWarning("DirectAnswerExecutor had no prompt on the hypothesis or in shared state.");
                 await context.YieldOutputAsync("I am unable to provide a response at this time.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            AgentResponse agResponse = await agent.RunAsync(prompt, session, null, cancellationToken).ConfigureAwait(false);
+            AgentResponse agResponse = await _agent.RunAsync(prompt, _session, null, cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(agResponse.Text))
             {
                 // Fail soft and stop — this previously fell through to agResponse.Text (NRE).
-                reporter.ReportWarning("DirectAnswerExecutor agent returned a null response.");
+                _reporter.ReportWarning("DirectAnswerExecutor agent returned a null response.");
                 await context.YieldOutputAsync("I am unable to provide a response at this time.", cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            reporter.ReportInfo("Finished HandleAsync in DirectAnswerExecutor");
+            _reporter.ReportInfo("Finished HandleAsync in DirectAnswerExecutor");
             await context.YieldOutputAsync(agResponse.Text, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -93,16 +135,12 @@ public partial class DirectAnswerExecutor(AIAgent agent, AgentSession session ,I
         {
             // IMMEDIATELY isolate the step that failed, surface a user-visible
             // message, and stop — this previously fell through to agResponse.Text (NRE).
-            reporter.ReportError($"[CRITICAL WORKFLOW ERROR] Failed at {this.ToString()}", ex);
-            reporter.ReportError($"Exception Type: {ex.GetType().Name}", ex);
-            reporter.ReportError($"Stack Trace: {ex.StackTrace}", ex);
+            _reporter.ReportError($"[CRITICAL WORKFLOW ERROR] Failed at {this}", ex);
+            _reporter.ReportError($"Exception Type: {ex.GetType().Name}", ex);
+            _reporter.ReportError($"Stack Trace: {ex.StackTrace}", ex);
             await context.YieldOutputAsync("An error occurred while processing your request.", cancellationToken).ConfigureAwait(false);
         }
     }
-
-
-
-
 
 
 

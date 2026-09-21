@@ -145,9 +145,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
 
 
-    public McpServersViewModel()
-    {
-    }
 
 
 
@@ -409,7 +406,9 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
     private void HookCommand(IRelayCommand command)
     {
+#pragma warning disable IDE0060
         command.CanExecuteChanged += (s, e) =>
+#pragma warning restore IDE0060
         {
             if (_dispatcher.CheckAccess())
             {
@@ -562,7 +561,9 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     /// </summary>
     /// <param name="oldValue">The previously selected transport type.</param>
     /// <param name="newValue">The newly selected transport type.</param>
+#pragma warning disable CS8632, CS0448, CS0618, IDE0060
     partial void OnNewServerTransportTypeChanged(McpServerTransportType oldValue, McpServerTransportType newValue)
+#pragma warning restore CS8632, CS0448, CS0618, IDE0060
     {
         this.OnPropertyChanged(nameof(IsStdioTransport));
     }
@@ -579,7 +580,9 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     /// </summary>
     /// <param name="oldValue">The previously selected server row.</param>
     /// <param name="newValue">The newly selected server row.</param>
+#pragma warning disable IDE0060
     partial void OnSelectedServerChanged(McpServerRow? oldValue, McpServerRow? newValue)
+#pragma warning restore IDE0060
     {
         this.OnPropertyChanged(nameof(HasSelectedServer));
 

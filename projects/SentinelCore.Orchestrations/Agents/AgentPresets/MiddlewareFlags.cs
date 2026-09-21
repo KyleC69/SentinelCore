@@ -48,10 +48,13 @@ public enum MiddlewareFlags
     /// </summary>
     Logging = 1 << 4,
 
+
+    ContextProvider = 1 << 5,
+
     /// <summary>
     ///     Common middleware combination for core reasoning agents.
     /// </summary>
-    Core = Safety | PatternMemory | Events | Logging,
+    Core = ContextProvider | Safety | PatternMemory | Events | Logging,
 
     /// <summary>
     ///     Common middleware combination for utility agents.

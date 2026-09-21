@@ -1,5 +1,4 @@
 ﻿using SentinelCore.Abstractions;
-using SentinelCore.Contracts.Abstractions;
 
 
 
@@ -10,12 +9,12 @@ namespace SentinelCore.Orchestrations.Agents.Middleware;
 
 
 
-public class ExceptionMiddleware(ISystemReporter reporter) : Executor<ChatMessage, ChatMessage>("ExceptionMiddleware")
+public class ExceptionMiddleware() : Executor<ChatMessage, ChatMessage>("ExceptionMiddleware")
 {
     public override ValueTask<ChatMessage> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        Throw.IfNull(message, nameof(message));
-        Throw.IfNull(context, nameof(context));
+        Throw.IfNull(message);
+        Throw.IfNull(context);
 
 
 

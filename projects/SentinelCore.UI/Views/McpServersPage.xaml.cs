@@ -6,8 +6,6 @@
 
 
 
-using System.Windows.Controls;
-
 using SentinelCore.UI.ViewModels;
 
 
@@ -23,17 +21,8 @@ namespace SentinelCore.UI.Views;
 ///     Code-behind for the MCP Servers management page.
 ///     Responsibilities scoped to this file: ViewModel wiring.
 /// </summary>
-public partial class McpServersPage : Page
+public partial class McpServersPage
 {
-    private McpServersViewModel _viewModel;
-
-
-
-
-
-
-
-
     /// <summary>
     ///     Creates the page and binds the provided view-model.
     /// </summary>
@@ -41,8 +30,8 @@ public partial class McpServersPage : Page
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="viewModel" /> is <c>null</c>.</exception>
     public McpServersPage(McpServersViewModel? viewModel)
     {
-        _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+        McpServersViewModel vm = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         InitializeComponent();
-        DataContext = _viewModel;
+        DataContext = vm;
     }
 }

@@ -40,6 +40,6 @@ public sealed class WpfFolderBrowserService : IFolderBrowserService
 
         Window? owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current?.MainWindow;
 
-        return dialog.ShowDialog(owner) == true ? dialog.FolderName : null;
+        return dialog.ShowDialog(owner!) == true ? dialog.FolderName! : null;
     }
 }

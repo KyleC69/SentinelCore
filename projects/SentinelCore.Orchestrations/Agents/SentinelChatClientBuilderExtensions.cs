@@ -36,6 +36,6 @@ public static class SentinelChatClientBuilderExtensions
             return builder; // Skip if not configured
         }
 
-        return builder.Use((inner, services) => new EventPublishingChatClient(inner, events, agentName, logger));
+        return builder.Use((inner, _) => new EventPublishingChatClient(inner, events, agentName, logger));
     }
 }

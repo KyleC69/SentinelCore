@@ -21,6 +21,7 @@ namespace SentinelCore.Orchestrations.Agents.Core.Tools;
 
 public sealed class MicrosoftDocsSearchTool : AITool
 {
+    private static readonly HttpClient HttpClient = new();
     private readonly string _endpoint;
 
 
@@ -47,10 +48,9 @@ public sealed class MicrosoftDocsSearchTool : AITool
     {
         string query = input ?? "";
 
-        using HttpClient client = new();
         var payload = new { jsonrpc = "2.0", id = "docs-search", method = "tools/call", @params = new { name = "microsoft_docs_search", arguments = new { query } } };
 
-        HttpResponseMessage response = await client.PostAsync(_endpoint, JsonContent.Create(payload)).ConfigureAwait(false);
+        HttpResponseMessage response = await HttpClient.PostAsync(_endpoint, JsonContent.Create(payload)).ConfigureAwait(false);
         string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         return JsonSerializer.Deserialize<object>(json);
     }
@@ -62,6 +62,7 @@ public sealed class MicrosoftDocsSearchTool : AITool
 
 public sealed class MicrosoftDocsFetchTool : AITool
 {
+    private static readonly HttpClient HttpClient = new();
     private readonly string _endpoint;
 
 
@@ -88,10 +89,9 @@ public sealed class MicrosoftDocsFetchTool : AITool
     {
         string url = docUrl ?? "";
 
-        using HttpClient client = new HttpClient();
         var payload = new { jsonrpc = "2.0", id = "docs-fetch", method = "tools/call", @params = new { name = "microsoft_docs_fetch", arguments = new { url } } };
 
-        HttpResponseMessage response = await client.PostAsync(_endpoint, JsonContent.Create(payload)).ConfigureAwait(false);
+        HttpResponseMessage response = await HttpClient.PostAsync(_endpoint, JsonContent.Create(payload)).ConfigureAwait(false);
         string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         return JsonSerializer.Deserialize<string>(json);
     }
@@ -103,6 +103,7 @@ public sealed class MicrosoftDocsFetchTool : AITool
 
 public sealed class MicrosoftCodeSampleSearchTool : AITool
 {
+    private static readonly HttpClient HttpClient = new();
     private readonly string _endpoint;
 
 
@@ -129,10 +130,9 @@ public sealed class MicrosoftCodeSampleSearchTool : AITool
     {
         // Expecting input to be an anonymous object with { query, language }
 
-        using HttpClient client = new HttpClient();
         var payload = new { jsonrpc = "2.0", id = "code-search", method = "tools/call", @params = new { name = "microsoft_code_sample_search", arguments = new { query, language } } };
 
-        HttpResponseMessage response = await client.PostAsync(_endpoint, JsonContent.Create(payload)).ConfigureAwait(false);
+        HttpResponseMessage response = await HttpClient.PostAsync(_endpoint, JsonContent.Create(payload)).ConfigureAwait(false);
         string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         return JsonSerializer.Deserialize<object>(json);
     }

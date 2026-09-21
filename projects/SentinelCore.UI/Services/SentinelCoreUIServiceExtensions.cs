@@ -26,14 +26,14 @@ namespace SentinelCore.UI.Services;
 ///     This is the single composition point for the UI layer — adding a
 ///     new page only requires adding entries here and in the page-type map.
 /// </summary>
-public static class SentinelCoreUIServiceExtensions
+public static class SentinelCoreUiServiceExtensions
 {
     /// <summary>
     ///     Registers all UI-layer services, view-models, views, and the
     ///     <see cref="IViewLocator" /> page-type map.
     /// </summary>
     /// <param name="services">The service collection to register into.</param>
-    public static void AddSentinelCoreUI(this IServiceCollection services)
+    public static void AddSentinelCoreUi(this IServiceCollection services)
     {
         // Platform services
         services.AddSingleton<IDispatcherService, WpfDispatcherService>();

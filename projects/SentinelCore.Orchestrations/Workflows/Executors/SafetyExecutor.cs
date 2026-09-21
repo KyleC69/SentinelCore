@@ -4,8 +4,6 @@
 // Author: Kyle L. Crowder
 // Build Num:  091418
 
-
-
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Contracts.Abstractions;
@@ -13,14 +11,7 @@ using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.SafetyEngine;
 using SentinelCore.Orchestrations.SafetyEngine.Rules;
 
-
-
-
 namespace SentinelCore.Orchestrations.Workflows.Executors;
-
-
-
-
 
 /// <summary>
 ///     An executor that evaluates incoming messages against configured safety rules
@@ -28,7 +19,8 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     This executor uses the <see cref="SafetyRuleEngine" /> to orchestrate rule evaluation
 ///     and leverages the agent factory to create safety-specific agents when needed.
 /// </summary>
-public sealed class SafetyExecutor : Executor<ChatMessage, ChatMessage>
+[YieldsOutput(typeof(ChatMessage))]
+public sealed partial class SafetyExecutor : Executor
 {
     // TODO: Remove pragma when safety agent creation is implemented
 #pragma warning disable S1144 // Unused private field - reserved for future safety agent creation
@@ -38,12 +30,10 @@ public sealed class SafetyExecutor : Executor<ChatMessage, ChatMessage>
     private readonly ISystemReporter _reporter;
     private readonly SafetyRuleEngine _ruleEngine;
 
-
-
-
-
-
-
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SafetyExecutor" />.
@@ -57,70 +47,108 @@ public sealed class SafetyExecutor : Executor<ChatMessage, ChatMessage>
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Name = Id;
 
         // Initialize the rule engine with default safety rules
         IReadOnlyList<ISafetyRule> rules = CreateDefaultRules();
         _ruleEngine = new SafetyRuleEngine(rules, loggerFactory);
     }
 
-
-
-
-
-
-
-
-
-    public override async ValueTask<ChatMessage> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    /// <summary>
+    ///     Handles the safety evaluation of an incoming message.
+    ///     Provides uniform cross-cutting concerns: logging, null validation,
+    ///     cooperative cancellation propagation, and structured error handling.
+    /// </summary>
+    /// <param name="message">The message to evaluate against safety rules.</param>
+    /// <param name="context">The workflow context providing shared state and yielding.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The original message if allowed, or a blocked response message.</returns>
+    [MessageHandler]
+    public async ValueTask<ChatMessage> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        _reporter.ReportInfo("Starting Safety filter");
-        _logger.LogDebug("SafetyExecutor processing message");
+        // --- Status: Executor start ---
+        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(ChatMessage).Name}");
+
+        // --- Null validation ---
+        if (message is null)
+        {
+            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
+            return CreateFallbackResult();
+        }
 
         try
         {
-            // Create evaluation context from the message
-            IReadOnlyList<ChatMessage> messages = new List<ChatMessage> { message };
-            SafetyEvaluationContext evalContext = new(messages);
+            // --- Status: Begin processing ---
+            _reporter.ReportInfo($"[{Name}] Processing message...");
 
-            // Evaluate the message against safety rules
-            SafetyEvaluationResult result = await _ruleEngine.EvaluateAsync(evalContext, cancellationToken).ConfigureAwait(false);
+            ChatMessage result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
-            if (!result.IsAllowed)
+            if (result is null)
             {
-                _logger.LogWarning("Message blocked by safety policy. Severity: {Severity}, Summary: {Summary}", result.HighestSeverity, result.Summary);
-
-                _reporter.ReportWarning($"Safety block: {result.Summary}");
-
-                // Return a blocked response message
-                ChatMessage blockedMessage = new(ChatRole.Assistant, $"Request blocked by safety policy: {result.Summary}");
-
-                return blockedMessage;
+                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(ChatMessage)}.");
+                result = CreateFallbackResult();
             }
 
-            _logger.LogDebug("Message passed safety evaluation. Rule results: {ResultCount}", result.RuleResults.Count);
-            _reporter.ReportInfo("Message passed safety filter");
+            // --- Status: Final output ---
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(ChatMessage)}");
+
+            return result;
         }
         catch (OperationCanceledException)
         {
-            _logger.LogDebug("Safety evaluation was cancelled");
+            // Cooperative cancellation must propagate — never swallow it.
+            _reporter.ReportInfo($"[{Name}] Execution canceled.");
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during safety evaluation");
-            _reporter.ReportError("Safety evaluation error", ex);
+            // --- Robust error handling ---
+            _reporter.ReportError($"[{Name}] Exception: {ex.Message}", ex);
+
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
+
+            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
+
+            return CreateFallbackResult();
+        }
+    }
+
+    /// <summary>
+    ///     Core processing logic: evaluates the message against safety rules.
+    /// </summary>
+    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
+    {
+        _reporter.ReportInfo("Starting Safety filter");
+        _logger.LogDebug("SafetyExecutor processing message");
+
+        // Create evaluation context from the message
+        IReadOnlyList<ChatMessage> messages = new List<ChatMessage> { message };
+        SafetyEvaluationContext evalContext = new(messages);
+
+        // Evaluate the message against safety rules
+        SafetyEvaluationResult result = await _ruleEngine.EvaluateAsync(evalContext, cancellationToken).ConfigureAwait(false);
+
+        if (!result.IsAllowed)
+        {
+            _logger.LogWarning("Message blocked by safety policy. Severity: {Severity}, Summary: {Summary}", result.HighestSeverity, result.Summary);
+            _reporter.ReportWarning($"Safety block: {result.Summary}");
+
+            // Return a blocked response message
+            ChatMessage blockedMessage = new(ChatRole.Assistant, $"Request blocked by safety policy: {result.Summary}");
+            return blockedMessage;
         }
 
-        _reporter.ReportInfo("Leaving safety exec");
+        _logger.LogDebug("Message passed safety evaluation. Rule results: {ResultCount}", result.RuleResults.Count);
+        _reporter.ReportInfo("Message passed safety filter");
+
         return message;
     }
 
-
-
-
-
-
-
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private ChatMessage CreateFallbackResult() => new(ChatRole.Assistant, "Safety evaluation could not be completed. The message has been allowed through as a precaution.");
 
     /// <summary>
     ///     Creates the default set of safety rules for evaluation.

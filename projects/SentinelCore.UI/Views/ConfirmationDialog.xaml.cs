@@ -23,7 +23,7 @@ namespace SentinelCore.UI.Views;
 ///     Themed modal confirmation dialog used by <see cref="WpfDialogService" />.
 ///     Destructive confirmations restyle the confirm button with the danger palette.
 /// </summary>
-public partial class ConfirmationDialog : Window
+public partial class ConfirmationDialog
 {
     /// <summary>
     ///     Creates the dialog with the given title, message, and confirm button label.

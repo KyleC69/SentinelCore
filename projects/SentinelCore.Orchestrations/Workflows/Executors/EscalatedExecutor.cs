@@ -13,7 +13,6 @@ using SentinelCore.Contracts.Cfe;
 
 
 
-
 namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
@@ -25,35 +24,131 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     <see cref="CaseStatus.Escalated" /> and yields a user-visible escalation notice.
 ///     The hypothesis is passed through to the next executor.
 /// </summary>
-/// <param name="caseFlowEngine">The case flow engine used to advance the case lifecycle.</param>
-/// <param name="reporter">The system reporter for logging.</param>
-internal sealed class EscalatedExecutor(ICaseFlowEngine caseFlowEngine, ISystemReporter reporter) : Executor<SignalHypothesis, SignalHypothesis>("EscalatedExecutor")
+[YieldsOutput(typeof(ChatMessage))]
+[YieldsOutput(typeof(SignalHypothesis))]
+internal sealed partial class EscalatedExecutor : Executor
 {
+    private readonly ICaseFlowEngine _caseFlowEngine;
+    private readonly ISystemReporter _reporter;
+
     /// <summary>
-    ///     Advances the case to <see cref="CaseStatus.Escalated" /> when a case id is present
-    ///     in shared state, then yields an escalation notice to the user.
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="EscalatedExecutor" /> class.
+    /// </summary>
+    /// <param name="caseFlowEngine">The case flow engine used to advance the case lifecycle.</param>
+    /// <param name="reporter">The system reporter for logging.</param>
+    public EscalatedExecutor(ICaseFlowEngine caseFlowEngine, ISystemReporter reporter) : base("EscalatedExecutor")
+    {
+        _caseFlowEngine = caseFlowEngine ?? throw new ArgumentNullException(nameof(caseFlowEngine));
+        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
+        Name = Id;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Handles the escalation of a signal to a human operator.
+    ///     Provides uniform cross-cutting concerns: logging, null validation,
+    ///     cooperative cancellation propagation, and structured error handling.
     /// </summary>
     /// <param name="message">The classified signal hypothesis.</param>
     /// <param name="context">The workflow context providing shared state and yielding.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The hypothesis, passed through unchanged.</returns>
-    public override async ValueTask<SignalHypothesis> HandleAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken = new())
+    [MessageHandler]
+    public async ValueTask<SignalHypothesis> HandleSignalHypothesisAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        reporter.ReportInfo("Escalating signal to human operator — advancing case to Escalated where applicable.");
+        // --- Status: Executor start ---
+        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(SignalHypothesis)}");
+
+        // --- Null validation ---
+        if (message is null)
+        {
+            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}.");
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}."), cancellationToken).ConfigureAwait(false);
+            return CreateFallbackResult();
+        }
+
+        try
+        {
+            // --- Status: Begin processing ---
+            _reporter.ReportInfo($"[{Name}] Processing message...");
+
+            SignalHypothesis result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
+
+            if (result is null)
+            {
+                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(SignalHypothesis)}.");
+                result = CreateFallbackResult();
+            }
+
+            // --- Status: Final output ---
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(SignalHypothesis)}");
+
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            // Cooperative cancellation must propagate — never swallow it.
+            _reporter.ReportInfo($"[{Name}] Execution canceled.");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // --- Robust error handling ---
+            _reporter.ReportError($"[{Name}] Exception: {ex.Message}", ex);
+
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
+
+            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(SignalHypothesis)} due to error.");
+
+            return CreateFallbackResult();
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Core processing logic: advances the case to Escalated and yields an escalation notice.
+    /// </summary>
+    private async ValueTask<SignalHypothesis> ProcessMessageAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken)
+    {
+        _reporter.ReportInfo("Escalating signal to human operator — advancing case to Escalated where applicable.");
 
         Guid? caseId = await context.ReadStateAsync<Guid?>(WorkFlowStateKeys.CASE_ID, "SharedState", cancellationToken).ConfigureAwait(false);
         if (caseId is { } id && id != Guid.Empty)
         {
             try
             {
-                await caseFlowEngine.AdvanceCaseAsync(id, CaseStatus.Escalated, cancellationToken).ConfigureAwait(false);
-                reporter.ReportInfo($"Case {id} advanced to Escalated.");
+                await _caseFlowEngine.AdvanceCaseAsync(id, CaseStatus.Escalated, cancellationToken).ConfigureAwait(false);
+                _reporter.ReportInfo($"Case {id} advanced to Escalated.");
             }
             catch (Exception ex)
             {
                 // The case lifecycle transition failed — report it, but the escalation
                 // notice must still be delivered.
-                reporter.ReportError($"Failed to advance case {id} to Escalated.", ex);
+                _reporter.ReportError($"Failed to advance case {id} to Escalated.", ex);
             }
         }
 
@@ -62,4 +157,16 @@ internal sealed class EscalatedExecutor(ICaseFlowEngine caseFlowEngine, ISystemR
 
         return message;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: escalation did not produce a result." };
 }

@@ -139,11 +139,6 @@ public sealed partial class AgentModelCard : ObservableObject
     public string AgentName { get; }
 
     /// <summary>
-    ///     The role tier used when no per-agent model is configured.
-    /// </summary>
-    public ModelProfile.ModelProvider? FallbackProvider { get; }
-
-    /// <summary>
     ///     Gets a value indicating whether the card has the minimum fields
     ///     required to build a model profile.
     /// </summary>

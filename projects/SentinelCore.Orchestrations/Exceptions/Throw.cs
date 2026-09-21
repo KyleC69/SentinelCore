@@ -984,7 +984,6 @@ public static class Throw
     // Returns:
     //     The original value of argument.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [return: NotNull]
     public static string IfNullOrEmpty([NotNull] string? argument, [CallerArgumentExpression("argument")] string paramName = "")
     {
         if (string.IsNullOrEmpty(argument))
@@ -1025,7 +1024,6 @@ public static class Throw
     //     The original value of argument.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [ExcludeFromCodeCoverage]
-    [return: NotNull]
     public static IEnumerable<T> IfNullOrEmpty<T>([NotNull] IEnumerable<T>? argument, [CallerArgumentExpression("argument")] string paramName = "")
     {
         if (argument == null)
@@ -1119,7 +1117,6 @@ public static class Throw
     // Returns:
     //     The original value of argument.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [return: NotNull]
     public static string IfNullOrWhitespace([NotNull] string? argument, [CallerArgumentExpression("argument")] string paramName = "")
     {
         if (string.IsNullOrWhiteSpace(argument))

@@ -6,7 +6,7 @@
 
 
 
-using SentinelCore.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 
 
 
@@ -25,15 +25,15 @@ namespace SentinelCore.Contracts.Contracts;
 public sealed class ModelProfile
 {
 
-    public ModelProfile(string endpoint, string modelId, float? temperature, int? maxOutputTokens = 16000, int topK = 1, float topP = .1f, ModelProvider provider = ModelProvider.Ollama, string? apiKey = null, string? modelPath = null, string? executionProvider = null, string? alias = null)
+    public ModelProfile(string endpoint, string modelId, [DisallowNull] float? temperature, int? maxOutputTokens = 16000, int topK = 1, float topP = .1f, ModelProvider provider = ModelProvider.Ollama, string? apiKey = null, string? modelPath = null, string? executionProvider = null, string? alias = null)
     {
-        Throw.IfNull(endpoint);
-        Throw.IfNull(modelId);
-        Throw.IfNull(temperature);
+        ArgumentNullException.ThrowIfNull(endpoint);
+        ArgumentNullException.ThrowIfNull(modelId);
+        ArgumentNullException.ThrowIfNull(temperature);
         Endpoint = endpoint;
         Provider = provider;
         ModelId = modelId;
-        Temperature = temperature ?? 0;
+        Temperature = temperature.Value;
         TopK = topK;
         TopP = topP;
         MaxOutputTokens = maxOutputTokens;

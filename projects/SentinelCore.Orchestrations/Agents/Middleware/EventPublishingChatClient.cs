@@ -6,12 +6,11 @@
 
 
 
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
-
 using Microsoft.Extensions.Logging;
 
+using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Events;
 
 
@@ -63,11 +62,11 @@ public sealed class EventPublishingChatClient : DelegatingChatClient
     /// <param name="events">The event hub to publish to.</param>
     /// <param name="agentName">The name of the agent using this client.</param>
     /// <param name="logger">The logger for diagnostic output.</param>
-    public EventPublishingChatClient([NotNull] IChatClient inner, [NotNull] ISentinelCoreEvents events, [NotNull] string agentName, [NotNull] ILogger logger) : base(inner)
+    public EventPublishingChatClient(IChatClient inner, ISentinelCoreEvents events, string agentName, ILogger logger) : base(inner)
     {
-        ArgumentNullException.ThrowIfNull(events);
-        ArgumentNullException.ThrowIfNull(agentName);
-        ArgumentNullException.ThrowIfNull(logger);
+        Throw.IfNull(events);
+        Throw.IfNull(agentName);
+        Throw.IfNull(logger);
 
         _events = events;
         _agentName = agentName;
@@ -88,9 +87,10 @@ public sealed class EventPublishingChatClient : DelegatingChatClient
     /// </summary>
     public override async Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
     {
-        _logger.LogTrace("Agent {AgentName} sending request with {MessageCount} messages", _agentName, messages.Count());
+        var messageList = messages is IReadOnlyList<ChatMessage> list ? list : messages.ToList();
+        _logger.LogTrace("Agent {AgentName} sending request with {MessageCount} messages", _agentName, messageList.Count);
 
-        ChatResponse response = await base.GetResponseAsync(messages, options, cancellationToken).ConfigureAwait(false);
+        ChatResponse response = await base.GetResponseAsync(messageList, options, cancellationToken).ConfigureAwait(false);
 
         foreach (FunctionResultContent toolResult in response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>())
         {

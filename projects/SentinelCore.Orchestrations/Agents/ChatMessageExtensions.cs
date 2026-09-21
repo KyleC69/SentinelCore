@@ -2,16 +2,7 @@
 
 
 using SentinelCore.Abstractions;
-using SentinelCore.Orchestrations.Agents.Models;
-
-
-
-
 namespace SentinelCore.Orchestrations.agents;
-
-
-
-
 
 public static class ChatMessageExtensions
 {

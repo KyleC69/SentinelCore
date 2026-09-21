@@ -37,7 +37,7 @@ public sealed class FileModelConfigStore : IModelConfigStore
     /// <summary>
     ///     The file name of the persisted document.
     /// </summary>
-    public const string FileName = "model-configuration.json";
+    public const string FILE_NAME = "model-configuration.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
@@ -74,7 +74,7 @@ public sealed class FileModelConfigStore : IModelConfigStore
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        _filePath = filePath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", FileName);
+        _filePath = filePath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", FILE_NAME);
     }
 
 

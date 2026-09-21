@@ -65,7 +65,6 @@ public sealed class ModelConfigGate : IModelConfigGate
 {
 
     private readonly ISentinelAgentCatalog _agentCatalog;
-    private readonly IAgentProfileBuilder _profileBuilder;
 
     private readonly SentinelCoreSettings _settings;
 
@@ -84,8 +83,8 @@ public sealed class ModelConfigGate : IModelConfigGate
     /// <param name="settings">The live SentinelCore settings.</param>
     public ModelConfigGate(ISentinelAgentCatalog agentCatalog, IAgentProfileBuilder profileBuilder, SentinelCoreSettings settings)
     {
+        ArgumentNullException.ThrowIfNull(profileBuilder);
         _agentCatalog = agentCatalog ?? throw new ArgumentNullException(nameof(agentCatalog));
-        _profileBuilder = profileBuilder ?? throw new ArgumentNullException(nameof(profileBuilder));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
     }
 
