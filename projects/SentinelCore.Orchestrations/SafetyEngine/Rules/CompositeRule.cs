@@ -49,7 +49,7 @@ public sealed class CompositeRule : ISafetyRule
 
 
 
- 
+
     public string Description { get; }
 
 
@@ -59,7 +59,7 @@ public sealed class CompositeRule : ISafetyRule
 
 
 
- 
+
     public async Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
         List<SafetyRuleResult> results = new(_subRules.Count);
@@ -94,6 +94,6 @@ public sealed class CompositeRule : ISafetyRule
 
 
 
- 
+
     public string Name { get; }
 }

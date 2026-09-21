@@ -6,11 +6,8 @@
 
 
 
-using System.Text.Json;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 
 using ModelContextProtocol.Authentication;
 
@@ -26,10 +23,8 @@ using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Mcp;
-using SentinelCore.Orchestrations.Orchestrations;
 using SentinelCore.Orchestrations.Rag;
 using SentinelCore.Orchestrations.Workflows;
-using SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
@@ -46,8 +41,6 @@ namespace SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 /// </summary>
 public static class SentinelCoreServiceExtensions
 {
-
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true, PropertyNameCaseInsensitive = true };
 
 
 
@@ -82,7 +75,6 @@ public static class SentinelCoreServiceExtensions
         ArgumentNullException.ThrowIfNull(options);
 
         // -- Bind settings into the options pipeline --
-        services.AddSingleton<IOrchestrationControl, OrchestrationControl>();
         services.AddOptions<SentinelCoreSettings>()
                 .Configure(opt =>
                 {
@@ -101,18 +93,16 @@ public static class SentinelCoreServiceExtensions
                     }
                 });
 
-        JsonConfiguredLogging(services);
-
-
         // -- Always-on core services --
         // Safety middleware defaults to pass-through; host can override with real rules
 
-        // Case Flow Engine — owns the entire case lifecycle; registers its own internal repository.
-        // Transient so it does not capture scoped/transient persistence services (DbContext, IEvidenceStore)
-        // and can be resolved safely from any scope.
-        services.AddTransient<ICaseFlowEngine, CaseFlowEngine.Cfe.CaseFlowEngine>();
-        services.AddTransient<IEvidenceStore, EvidenceStore>();
-        services.AddTransient<IPatternMemoryStore, PatternMemoryStore>();
+        // Case Flow Engine is an OPTIONAL module (PL-4/PL-5): register null-object
+        // defaults so the system runs without persistence. The host opts in to the
+        // real EF Core-backed engine by calling AddCaseFlowEngine() (CaseFlowEngine
+        // project), which overrides these defaults via RemoveAll<T>() + Add<T>().
+        services.AddSingleton<ICaseFlowEngine, NullCaseFlowEngine>();
+        services.AddSingleton<IEvidenceStore, NullEvidenceStore>();
+        services.AddSingleton<IPatternMemoryStore, NullPatternMemoryStore>();
         services.AddTransient<IPatternMatcher, SemanticPatternMatcher>();
 
         // -- RAG Search Services --
@@ -136,10 +126,7 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<IRagSearchService, RagSearchService>();
 
         services.AddSingleton<IOrchestrationControl, OrchestrationControl>();
-        services.AddTransient<IOrchestration, CustomGroupWorkflow>();
-        services.AddTransient<IOrchestration, TheCoreWorkflow>();
         services.AddTransient<IChatClientFactory, SentinelChatClientFactory>();
-        services.AddTransient<CaseGenExec>();
         services.AddTransient<CustomGroupWorkflow>();
         services.AddTransient<ICaseGenerator, CaseGenerator>();
         services.AddSingleton<ISentinelCoreEvents, SentinelCoreEvents>();
@@ -150,8 +137,6 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<TheCoreWorkflow>();
         services.AddSingleton<ISentinelAgentFactory, SentinelAgentFactory>();
         services.AddSingleton<IOrchestrationFactory, OrchestrationFactory>();
-        services.AddSingleton<MagneticOrchestration>();
-        services.AddTransient<NewCaseExecutor>();
         services.RegisterExecutors();
 
         // -- MCP server registry --
@@ -170,52 +155,6 @@ public static class SentinelCoreServiceExtensions
         services.AddHostedService<McpServerRegistryInitializer>();
 
 
-        return services;
-    }
-
-
-
-
-
-
-
-
-    private static IServiceCollection JsonConfiguredLogging(IServiceCollection services)
-    {
-
-
-
-
-        Action<JsonConsoleFormatterOptions> jops = options =>
-        {
-            options.IncludeScopes = true;
-            options.UseUtcTimestamp = false;
-            options.JsonWriterOptions = new JsonWriterOptions { Indented = true, SkipValidation = false, IndentSize = 4 };
-        };
-
-
-
-        JsonLoggerOptions jsonOptions = new()
-        {
-                MinimumLevel = LogLevel.Trace, Indented = true, Output = JsonLoggerOutput.File, FilePath = "SentinelCore.log"
-
-                // Or:
-                // Output = JsonLoggerOutput.File,
-                // FilePath = "logs/sentinelcore.json"
-        };
-
-
-
-        services.AddLogging(op =>
-        {
-            //   op.AddJsonConsole(jops);
-            op.AddConsole();
-            op.AddProvider(new JsonLoggerProvider(jsonOptions));
-            op.SetMinimumLevel(LogLevel.Trace);
-            op.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
-
-
-        });
         return services;
     }
 }

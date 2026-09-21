@@ -56,10 +56,16 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
     private readonly IFolderBrowserService _folderBrowser;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
     private bool _isAddingServer;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddServerCommand))] [NotifyCanExecuteChangedFor(nameof(StartServerCommand))] [NotifyCanExecuteChangedFor(nameof(StopServerCommand))] [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))] [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StopServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
     private bool _isBusy;
 
     private readonly CancellationTokenSource _lifecycleCts = new();
@@ -69,10 +75,12 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
     [ObservableProperty] private string _newServerArgumentsText = string.Empty;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
     private string _newServerCommandOrEndpoint = string.Empty;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
     private string _newServerDisplayName = string.Empty;
 
     [ObservableProperty] private string _newServerEnvironmentText = string.Empty;
@@ -85,7 +93,11 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
     [ObservableProperty] private string _resultMessage = string.Empty;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(StartServerCommand))] [NotifyCanExecuteChangedFor(nameof(StopServerCommand))] [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))] [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StopServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
     private McpServerRow? _selectedServer;
 
     [ObservableProperty] private ObservableCollection<AgentAssignmentRow> _selectedServerAgentAssignments = [];
@@ -174,7 +186,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
 
 
- 
+
     public void Dispose()
     {
         if (_disposed)
@@ -221,7 +233,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
 
 
- 
+
     public void OnNavigatedTo(object? parameter)
     {
         _ = LoadAsync(_lifecycleCts.Token);
@@ -526,14 +538,14 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     {
         return new McpServerRow
         {
-                Id = server.Definition.Id,
-                DisplayName = server.Definition.DisplayName,
-                TransportType = server.Definition.TransportType,
-                CommandOrEndpoint = server.Definition.CommandOrEndpoint,
-                Status = server.Status,
-                ToolNamesText = string.Join(", ", server.ToolNames),
-                AssignedAgentsText = server.Definition.AssignedAgentNames.Count > 0 ? string.Join(", ", server.Definition.AssignedAgentNames) : "All agents",
-                LastError = server.LastError
+            Id = server.Definition.Id,
+            DisplayName = server.Definition.DisplayName,
+            TransportType = server.Definition.TransportType,
+            CommandOrEndpoint = server.Definition.CommandOrEndpoint,
+            Status = server.Status,
+            ToolNamesText = string.Join(", ", server.ToolNames),
+            AssignedAgentsText = server.Definition.AssignedAgentNames.Count > 0 ? string.Join(", ", server.Definition.AssignedAgentNames) : "All agents",
+            LastError = server.LastError
         };
     }
 

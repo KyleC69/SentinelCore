@@ -20,6 +20,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using SentinelCore.Abstractions;
+using SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection;
 using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Mcp;
@@ -95,8 +96,10 @@ public partial class App : Application
         // without configuration are gated at the factory.
         SentinelCoreSettings sentinelSettings = new()
         {
-                //TODO: Isolate Caseflow engine db configuration to make module optional. Keep seams to case flow engine clean.
-                SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty, TraceEnabled = true, TraceLogLevel = LogLevel.Trace, OrchestrationType = OrchestrationType.TheCore
+            SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
+            TraceEnabled = true,
+            TraceLogLevel = LogLevel.Trace,
+            OrchestrationType = OrchestrationType.TheCore
         };
 
         // Seed per-agent models from the persisted configuration document so the
@@ -113,6 +116,11 @@ public partial class App : Application
         }
 
         services.AddSentinelCore(sentinelSettings);
+
+        // Case Flow Engine — optional module (PL-4/PL-5). The UI host opts in to the
+        // real EF Core-backed engine, overriding the null-object defaults registered
+        // by AddSentinelCore. Requires the DbContext factory registration below (PL-7).
+        services.AddCaseFlowEngine();
 
         // UI layer — services, ViewModels, Views, and navigation
         services.AddSentinelCoreUI();
@@ -266,7 +274,6 @@ public partial class App : Application
             LogUnhandledUiException(logger, e.Exception);
         }
 
-        e.Handled = false;
         LogStartupException(e.Exception);
         MessageBox.Show($"Unhandled dispatcher exception:\n\n{e.Exception}", "SentinelCore Error", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
@@ -390,6 +397,7 @@ public partial class App : Application
                 {
                     logging.ClearProviders();
                     // WinExe has no attached console — Debug output surfaces in the VS Output window.
+                    logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
                     logging.AddDebug();
                     logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }; });
                     logging.AddFileLogger();

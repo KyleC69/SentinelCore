@@ -103,10 +103,13 @@ public class CaseGenerator : ICaseGenerator, IDisposable
 
         //Start mcp server tooling
         _client = await McpClient.CreateAsync(new StdioClientTransport(new()
-                {
-                        //Should be running from the output directory
-                        Name = "SentinelCoreMCP", Command = "SentinelCoreMCP.exe", WorkingDirectory = AppContext.BaseDirectory, Arguments = ["--stdio"]
-                }, _factory))
+        {
+            //Should be running from the output directory
+            Name = "SentinelCoreMCP",
+            Command = "SentinelCoreMCP.exe",
+            WorkingDirectory = AppContext.BaseDirectory,
+            Arguments = ["--stdio"]
+        }, _factory))
                 .ConfigureAwait(false);
 
 

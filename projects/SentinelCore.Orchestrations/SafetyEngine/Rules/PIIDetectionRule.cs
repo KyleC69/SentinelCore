@@ -93,7 +93,7 @@ public sealed class PIIDetectionRule : ISafetyRule
 
 
 
- 
+
     public string Description { get; }
 
 
@@ -103,7 +103,7 @@ public sealed class PIIDetectionRule : ISafetyRule
 
 
 
- 
+
     public Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
         string text = context.CombinedText;
@@ -114,9 +114,9 @@ public sealed class PIIDetectionRule : ISafetyRule
                 SafetyAction resultAction = _action;
                 SafetyRuleResult result = resultAction switch
                 {
-                        SafetyAction.Block => SafetyRuleResult.Block(Name, _severity, $"Potential PII detected: {label}."),
-                        SafetyAction.Warn => SafetyRuleResult.Warn(Name, _severity, $"Potential PII detected: {label}."),
-                        _ => SafetyRuleResult.Allow(Name, $"PII pattern matched ({label}) but action is Allow.")
+                    SafetyAction.Block => SafetyRuleResult.Block(Name, _severity, $"Potential PII detected: {label}."),
+                    SafetyAction.Warn => SafetyRuleResult.Warn(Name, _severity, $"Potential PII detected: {label}."),
+                    _ => SafetyRuleResult.Allow(Name, $"PII pattern matched ({label}) but action is Allow.")
                 };
                 return Task.FromResult(result);
             }
@@ -131,6 +131,6 @@ public sealed class PIIDetectionRule : ISafetyRule
 
 
 
- 
+
     public string Name { get; }
 }

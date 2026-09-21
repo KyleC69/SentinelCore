@@ -51,7 +51,9 @@ internal class TheCoreExec(AIAgent agent, AgentSession session, ISystemReporter 
 
             ChatMessage outMsg = new(ChatRole.Assistant, result.Text);
 
-            await context.YieldOutputAsync(outMsg, cancellationToken).ConfigureAwait(false); //bubble up to output
+            // The return value is auto-yielded as workflow output (non-void handler
+            // return + WithOutputFrom registration), so no explicit yield here —
+            // an explicit yield would duplicate the message in the chat.
             return outMsg; //send to next step
         }
         catch (Exception ex)

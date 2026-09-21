@@ -61,7 +61,7 @@ public sealed class DpapiTokenCache : ITokenCache
 
 
 
- 
+
     public ValueTask<TokenContainer?> GetTokensAsync(CancellationToken cancellationToken = default)
     {
         // Return the first cached token. SentinelCore currently handles a single token set per cache.
@@ -79,7 +79,7 @@ public sealed class DpapiTokenCache : ITokenCache
 
 
 
- 
+
     public ValueTask StoreTokensAsync(TokenContainer tokens, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(tokens);

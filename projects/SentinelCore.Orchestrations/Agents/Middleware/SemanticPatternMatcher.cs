@@ -70,7 +70,7 @@ public sealed class SemanticPatternMatcher : IPatternMatcher
 
 
 
- 
+
     public async Task<IReadOnlyList<PatternMatchResult>> SearchAsync(string signal, int topK = 5, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(signal);
@@ -111,7 +111,7 @@ public sealed class SemanticPatternMatcher : IPatternMatcher
 
 
 
- 
+
     public async Task<IReadOnlyList<PatternMatchResult>> SearchByEmbeddingAsync(float[] embedding, int topK = 5, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(embedding);

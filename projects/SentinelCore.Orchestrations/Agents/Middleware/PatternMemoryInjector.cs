@@ -57,7 +57,7 @@ public sealed class PatternMemoryInjector : MessageAIContextProvider
 
 
 
- 
+
     protected override async ValueTask<AIContext> ProvideAIContextAsync(AIContextProvider.InvokingContext context, CancellationToken cancellationToken = default)
     {
         // TODO: Extract user prompt/signal from context and search pattern memory
@@ -79,7 +79,7 @@ public sealed class PatternMemoryInjector : MessageAIContextProvider
 
 
 
- 
+
     protected override async ValueTask<IEnumerable<ChatMessage>> ProvideMessagesAsync(InvokingContext context, CancellationToken cancellationToken = default)
     {
         // TODO: Implement message injection when valid case data is available

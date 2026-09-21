@@ -91,7 +91,7 @@ public sealed class RoleEscalationRule : ISafetyRule
 
 
 
- 
+
     public string Description { get; }
 
 
@@ -101,7 +101,7 @@ public sealed class RoleEscalationRule : ISafetyRule
 
 
 
- 
+
     public Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
         string text = context.CombinedText;
@@ -122,6 +122,6 @@ public sealed class RoleEscalationRule : ISafetyRule
 
 
 
- 
+
     public string Name { get; }
 }

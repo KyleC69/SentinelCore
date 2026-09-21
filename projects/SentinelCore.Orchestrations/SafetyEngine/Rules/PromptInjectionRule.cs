@@ -101,7 +101,7 @@ public sealed class PromptInjectionRule : ISafetyRule
     /// </summary>
     public SafetySeverity BlockSeverity { get; }
 
- 
+
     public string Description { get; }
 
 
@@ -111,7 +111,7 @@ public sealed class PromptInjectionRule : ISafetyRule
 
 
 
- 
+
     public Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
         string text = context.CombinedText;
@@ -132,6 +132,6 @@ public sealed class PromptInjectionRule : ISafetyRule
 
 
 
- 
+
     public string Name { get; }
 }

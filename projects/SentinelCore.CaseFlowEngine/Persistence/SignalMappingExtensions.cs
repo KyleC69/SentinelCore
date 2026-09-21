@@ -35,11 +35,11 @@ public static class SignalMappingExtensions
 
         return new SignalEntity
         {
-                Id = signal.Id,
-                SignalId = signal.SignalId,
-                SignalText = signal.SignalText,
-                Source = signal.Source,
-                FirstSeen = signal.Timestamp
+            Id = signal.Id,
+            SignalId = signal.SignalId,
+            SignalText = signal.SignalText,
+            Source = signal.Source,
+            FirstSeen = signal.Timestamp
         };
     }
 }

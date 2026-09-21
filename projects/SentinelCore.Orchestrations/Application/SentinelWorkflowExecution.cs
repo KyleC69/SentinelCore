@@ -67,6 +67,21 @@ public interface ISentinelWorkflowExecution
     ///     Executes a <see cref="Workflow" /> with the default phase label "Workflow".
     /// </summary>
     Task<WorkflowExecutionResult> ExecuteAsync([NotNull] Workflow workflow, [NotNull] ChatMessage promptSignal, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Executes a <see cref="Workflow" /> with full streaming event capture, forwarding
+    ///     every raw <see cref="WorkflowEvent" /> to the optional callback before structured
+    ///     processing. Orchestrations use this overload when they need per-event handling
+    ///     (e.g. accumulating streaming agent output) in addition to the engine's
+    ///     structured logging and event publishing.
+    /// </summary>
+    /// <param name="workflow">The workflow to execute.</param>
+    /// <param name="promptSignal">The user prompt to send into the workflow.</param>
+    /// <param name="phaseLabel">Label identifying the pipeline phase.</param>
+    /// <param name="rawEventCallback">Optional callback invoked for every streamed workflow event.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The execution result with collected output messages and the structured event log.</returns>
+    Task<WorkflowExecutionResult> ExecuteAsync([NotNull] Workflow workflow, [NotNull] ChatMessage promptSignal, [NotNull] string phaseLabel, Action<WorkflowEvent>? rawEventCallback, CancellationToken cancellationToken = default);
 }
 
 
@@ -151,6 +166,23 @@ public sealed class SentinelWorkflowExecution : ISentinelWorkflowExecution
     /// </returns>
     public async Task<WorkflowExecutionResult> ExecuteAsync([NotNull] Workflow workflow, [NotNull] ChatMessage promptSignal, [NotNull] string phaseLabel, CancellationToken cancellationToken = default)
     {
+        return await ExecuteAsync(workflow, promptSignal, phaseLabel, rawEventCallback: null, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Executes a <see cref="Workflow" /> with full streaming event capture, forwarding
+    ///     every raw <see cref="WorkflowEvent" /> to the optional callback before structured
+    ///     processing, and collecting individual <see cref="ChatMessage" /> outputs yielded
+    ///     by executors registered via <see cref="WorkflowBuilder.WithOutputFrom" />.
+    /// </summary>
+    /// <param name="workflow">The workflow to execute.</param>
+    /// <param name="promptSignal">The user prompt to send into the workflow.</param>
+    /// <param name="phaseLabel">Label identifying the pipeline phase.</param>
+    /// <param name="rawEventCallback">Optional callback invoked for every streamed workflow event.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The execution result with collected output messages and the structured event log.</returns>
+    public async Task<WorkflowExecutionResult> ExecuteAsync([NotNull] Workflow workflow, [NotNull] ChatMessage promptSignal, [NotNull] string phaseLabel, Action<WorkflowEvent>? rawEventCallback, CancellationToken cancellationToken = default)
+    {
         ArgumentNullException.ThrowIfNull(workflow);
         ArgumentNullException.ThrowIfNull(promptSignal);
         ArgumentException.ThrowIfNullOrWhiteSpace(phaseLabel);
@@ -158,7 +190,7 @@ public sealed class SentinelWorkflowExecution : ISentinelWorkflowExecution
         _eventing.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(phaseLabel, $"{phaseLabel}: Starting workflow execution…", ActivityType.System));
         Guid sessionid = Guid.NewGuid();
         List<WorkflowEventEntry> eventLog = new();
-        List<ChatMessage>? finalMessages = null;
+        List<ChatMessage> outputMessages = [];
 
         try
         {
@@ -170,13 +202,16 @@ public sealed class SentinelWorkflowExecution : ISentinelWorkflowExecution
             // Now allow the workflow to run
             await run.TrySendMessageAsync(new TurnToken(true)).ConfigureAwait(false);
 
-            await foreach (WorkflowEvent evt in run.WatchStreamAsync().ConfigureAwait(false))
+            await foreach (WorkflowEvent evt in run.WatchStreamAsync(cancellationToken).ConfigureAwait(false))
             {
+                rawEventCallback?.Invoke(evt);
                 ProcessEvent(evt, phaseLabel, eventLog);
 
-                if (evt is WorkflowOutputEvent outputEvent && outputEvent.Is<List<ChatMessage>>())
+                // Executors registered via WithOutputFrom yield individual ChatMessage
+                // values — collect each one.
+                if (evt is WorkflowOutputEvent outputEvent && outputEvent.Is<ChatMessage>(out ChatMessage? outputMessage))
                 {
-                    finalMessages = outputEvent.As<List<ChatMessage>>();
+                    outputMessages.Add(outputMessage);
                 }
             }
 
@@ -189,7 +224,7 @@ public sealed class SentinelWorkflowExecution : ISentinelWorkflowExecution
             throw;
         }
 
-        return new WorkflowExecutionResult(finalMessages, eventLog);
+        return new WorkflowExecutionResult(outputMessages, eventLog);
     }
 
 
@@ -355,7 +390,7 @@ public sealed class WorkflowEventEntry
     /// <summary>
     ///     When the event was captured (UTC).
     /// </summary>
-    public DateTime Timestamp { get; } = DateTime.Now;
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
 }
 
 

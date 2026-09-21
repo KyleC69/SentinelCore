@@ -28,6 +28,8 @@ namespace SentinelCore.Orchestrations.Application;
 /// <summary>
 ///     Encapsulates the result of a workflow execution, including the final
 ///     output messages and a structured log of all captured events.
+///     Constructed exclusively by the workflow execution engine — the internal
+///     constructor is the only creation path, so callers cannot fabricate results.
 /// </summary>
 public sealed class WorkflowExecutionResult
 {
@@ -41,36 +43,10 @@ public sealed class WorkflowExecutionResult
 
 
 
-
-
-
-    public WorkflowExecutionResult()
-    {
-    }
-
-
-
-
-
-
-
-
-    public WorkflowExecutionResult(List<ChatMessage> conversationHistory, WorkflowOutputEvent eventLog)
-    {
-        OutputMessages = conversationHistory;
-    }
-
-
-
-
-
-
-
-
     /// <summary>
     ///     A chronological log of all workflow events captured during execution.
     /// </summary>
-    public IReadOnlyList<WorkflowEventEntry> EventLog { get; } = [];
+    public IReadOnlyList<WorkflowEventEntry> EventLog { get; }
 
     /// <summary>
     ///     Whether the workflow produced output messages.

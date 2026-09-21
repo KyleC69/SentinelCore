@@ -35,14 +35,14 @@ public static class CaseMappingExtensions
 
         return new Case
         {
-                Id = entity.Id,
-                CaseId = entity.CaseId,
-                Status = (CaseStatus)entity.Status,
-                InitiatingSignal = entity.InitiatingSignal,
-                CreatedAt = entity.CreatedAt,
-                UpdatedAt = entity.UpdatedAt,
-                PlanId = entity.PlanId,
-                PatternMemoryId = entity.PatternMemoryId
+            Id = entity.Id,
+            CaseId = entity.CaseId,
+            Status = (CaseStatus)entity.Status,
+            InitiatingSignal = entity.InitiatingSignal,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt,
+            PlanId = entity.PlanId,
+            PatternMemoryId = entity.PatternMemoryId
         };
     }
 
@@ -64,14 +64,14 @@ public static class CaseMappingExtensions
 
         return new CaseEntity
         {
-                Id = @case.Id,
-                CaseId = @case.CaseId,
-                Status = (int)@case.Status,
-                InitiatingSignal = @case.InitiatingSignal,
-                CreatedAt = @case.CreatedAt,
-                UpdatedAt = @case.UpdatedAt,
-                PlanId = @case.PlanId,
-                PatternMemoryId = @case.PatternMemoryId
+            Id = @case.Id,
+            CaseId = @case.CaseId,
+            Status = (int)@case.Status,
+            InitiatingSignal = @case.InitiatingSignal,
+            CreatedAt = @case.CreatedAt,
+            UpdatedAt = @case.UpdatedAt,
+            PlanId = @case.PlanId,
+            PatternMemoryId = @case.PatternMemoryId
         };
     }
 }

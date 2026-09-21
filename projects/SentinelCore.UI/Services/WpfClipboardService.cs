@@ -23,7 +23,7 @@ namespace SentinelCore.UI.Services;
 /// </summary>
 public sealed class WpfClipboardService : IClipboardService
 {
- 
+
     public void SetText(string text)
     {
         ArgumentNullException.ThrowIfNull(text);

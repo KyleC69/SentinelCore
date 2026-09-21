@@ -88,7 +88,7 @@ public sealed class OrchestrationControl : IOrchestrationControl
 
         await EnsureMcpServersStartedAsync(token).ConfigureAwait(false);
 
-        // Initialize agents once (idempotent - will throw if called twice)
+        // Initialize agents once (idempotent — repeated calls are safe no-ops)
         await _orchestration.InitializeAsync(token).ConfigureAwait(false);
 
         // Raising an event to notify that the orchestration process is starting. This can be useful for logging, monitoring, or triggering other actions in response to the start of the orchestration.

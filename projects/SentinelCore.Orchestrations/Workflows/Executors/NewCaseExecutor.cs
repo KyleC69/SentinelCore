@@ -30,13 +30,6 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 public sealed class NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter reporter) : Executor<SignalHypothesis, SignalHypothesis>("NewCase")
 {
 
-    // This field is currently unused; make it nullable to silence the warning.
-    private const string SharedState = "SharedState";
-
-
-
-
-
 
 
 
@@ -54,10 +47,12 @@ public sealed class NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter rep
 
 
             // Set caseid so it can be picked up by future steps.
-            await context.QueueStateUpdateAsync(WorkFlowStateKeys.CASE_ID, caseId, SharedState, token).ConfigureAwait(false);
-            await context.QueueStateUpdateAsync(WorkFlowStateKeys.SIGNAL_HYPOTHESIS, message, SharedState, token).ConfigureAwait(false);
+            await context.QueueStateUpdateAsync(WorkFlowStateKeys.CASE_ID, caseId, "SharedState", token).ConfigureAwait(false);
+            await context.QueueStateUpdateAsync(WorkFlowStateKeys.SIGNAL_HYPOTHESIS, message, "SharedState", token).ConfigureAwait(false);
 
-            await context.YieldOutputAsync(message, token).ConfigureAwait(false); //Bubble caseid to output
+            // The returned hypothesis is auto-yielded as workflow output (non-void
+            // handler return + WithOutputFrom registration); an explicit yield here
+            // would duplicate it.
 
 
 

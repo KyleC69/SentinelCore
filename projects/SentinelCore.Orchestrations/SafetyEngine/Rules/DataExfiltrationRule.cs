@@ -95,7 +95,7 @@ public sealed class DataExfiltrationRule : ISafetyRule
 
 
 
- 
+
     public string Description { get; }
 
 
@@ -105,7 +105,7 @@ public sealed class DataExfiltrationRule : ISafetyRule
 
 
 
- 
+
     public Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
         string text = context.CombinedText;
@@ -126,6 +126,6 @@ public sealed class DataExfiltrationRule : ISafetyRule
 
 
 
- 
+
     public string Name { get; }
 }

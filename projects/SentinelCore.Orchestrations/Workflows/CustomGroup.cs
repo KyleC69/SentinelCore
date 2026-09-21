@@ -82,7 +82,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
     {
         AgentResponse response = await GetAgentResponse(promptSignal.Text);
 
-        Console.WriteLine(response.Text);
+        _reporter.ReportInfo($"CustomGroup agent response: {response.Text}");
 
         return new WorkflowExecutionResult([new ChatMessage(ChatRole.Assistant, response.Text)], eventLog: []);
     }
@@ -94,7 +94,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
- 
+
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
@@ -148,9 +148,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
         AgentResponse response = await _theCore!.RunAsync(new ChatMessage(ChatRole.User, prompt), _session!);
 
-        Console.WriteLine($"Agent Response: {response.Text}");
-
-        Console.WriteLine($"Agent Response: {response.Text}");
+        _reporter.ReportInfo($"Agent Response: {response.Text}");
 
         return response;
     }

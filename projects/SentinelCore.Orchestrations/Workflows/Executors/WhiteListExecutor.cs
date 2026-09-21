@@ -18,22 +18,14 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 /// <summary>
-///     This will check the signal against the operators whitelist. This will probably be stored in DB.
-///     A list of environmentally acceptable signals that should be ignored.
-///     ** NOTE: This must be a bullet proof design and never leave any room for a poor identification. If the signal is
-///     not on the whitelist
+///     This will check the signal against the operators whitelist. This will be stored in DB and vector searchable.
+///     A list of environmentally acceptable signals that should be ignored. This list is populated only by end user as a means of silencing benign signals.
+///     If the signal is  not on the whitelist
 ///     It must flow through normal pathways, If it is on the list It will be logged and the flow terminated.
 /// </summary>
 public sealed partial class WhiteListExecutor : Executor<ChatMessage, SuppressionDecision>
 {
     private readonly ISystemReporter _reporter;
-
-
-
-
-
-
-
 
     public WhiteListExecutor(ISystemReporter reporter) : base("WhitelistExecutor")
     {
@@ -48,9 +40,8 @@ public sealed partial class WhiteListExecutor : Executor<ChatMessage, Suppressio
 
 
     /// <summary>
-    ///     ///     This will check the signal against the operators whitelist.
-    ///     Currently this executor is being used for testing the viability of prompt override commands. A type of back door to
-    ///     other pathways.
+    ///     ///     This will check the signal against the operators whitelist This will do vector search in database
+    ///
     /// </summary>
     /// <param name="message"></param>
     /// <param name="context"></param>
@@ -74,7 +65,7 @@ public sealed partial class WhiteListExecutor : Executor<ChatMessage, Suppressio
             results.Prompt = message.Text;
         }
 
-        await context.SendMessageAsync(results); //send the results to the next executor in the workflow
+        await context.SendMessageAsync(results, cancellationToken: ct); //send the results to the next executor in the workflow
         return results;
 
     }

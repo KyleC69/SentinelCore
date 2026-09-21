@@ -65,10 +65,10 @@ public sealed class RagSearchTool : AITool
 
 
 
- 
+
     public override string Description { get; } = "Searches the knowledge base for relevant documentation, policies, and reference materials. " + "Use this tool when you need to find information about procedures, guidelines, specifications, " + "or any documented knowledge. The search returns the most relevant results with context.";
 
- 
+
     public override string Name { get; } = "SearchKnowledgeBase";
 
 

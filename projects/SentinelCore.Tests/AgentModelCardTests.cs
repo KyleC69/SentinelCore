@@ -94,12 +94,12 @@ public sealed class AgentModelCardTests
         // Arrange
         AgentModelCard card = new("TheCore")
         {
-                Endpoint = "http://localhost:11434",
-                ModelId = "model-a",
-                Temperature = 0.3f,
-                MaxOutputTokens = 12000,
-                TopK = 1,
-                TopP = 0.2f
+            Endpoint = "http://localhost:11434",
+            ModelId = "model-a",
+            Temperature = 0.3f,
+            MaxOutputTokens = 12000,
+            TopK = 1,
+            TopP = 0.2f
         };
 
         // Act

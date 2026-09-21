@@ -145,13 +145,13 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
             LogEnvelope envelope = new()
             {
-                    Timestamp = DateTimeOffset.Now,
-                    Level = logLevel.ToString(),
-                    Category = _category,
-                    EventId = eventId.Id,
-                    Message = formatter(state, exception!),
-                    Exception = exception?.ToString(),
-                    Scopes = scopes
+                Timestamp = DateTimeOffset.Now,
+                Level = logLevel.ToString(),
+                Category = _category,
+                EventId = eventId.Id,
+                Message = formatter(state, exception!),
+                Exception = exception?.ToString(),
+                Scopes = scopes
             };
 
             string json = JsonSerializer.Serialize(envelope, new JsonSerializerOptions { WriteIndented = _options.Indented, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });

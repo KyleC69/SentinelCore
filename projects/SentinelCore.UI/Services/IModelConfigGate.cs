@@ -96,7 +96,7 @@ public sealed class ModelConfigGate : IModelConfigGate
 
 
 
- 
+
     public string BuildGateMessage()
     {
         IReadOnlyList<string> missing = UnconfiguredAgents;
@@ -116,13 +116,13 @@ public sealed class ModelConfigGate : IModelConfigGate
 
 
 
- 
+
     public bool IsConfigurationComplete
     {
         get => UnconfiguredAgents.Count == 0;
     }
 
- 
+
     public IReadOnlyList<string> UnconfiguredAgents
     {
         get

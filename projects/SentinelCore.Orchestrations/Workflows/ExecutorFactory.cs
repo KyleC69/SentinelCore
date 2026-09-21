@@ -9,6 +9,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Newtonsoft.Json;
+
 using SentinelCore.Orchestrations.Workflows.Executors;
 
 
@@ -67,27 +69,23 @@ internal sealed class ExecutorFactory
 
 
     /// <summary>
-    ///     Creates all workflow executors in a single call to reduce ceremony.
+    ///     Creates all workflow executors used by the TheCore graph in a single call.
     /// </summary>
-    /// <returns>A tuple containing all workflow executors.</returns>
+    /// <returns>A container holding every executor wired into the workflow graph.</returns>
     public ExecutorCollection CreateAllExecutors()
     {
         return new ExecutorCollection
         {
             SafetyExecutor = Create<SafetyExecutor>(),
             EscalatedExecutor = Create<EscalatedExecutor>(),
-            WhiteListExecutor = Create<WhiteListExecutor>(),
             PatternCheckExecutor = Create<PatternCheckExecutor>(),
             HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
-            VerifyEvidenceExecutor = Create<VerifyEvidenceExecutor>(),
-
+            PersistEvidenceExecutor = Create<PersistEvidence>(),
             NewCaseExecutor = Create<NewCaseExecutor>(),
             AggregationExecutor = Create<AggregationExecutor>(),
             MoreInformationExecutor = Create<MoreInformationExecutor>(),
             CriticalAlert = Create<CriticalAlert>(),
-            LoggingExecutor = Create<LoggingExecutor>(),
-            CaseGenExecutor = Create<CaseGenExec>(),
-
+            TerminateWorkflow = Create<TerminateWorkflow>()
         };
     }
 }
@@ -98,19 +96,18 @@ internal sealed class ExecutorFactory
 
 /// <summary>
 ///     Container for all workflow executors to simplify passing them around.
+///     Holds exactly the executors wired into the TheCore workflow graph.
 /// </summary>
 internal sealed class ExecutorCollection
 {
     public required AggregationExecutor AggregationExecutor { get; init; }
-    public required CaseGenExec CaseGenExecutor { get; init; }
     public required CriticalAlert CriticalAlert { get; init; }
     public required EscalatedExecutor EscalatedExecutor { get; init; }
     public required HumanOperatorExecutor HumanOperatorExecutor { get; init; }
-    public required LoggingExecutor LoggingExecutor { get; init; }
     public required MoreInformationExecutor MoreInformationExecutor { get; init; }
     public required NewCaseExecutor NewCaseExecutor { get; init; }
     public required PatternCheckExecutor PatternCheckExecutor { get; init; }
     public required SafetyExecutor SafetyExecutor { get; init; }
-    public required VerifyEvidenceExecutor VerifyEvidenceExecutor { get; init; }
-    public required WhiteListExecutor WhiteListExecutor { get; init; }
+    public required PersistEvidence PersistEvidenceExecutor { get; init; }
+    public TerminateWorkflow TerminateWorkflow { get; internal set; }
 }

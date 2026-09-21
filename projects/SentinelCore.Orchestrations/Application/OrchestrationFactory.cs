@@ -86,11 +86,11 @@ public sealed class OrchestrationFactory : IOrchestrationFactory
     {
         return orchestrationType switch
         {
-                // TheCore Orchestration is the default orchestration that is used to manage the core functionality of the system.
-                // A very specialized multi-agent investigation type orchestration to interrogate Windows systems.
-                OrchestrationType.TheCore => _serviceProvider.GetRequiredService<TheCoreWorkflow>(),
-                OrchestrationType.CustomGroup => _serviceProvider.GetRequiredService<CustomGroupWorkflow>(),
-                _ => _serviceProvider.GetRequiredService<TheCoreWorkflow>()
+            // TheCore Orchestration is the default orchestration that is used to manage the core functionality of the system.
+            // A very specialized multi-agent investigation type orchestration to interrogate Windows systems.
+            OrchestrationType.TheCore => _serviceProvider.GetRequiredService<TheCoreWorkflow>(),
+            OrchestrationType.CustomGroup => _serviceProvider.GetRequiredService<CustomGroupWorkflow>(),
+            _ => _serviceProvider.GetRequiredService<TheCoreWorkflow>()
         };
     }
 }

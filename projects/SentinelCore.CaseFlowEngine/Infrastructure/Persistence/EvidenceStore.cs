@@ -76,12 +76,12 @@ public sealed class EvidenceStore : IEvidenceStore
 
         EvidenceEntity entity = new()
         {
-                EvidenceId = item.EvidenceId,
-                Type = item.Type,
-                Source = item.Source,
-                ContentJson = item.ContentJson,
-                Provenance = item.Provenance,
-                Timestamp = item.Timestamp
+            EvidenceId = item.EvidenceId,
+            Type = item.Type,
+            Source = item.Source,
+            ContentJson = item.ContentJson,
+            Provenance = item.Provenance,
+            Timestamp = item.Timestamp
         };
 
         db.EvidenceEntities.Add(entity);
@@ -110,15 +110,15 @@ public sealed class EvidenceStore : IEvidenceStore
         List<EvidenceEntity> entities = await db.EvidenceEntities.AsNoTracking().Where(e => db.CaseEntities.Any(c => c.CaseId == caseIdGuid && c.EvidenceId == e.EvidenceId)).ToListAsync(cancellationToken).ConfigureAwait(false);
 
         return entities.Select(e => new Evidence
-                {
-                        Id = e.Id,
-                        EvidenceId = e.EvidenceId,
-                        Type = e.Type,
-                        Source = e.Source,
-                        ContentJson = e.ContentJson,
-                        Provenance = e.Provenance,
-                        Timestamp = e.Timestamp
-                })
+        {
+            Id = e.Id,
+            EvidenceId = e.EvidenceId,
+            Type = e.Type,
+            Source = e.Source,
+            ContentJson = e.ContentJson,
+            Provenance = e.Provenance,
+            Timestamp = e.Timestamp
+        })
                 .ToList();
     }
 

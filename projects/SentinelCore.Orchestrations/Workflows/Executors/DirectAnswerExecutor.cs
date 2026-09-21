@@ -6,7 +6,6 @@
 
 
 
-using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Abstractions;
 
 
@@ -24,16 +23,16 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 /// Consider implementing a retry mechanism for transient failures in agent execution.
 /// Consider a safety filter to validate the agent's output before yielding it to the workflow context.
 /// </summary>
-/// <remarks>On failure, exceptions are reported to the reporter and rethrown. The executor calls agent.RunAsync
-/// to obtain an AgentResponse, yields the resulting text to the workflow via IWorkflowContext.YieldOutputAsync, and
-/// returns the same text.</remarks>
+/// <remarks>On failure, exceptions are reported to the reporter and a user-visible fallback message is yielded;
+/// cancellation is re-thrown so cooperative cancellation propagates. The executor calls agent.RunAsync
+/// to obtain an AgentResponse and yields the resulting text to the workflow via IWorkflowContext.YieldOutputAsync.</remarks>
 /// <param name="agent">Model-backed AIAgent used to generate the answer for the workflow step.</param>
 /// <param name="reporter">ISystemReporter used to emit informational and error reports during execution.</param>
-[YieldsOutput(typeof(string))]
-public partial class DirectAnswerExecutor(AIAgent agent, ISystemReporter reporter) : Executor("DirectAnswer")
+[YieldsOutput(typeof(ChatMessage))]
+public partial class DirectAnswerExecutor(AIAgent agent, AgentSession session ,ISystemReporter reporter) : Executor("DirectAnswer")
 {
     //TODO: We need to bring in TheCore agent, and it's session, this agent interaction needs recall in future for conversational consistency
-
+    //Agent creation need to be moved to allow the customization of the agent inside the executor
 
     /// <summary>
     /// Handles the direct answer workflow step by invoking an AIAgent to produce a textual response.
@@ -43,41 +42,62 @@ public partial class DirectAnswerExecutor(AIAgent agent, ISystemReporter reporte
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown if input is null.</exception>
-    /// <exception cref="Exception">Thrown if any error occurs during agent execution or reporting.</exception>
+    /// <exception cref="OperationCanceledException">Re-thrown when execution is cancelled so cancellation propagates.</exception>
+    /// <remarks>
+    /// On a null agent response or an execution failure the executor yields a user-visible
+    /// fallback message and returns early; it never falls through to a null response dereference.
+    /// </remarks>
     [MessageHandler]
     public async ValueTask HandleAnswerAsync(SignalHypothesis input, IWorkflowContext context, CancellationToken cancellationToken = new())
     {
-        AgentResponse agResponse = null!;
         try
         {
             reporter.ReportInfo("Starting HandleAsync in DirectAnswerExecutor");
-            Throw.IfNull(input, nameof(input));
 
-            //If prompt did not carry forward get it from the state
-            if (input.OrigPrompt is null)
+
+            // If the prompt did not carry forward on the hypothesis, recover it from
+            // the shared workflow state written by the classifier step.
+            string prompt = input.OrigPrompt;
+            if (string.IsNullOrWhiteSpace(prompt))
             {
-                var prompt = await context.ReadStateAsync<string>(WorkFlowStateKeys.PROMPT, "SharedState", cancellationToken);
+                prompt = await context.ReadStateAsync<string>(WorkFlowStateKeys.PROMPT, "SharedState", cancellationToken).ConfigureAwait(false) ?? string.Empty;
+
             }
 
-            // Simulate some processing logic
-            agResponse = await agent.RunAsync(input.OrigPrompt, null, null, cancellationToken);
-            if (agResponse == null)
+            if (string.IsNullOrWhiteSpace(prompt))
             {
-                await context.YieldOutputAsync("I am unable to provide a response at this time.", cancellationToken);
+                // Nothing to ask the agent — fail soft with a user-visible message.
+                reporter.ReportWarning("DirectAnswerExecutor had no prompt on the hypothesis or in shared state.");
+                await context.YieldOutputAsync("I am unable to provide a response at this time.", cancellationToken).ConfigureAwait(false);
+                return;
             }
 
+            AgentResponse agResponse = await agent.RunAsync(prompt, session, null, cancellationToken).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(agResponse.Text))
+            {
+                // Fail soft and stop — this previously fell through to agResponse.Text (NRE).
+                reporter.ReportWarning("DirectAnswerExecutor agent returned a null response.");
+                await context.YieldOutputAsync("I am unable to provide a response at this time.", cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            reporter.ReportInfo("Finished HandleAsync in DirectAnswerExecutor");
+            await context.YieldOutputAsync(agResponse.Text, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Cooperative cancellation must propagate — never swallow it.
+            throw;
         }
         catch (Exception ex)
         {
-            // IMMEDIATELY isolate the step that failed
+            // IMMEDIATELY isolate the step that failed, surface a user-visible
+            // message, and stop — this previously fell through to agResponse.Text (NRE).
             reporter.ReportError($"[CRITICAL WORKFLOW ERROR] Failed at {this.ToString()}", ex);
             reporter.ReportError($"Exception Type: {ex.GetType().Name}", ex);
             reporter.ReportError($"Stack Trace: {ex.StackTrace}", ex);
-            await context.YieldOutputAsync("An error occurred while processing your request.", cancellationToken);
+            await context.YieldOutputAsync("An error occurred while processing your request.", cancellationToken).ConfigureAwait(false);
         }
-
-        reporter.ReportInfo("Finished HandleAsync in DirectAnswerExecutor");
-        await context.YieldOutputAsync(agResponse.Text, cancellationToken);
     }
 
 

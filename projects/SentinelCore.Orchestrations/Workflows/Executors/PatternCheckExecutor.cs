@@ -48,8 +48,9 @@ public sealed class PatternCheckExecutor(ISystemReporter reporter) : Executor<Ch
         reporter.ReportInfo("Saving initial message to context");
         await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message.Text, "SharedState", token).ConfigureAwait(false);
 
-        // Example implementation: Log the received message and return it
-        await context.YieldOutputAsync(new ChatMessage(ChatRole.User, "Pattern Match Found"), token).ConfigureAwait(false);
+        // Intentionally pass the message through to the next executor — this is a
+        // check, not a transformation. No output is yielded: pattern matching is not
+        // implemented yet and a placeholder yield would leak fake data into the chat.
         return message;
     }
 }

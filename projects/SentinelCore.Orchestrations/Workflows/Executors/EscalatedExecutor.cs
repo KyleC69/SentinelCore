@@ -6,57 +6,60 @@
 
 
 
+using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.Cfe;
+
+
+
+
+
 namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
 
 
-internal sealed class EscalatedExecutor() : Executor<SignalHypothesis, string>("EscalatedExecutor")
+/// <summary>
+///     Handles the EscalateToHumanOperator branch: advances the case (if any) to
+///     <see cref="CaseStatus.Escalated" /> and yields a user-visible escalation notice.
+///     The hypothesis is passed through to the next executor.
+/// </summary>
+/// <param name="caseFlowEngine">The case flow engine used to advance the case lifecycle.</param>
+/// <param name="reporter">The system reporter for logging.</param>
+internal sealed class EscalatedExecutor(ICaseFlowEngine caseFlowEngine, ISystemReporter reporter) : Executor<SignalHypothesis, SignalHypothesis>("EscalatedExecutor")
 {
-
-    /// <summary>Initialize the executor with a unique identifier</summary>
-    /// <param name="options">Configuration options for the executor. If <c>null</c>, default options will be used.</param>
-    /// <param name="declareCrossRunShareable">Declare that this executor may be used simultaneously by multiple runs safely.</param>
-    public EscalatedExecutor(ExecutorOptions? options = null, bool declareCrossRunShareable = false) : this()
-    {
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// <summary>
-    ///     Handles the provided message asynchronously within the workflow context.
+    ///     Advances the case to <see cref="CaseStatus.Escalated" /> when a case id is present
+    ///     in shared state, then yields an escalation notice to the user.
     /// </summary>
-    /// <param name="message">The input message to be processed by the executor.</param>
-    /// <param name="context">The workflow context providing execution-specific information.</param>
-    /// <param name="cancellationToken">
-    ///     A token to monitor for cancellation requests. The operation should respect this token and terminate
-    ///     promptly if cancellation is requested.
-    /// </param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result contains the processed output
-    ///     as a string.
-    /// </returns>
-    /// <remarks>
-    ///     This method is overridden to provide custom handling logic for messages within the workflow.
-    ///     Ensure that the implementation is thread-safe if the executor is declared as cross-run shareable.
-    /// </remarks>
-    public override ValueTask<string> HandleAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken = new())
+    /// <param name="message">The classified signal hypothesis.</param>
+    /// <param name="context">The workflow context providing shared state and yielding.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The hypothesis, passed through unchanged.</returns>
+    public override async ValueTask<SignalHypothesis> HandleAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken = new())
     {
-        throw new NotImplementedException();
+        reporter.ReportInfo("Escalating signal to human operator — advancing case to Escalated where applicable.");
+
+        Guid? caseId = await context.ReadStateAsync<Guid?>(WorkFlowStateKeys.CASE_ID, "SharedState", cancellationToken).ConfigureAwait(false);
+        if (caseId is { } id && id != Guid.Empty)
+        {
+            try
+            {
+                await caseFlowEngine.AdvanceCaseAsync(id, CaseStatus.Escalated, cancellationToken).ConfigureAwait(false);
+                reporter.ReportInfo($"Case {id} advanced to Escalated.");
+            }
+            catch (Exception ex)
+            {
+                // The case lifecycle transition failed — report it, but the escalation
+                // notice must still be delivered.
+                reporter.ReportError($"Failed to advance case {id} to Escalated.", ex);
+            }
+        }
+
+        string prompt = string.IsNullOrWhiteSpace(message.OrigPrompt) ? "the signal" : $"\"{message.OrigPrompt}\"";
+        await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"👤 {prompt} has been escalated for human review. {message.Reasoning ?? string.Empty}"), cancellationToken).ConfigureAwait(false);
+
+        return message;
     }
 }

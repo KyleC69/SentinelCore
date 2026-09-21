@@ -60,7 +60,7 @@ public sealed class JsonFileMcpServerRegistryStore : IMcpServerRegistryStore
 
 
 
- 
+
     public async Task<IReadOnlyList<McpServerDefinition>> LoadAsync(CancellationToken cancellationToken = default)
     {
         if (!File.Exists(_filePath))
@@ -90,7 +90,7 @@ public sealed class JsonFileMcpServerRegistryStore : IMcpServerRegistryStore
 
 
 
- 
+
     public async Task SaveAsync(IReadOnlyList<McpServerDefinition> definitions, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definitions);
