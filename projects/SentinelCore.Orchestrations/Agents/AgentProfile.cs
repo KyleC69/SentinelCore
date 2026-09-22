@@ -6,8 +6,6 @@
 
 
 
-using Microsoft.Extensions.Logging;
-
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Personas;
@@ -54,6 +52,7 @@ public sealed record AgentProfile
     ///     </para>
     /// </summary>
     public IList<AIContextProvider> AIContextProviders { get; set; } = new List<AIContextProvider>();
+
     /// <summary>
     /// Gets or sets the unique identifier for the agent.
     /// </summary>
@@ -61,6 +60,7 @@ public sealed record AgentProfile
     /// A <see cref="string"/> representing the unique identifier of the agent.
     /// </value>
     public string AgentId { get; set; } = string.Empty;
+
     /// <summary>
     /// Gets or sets the name of the agent.
     /// BOTH AgentId and AgentName are required for the agent to be valid.
@@ -71,22 +71,13 @@ public sealed record AgentProfile
     public string AgentName { get; set; } = string.Empty;
 
     /// <summary>
-    ///     Gets or initializes the delegate responsible for constructing an <see cref="AIAgent" />.
-    /// </summary>
-    /// <remarks>
-    ///     This property provides a function that takes a <see cref="ChatClientAgent" /> and an <see cref="ILoggerFactory" />
-    ///     as parameters and returns an instance of <see cref="AIAgent" />. It is used to define the logic for creating
-    ///     agents based on the provided context and logging capabilities.
-    /// </remarks>
-    public Func<ChatClientAgent, ILoggerFactory, AIAgent>? BuildAgent { get; init; }
-
-    /// <summary>
     ///     Gets or sets the model-specific instructions for the agent.
     ///     These instructions are represented as a collection of <see cref="ChatMessage" /> objects
     ///     and define the contextual guidelines or directives for the agent's behavior.
     ///     <para>
-    ///         This property replaces the deprecated <see cref="Instructions" /> property and provides
-    ///         a more structured approach to managing agent instructions.
+    ///         Instructions are assembled at the call site (executor) using <see cref="InstructionLayerBuilder" />,
+    ///         not baked into the agent at construction time. This allows the same agent instance
+    ///         to be reused with different instructions per invocation.
     ///     </para>
     /// </summary>
     public ChatMessages ModelInstructions { get; set; } = new ChatMessages();
@@ -107,18 +98,7 @@ public sealed record AgentProfile
     public AgentPersona? Persona { get; set; }
 
     /// <summary>
-    ///     Gets or sets the <see cref="Type" /> used to configure <see cref="ChatResponseFormat" />
-    ///     for structured output. When <c>null</c>, no structured output format is applied.
-    /// </summary>
-    public ChatResponseFormat? ResponseFormat { get; set; }
-
-    /// <summary>
     ///     The list of tools available to the agent. Default empty, set at runtime
     /// </summary>
     public IList<AITool> Tools { get; set; } = new List<AITool>();
-    /// <summary>
-    /// Not used see constants file
-    /// </summary>
-    [Obsolete("Being removed from agent construction in favor of per-agent usage function. Agents are reusable and need different instructions. To be generated from constants and added at RunAsync call.")]
-    public string Instructions { get; set; } = string.Empty;
 }

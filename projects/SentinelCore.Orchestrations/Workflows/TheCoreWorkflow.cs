@@ -328,11 +328,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         // ── Build main workflow agents ─────────────────────────────────────────────────────────
 
-        _sentinelCoreAgent = await _agentFactory.CreateAgentAsync("TheCore", cancellationToken, ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema(typeof(CoreDirective))));
+        _sentinelCoreAgent = await _agentFactory.CreateAgentAsync("TheCore", cancellationToken);
 
-        _classifierAgent = await _agentFactory.CreateAgentAsync("Classifier", cancellationToken, ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema(typeof(SignalHypothesis))));
+        _classifierAgent = await _agentFactory.CreateAgentAsync("Classifier", cancellationToken);
 
-        _safetyAgent = await _agentFactory.CreateAgentAsync("SafetyAgent",cancellationToken,null);
+        _safetyAgent = await _agentFactory.CreateAgentAsync("SafetyAgent", cancellationToken);
 
         _sentinelCoreSession = await _sentinelCoreAgent.CreateSessionAsync(cancellationToken);
 

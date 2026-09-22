@@ -105,13 +105,22 @@ public class CaseGenerator : ICaseGenerator, IDisposable
 
 
         // Build a profile for the CaseGenerator agent.
-        AgentProfile profile = null;
+        // CaseGenerator is a special case — it constructs its own agent directly
+        // because it needs per-call MCP tools and case-specific instructions.
+        // Instructions are set at invocation time via ChatMessages, not baked into the profile.
+        AgentProfile profile = new()
+        {
+            AgentName = "CaseGenerator",
+            AgentId = "CaseGenerator"
+        };
+
+        // The model is owned by the Model Configuration page.
+        // The factory gates the build when unconfigured.
+        profile.Model = _profileBuilder.TryGetModel("CaseGenerator");
+
         var mcpTools = await GetMcpToolsAsync().ConfigureAwait(false);
         CaseTool caseTool = new(_engine);
 
-        profile.Instructions = GeneratorInstructions;
-        // The model is owned by the Model Configuration page (per-agent entry,
-        // Core tier as secondary source). The factory gates the build when unconfigured.
         profile.Tools = [AIFunctionFactory.Create(caseTool.CreateCase), .. mcpTools]; // Combine MCP tools with the CaseTool
 
 

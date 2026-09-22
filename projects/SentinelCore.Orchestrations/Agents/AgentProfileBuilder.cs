@@ -44,14 +44,21 @@ public interface IAgentProfileBuilder
 
 
     /// <summary>
-    ///     Builds an <see cref="AgentProfile" /> from an agent preset.
+    ///     Builds an <see cref="AgentProfile" /> from an agent preset definition.
     ///     This is the preferred method for creating agent profiles.
     /// </summary>
-    /// <param name="preset">The agent preset containing default configuration.</param>
-    /// <param name="taskInstructions">Optional task-specific instructions to append to defaults.</param>
-    /// <param name="personaOverride">Optional persona to override the preset default.</param>
+    /// <param name="preset">The agent preset definition containing default configuration.</param>
     /// <returns>An <see cref="AgentProfile" /> configured from the preset.</returns>
-    AgentProfile BuildFromPreset(AgentPresetBase preset);
+    AgentProfile BuildFromPreset(AgentPresetDefinition preset);
+
+    /// <summary>
+    ///     Builds an <see cref="AgentProfile" /> from an agent preset definition,
+    ///     optionally overriding the default persona.
+    /// </summary>
+    /// <param name="preset">The agent preset definition containing default configuration.</param>
+    /// <param name="personaOverride">Optional persona override; if null, the preset's default persona is used.</param>
+    /// <returns>An <see cref="AgentProfile" /> configured from the preset.</returns>
+    AgentProfile BuildFromPreset(AgentPresetDefinition preset, AgentPersona? personaOverride);
 
 
 
@@ -138,16 +145,15 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
     /// overrides.
     /// </summary>
     /// <param name="agentName">The agent name used to resolve a preset or create the default profile.</param>
-    /// <param name="taskInstructions">The last layer of instructions of the 3 layer instruction set.</param>
     /// <param name="personaOverride">Optional persona to apply to the generated profile.</param>
     /// <returns>The generated agent profile.</returns>
-    public AgentProfile BuildAgentSpec(string agentName, string? taskInstructions = null, AgentPersona? personaOverride = null)
+    public AgentProfile BuildAgentSpec(string agentName, AgentPersona? personaOverride = null)
     {
         // Try to get a preset for this agent name
-        AgentPresetBase? preset = _presetProvider.GetPreset(agentName);
+        AgentPresetDefinition? preset = _presetProvider.GetPreset(agentName);
         if (preset != null)
         {
-            return BuildFromPreset(preset, taskInstructions, personaOverride);
+            return BuildFromPreset(preset, personaOverride);
         }
 
         // No preset found - build with minimal defaults
@@ -169,17 +175,28 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
 
-    public AgentProfile BuildFromPreset(AgentPresetBase preset, string? taskInstructions = null, AgentPersona? personaOverride = null)
+    /// <summary>
+    ///     Builds an <see cref="AgentProfile" /> from an <see cref="AgentPresetDefinition" />,
+    ///     optionally overriding the default persona.
+    /// </summary>
+    /// <param name="preset">The preset definition containing default configuration.</param>
+    /// <param name="personaOverride">Optional persona override; if null, the preset's default persona is used.</param>
+    /// <returns>An <see cref="AgentProfile" /> configured from the preset.</returns>
+    public AgentProfile BuildFromPreset(AgentPresetDefinition preset, AgentPersona? personaOverride = null)
     {
         Throw.IfNull(preset);
 
-        AgentProfile profile = new() { AgentName = preset.AgentName, AgentId = preset.AgentName };
+        AgentProfile profile = BuildFromPreset(preset);
 
         // Apply persona: explicit override wins, otherwise use preset default
-        profile.Persona = personaOverride ?? preset.GetDefaultPersona();// Personas are disabled by default.
-
-        // Model configuration comes from settings
-        profile.Model = TryGetModel(preset.AgentName);
+        if (personaOverride != null)
+        {
+            profile.Persona = personaOverride;
+        }
+        else if (preset.DefaultPersona.HasValue)
+        {
+            profile.Persona = PersonaRegistry.Get(preset.DefaultPersona.Value);
+        }
 
         return profile;
     }
@@ -247,11 +264,11 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
 
-    public AgentProfile BuildFromPreset(AgentPresetBase preset)
+    public AgentProfile BuildFromPreset(AgentPresetDefinition preset)
     {
         Throw.IfNull(preset);
 
-        AgentProfile profile = new() { AgentName = preset.AgentName, AgentId = preset.AgentName };
+        AgentProfile profile = new() { AgentName = preset.AgentName, AgentId = preset.AgentId };
 
         // Model configuration comes from settings
         profile.Model = TryGetModel(preset.AgentName);

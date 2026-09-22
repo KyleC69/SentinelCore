@@ -39,14 +39,14 @@ digraph Workflow {
     label="sub-workflow: EvidenceCollection";
     style=dashed;
     "EvidenceCollection/MagenticOrchestrator" [fillcolor=lightgreen, label="MagenticOrchestrator\n(Start)"];
-    "EvidenceCollection/Worker1_Worker1" [label="Worker1_Worker1"];
-    "EvidenceCollection/Worker2_Worker2" [label="Worker2_Worker2"];
-    "EvidenceCollection/Worker3_Worker3" [label="Worker3_Worker3"];
-    "EvidenceCollection/Worker1_Worker1" -> "EvidenceCollection/MagenticOrchestrator";
-    "EvidenceCollection/Worker2_Worker2" -> "EvidenceCollection/MagenticOrchestrator";
-    "EvidenceCollection/Worker3_Worker3" -> "EvidenceCollection/MagenticOrchestrator";
-    "EvidenceCollection/MagenticOrchestrator" -> "EvidenceCollection/Worker1_Worker1";
-    "EvidenceCollection/MagenticOrchestrator" -> "EvidenceCollection/Worker2_Worker2";
-    "EvidenceCollection/MagenticOrchestrator" -> "EvidenceCollection/Worker3_Worker3";
+    "EvidenceCollection/Worker1_worker1" [label="Worker1_worker1"];
+    "EvidenceCollection/Worker2_worker2" [label="Worker2_worker2"];
+    "EvidenceCollection/Worker3_worker3" [label="Worker3_worker3"];
+    "EvidenceCollection/Worker1_worker1" -> "EvidenceCollection/MagenticOrchestrator";
+    "EvidenceCollection/Worker2_worker2" -> "EvidenceCollection/MagenticOrchestrator";
+    "EvidenceCollection/Worker3_worker3" -> "EvidenceCollection/MagenticOrchestrator";
+    "EvidenceCollection/MagenticOrchestrator" -> "EvidenceCollection/Worker1_worker1";
+    "EvidenceCollection/MagenticOrchestrator" -> "EvidenceCollection/Worker2_worker2";
+    "EvidenceCollection/MagenticOrchestrator" -> "EvidenceCollection/Worker3_worker3";
   }
 }

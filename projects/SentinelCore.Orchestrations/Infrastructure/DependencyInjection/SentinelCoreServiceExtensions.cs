@@ -44,11 +44,6 @@ public static class SentinelCoreServiceExtensions
 
 
 
-
-
-
-
-
     /// <summary>
     ///     Adds the core SentinelCore services to the specified <see cref="IServiceCollection" />.
     ///     This method configures essential services and dependencies required for the SentinelCore framework.
@@ -136,6 +131,15 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<ISentinelWorkflowExecution, SentinelWorkflowExecution>();
         services.AddSingleton<TheCoreWorkflow>();
         services.AddSingleton<ISentinelAgentFactory, SentinelAgentFactory>();
+
+        // -- Agent construction contributors (pipeline) --
+        // Each contributor owns exactly one concern. Adding a new middleware type
+        // requires only a new contributor class and DI registration — no factory changes.
+        services.AddSingleton<IAgentConstructionContributor, LoggingClientContributor>();
+        services.AddSingleton<IAgentConstructionContributor, PatternMemoryContributor>();
+        services.AddSingleton<IAgentConstructionContributor, McpToolContributor>();
+        services.AddSingleton<IAgentConstructionContributor, CompactionContributor>();
+
         services.AddSingleton<IOrchestrationFactory, OrchestrationFactory>();
         services.RegisterExecutors();
 

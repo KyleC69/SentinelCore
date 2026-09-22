@@ -2,60 +2,17 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentPresetProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092200
 
 
 
+using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Personas;
 
 
 
 
-namespace SentinelCore.Orchestrations.Agents.AgentPresets;
-
-
-
-
-
-/// <summary>
-///     Provides access to agent preset configurations.
-/// </summary>
-public interface IAgentPresetProvider
-{
-
-    /// <summary>
-    ///     Gets all registered presets.
-    /// </summary>
-    /// <returns>A read-only list of all agent presets.</returns>
-    IReadOnlyList<AgentPresetBase> GetAllPresets();
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Gets the preset for the specified agent name.
-    /// </summary>
-    /// <param name="agentName">The agent name to look up.</param>
-    /// <returns>The preset if found, otherwise <c>null</c>.</returns>
-    AgentPresetBase? GetPreset(string agentName);
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Gets the names of all registered presets.
-    /// </summary>
-    /// <returns>A read-only list of preset names.</returns>
-    IReadOnlyList<string> ListPresets();
-}
+namespace SentinelCore.Orchestrations.Agents;
 
 
 
@@ -64,10 +21,12 @@ public interface IAgentPresetProvider
 /// <summary>
 ///     Default implementation of <see cref="IAgentPresetProvider" /> that provides
 ///     all built-in agent presets (matching SentinelAgentCatalog names).
+///     Each preset is an <see cref="AgentPresetDefinition" /> — an immutable record
+///     that declares what infrastructure the agent needs at construction time.
 /// </summary>
 public sealed class AgentPresetProvider : IAgentPresetProvider
 {
-    private readonly Dictionary<string, AgentPresetBase> _presets;
+    private readonly Dictionary<string, AgentPresetDefinition> _presets;
 
 
 
@@ -81,20 +40,21 @@ public sealed class AgentPresetProvider : IAgentPresetProvider
     /// </summary>
     public AgentPresetProvider()
     {
-        AgentPresetBase[] presets =
+        AgentPresetDefinition[] presets =
         [
-                new CoreChatPreset(),
-                new ClassifierPreset(),
-                new TheCorePreset(),
-                new SafetyAgentPreset(),
-                new ManagerPreset(),
-                new Worker1Preset(),
-                new Worker2Preset(),
-                new Worker3Preset()
+                AgentPresetDefinition.CoreRole("CoreChat", "corechat") with { UsePatternMemory = true, UseRagSearch = true, DefaultSystemInstructions = AgentInstructionConstants.GetAgentPresetInstructions("CoreChat") },
+                AgentPresetDefinition.UtilityRole("Classifier", "classifier") with { DefaultPersona = PersonaType.TheAnalyst, DefaultSystemInstructions = AgentInstructionConstants.CLASSIFIER_INSTRUCTIONS },
+                AgentPresetDefinition.CoreRole("TheCore", "thecore") with { UsePatternMemory = true, DefaultSystemInstructions = AgentInstructionConstants.GetAgentPresetInstructions("TheCore") },
+                AgentPresetDefinition.UtilityRole("SafetyAgent", "safetyagent") with { DefaultSystemInstructions = AgentInstructionConstants.SAFETY_AGENT_INSTRUCTIONS },
+                AgentPresetDefinition.ManagerRole("Manager", "manager") with { DefaultSystemInstructions = AgentInstructionConstants.MAG_MANAGER_INSTRUCTIONS },
+                AgentPresetDefinition.UtilityRole("Worker1", "worker1") with { DefaultSystemInstructions = AgentInstructionConstants.WORKER_INSTRUCTIONS },
+                AgentPresetDefinition.UtilityRole("Worker2", "worker2") with { DefaultSystemInstructions = AgentInstructionConstants.WORKER_INSTRUCTIONS },
+                AgentPresetDefinition.UtilityRole("Worker3", "worker3") with { DefaultSystemInstructions = AgentInstructionConstants.WORKER_INSTRUCTIONS },
+                AgentPresetDefinition.UtilityRole("DirectAnswer", "directanswer") with { DefaultSystemInstructions = AgentInstructionConstants.GetAgentPresetInstructions("DirectAnswer") }
         ];
 
-        _presets = new Dictionary<string, AgentPresetBase>(StringComparer.OrdinalIgnoreCase);
-        foreach (AgentPresetBase preset in presets)
+        _presets = new Dictionary<string, AgentPresetDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (AgentPresetDefinition preset in presets)
         {
             _presets[preset.AgentName] = preset;
         }
@@ -107,8 +67,7 @@ public sealed class AgentPresetProvider : IAgentPresetProvider
 
 
 
-
-    public IReadOnlyList<AgentPresetBase> GetAllPresets()
+    public IReadOnlyList<AgentPresetDefinition> GetAllPresets()
     {
         return _presets.Values.ToList().AsReadOnly();
     }
@@ -120,12 +79,10 @@ public sealed class AgentPresetProvider : IAgentPresetProvider
 
 
 
-
-    public AgentPresetBase? GetPreset(string agentName)
+    public AgentPresetDefinition? GetPreset(string agentName)
     {
-        return _presets.TryGetValue(agentName, out AgentPresetBase? preset) ? preset : null;
+        return _presets.TryGetValue(agentName, out AgentPresetDefinition? preset) ? preset : null;
     }
-
 
 
 
@@ -138,35 +95,4 @@ public sealed class AgentPresetProvider : IAgentPresetProvider
     {
         return _presets.Keys.ToList().AsReadOnly();
     }
-}
-
-
-
-
-
-/// <summary>
-///     Extension methods for working with agent presets.
-/// </summary>
-public static class AgentPresetExtensions
-{
-    /// <summary>
-    ///     Gets the default persona for this preset, if configured.
-    /// </summary>
-    /// <param name="preset">The agent preset.</param>
-    /// <returns>The persona if available, otherwise <c>null</c>.</returns>
-    public static AgentPersona? GetDefaultPersona(this AgentPresetBase preset)
-    {
-        if (preset.DefaultPersona is null)
-        {
-            return null;
-        }
-
-        return PersonaRegistry.Get(preset.DefaultPersona.Value);
-    }
-
-
-
-
-
-
 }

@@ -8,7 +8,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
-[YieldsOutput(typeof(string))]
+[YieldsOutput(typeof(ChatMessage))]
 public partial class TerminateWorkflow : Executor
 {
     private ISystemReporter _reporter;
