@@ -6,6 +6,7 @@
 
 
 
+using System.Diagnostics;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.agents;
 using SentinelCore.Orchestrations.Agents;
@@ -64,22 +65,6 @@ public sealed partial class DirectAnswerExecutor : Executor
     }
 
 
-
-
-
-
-
-
-    //TODO: We need to bring in TheCore agent, and it's session, this agent interaction needs recall in future for conversational consistency
-    //Agent creation need to be moved to allow the customization of the agent inside the executor
-
-
-
-
-
-
-
-
     /// <summary>
     /// Handles the direct answer workflow step by invoking an AIAgent to produce a textual response.
     /// </summary>
@@ -123,15 +108,17 @@ public sealed partial class DirectAnswerExecutor : Executor
 
 
             AgentResponse agResponse = await _agent.RunAsync(instructions, _session, null, cancellationToken).ConfigureAwait(false);
+
             if (string.IsNullOrWhiteSpace(agResponse.Text))
             {
+                Debugger.Break();
                 // Fail soft and stop — this previously fell through to agResponse.Text (NRE).
                 _reporter.ReportWarning("DirectAnswerExecutor agent returned a null response.");
                 await context.YieldOutputAsync(new ChatMessage().AddAssistantMessage("I am unable to provide a response at this time."), cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            _reporter.ReportInfo("Finished HandleAsync in DirectAnswerExecutor");
+            _reporter.ReportInfo("Finished HandleAsync in DirectAnswerExecutor successfully");
             await context.YieldOutputAsync(new ChatMessage().AddAssistantMessage(agResponse.Text), cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)

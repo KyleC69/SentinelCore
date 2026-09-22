@@ -50,15 +50,12 @@ folder path relative to the project root.
 
 ## PL-3: Agent Construction
 
-**Under Review subject to change.**
 
-Every agent must be constructed through `IAgentBuilder.Build(AgentSpec)`. Never
-construct `ChatClientAgent` directly in a factory.
+**Under Review subject to change**
+Every agent must be constructed through `ISentinelAgentFactory`.
+Never construct `ChatClientAgent` directly in a factory.
+Agent instructions are added at the Agent callsite for flexibility and allow agents to be reused for different purposes
 
-- Every factory produces an `AgentSpec` and delegates to `IAgentBuilder`.
-- `AgentRole` determines event routing and middleware — do not add roles without
-  updating `EventPublishingChatClient` and `AgentBuilder`.
-- `SafetyMiddleware` and `PatternMemoryInjector` are applied **only** to the Core agent.
 - The Manager agent must not have tools.
 - Function invocation is handled by `ChatClientAgent` automatically — do not add
   `UseFunctionInvocation` to the agent builder pipeline.
@@ -67,22 +64,19 @@ construct `ChatClientAgent` directly in a factory.
 
 - ❌ `services.BuildServiceProvider()` inside registration methods
 - ❌ `services.AddLogging()` inside the library — the host owns logging
-- ❌ Registering `ISentinelCoreBuilder` as a DI service
 - ❌ Registering `ICaseFlowEngine` unconditionally (depends on optional persistence)
-- ❌ Registering `ISentinelCoreBuilder` in the DI container
 
 ## PL-5: Null-Object Pattern
 
-Every optional module has a `Null*` default. Null implementations must never throw
-`NotImplementedException` or return `Task.FromCanceled`. They return
-`Task.CompletedTask` or default values.
+Do NOT introduce or edit code that creates a nullable warning without properly handling the nullable value.
+Use annotations where possible to make intent clear and explicit
 
-Builder methods override null defaults using `RemoveAll<T>() + AddSingleton<T>()`.
 
 ## PL-6: Event Publishing
 
-All agent output flows through `ISentinelCoreEvents`. Never use `Console.WriteLine`
+All agent output flows through `ISystemReporter` which distributes to available loggers and application events. Never use `Console.WriteLine`
 for agent or workflow output. The library must never reference the host project.
+
 
 ## PL-7: EF Core DbContext Registration & Usage — Factory Pattern Standard
 
@@ -92,6 +86,7 @@ for agent or workflow output. The library must never reference the host project.
 
 All EF Core `DbContext` registration and consumption in SentinelCore uses the
 **factory pattern**. Registration types and consumption types must stay aligned.
+Solution contains multiple dbcontext
 
 **Registration (composition roots only):**
 
@@ -238,6 +233,8 @@ structure (margins, padding, layout).
 resolve **instance** properties only — `{Binding Role.User}` never works.
 The instance property is `ChatRole.Value` (a lowercase string: `"user"`,
 `"assistant"`, `"system"`, `"tool"`).
+*new* ChatMessages (List<Chatmessage>) with helpers AddUserMessage(string)
+*new* ChatMessage extension methods AddUserMessage(string) 
 
 **Approved pattern:** bind `{Binding Role.Value}` and compare against the
 lowercase string in `DataTrigger Value="..."`.

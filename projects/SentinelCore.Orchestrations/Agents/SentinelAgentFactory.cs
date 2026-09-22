@@ -3,13 +3,15 @@
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
 // Build Num:  091522
+#pragma warning disable MEAI001
 
+using System.Diagnostics.CodeAnalysis;
 
+using Microsoft.Agents.AI.Compaction;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using SentinelCore.Abstractions;
-using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Events;
 using SentinelCore.Contracts.Mcp;
@@ -17,7 +19,6 @@ using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Providers;
-using SentinelCore.Orchestrations.Workflows;
 
 
 
@@ -54,9 +55,6 @@ public interface ISentinelAgentFactory
     /// </summary>
     /// <param name="presetName">
     ///     The name of the preset to use for creating the agent (e.g., "Classifier", "Researcher").
-    /// </param>
-    /// <param name="taskInstructions">
-    ///     Optional additional instructions to customize the agent's behavior, appended to the preset defaults.
     /// </param>
     /// <param name="cancellationToken">
     ///     A token to observe while waiting for the task to complete, enabling cancellation of the operation.
@@ -96,7 +94,6 @@ public interface ISentinelAgentFactory
 /// </summary>
 public sealed class SentinelAgentFactory : ISentinelAgentFactory
 {
-    private readonly ISystemReporter _systemReporter;
     private readonly IChatClientFactory _chatClientFactory;
     private readonly ISentinelCoreEvents _events;
     private readonly ILoggerFactory _loggerFactory;
@@ -125,12 +122,9 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="ragOptions">Configuration options for RAG search.</param>
     /// <param name="presetProvider">The preset provider for resolving agent presets.</param>
     /// <param name="profileBuilder">The profile builder for constructing agent profiles from presets.</param>
-    /// <param name="reporter"></param>
     /// <exception cref="ArgumentNullException">Thrown when any required dependency is <c>null</c>.</exception>
-    public SentinelAgentFactory(IChatClientFactory chatClientFactory, ISentinelCoreEvents events, ILoggerFactory loggerFactory, IMcpServerRegistry mcpServerRegistry, IPatternMatcher patternMatcher, IOptions<RagSearchOptions> ragOptions, IAgentPresetProvider presetProvider, IAgentProfileBuilder profileBuilder, ISystemReporter reporter)
+    public SentinelAgentFactory(IChatClientFactory chatClientFactory, ISentinelCoreEvents events, ILoggerFactory loggerFactory, IMcpServerRegistry mcpServerRegistry, IPatternMatcher patternMatcher, IOptions<RagSearchOptions> ragOptions, IAgentPresetProvider presetProvider, IAgentProfileBuilder profileBuilder)
     {
-        Throw.IfNull(reporter);
-        _systemReporter = reporter;
         _chatClientFactory = chatClientFactory ?? throw new ArgumentNullException(nameof(chatClientFactory));
         _events = events ?? throw new ArgumentNullException(nameof(events));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
@@ -163,6 +157,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <exception cref="InvalidOperationException">
     ///     Thrown when the provided <see cref="AgentProfile" /> does not contain a valid model configuration.
     /// </exception>
+    [Experimental("MAAI001")]
     public async Task<AIAgent> BuildFromProfileAsync(AgentProfile profile, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(profile);
@@ -219,6 +214,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="responseFormat"></param>
     /// <returns>AIAgent</returns>
     /// <exception cref="ArgumentException"></exception>
+    [Experimental("MAAI001")]
     public async Task<AIAgent> CreateAgentAsync(string presetName, CancellationToken cancellationToken = default, ChatResponseFormat? responseFormat = null)
     {
         // Validate input
@@ -255,6 +251,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <returns>
     ///     A task that resolves to a fully configured <see cref="ChatClientAgentOptions" /> instance.
     /// </returns>
+    [Experimental("MAAI001")]
     private async Task<ChatClientAgentOptions> BuildAgentOptionsAsync(AgentProfile profile, string logicalAgentName, List<AIContextProvider> additionalContextProviders, CancellationToken cancellationToken)
     {
         var roleInstructions = AgentInstructionConstants.GetAgentPresetInstructions(logicalAgentName);
@@ -268,7 +265,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
                 TopK = profile.Model.TopK,
                 ModelId = profile.Model.ModelId,
                 AllowMultipleToolCalls= true,
-                ResponseFormat = profile.ResponseFormat
+                ResponseFormat = profile.ResponseFormat,
+
         };
 
         // Merge tools from three sources: profile tools, MCP server tools, and RAG tools.
@@ -299,6 +297,12 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             chatOptions.Tools = allTools;
         }
 
+
+PipelineCompactionStrategy pipeline = new(new ToolResultCompactionStrategy(CompactionTriggers.TokensExceed(0x200)),
+        new SlidingWindowCompactionStrategy(CompactionTriggers.TurnsExceed(25)),
+        new TruncationCompactionStrategy(CompactionTriggers.TokensExceed(0x128000)));
+
+
         // Merge context providers: profile providers + additional providers (RAG injector)
         List<AIContextProvider> allContextProviders = new();
         if (profile.AIContextProviders is { Count: > 0 })
@@ -307,6 +311,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         }
 
         allContextProviders.AddRange(additionalContextProviders);
+        allContextProviders.Add(new CompactionProvider(pipeline));
+
 
         return new ChatClientAgentOptions
         {
@@ -322,7 +328,10 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
                 RequirePerServiceCallChatHistoryPersistence = false,
                 EnableMessageInjection = false,
                 DisableApprovalNotRequiredFunctionBypassing = false,
-                DisableApprovalResponseBinding = false
+                DisableApprovalResponseBinding = false,
+                ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider(),
+
+
         };
     }
 
@@ -529,7 +538,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         if (flags.HasFlag(MiddlewareFlags.PatternMemory))
         {
             providers.Add(new PatternMemoryInjector(_patternMatcher, _loggerFactory.CreateLogger<PatternMemoryInjector>()));
-            providers.Add(new TheCoreContextProvider(_systemReporter, _loggerFactory.CreateLogger<TheCoreContextProvider>()));
+
         }
 
         return providers;
