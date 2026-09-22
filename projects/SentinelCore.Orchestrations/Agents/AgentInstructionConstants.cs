@@ -6,7 +6,7 @@
 
 
 
-namespace SentinelCore.Orchestrations.Workflows;
+namespace SentinelCore.Orchestrations.Agents;
 
 
 
@@ -33,7 +33,7 @@ public static class AgentInstructionConstants
 
                                                  - If the signal indicates catastrophic hardware or software failure is imminent, choose RedAlert.
                                                  - If the signal is ambiguous, or conflicts with itself, or choose MoreInformationRequired.
-                                                 - If the signal is a general question from the end user about the environment or general topics or contains procedural instructions (eg. check logs) or direct system control (eg. set keyboard off) then choose direct answer
+                                                 - If the signal is a general question from the end user about the environment or general topics or contains procedural instructions (eg. check logs) or direct system control (eg. set keyboard off) then choose directanswer
                                                  - All other cases: choose Investigate and provide a reasonable hypothesis about what the signal may indicate. The category can be the subsystem affected.
 
                                                      You do not perform the tasks or answer the questions, you only classify the signal.

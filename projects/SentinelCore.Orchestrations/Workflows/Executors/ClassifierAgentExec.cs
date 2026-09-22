@@ -7,6 +7,8 @@
 
 
 using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Agents.Models;
 
 
 
@@ -140,10 +142,16 @@ public sealed partial class ClassifierAgentExec : Executor
     private async ValueTask<SignalHypothesis> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
     {
         _reporter.ReportInfo($"[{Name}] Starting classifier handler");
+        ChatMessages msg = new();
+        msg.AddSystemMessage(AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S);
+        msg.AddSystemMessage(AgentInstructionConstants.CLASSIFIER_INSTRUCTIONS);
+        msg.AddUserMessage(message.Text);
+
+
 
         await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message.Text, "SharedState", cancellationToken).ConfigureAwait(false);
 
-        AgentResponse response = await _agent.RunAsync(message, cancellationToken: cancellationToken).ConfigureAwait(false);
+        AgentResponse<SignalHypothesis> response = await _agent.RunAsync<SignalHypothesis>(msg, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (response.Messages.Count ==0)
         {
@@ -153,11 +161,9 @@ public sealed partial class ClassifierAgentExec : Executor
 
         // Copy the result and attach the original prompt so downstream
         // executors can recall what the user actually asked.
-        SignalHypothesis returnObj = null;
-        returnObj.OrigPrompt = message.Text;
+        response.Result.OrigPrompt = message.Text;
 
-        await context.YieldOutputAsync(message, cancellationToken).ConfigureAwait(false);
-        return returnObj;
+        return response.Result;
     }
 
 

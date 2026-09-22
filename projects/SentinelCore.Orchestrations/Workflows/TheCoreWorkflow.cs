@@ -165,7 +165,13 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // --- Pre-Agent ---------
         builder.AddEdge(executors.PatternCheckExecutor, executors.SafetyExecutor);
         builder.AddEdge(executors.SafetyExecutor, classifierExec);
-        builder.AddSwitch(classifierExec, switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), executors.NewCaseExecutor).AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec).AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert).AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor).AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.EscalatedExecutor).WithDefault(executors.HumanOperatorExecutor));
+        builder.AddSwitch(classifierExec,
+                switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), executors.NewCaseExecutor)
+                        .AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec)
+                        .AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert)
+                        .AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor)
+                        .AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.EscalatedExecutor)
+                        .WithDefault(executors.HumanOperatorExecutor));
 
         // ------- RedAlert Branch -------------------------
         // Alert UI to critical error and mark case urgent
@@ -196,7 +202,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // ── Register output sources ─────────────────────────────────────────────────────────
         // MAF only surfaces yielded values from executors registered via WithOutputFrom;
         // without this registration no executor output ever reaches the WorkflowOutputEvent stream.
-        builder.WithOutputFrom(classifierExec, directAnswerAgentExec, sentinelCoreExec, executors.NewCaseExecutor, executors.CriticalAlert, executors.MoreInformationExecutor, executors.EscalatedExecutor, executors.TerminateWorkflow, executors.HumanOperatorExecutor, executors.AggregationExecutor, executors.PersistEvidenceExecutor, executors.SafetyExecutor, executors.PatternCheckExecutor);
+        builder.WithOutputFrom(classifierExec, directAnswerAgentExec, sentinelCoreExec, executors.NewCaseExecutor, executors.CriticalAlert, executors.MoreInformationExecutor, executors.EscalatedExecutor, executors.TerminateWorkflow, executors.HumanOperatorExecutor, executors.AggregationExecutor, executors.PersistEvidenceExecutor);
 
         Workflow flow = builder.Build();
 

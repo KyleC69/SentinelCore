@@ -398,6 +398,10 @@ public partial class App
                     logging.ClearProviders();
                     // WinExe has no attached console — Debug output surfaces in the VS Output window.
                     logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
+                    logging.AddFilter("ModelContextProtocol", LogLevel.Warning);
+                    logging.AddFilter("SentinelCore.UI", LogLevel.Warning);
+                    logging.AddFilter("Microsoft.Extensions", LogLevel.Warning);
+                    logging.AddFilter("Microsoft.Hosting", LogLevel.Warning);
                     logging.AddDebug();
                     logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }; });
                     logging.AddFileLogger();

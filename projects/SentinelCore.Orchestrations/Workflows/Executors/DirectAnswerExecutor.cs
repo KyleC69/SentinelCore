@@ -7,6 +7,9 @@
 
 
 using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Orchestrations.agents;
+using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Agents.Models;
 
 
 
@@ -97,7 +100,6 @@ public sealed partial class DirectAnswerExecutor : Executor
         {
             _reporter.ReportInfo("Starting HandleAsync in DirectAnswerExecutor");
 
-
             // If the prompt did not carry forward on the hypothesis, recover it from
             // the shared workflow state written by the classifier step.
             string prompt = input.OrigPrompt;
@@ -110,21 +112,27 @@ public sealed partial class DirectAnswerExecutor : Executor
             {
                 // Nothing to ask the agent — fail soft with a user-visible message.
                 _reporter.ReportWarning("DirectAnswerExecutor had no prompt on the hypothesis or in shared state.");
-                await context.YieldOutputAsync("I am unable to provide a response at this time.", cancellationToken).ConfigureAwait(false);
+                await context.YieldOutputAsync(new ChatMessage().AddAssistantMessage("I am unable to provide a response at this time."), cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            AgentResponse agResponse = await _agent.RunAsync(prompt, _session, null, cancellationToken).ConfigureAwait(false);
+            var instructions = new ChatMessages();
+            instructions.AddSystemMessage(AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S);
+            instructions.AddSystemMessage("Using the mcp tools in your toolbelt answer the questions ask of you. Do not fabricate answers.");
+            instructions.AddUserMessage(prompt);
+
+
+            AgentResponse agResponse = await _agent.RunAsync(instructions, _session, null, cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(agResponse.Text))
             {
                 // Fail soft and stop — this previously fell through to agResponse.Text (NRE).
                 _reporter.ReportWarning("DirectAnswerExecutor agent returned a null response.");
-                await context.YieldOutputAsync("I am unable to provide a response at this time.", cancellationToken).ConfigureAwait(false);
+                await context.YieldOutputAsync(new ChatMessage().AddAssistantMessage("I am unable to provide a response at this time."), cancellationToken).ConfigureAwait(false);
                 return;
             }
 
             _reporter.ReportInfo("Finished HandleAsync in DirectAnswerExecutor");
-            await context.YieldOutputAsync(agResponse.Text, cancellationToken).ConfigureAwait(false);
+            await context.YieldOutputAsync(new ChatMessage().AddAssistantMessage(agResponse.Text), cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -138,7 +146,7 @@ public sealed partial class DirectAnswerExecutor : Executor
             _reporter.ReportError($"[CRITICAL WORKFLOW ERROR] Failed at {this}", ex);
             _reporter.ReportError($"Exception Type: {ex.GetType().Name}", ex);
             _reporter.ReportError($"Stack Trace: {ex.StackTrace}", ex);
-            await context.YieldOutputAsync("An error occurred while processing your request.", cancellationToken).ConfigureAwait(false);
+            await context.YieldOutputAsync(new ChatMessage().AddAssistantMessage("An error occurred while processing your request."), cancellationToken).ConfigureAwait(false);
         }
     }
 

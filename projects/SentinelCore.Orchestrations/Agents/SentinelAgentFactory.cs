@@ -271,17 +271,32 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
                 ResponseFormat = profile.ResponseFormat
         };
 
+        // Merge tools from three sources: profile tools, MCP server tools, and RAG tools.
+        // Profile tools are set by callers (e.g., CaseGenerator) before BuildFromProfileAsync.
+        // MCP tools are resolved from the registry based on the agent's logical name.
+        // RAG tools are conditionally included based on configuration.
+        List<AITool> allTools = new();
+
+        if (profile.Tools is { Count: > 0 })
+        {
+            allTools.AddRange(profile.Tools);
+        }
+
         List<AITool> mcpTools = await GetMcpToolsAsync(logicalAgentName, cancellationToken).ConfigureAwait(false);
         if (mcpTools.Count > 0)
         {
-            chatOptions.Tools = chatOptions.Tools is null ? mcpTools : new List<AITool>(chatOptions.Tools.Concat(mcpTools));
+            allTools.AddRange(mcpTools);
         }
 
-        // Add RAG search tools if enabled
         List<AITool> ragTools = GetRagTools();
         if (ragTools.Count > 0)
         {
-            chatOptions.Tools = chatOptions.Tools is null ? ragTools : new List<AITool>(chatOptions.Tools.Concat(ragTools));
+            allTools.AddRange(ragTools);
+        }
+
+        if (allTools.Count > 0)
+        {
+            chatOptions.Tools = allTools;
         }
 
         // Merge context providers: profile providers + additional providers (RAG injector)
