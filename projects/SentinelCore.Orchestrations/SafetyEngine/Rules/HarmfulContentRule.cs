@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         HarmfulContentRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -97,9 +97,7 @@ public sealed class HarmfulContentRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -120,7 +118,6 @@ public sealed class HarmfulContentRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Allow(Name));
     }
-
 
 
 

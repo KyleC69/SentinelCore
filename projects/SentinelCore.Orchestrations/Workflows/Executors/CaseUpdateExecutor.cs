@@ -1,8 +1,8 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
 // File:         CaseUpdateExecutor.cs
-// Author: Kyle L. Crowler
-// Build Num:  091418
+// Author: Kyle L. Crowder
+// Build Num:  092308
 
 
 
@@ -26,11 +26,6 @@ public sealed partial class CaseUpdateExecutor : Executor
 {
     private readonly ICaseFlowEngine _engine;
 
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
-
 
 
 
@@ -47,6 +42,18 @@ public sealed partial class CaseUpdateExecutor : Executor
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
 
 
 

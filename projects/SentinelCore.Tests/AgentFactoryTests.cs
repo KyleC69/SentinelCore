@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Tests
 // File:         AgentFactoryTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
+
+using Microsoft.Extensions.Options;
 
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Orchestrations.Agents;
@@ -67,7 +69,7 @@ public sealed class AgentFactoryTests
         // Arrange — a per-agent entry.
         SentinelCoreSettings settings = new() { DefaultModel = new ModelProfile("http://tier", "tier-model", 0.1f), AgentModels = { ["TheCore"] = new ModelProfile("http://per-agent", "per-agent-model", 0.5f) } };
 
-        AgentProfileBuilder specBuilder = new(Microsoft.Extensions.Options.Options.Create(settings));
+        AgentProfileBuilder specBuilder = new(Options.Create(settings));
 
         // Act
         AgentProfile spec = specBuilder.BuildAgentSpec("TheCore");
@@ -92,7 +94,7 @@ public sealed class AgentFactoryTests
         SentinelCoreSettings settings = new();
         settings.AgentModels["Worker1"] = new ModelProfile("http://worker", "worker-model", 0.1f);
 
-        AgentProfileBuilder specBuilder = new(Microsoft.Extensions.Options.Options.Create(settings));
+        AgentProfileBuilder specBuilder = new(Options.Create(settings));
 
         // Act & Assert
         Assert.AreEqual("worker-model", specBuilder.TryGetModel("Worker1")?.ModelId);

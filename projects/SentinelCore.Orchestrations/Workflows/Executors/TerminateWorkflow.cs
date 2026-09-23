@@ -1,3 +1,11 @@
+// Solution: SentinelCore
+// Project:   SentinelCore.Orchestrations
+// File:         TerminateWorkflow.cs
+// Author: Kyle L. Crowder
+// Build Num:  092308
+
+
+
 using SentinelCore.Contracts.Abstractions;
 
 
@@ -8,10 +16,18 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
+
 [YieldsOutput(typeof(ChatMessage))]
 public partial class TerminateWorkflow : Executor
 {
     private ISystemReporter _reporter;
+
+
+
+
+
+
+
 
     public TerminateWorkflow(ISystemReporter reporter) : base("TerminateWorkflow")
     {
@@ -29,6 +45,19 @@ public partial class TerminateWorkflow : Executor
     ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
     /// </summary>
     public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    ///     Override this in your real executor to provide a domain-appropriate fallback value.
+    /// </summary>
+    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: executor did not produce a result." };
 
 
 
@@ -80,7 +109,6 @@ public partial class TerminateWorkflow : Executor
             // --- Status: Final output ---
             _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(SignalHypothesis)}");
 
-            return;
         }
         catch (OperationCanceledException)
         {
@@ -99,7 +127,6 @@ public partial class TerminateWorkflow : Executor
             // --- Status: fallback output ---
             _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(SignalHypothesis)} due to error.");
 
-            return;
         }
 
 
@@ -113,28 +140,15 @@ public partial class TerminateWorkflow : Executor
 
 
     /// <summary>
-        ///     Core processing logic for the executor.
-        ///     Replace this method with your actual domain logic.
-        /// </summary>
-        private async ValueTask<SignalHypothesis> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
-        {
-            // Example placeholder logic:
-            await Task.Delay(10, cancellationToken).ConfigureAwait(false);
+    ///     Core processing logic for the executor.
+    ///     Replace this method with your actual domain logic.
+    /// </summary>
+    private async ValueTask<SignalHypothesis> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
+    {
+        // Example placeholder logic:
+        await Task.Delay(10, cancellationToken).ConfigureAwait(false);
 
-            // Always return a valid result instance.
-            return CreateFallbackResult();
-        }
-
-
-
-        /// <summary>
-        ///     Creates a fallback result when the executor encounters an error or receives null input.
-        ///     Override this in your real executor to provide a domain-appropriate fallback value.
-        /// </summary>
-        private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: executor did not produce a result." };
-
-
-
-
-
+        // Always return a valid result instance.
+        return CreateFallbackResult();
+    }
 }

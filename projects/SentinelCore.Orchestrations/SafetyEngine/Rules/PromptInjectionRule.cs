@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PromptInjectionRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -111,7 +111,6 @@ public sealed class PromptInjectionRule : ISafetyRule
 
 
 
-
     public Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
         string text = context.CombinedText;
@@ -124,7 +123,6 @@ public sealed class PromptInjectionRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Allow(Name));
     }
-
 
 
 

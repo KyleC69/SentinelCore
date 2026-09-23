@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         EvidenceMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -35,13 +35,13 @@ public static class EvidenceMappingExtensions
 
         return new EvidenceEntity
         {
-            Id = evidence.Id,
-            EvidenceId = evidence.EvidenceId,
-            ContentJson = evidence.ContentJson,
-            Provenance = evidence.Provenance,
-            Source = evidence.Source,
-            Timestamp = evidence.Timestamp,
-            Type = evidence.Type
+                Id = evidence.Id,
+                EvidenceId = evidence.EvidenceId,
+                ContentJson = evidence.ContentJson,
+                Provenance = evidence.Provenance,
+                Source = evidence.Source,
+                Timestamp = evidence.Timestamp,
+                Type = evidence.Type
         };
     }
 }

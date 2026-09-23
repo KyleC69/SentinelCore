@@ -2,13 +2,17 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ChatMessages.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
 using System.Collections;
 
+
+
+
 namespace SentinelCore.Orchestrations.Agents.Models;
+
 
 
 
@@ -19,15 +23,33 @@ public class ChatMessages : IEnumerable<ChatMessage>
     private readonly List<ChatMessage> _messages = new();
 
 
+
+
+
+
+
+
     public ChatMessages()
     {
     }
+
+
+
+
+
+
 
 
     public ChatMessages(IEnumerable<ChatMessage> messages)
     {
         _messages.AddRange(messages);
     }
+
+
+
+
+
+
 
 
     public ChatMessage this[int index]
@@ -37,55 +59,16 @@ public class ChatMessages : IEnumerable<ChatMessage>
     }
 
 
-    public int Count => _messages.Count;
-
-
-    public void Add(ChatMessage message)
+    public int Count
     {
-        _messages.Add(message);
+        get => _messages.Count;
     }
 
 
-    public void AddRange(IEnumerable<ChatMessage> messages)
-    {
-        _messages.AddRange(messages);
-    }
 
 
-    public void AddUserMessage(string content)
-    {
-        _messages.Add(new ChatMessage(ChatRole.User, content));
-    }
 
 
-    public void AddAssistantMessage(string content)
-    {
-        _messages.Add(new ChatMessage(ChatRole.Assistant, content));
-    }
-
-
-    public void AddSystemMessage(string content)
-    {
-        _messages.Add(new ChatMessage(ChatRole.System, content));
-    }
-
-
-    public void Clear()
-    {
-        _messages.Clear();
-    }
-
-
-    public bool Remove(ChatMessage message)
-    {
-        return _messages.Remove(message);
-    }
-
-
-    public void RemoveAt(int index)
-    {
-        _messages.RemoveAt(index);
-    }
 
 
     public IEnumerator<ChatMessage> GetEnumerator()
@@ -94,8 +77,110 @@ public class ChatMessages : IEnumerable<ChatMessage>
     }
 
 
+
+
+
+
+
+
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
+    }
+
+
+
+
+
+
+
+
+    public void Add(ChatMessage message)
+    {
+        _messages.Add(message);
+    }
+
+
+
+
+
+
+
+
+    public void AddAssistantMessage(string content)
+    {
+        _messages.Add(new ChatMessage(ChatRole.Assistant, content));
+    }
+
+
+
+
+
+
+
+
+    public void AddRange(IEnumerable<ChatMessage> messages)
+    {
+        _messages.AddRange(messages);
+    }
+
+
+
+
+
+
+
+
+    public void AddSystemMessage(string content)
+    {
+        _messages.Add(new ChatMessage(ChatRole.System, content));
+    }
+
+
+
+
+
+
+
+
+    public void AddUserMessage(string content)
+    {
+        _messages.Add(new ChatMessage(ChatRole.User, content));
+    }
+
+
+
+
+
+
+
+
+    public void Clear()
+    {
+        _messages.Clear();
+    }
+
+
+
+
+
+
+
+
+    public bool Remove(ChatMessage message)
+    {
+        return _messages.Remove(message);
+    }
+
+
+
+
+
+
+
+
+    public void RemoveAt(int index)
+    {
+        _messages.RemoveAt(index);
     }
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -57,7 +57,6 @@ public sealed class McpServerRegistry : IMcpServerRegistry
         _connectionFactory = connectionFactory;
         _logger = logger;
     }
-
 
 
 
@@ -135,14 +134,12 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-
     public Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default)
     {
         IReadOnlyList<McpServerInfo> infos = _entries.Values.Select(e => e.ToInfo()).ToList().AsReadOnly();
 
         return Task.FromResult(infos);
     }
-
 
 
 
@@ -173,7 +170,6 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-
     public async Task RemoveAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
@@ -185,7 +181,6 @@ public sealed class McpServerRegistry : IMcpServerRegistry
             _logger.LogInformation("Removed MCP server {ServerId}.", id);
         }
     }
-
 
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         DpapiTokenCache.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -61,7 +61,6 @@ public sealed class DpapiTokenCache : ITokenCache
 
 
 
-
     public ValueTask<TokenContainer?> GetTokensAsync(CancellationToken cancellationToken = default)
     {
         // Return the first cached token. SentinelCore currently handles a single token set per cache.
@@ -71,7 +70,6 @@ public sealed class DpapiTokenCache : ITokenCache
             return new ValueTask<TokenContainer?>(token);
         }
     }
-
 
 
 

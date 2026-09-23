@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         IModelConfigGate.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -95,7 +95,6 @@ public sealed class ModelConfigGate : IModelConfigGate
 
 
 
-
     public string BuildGateMessage()
     {
         IReadOnlyList<string> missing = UnconfiguredAgents;
@@ -107,7 +106,6 @@ public sealed class ModelConfigGate : IModelConfigGate
 
         return "Model configuration is incomplete. Open the Model Configuration page and set a " + $"provider, model, and endpoint for: {string.Join(", ", missing)}.";
     }
-
 
 
 

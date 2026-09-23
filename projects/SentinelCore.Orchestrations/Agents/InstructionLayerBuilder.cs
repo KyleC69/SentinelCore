@@ -2,11 +2,9 @@
 // Project:   SentinelCore.Orchestrations
 // File:         InstructionLayerBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  092200
+// Build Num:  092308
 
 
-
-#nullable enable
 
 using SentinelCore.Orchestrations.Agents.Models;
 
@@ -40,9 +38,6 @@ namespace SentinelCore.Orchestrations.Agents;
 /// </summary>
 public sealed class InstructionLayerBuilder
 {
-    private readonly string _platformDomain;
-
-
 
 
 
@@ -64,8 +59,24 @@ public sealed class InstructionLayerBuilder
             throw new ArgumentException("Platform domain instructions must not be empty or whitespace.", nameof(platformDomain));
         }
 
-        _platformDomain = platformDomain;
+        PlatformDomain = platformDomain;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the platform domain instruction string used by this builder.
+    ///     Useful for testing and diagnostics.
+    /// </summary>
+    public string PlatformDomain { get; }
+
+
+
 
 
 
@@ -91,7 +102,7 @@ public sealed class InstructionLayerBuilder
         ChatMessages messages = new();
 
         // Layer 1: Platform domain (always present, grounds the agent)
-        messages.AddSystemMessage(_platformDomain);
+        messages.AddSystemMessage(PlatformDomain);
 
         // Layer 2: Preset/role instructions (from preset or override)
         if (!string.IsNullOrWhiteSpace(presetInstructions))
@@ -107,14 +118,4 @@ public sealed class InstructionLayerBuilder
 
         return messages;
     }
-
-
-
-
-
-    /// <summary>
-    ///     Gets the platform domain instruction string used by this builder.
-    ///     Useful for testing and diagnostics.
-    /// </summary>
-    public string PlatformDomain => _platformDomain;
 }

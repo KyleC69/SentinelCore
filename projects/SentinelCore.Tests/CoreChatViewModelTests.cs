@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Tests
 // File:         CoreChatViewModelTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
+
+using System.Windows;
 
 using Microsoft.Extensions.Logging;
 
@@ -232,7 +234,7 @@ public sealed class CoreChatViewModelTests
             try
             {
                 viewModel.CopyMessageCommand.Execute(expected);
-                clipboardText = System.Windows.Clipboard.GetText();
+                clipboardText = Clipboard.GetText();
             }
             catch (Exception ex)
             {

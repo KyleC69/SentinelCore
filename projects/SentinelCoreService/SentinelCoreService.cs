@@ -2,11 +2,13 @@
 // Project:   SentinelCoreService
 // File:         SentinelCoreService.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
+using System.Diagnostics;
 using System.ServiceProcess;
+using System.Threading.Tasks;
 
 
 
@@ -34,14 +36,14 @@ public sealed partial class SentinelCoreService : ServiceBase
     protected override void OnStart(string[] args)
     {
         // Log service start
-        System.Diagnostics.EventLog.WriteEntry("SentinelCoreService", "Service is starting.", System.Diagnostics.EventLogEntryType.Information);
+        EventLog.WriteEntry("SentinelCoreService", "Service is starting.", EventLogEntryType.Information);
 
         // Initialize necessary resources or start background tasks
         // Example: Start a background worker or timer
-        System.Threading.Tasks.Task.Run(() =>
+        Task.Run(() =>
         {
             // Simulate background work
-            System.Diagnostics.EventLog.WriteEntry("SentinelCoreService", "Background task is running.", System.Diagnostics.EventLogEntryType.Information);
+            EventLog.WriteEntry("SentinelCoreService", "Background task is running.", EventLogEntryType.Information);
         });
     }
 
@@ -55,10 +57,10 @@ public sealed partial class SentinelCoreService : ServiceBase
     protected override void OnStop()
     {
         // Log service stop
-        System.Diagnostics.EventLog.WriteEntry("SentinelCoreService", "Service is stopping.", System.Diagnostics.EventLogEntryType.Information);
+        EventLog.WriteEntry("SentinelCoreService", "Service is stopping.", EventLogEntryType.Information);
 
         // Clean up resources or stop background tasks
         // Example: Stop a background worker or timer
-        System.Diagnostics.EventLog.WriteEntry("SentinelCoreService", "Background task is stopping.", System.Diagnostics.EventLogEntryType.Information);
+        EventLog.WriteEntry("SentinelCoreService", "Background task is stopping.", EventLogEntryType.Information);
     }
 }

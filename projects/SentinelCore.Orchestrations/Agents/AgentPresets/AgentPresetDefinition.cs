@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentPresetDefinition.cs
 // Author: Kyle L. Crowder
-// Build Num:  092200
+// Build Num:  092308
 
 
 
@@ -30,11 +30,6 @@ namespace SentinelCore.Orchestrations.Agents.AgentPresets;
 /// </summary>
 public sealed record AgentPresetDefinition
 {
-    /// <summary>
-    ///     Gets the unique agent name identifier. This must match the name used
-    ///     in <see cref="SentinelAgentCatalog" /> and workflow executor registrations.
-    /// </summary>
-    public required string AgentName { get; init; }
 
     /// <summary>
     ///     Gets the unique, stable identifier for the agent. Suitable for lookup
@@ -43,32 +38,16 @@ public sealed record AgentPresetDefinition
     public required string AgentId { get; init; }
 
     /// <summary>
-    ///     Gets the model tier for this agent, used to select the default model
-    ///     from <see cref="SentinelCoreSettings" />.
+    ///     Gets the unique agent name identifier. This must match the name used
+    ///     in <see cref="SentinelAgentCatalog" /> and workflow executor registrations.
     /// </summary>
-    public ModelTier Tier { get; init; } = ModelTier.Utility;
+    public required string AgentName { get; init; }
 
     /// <summary>
     ///     Gets the default persona type, or <c>null</c> if no persona should be applied.
     ///     Executors may override this at invocation time.
     /// </summary>
     public PersonaType? DefaultPersona { get; init; }
-
-    /// <summary>
-    ///     Gets whether pattern memory injection should be enabled for this agent.
-    ///     Per PL-3, pattern memory is only applied to the Core agent.
-    /// </summary>
-    public bool UsePatternMemory { get; init; }
-
-    /// <summary>
-    ///     Gets whether logging middleware should be applied to this agent's chat client.
-    /// </summary>
-    public bool UseLogging { get; init; } = true;
-
-    /// <summary>
-    ///     Gets whether RAG search tools should be included for this agent.
-    /// </summary>
-    public bool UseRagSearch { get; init; }
 
     /// <summary>
     ///     Gets the default system instructions for this agent role.
@@ -78,9 +57,31 @@ public sealed record AgentPresetDefinition
     public string? DefaultSystemInstructions { get; init; }
 
     /// <summary>
+    ///     Gets the model tier for this agent, used to select the default model
+    ///     from <see cref="SentinelCoreSettings" />.
+    /// </summary>
+    public ModelTier Tier { get; init; } = ModelTier.Utility;
+
+    /// <summary>
     ///     Gets the tool names to include by default, or <c>null</c> for all available tools.
     /// </summary>
     public IReadOnlyList<string>? ToolSet { get; init; }
+
+    /// <summary>
+    ///     Gets whether logging middleware should be applied to this agent's chat client.
+    /// </summary>
+    public bool UseLogging { get; init; } = true;
+
+    /// <summary>
+    ///     Gets whether pattern memory injection should be enabled for this agent.
+    ///     Per PL-3, pattern memory is only applied to the Core agent.
+    /// </summary>
+    public bool UsePatternMemory { get; init; }
+
+    /// <summary>
+    ///     Gets whether RAG search tools should be included for this agent.
+    /// </summary>
+    public bool UseRagSearch { get; init; }
 
 
 

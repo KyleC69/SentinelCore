@@ -5,7 +5,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:viewModels="clr-namespace:SentinelCore.UI.ViewModels"
-    xmlns:models="clr-namespace:SentinelCore.UI.Models"
     mc:Ignorable="d"
     d:DesignHeight="700" d:DesignWidth="900"
     d:DataContext="{d:DesignInstance viewModels:ModelConfigViewModel}"

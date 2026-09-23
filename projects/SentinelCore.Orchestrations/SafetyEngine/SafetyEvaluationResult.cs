@@ -2,7 +2,12 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyEvaluationResult.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
+
+
+
+using SentinelCore.Orchestrations.Workflows.Executors;
+
 
 
 
@@ -18,14 +23,15 @@ namespace SentinelCore.Orchestrations.SafetyEngine;
 /// </summary>
 public sealed class SafetyEvaluationResult
 {
-
-    public SafetyEvaluationResult(bool isAllowed, IReadOnlyList<SafetyRuleResult> ruleResults, SafetySeverity highestSeverity, string summary, SafetyRuleResult? blockingResult = null)
+    public SafetyEvaluationResult(bool isAllowed, IReadOnlyList<SafetyRuleResult> ruleResults, SafetySeverity highestSeverity, string summary, SafetyRuleResult? blockingResult = null, int totalScore = 0, IReadOnlyList<SafetyTriggerTerms.SafetyIndicator>? matchedIndicators = null)
     {
         IsAllowed = isAllowed;
         RuleResults = ruleResults;
         HighestSeverity = highestSeverity;
         Summary = summary;
         BlockingResult = blockingResult;
+        TotalScore = totalScore;
+        MatchedIndicators = matchedIndicators ?? Array.Empty<SafetyTriggerTerms.SafetyIndicator>();
     }
 
 
@@ -49,6 +55,9 @@ public sealed class SafetyEvaluationResult
     /// <summary>Whether the prompt is allowed to proceed to the AI model.</summary>
     public bool IsAllowed { get; init; }
 
+    /// <summary>The indicators that contributed to the cumulative safety score.</summary>
+    public IReadOnlyList<SafetyTriggerTerms.SafetyIndicator> MatchedIndicators { get; init; }
+
     /// <summary>The individual results from each evaluated rule.</summary>
     public IReadOnlyList<SafetyRuleResult> RuleResults { get; init; }
 
@@ -56,6 +65,9 @@ public sealed class SafetyEvaluationResult
     ///     A human-readable summary of the evaluation.
     /// </summary>
     public string Summary { get; init; }
+
+    /// <summary>The cumulative weighted score for the prompt across all evaluated rules.</summary>
+    public int TotalScore { get; init; }
 
 
 
@@ -73,10 +85,11 @@ public sealed class SafetyEvaluationResult
         List<SafetyRuleResult> violations = results.Where(r => r.IsViolation).ToList();
         SafetyRuleResult? blocking = results.FirstOrDefault(r => r.Action == SafetyAction.Block);
         SafetySeverity highestSeverity = violations.Count != 0 ? violations.Max(r => r.Severity) : SafetySeverity.None;
+        int totalScore = results.Sum(r => r.Score);
+        IReadOnlyList<SafetyTriggerTerms.SafetyIndicator> matchedIndicators = results.SelectMany(r => r.MatchedIndicators).DistinctBy(indicator => indicator.Term).ToList();
 
         bool isAllowed = blocking is null;
         string summary = isAllowed ? violations.Count == 0 ? "All safety rules passed." : $"Prompt allowed with {violations.Count} warning(s)." : $"Prompt blocked by rule '{blocking!.RuleName}': {blocking.Reason}";
-
-        return new SafetyEvaluationResult(isAllowed, results, highestSeverity, summary, blocking);
+        return new SafetyEvaluationResult(isAllowed, results, highestSeverity, summary, blocking, totalScore, matchedIndicators);
     }
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         EncodingEvasionRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -82,9 +82,7 @@ public sealed class EncodingEvasionRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -147,14 +145,13 @@ public sealed class EncodingEvasionRule : ISafetyRule
         string reason = $"Potential encoding evasion detected: {string.Join(", ", detections)}";
         SafetyRuleResult result = _action switch
         {
-            SafetyAction.Block => SafetyRuleResult.Block(Name, _severity, reason),
-            SafetyAction.Warn => SafetyRuleResult.Warn(Name, _severity, reason),
-            _ => SafetyRuleResult.Allow(Name, reason)
+                SafetyAction.Block => SafetyRuleResult.Block(Name, _severity, reason),
+                SafetyAction.Warn => SafetyRuleResult.Warn(Name, _severity, reason),
+                _ => SafetyRuleResult.Allow(Name, reason)
         };
 
         return Task.FromResult(result);
     }
-
 
 
 

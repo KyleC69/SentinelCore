@@ -2,7 +2,12 @@
 // Project:   SentinelCore.Orchestrations
 // File:         BlocklistRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
+
+
+
+using SentinelCore.Orchestrations.Workflows.Executors;
+
 
 
 
@@ -13,14 +18,16 @@ namespace SentinelCore.Orchestrations.SafetyEngine.Rules;
 
 
 /// <summary>
-///     A safety rule that blocks prompts containing content matching any entry in a
-///     configurable blocklist of strings. Matches are case-insensitive by default.
+///     A safety rule that evaluates weighted blocklist indicators in a prompt and returns
+///     a cumulative score rather than a binary first-match result.
 /// </summary>
 public sealed class BlocklistRule : ISafetyRule
 {
-    private readonly IReadOnlySet<string> _blocklist;
-    private readonly StringComparison _comparison;
-    private readonly SafetySeverity _severity;
+
+    private readonly IReadOnlyList<SafetyTriggerTerms.SafetyIndicator> _indicators;
+    private const int BlockThreshold = 15;
+    private const int ReviewThreshold = 5;
+    private const int WarningThreshold = 10;
 
 
 
@@ -29,27 +36,8 @@ public sealed class BlocklistRule : ISafetyRule
 
 
 
-    /// <summary>
-    ///     Creates a new <see cref="BlocklistRule" />.
-    /// </summary>
-    /// <param name="name">The unique name of this rule.</param>
-    /// <param name="blocklist">The set of strings to block. Any match in the prompt text will block it.</param>
-    /// <param name="severity">
-    ///     The severity to assign when a blocklisted term is found. Default is
-    ///     <see cref="SafetySeverity.High" />.
-    /// </param>
-    /// <param name="description">A description of what this rule checks.</param>
-    /// <param name="caseSensitive">Whether the blocklist matching is case-sensitive. Default is <c>false</c>.</param>
-    public BlocklistRule(string name, IEnumerable<string> blocklist, SafetySeverity severity = SafetySeverity.High, string? description = null, bool caseSensitive = false)
+    public BlocklistRule(string name, SafetySeverity severity = SafetySeverity.High, string? description = null) : this(name, severity, description, SafetyTriggerTerms.GetAllIndicators())
     {
-        ArgumentNullException.ThrowIfNull(blocklist);
-
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        _severity = severity;
-        _comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
-        Description = description ?? "Blocks prompts containing blocklisted terms.";
-
-        _blocklist = new HashSet<string>(blocklist, caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
     }
 
 
@@ -57,6 +45,48 @@ public sealed class BlocklistRule : ISafetyRule
 
 
 
+
+
+    public BlocklistRule(string name, IEnumerable<SafetyTriggerTerms.SafetyIndicator> indicators, SafetySeverity severity = SafetySeverity.High, string? description = null) : this(name, severity, description, indicators)
+    {
+    }
+
+
+
+
+
+
+
+
+    public BlocklistRule(string name, IEnumerable<string> blocklist, SafetySeverity severity = SafetySeverity.High, string? description = null) : this(name, severity, description, NormalizeStringsToIndicators(blocklist))
+    {
+    }
+
+
+
+
+
+
+
+
+    private BlocklistRule(string name, SafetySeverity severity, string? description, IEnumerable<SafetyTriggerTerms.SafetyIndicator>? indicators)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+
+        Name = name;
+        Severity = severity;
+        Description = description ?? "Blocks prompts containing blocklisted terms or phrases.";
+        _indicators = NormalizeIndicators(indicators);
+    }
+
+
+
+
+
+
+
+
+    public SafetySeverity Severity { get; private set; }
 
 
 
@@ -69,18 +99,44 @@ public sealed class BlocklistRule : ISafetyRule
 
 
 
-
     public Task<SafetyRuleResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(context);
+
         string text = context.CombinedText;
+        List<SafetyTriggerTerms.SafetyIndicator> matchedIndicators = _indicators.Where(indicator => text.Contains(indicator.Term, StringComparison.OrdinalIgnoreCase)).OrderByDescending(indicator => indicator.Weight).ToList();
 
-        foreach (string term in _blocklist)
-            if (text.Contains(term, _comparison))
-            {
-                return Task.FromResult(SafetyRuleResult.Block(Name, _severity, "Prompt contains blocklisted term."));
-            }
+        if (matchedIndicators.Count == 0)
+        {
+            return Task.FromResult(SafetyRuleResult.Allow(Name));
+        }
 
-        return Task.FromResult(SafetyRuleResult.Allow(Name));
+        IReadOnlyList<SafetyTriggerTerms.SafetyIndicator> uniqueIndicators = ReduceOverlappingIndicators(matchedIndicators);
+        int score = uniqueIndicators.Sum(indicator => indicator.Weight);
+
+        if (uniqueIndicators.Count > 1 && score < WarningThreshold)
+        {
+            score += uniqueIndicators.Count == 2 ? WarningThreshold - score : (uniqueIndicators.Count - 1) * 2;
+        }
+
+        bool requiresImmediateReview = uniqueIndicators.Any(indicator => indicator.RequiresImmediateReview);
+
+        if (score >= BlockThreshold)
+        {
+            return Task.FromResult(SafetyRuleResult.Block(Name, SafetySeverity.Critical, $"Prompt exceeded the block threshold ({score}) with weighted indicators: {FormatIndicators(uniqueIndicators)}.", score, uniqueIndicators));
+        }
+
+        if (score >= WarningThreshold || (uniqueIndicators.Count >= 2 && score >= ReviewThreshold))
+        {
+            return Task.FromResult(SafetyRuleResult.Warn(Name, SafetySeverity.High, $"Prompt reached the warning threshold ({score}) with weighted indicators: {FormatIndicators(uniqueIndicators)}.", score, uniqueIndicators));
+        }
+
+        if (score >= ReviewThreshold || requiresImmediateReview || uniqueIndicators.Count > 0)
+        {
+            return Task.FromResult(SafetyRuleResult.Warn(Name, SafetySeverity.Medium, $"Prompt triggered weighted safety review ({score}) with indicators: {FormatIndicators(uniqueIndicators)}.", score, uniqueIndicators));
+        }
+
+        return Task.FromResult(SafetyRuleResult.Warn(Name, SafetySeverity.Medium, $"Prompt contains matched safety indicators ({score}) and should be reviewed.", score, uniqueIndicators));
     }
 
 
@@ -90,6 +146,108 @@ public sealed class BlocklistRule : ISafetyRule
 
 
 
-
     public string Name { get; }
+
+
+
+
+
+
+
+
+    private static string FormatIndicators(IEnumerable<SafetyTriggerTerms.SafetyIndicator> indicators)
+    {
+        return string.Join(", ", indicators.Select(indicator => $"{indicator.Term}({indicator.Weight})"));
+    }
+
+
+
+
+
+
+
+
+    private static IReadOnlyList<SafetyTriggerTerms.SafetyIndicator> NormalizeIndicators(IEnumerable<SafetyTriggerTerms.SafetyIndicator>? indicators)
+    {
+        IReadOnlyList<SafetyTriggerTerms.SafetyIndicator> fallback = SafetyTriggerTerms.GetAllIndicators().ToList();
+
+        if (indicators is null)
+        {
+            return fallback;
+        }
+
+        List<SafetyTriggerTerms.SafetyIndicator> normalized = indicators.Where(indicator => !string.IsNullOrWhiteSpace(indicator.Term)).Select(indicator => indicator with { Term = indicator.Term.Trim() }).ToList();
+
+        return normalized.Count > 0 ? normalized : fallback;
+    }
+
+
+
+
+
+
+
+
+    private static IReadOnlyList<SafetyTriggerTerms.SafetyIndicator> NormalizeStringsToIndicators(IEnumerable<string>? blocklist)
+    {
+        if (blocklist is null)
+        {
+            return SafetyTriggerTerms.GetAllIndicators().ToList();
+        }
+
+        List<SafetyTriggerTerms.SafetyIndicator> indicators = blocklist.Where(term => !string.IsNullOrWhiteSpace(term)).Select(term => new SafetyTriggerTerms.SafetyIndicator(term.Trim(), "Blocklist", 2, false)).ToList();
+
+        return indicators.Count > 0 ? indicators : SafetyTriggerTerms.GetAllIndicators().ToList();
+    }
+
+
+
+
+
+
+
+
+    private static IReadOnlyList<SafetyTriggerTerms.SafetyIndicator> ReduceOverlappingIndicators(IEnumerable<SafetyTriggerTerms.SafetyIndicator> indicators)
+    {
+        List<SafetyTriggerTerms.SafetyIndicator> retained = new();
+
+        foreach (SafetyTriggerTerms.SafetyIndicator indicator in indicators.OrderByDescending(item => item.Weight))
+        {
+            SafetyTriggerTerms.SafetyIndicator? existing = retained.FirstOrDefault(item => TermsOverlap(item.Term, indicator.Term));
+            if (existing is not null)
+            {
+                if (indicator.Weight > existing.Weight)
+                {
+                    int index = retained.IndexOf(existing);
+                    retained[index] = indicator;
+                }
+
+                continue;
+            }
+
+            retained.Add(indicator);
+        }
+
+        return retained.OrderByDescending(indicator => indicator.Weight).ToList();
+    }
+
+
+
+
+
+
+
+
+    private static bool TermsOverlap(string left, string right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+        {
+            return false;
+        }
+
+        string normalizedLeft = left.Trim();
+        string normalizedRight = right.Trim();
+
+        return normalizedLeft.Contains(normalizedRight, StringComparison.OrdinalIgnoreCase) || normalizedRight.Contains(normalizedLeft, StringComparison.OrdinalIgnoreCase) || normalizedLeft.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Intersect(normalizedRight.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), StringComparer.OrdinalIgnoreCase).Any();
+    }
 }

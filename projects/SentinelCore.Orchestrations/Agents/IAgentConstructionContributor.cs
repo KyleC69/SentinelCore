@@ -2,12 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         IAgentConstructionContributor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092200
-
-
-
-#nullable enable
-
+// Build Num:  092308
 
 
 
@@ -40,6 +35,13 @@ public interface IAgentConstructionContributor
     ///     </list>
     /// </summary>
     int Order { get; }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Contributes to the agent construction context. The contributor inspects

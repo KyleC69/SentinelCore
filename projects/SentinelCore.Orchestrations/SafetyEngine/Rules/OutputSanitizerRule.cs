@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         OutputSanitizerRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -94,9 +94,7 @@ public sealed class OutputSanitizerRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -167,7 +165,6 @@ public sealed class OutputSanitizerRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Allow(Name, "No noise patterns detected in output."));
     }
-
 
 
 

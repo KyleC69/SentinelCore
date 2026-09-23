@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PatternCheckExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -26,11 +26,6 @@ public sealed partial class PatternCheckExecutor : Executor
 {
     private readonly ISystemReporter _reporter;
 
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
-
 
 
 
@@ -47,6 +42,30 @@ public sealed partial class PatternCheckExecutor : Executor
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private ChatMessage CreateFallbackResult() => new(ChatRole.Assistant, "Pattern check could not be performed.");
 
 
 
@@ -139,16 +158,4 @@ public sealed partial class PatternCheckExecutor : Executor
         // implemented yet and a placeholder yield would leak fake data into the chat.
         return message;
     }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    /// </summary>
-    private ChatMessage CreateFallbackResult() => new(ChatRole.Assistant, "Pattern check could not be performed.");
 }

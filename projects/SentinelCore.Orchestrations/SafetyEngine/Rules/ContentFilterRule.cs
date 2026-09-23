@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ContentFilterRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -135,9 +135,7 @@ public sealed class ContentFilterRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -229,7 +227,6 @@ public sealed class ContentFilterRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Allow(Name, "Content passed blocklist filter."));
     }
-
 
 
 

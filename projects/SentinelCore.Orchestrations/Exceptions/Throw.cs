@@ -1,8 +1,8 @@
 ﻿// Solution: SentinelCore
-// Project:   SentinelCore.Contracts
+// Project:   SentinelCore.Orchestrations
 // File:         Throw.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 

@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyEngineAgent.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
+
+using System.Runtime.CompilerServices;
 
 using Microsoft.Extensions.Logging;
 
@@ -229,7 +231,7 @@ public sealed class SafetyEngineAgent
     /// <param name="innerAgent">The inner agent to forward to if allowed.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>An async enumerable of response updates.</returns>
-    public async IAsyncEnumerable<AgentResponseUpdate> InterceptRunStreamingAsync(IEnumerable<ChatMessage> messages, AgentSession? session, AgentRunOptions? options, AIAgent innerAgent, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<AgentResponseUpdate> InterceptRunStreamingAsync(IEnumerable<ChatMessage> messages, AgentSession? session, AgentRunOptions? options, AIAgent innerAgent, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(options);

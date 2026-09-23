@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RagSearchTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -57,7 +57,6 @@ public sealed class RagSearchTool : AITool
         _options = options.Value;
         _logger = logger;
     }
-
 
 
 

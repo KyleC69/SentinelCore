@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         HumanOperatorExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -29,11 +29,6 @@ public sealed partial class HumanOperatorExecutor : Executor
 {
     private readonly ISystemReporter _reporter;
 
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
-
 
 
 
@@ -50,6 +45,30 @@ public sealed partial class HumanOperatorExecutor : Executor
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: human operator executor did not produce a result." };
 
 
 
@@ -144,16 +163,4 @@ public sealed partial class HumanOperatorExecutor : Executor
 
         return input;
     }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    /// </summary>
-    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: human operator executor did not produce a result." };
 }

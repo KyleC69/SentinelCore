@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SemanticPatternMatcher.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -70,7 +70,6 @@ public sealed class SemanticPatternMatcher : IPatternMatcher
 
 
 
-
     public async Task<IReadOnlyList<PatternMatchResult>> SearchAsync(string signal, int topK = 5, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(signal);
@@ -103,7 +102,6 @@ public sealed class SemanticPatternMatcher : IPatternMatcher
 
         return [];
     }
-
 
 
 

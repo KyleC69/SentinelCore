@@ -2,7 +2,9 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorTemplate.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
+
+
 
 // ==============================================================================
 // EXECUTOR CONVENTION TEMPLATE
@@ -32,13 +34,21 @@
 //  11. Name property set from the executor Id string for logging.
 // ==============================================================================
 
+
+
 using SentinelCore.Contracts.Abstractions;
+
+
+
 
 namespace SentinelCore.Orchestrations.Workflows.Executors;
 
+
+
+
+
 /// <summary>
 ///     A reusable, production-grade MAF executor template.
-///
 ///     Key features:
 ///     - Strong typing: validates input at runtime to prevent silent routing failures.
 ///     - Robust error handling: catches and logs all exceptions, including cooperative cancellation.
@@ -46,13 +56,19 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     - Final response pattern: guarantees a well-formed TOut even under failure conditions.
 ///     - Context-safe: uses IWorkflowContext for shared-state updates and output yielding.
 ///     - Compile-time validation: [YieldsOutput] ensures the workflow graph type-checks.
-///
 ///     Replace TIn and TOut with your actual message types.
 /// </summary>
 [YieldsOutput(typeof(SignalHypothesis))] // ← MANDATORY: declare output type for compile-time validation
 public sealed partial class ExecutorTemplate : Executor
 {
     private readonly ISystemReporter _reporter;
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ExecutorTemplate" /> class.
@@ -65,10 +81,37 @@ public sealed partial class ExecutorTemplate : Executor
         Name = Id;
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
     /// </summary>
     public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    ///     Override this in your real executor to provide a domain-appropriate fallback value.
+    /// </summary>
+    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: executor did not produce a result." };
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Main executor entry point called by the MAF dispatcher.
@@ -136,6 +179,13 @@ public sealed partial class ExecutorTemplate : Executor
         }
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Core processing logic for the executor.
     ///     Replace this method with your actual domain logic.
@@ -148,14 +198,4 @@ public sealed partial class ExecutorTemplate : Executor
         // Always return a valid result instance.
         return CreateFallbackResult();
     }
-
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    ///     Override this in your real executor to provide a domain-appropriate fallback value.
-    /// </summary>
-    private SignalHypothesis CreateFallbackResult() => new()
-    {
-        NextStep = NextStep.EscalateToHumanOperator,
-        Reasoning = "Fallback: executor did not produce a result."
-    };
 }

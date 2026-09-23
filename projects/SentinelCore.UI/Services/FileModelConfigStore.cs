@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         FileModelConfigStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -84,7 +84,6 @@ public sealed class FileModelConfigStore : IModelConfigStore
 
 
 
-
     public ModelConfigDocument? Load()
     {
         try
@@ -111,7 +110,6 @@ public sealed class FileModelConfigStore : IModelConfigStore
             return null;
         }
     }
-
 
 
 

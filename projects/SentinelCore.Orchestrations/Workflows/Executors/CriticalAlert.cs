@@ -2,13 +2,22 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CriticalAlert.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
+
+
 
 using SentinelCore.CaseFlowEngine.Cfe;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Cfe;
 
+
+
+
 namespace SentinelCore.Orchestrations.Workflows.Executors;
+
+
+
+
 
 /// <summary>
 ///     Handles the RedAlert branch: a critical event was detected. Advances the case (if any)
@@ -21,10 +30,12 @@ internal sealed partial class CriticalAlert : Executor
     private readonly ICaseFlowEngine _caseFlowEngine;
     private readonly ISystemReporter _reporter;
 
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
+
+
+
+
+
+
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="CriticalAlert" /> class.
@@ -37,6 +48,25 @@ internal sealed partial class CriticalAlert : Executor
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Handles the RedAlert branch by advancing the case and yielding a critical alert.
@@ -84,6 +114,13 @@ internal sealed partial class CriticalAlert : Executor
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
         }
     }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Core processing logic: advances the case to Alerted and yields a critical alert message.

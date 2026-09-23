@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RepetitionAttackRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -66,9 +66,7 @@ public sealed class RepetitionAttackRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -115,7 +113,6 @@ public sealed class RepetitionAttackRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Allow(Name, "No repetition patterns detected."));
     }
-
 
 
 

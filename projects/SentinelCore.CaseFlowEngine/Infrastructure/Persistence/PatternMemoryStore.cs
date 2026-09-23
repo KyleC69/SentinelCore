@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         PatternMemoryStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -121,12 +121,12 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
         PatternMemoryEntity entity = new()
         {
-            PatternId = Guid.NewGuid().GetHashCode(),
-            CaseId = caseRecordId,
-            Summary = summary,
-            SignalEmbedding = new SqlVector<float>(signalEmbedding),
-            SummaryEmbedding = new SqlVector<float>(summaryEmbedding),
-            Timestamp = DateTime.Now
+                PatternId = Guid.NewGuid().GetHashCode(),
+                CaseId = caseRecordId,
+                Summary = summary,
+                SignalEmbedding = new SqlVector<float>(signalEmbedding),
+                SummaryEmbedding = new SqlVector<float>(summaryEmbedding),
+                Timestamp = DateTime.Now
         };
 
         db.PatternMemoryEntities!.Add(entity);
@@ -183,12 +183,12 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
     {
         return new PatternMemoryResult
         {
-            CaseId = e.CaseId,
-            PatternId = e.PatternId,
-            Summary = e.Summary!,
-            SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
-            SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
-            Timestamp = e.Timestamp
+                CaseId = e.CaseId,
+                PatternId = e.PatternId,
+                Summary = e.Summary!,
+                SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
+                SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
+                Timestamp = e.Timestamp
         };
     }
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelWorkflowExecution.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -67,6 +67,13 @@ public interface ISentinelWorkflowExecution
     ///     Executes a <see cref="Workflow" /> with the default phase label "Workflow".
     /// </summary>
     Task<WorkflowExecutionResult> ExecuteAsync([NotNull] Workflow workflow, [NotNull] ChatMessage promptSignal, CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Executes a <see cref="Workflow" /> with full streaming event capture, forwarding
@@ -169,6 +176,13 @@ public sealed class SentinelWorkflowExecution : ISentinelWorkflowExecution
         return await ExecuteAsync(workflow, promptSignal, phaseLabel, rawEventCallback: null, cancellationToken).ConfigureAwait(false);
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Executes a <see cref="Workflow" /> with full streaming event capture, forwarding
     ///     every raw <see cref="WorkflowEvent" /> to the optional callback before structured
@@ -209,7 +223,7 @@ public sealed class SentinelWorkflowExecution : ISentinelWorkflowExecution
 
                 // Executors registered via WithOutputFrom yield individual ChatMessage
                 // values — collect each one.
-                if (evt is WorkflowOutputEvent outputEvent && outputEvent.Is<ChatMessage>(out ChatMessage? outputMessage))
+                if (evt is WorkflowOutputEvent outputEvent && outputEvent.Is(out ChatMessage? outputMessage))
                 {
                     outputMessages.Add(outputMessage);
                 }

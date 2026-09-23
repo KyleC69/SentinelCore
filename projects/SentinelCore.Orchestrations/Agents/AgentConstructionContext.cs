@@ -2,13 +2,9 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentConstructionContext.cs
 // Author: Kyle L. Crowder
-// Build Num:  092200
+// Build Num:  092308
 
 
-
-#nullable enable
-
-using Microsoft.Extensions.AI;
 
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
@@ -34,46 +30,6 @@ namespace SentinelCore.Orchestrations.Agents;
 /// </summary>
 public sealed class AgentConstructionContext
 {
-    /// <summary>
-    ///     Gets the preset definition that drives this agent's construction.
-    /// </summary>
-    public AgentPresetDefinition Preset { get; }
-
-    /// <summary>
-    ///     Gets the model profile resolved from settings for this agent.
-    /// </summary>
-    public ModelProfile Model { get; }
-
-    /// <summary>
-    ///     Gets the base chat client created from the model profile.
-    ///     Contributors may wrap this client (e.g., logging decorator).
-    /// </summary>
-    public IChatClient ChatClient { get; }
-
-    /// <summary>
-    ///     Gets the wrapped chat client. Contributors should add wrappers here
-    ///     by reassigning this property. The factory reads this at the end
-    ///     to construct the <see cref="ChatClientAgent" />.
-    /// </summary>
-    public IChatClient WrappedClient { get; set; }
-
-    /// <summary>
-    ///     Gets the list of tools to include in the agent's <see cref="ChatOptions" />.
-    ///     Contributors add tools here (MCP tools, RAG tools, etc.).
-    /// </summary>
-    public List<AITool> Tools { get; } = [];
-
-    /// <summary>
-    ///     Gets the list of context providers to include in the agent's
-    ///     <see cref="ChatClientAgentOptions" />. Contributors add providers here
-    ///     (pattern memory, compaction, etc.).
-    /// </summary>
-    public List<AIContextProvider> ContextProviders { get; } = [];
-
-
-
-
-
 
 
 
@@ -95,4 +51,47 @@ public sealed class AgentConstructionContext
         ChatClient = chatClient;
         WrappedClient = chatClient;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the base chat client created from the model profile.
+    ///     Contributors may wrap this client (e.g., logging decorator).
+    /// </summary>
+    public IChatClient ChatClient { get; }
+
+    /// <summary>
+    ///     Gets the list of context providers to include in the agent's
+    ///     <see cref="ChatClientAgentOptions" />. Contributors add providers here
+    ///     (pattern memory, compaction, etc.).
+    /// </summary>
+    public List<AIContextProvider> ContextProviders { get; } = [];
+
+    /// <summary>
+    ///     Gets the model profile resolved from settings for this agent.
+    /// </summary>
+    public ModelProfile Model { get; }
+
+    /// <summary>
+    ///     Gets the preset definition that drives this agent's construction.
+    /// </summary>
+    public AgentPresetDefinition Preset { get; }
+
+    /// <summary>
+    ///     Gets the list of tools to include in the agent's <see cref="ChatOptions" />.
+    ///     Contributors add tools here (MCP tools, RAG tools, etc.).
+    /// </summary>
+    public List<AITool> Tools { get; } = [];
+
+    /// <summary>
+    ///     Gets the wrapped chat client. Contributors should add wrappers here
+    ///     by reassigning this property. The factory reads this at the end
+    ///     to construct the <see cref="ChatClientAgent" />.
+    /// </summary>
+    public IChatClient WrappedClient { get; set; }
 }

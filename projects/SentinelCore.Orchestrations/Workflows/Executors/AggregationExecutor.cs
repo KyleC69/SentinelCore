@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AggregationExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -28,11 +28,6 @@ public sealed partial class AggregationExecutor : Executor
 {
     private readonly ISystemReporter _reporter;
 
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
-
 
 
 
@@ -49,6 +44,30 @@ public sealed partial class AggregationExecutor : Executor
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: aggregation did not produce a result." };
 
 
 
@@ -137,16 +156,4 @@ public sealed partial class AggregationExecutor : Executor
 
         return new SignalHypothesis { NextStep = NextStep.EscalateToHumanOperator, OrigPrompt = prompt ?? message.Text, Hypothesis = "Evidence gathering completed.", Reasoning = message.Text };
     }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    /// </summary>
-    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: aggregation did not produce a result." };
 }

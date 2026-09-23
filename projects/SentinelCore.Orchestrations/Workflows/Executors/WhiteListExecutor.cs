@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WhiteListExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -20,18 +20,14 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 /// <summary>
 ///     Checks the signal against the operator's whitelist. This will be stored in DB and vector searchable.
 ///     A list of environmentally acceptable signals that should be ignored. This list is populated only by end user
-///     as a means of silencing benign signals. If the signal is not on the whitelist, it must flow through normal pathways.
+///     as a means of silencing benign signals. If the signal is not on the whitelist, it must flow through normal
+///     pathways.
 ///     If it is on the list, it will be logged and the flow terminated.
 /// </summary>
 [YieldsOutput(typeof(SuppressionDecision))]
 public sealed partial class WhiteListExecutor : Executor
 {
     private readonly ISystemReporter _reporter;
-
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
 
 
 
@@ -49,6 +45,30 @@ public sealed partial class WhiteListExecutor : Executor
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private SuppressionDecision CreateFallbackResult() => new() { Command = CommandValue.OTHER, Prompt = string.Empty, Suppress = false };
 
 
 
@@ -147,18 +167,6 @@ public sealed partial class WhiteListExecutor : Executor
         await context.SendMessageAsync(results, cancellationToken: ct).ConfigureAwait(false);
         return results;
     }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    /// </summary>
-    private SuppressionDecision CreateFallbackResult() => new() { Command = CommandValue.OTHER, Prompt = string.Empty, Suppress = false };
 }
 
 

@@ -2,16 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpToolContributor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092200
+// Build Num:  092308
 
 
-
-#nullable enable
-
-using Microsoft.Extensions.AI;
 
 using SentinelCore.Contracts.Mcp;
-using SentinelCore.Orchestrations.Agents.AgentPresets;
 
 
 
@@ -34,6 +29,9 @@ public sealed class McpToolContributor : IAgentConstructionContributor
 
 
 
+
+
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="McpToolContributor" /> class.
     /// </summary>
@@ -48,10 +46,6 @@ public sealed class McpToolContributor : IAgentConstructionContributor
 
 
 
-    /// <inheritdoc />
-    public int Order => 40;
-
-
 
 
 
@@ -60,13 +54,24 @@ public sealed class McpToolContributor : IAgentConstructionContributor
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        IReadOnlyList<AITool> serverTools = await _mcpServerRegistry
-            .GetToolsForAgentAsync(context.Preset.AgentName, cancellationToken)
-            .ConfigureAwait(false);
+        IReadOnlyList<AITool> serverTools = await _mcpServerRegistry.GetToolsForAgentAsync(context.Preset.AgentName, cancellationToken).ConfigureAwait(false);
 
         if (serverTools.Count > 0)
         {
             context.Tools.AddRange(serverTools);
         }
+    }
+
+
+
+
+
+
+
+
+    /// <inheritdoc />
+    public int Order
+    {
+        get => 40;
     }
 }

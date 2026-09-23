@@ -2,10 +2,11 @@
 // Project:   SentinelCore.Tests
 // File:         McpServerRegistryTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
+using System.Collections;
 using System.Text.Json.Nodes;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -385,7 +386,7 @@ public sealed class McpServerRegistryTests
         // Assert
         McpServerInfo? info = await registry.GetAsync("server-1");
         Assert.IsNotNull(info);
-        CollectionAssert.AreEquivalent(new[] { "CoreChat", "Classifier" }, (System.Collections.ICollection)info.Definition.AssignedAgentNames);
+        CollectionAssert.AreEquivalent(new[] { "CoreChat", "Classifier" }, (ICollection)info.Definition.AssignedAgentNames);
 
         IReadOnlyList<McpServerDefinition> persisted = await store.LoadAsync();
         Assert.AreEqual(1, persisted.Count);
@@ -480,7 +481,6 @@ public sealed class McpServerRegistryTests
 
 
 
-
         public override Task<ClientCompletionDetails> Completion
         {
             get => Task.FromResult(new ClientCompletionDetails());
@@ -523,12 +523,10 @@ public sealed class McpServerRegistryTests
 
 
 
-
         public override ValueTask DisposeAsync()
         {
             return ValueTask.CompletedTask;
         }
-
 
 
 
@@ -549,7 +547,6 @@ public sealed class McpServerRegistryTests
 
 
 
-
         public override ValueTask<IDictionary<string, InputResponse>> ResolveInputRequestsAsync(IDictionary<string, InputRequest> inputRequests, CancellationToken cancellationToken)
         {
             return ValueTask.FromResult<IDictionary<string, InputResponse>>(new Dictionary<string, InputResponse>());
@@ -562,12 +559,10 @@ public sealed class McpServerRegistryTests
 
 
 
-
         public override Task SendMessageAsync(JsonRpcMessage message, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
-
 
 
 

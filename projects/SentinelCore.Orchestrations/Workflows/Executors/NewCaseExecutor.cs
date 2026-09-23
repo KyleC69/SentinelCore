@@ -2,13 +2,22 @@
 // Project:   SentinelCore.Orchestrations
 // File:         NewCaseExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
+
+
 
 using SentinelCore.CaseFlowEngine.Cfe;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.CaseFlow;
 
+
+
+
 namespace SentinelCore.Orchestrations.Workflows.Executors;
+
+
+
+
 
 /// <summary>
 ///     NON-Agent executor that starts a new case and publishes the CaseId to the context
@@ -22,10 +31,12 @@ public sealed partial class NewCaseExecutor : Executor
     private readonly ICaseFlowEngine _caseEng;
     private readonly ISystemReporter _reporter;
 
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
+
+
+
+
+
+
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="NewCaseExecutor" /> class.
@@ -38,6 +49,37 @@ public sealed partial class NewCaseExecutor : Executor
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: new case creation did not produce a result." };
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Handles the creation of a new case from a signal hypothesis.
@@ -99,6 +141,13 @@ public sealed partial class NewCaseExecutor : Executor
         }
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Core processing logic: creates a new case and publishes the CaseId to context.
     /// </summary>
@@ -122,13 +171,4 @@ public sealed partial class NewCaseExecutor : Executor
         // would duplicate it.
         return message;
     }
-
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    /// </summary>
-    private SignalHypothesis CreateFallbackResult() => new()
-    {
-        NextStep = NextStep.EscalateToHumanOperator,
-        Reasoning = "Fallback: new case creation did not produce a result."
-    };
 }

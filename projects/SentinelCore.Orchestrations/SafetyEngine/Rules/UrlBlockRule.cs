@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         UrlBlockRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -64,9 +64,7 @@ public sealed class UrlBlockRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -107,14 +105,13 @@ public sealed class UrlBlockRule : ISafetyRule
 
         SafetyRuleResult result = _action switch
         {
-            SafetyAction.Block => SafetyRuleResult.Block(Name, _severity, $"Prompt contains {matches.Count} URL(s)."),
-            SafetyAction.Warn => SafetyRuleResult.Warn(Name, _severity, $"Prompt contains {matches.Count} URL(s)."),
-            _ => SafetyRuleResult.Allow(Name, "URLs detected but action is Allow.")
+                SafetyAction.Block => SafetyRuleResult.Block(Name, _severity, $"Prompt contains {matches.Count} URL(s)."),
+                SafetyAction.Warn => SafetyRuleResult.Warn(Name, _severity, $"Prompt contains {matches.Count} URL(s)."),
+                _ => SafetyRuleResult.Allow(Name, "URLs detected but action is Allow.")
         };
 
         return Task.FromResult(result);
     }
-
 
 
 

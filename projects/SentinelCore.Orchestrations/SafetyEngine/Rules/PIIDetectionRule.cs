@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PIIDetectionRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -93,9 +93,7 @@ public sealed class PIIDetectionRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -114,16 +112,15 @@ public sealed class PIIDetectionRule : ISafetyRule
                 SafetyAction resultAction = _action;
                 SafetyRuleResult result = resultAction switch
                 {
-                    SafetyAction.Block => SafetyRuleResult.Block(Name, _severity, $"Potential PII detected: {label}."),
-                    SafetyAction.Warn => SafetyRuleResult.Warn(Name, _severity, $"Potential PII detected: {label}."),
-                    _ => SafetyRuleResult.Allow(Name, $"PII pattern matched ({label}) but action is Allow.")
+                        SafetyAction.Block => SafetyRuleResult.Block(Name, _severity, $"Potential PII detected: {label}."),
+                        SafetyAction.Warn => SafetyRuleResult.Warn(Name, _severity, $"Potential PII detected: {label}."),
+                        _ => SafetyRuleResult.Allow(Name, $"PII pattern matched ({label}) but action is Allow.")
                 };
                 return Task.FromResult(result);
             }
 
         return Task.FromResult(SafetyRuleResult.Allow(Name, "No PII patterns detected."));
     }
-
 
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SimpleMcpClientTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -21,8 +21,8 @@ namespace SentinelCore.Orchestrations.Agents.Core.Tools;
 
 public sealed class MicrosoftDocsSearchTool : AITool
 {
-    private static readonly HttpClient HttpClient = new();
     private readonly string _endpoint;
+    private static readonly HttpClient HttpClient = new();
 
 
 
@@ -62,8 +62,8 @@ public sealed class MicrosoftDocsSearchTool : AITool
 
 public sealed class MicrosoftDocsFetchTool : AITool
 {
-    private static readonly HttpClient HttpClient = new();
     private readonly string _endpoint;
+    private static readonly HttpClient HttpClient = new();
 
 
 
@@ -103,8 +103,8 @@ public sealed class MicrosoftDocsFetchTool : AITool
 
 public sealed class MicrosoftCodeSampleSearchTool : AITool
 {
-    private static readonly HttpClient HttpClient = new();
     private readonly string _endpoint;
+    private static readonly HttpClient HttpClient = new();
 
 
 

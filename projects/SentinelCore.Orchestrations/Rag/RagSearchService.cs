@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RagSearchService.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -59,7 +59,6 @@ public sealed class RagSearchService : IRagSearchService
 
 
 
-
     public Task<bool> HasIndexedContentAsync(CancellationToken cancellationToken = default)
     {
         lock (_indexLock)
@@ -67,7 +66,6 @@ public sealed class RagSearchService : IRagSearchService
             return Task.FromResult(_inMemoryIndex.Count > 0);
         }
     }
-
 
 
 
@@ -151,7 +149,6 @@ public sealed class RagSearchService : IRagSearchService
 
 
 
-
     public async Task<IReadOnlyList<RagSearchResult>> SearchAsync(string query, int maxResults = 5, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -181,7 +178,6 @@ public sealed class RagSearchService : IRagSearchService
         _logger.LogDebug("RAG search returned {Count} results", results.Count);
         return results;
     }
-
 
 
 

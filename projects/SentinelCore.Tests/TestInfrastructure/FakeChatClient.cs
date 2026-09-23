@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         FakeChatClient.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -23,18 +23,12 @@ namespace SentinelCore.Tests.TestInfrastructure;
 /// </summary>
 public sealed class FakeChatClient : IChatClient
 {
-    private readonly ChatResponse _response;
-
-
-
-
-
 
 
 
     public FakeChatClient(ChatResponse response)
     {
-        _response = response;
+        GetResponseResult = response;
     }
 
 
@@ -44,10 +38,7 @@ public sealed class FakeChatClient : IChatClient
 
 
 
-    public ChatResponse GetResponseResult
-    {
-        get => _response;
-    }
+    public ChatResponse GetResponseResult { get; }
 
 
 
@@ -69,7 +60,7 @@ public sealed class FakeChatClient : IChatClient
 
     public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options, CancellationToken cancellationToken)
     {
-        return Task.FromResult(_response);
+        return Task.FromResult(GetResponseResult);
     }
 
 
@@ -96,7 +87,7 @@ public sealed class FakeChatClient : IChatClient
         // FakeChatClient is used for non-streaming tests; return the full
         // response as a single update. If a streaming test is needed, a
         // dedicated fake should be created.
-        ChatResponseUpdate update = new(_response.Messages[0].Role, _response.Messages[0].Text);
+        ChatResponseUpdate update = new(GetResponseResult.Messages[0].Role, GetResponseResult.Messages[0].Text);
         yield return update;
         await Task.CompletedTask;
     }

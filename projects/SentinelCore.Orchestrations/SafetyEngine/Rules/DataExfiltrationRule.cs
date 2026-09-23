@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         DataExfiltrationRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -95,9 +95,7 @@ public sealed class DataExfiltrationRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -118,7 +116,6 @@ public sealed class DataExfiltrationRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Allow(Name));
     }
-
 
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         ModelConfigViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -39,12 +39,10 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 {
     private readonly ISentinelAgentCatalog _agentCatalog;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private ObservableCollection<AgentModelCard> _cards = [];
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _isBusy;
 
     private readonly ILogger<ModelConfigViewModel> _logger;

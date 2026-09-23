@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TokenLimitRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -60,9 +60,7 @@ public sealed class TokenLimitRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -89,7 +87,6 @@ public sealed class TokenLimitRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Allow(Name, $"Prompt word count ({wordCount:N0}) is within limit."));
     }
-
 
 
 

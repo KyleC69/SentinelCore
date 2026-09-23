@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         IChatClientFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 

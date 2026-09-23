@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SignalHypothesis.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -24,11 +24,12 @@ namespace SentinelCore.Orchestrations.Workflows;
 /// </summary>
 public sealed class SignalHypothesis
 {
+
     /// <summary>
-    ///     The affected subsystem or category identified by the classifier.
+    ///     Confidence score between 0.0 and 1.0 indicating the classifier's certainty.
     /// </summary>
-    [JsonPropertyName("subSystem")]
-    public string? SubSystem { get; set; }
+    [JsonPropertyName("confidenceScore")]
+    public double ConfidenceScore { get; set; }
 
     /// <summary>
     ///     The classifier's hypothesis about the nature of the signal.
@@ -36,12 +37,6 @@ public sealed class SignalHypothesis
     [JsonPropertyName("hypothesis")]
     [Description("What do you think the signal is trying to indicate? What is the root cause for the signal.")]
     public string? Hypothesis { get; set; }
-
-    /// <summary>
-    ///     Confidence score between 0.0 and 1.0 indicating the classifier's certainty.
-    /// </summary>
-    [JsonPropertyName("confidenceScore")]
-    public double ConfidenceScore { get; set; }
 
     /// <summary>
     ///     The recommended next step based on the signal classification.
@@ -62,4 +57,10 @@ public sealed class SignalHypothesis
     [JsonPropertyName("reasoning")]
     [Description("The reason behind your choice for next step")]
     public string? Reasoning { get; set; }
+
+    /// <summary>
+    ///     The affected subsystem or category identified by the classifier.
+    /// </summary>
+    [JsonPropertyName("subSystem")]
+    public string? SubSystem { get; set; }
 }

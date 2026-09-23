@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowBase.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -158,6 +158,19 @@ public class WorkflowBase
 
 
 
+    private string FormatSubWorkflowErrorEvent(SubworkflowErrorEvent subworkflowError)
+    {
+        // No meaningful error string is currently available; return an empty string to avoid null.
+        return $"SubWorkflow error: {subworkflowError.SubworkflowId}, Error: {subworkflowError.Data}";
+    }
+
+
+
+
+
+
+
+
     private string FormatSuperStepCompletedEvent(SuperStepCompletedEvent evt)
     {
         return $"Superstep completed: {evt.CompletionInfo}, data: {evt.Data}";
@@ -232,37 +245,24 @@ public class WorkflowBase
 
 
 
-    private string FormatSubWorkflowErrorEvent(SubworkflowErrorEvent subworkflowError)
-    {
-        // No meaningful error string is currently available; return an empty string to avoid null.
-        return $"SubWorkflow error: {subworkflowError.SubworkflowId}, Error: {subworkflowError.Data}";
-    }
-
-
-
-
-
-
-
-
     private string? GetEventDetails(WorkflowEvent evt)
     {
         return evt switch
         {
-            WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
-            AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
-            AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
-            SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
-            WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
-            WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
-            WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
-            ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
-            ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
-            ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
-            SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
-            SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
-            RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
-            _ => $"Unknown event type: {evt.GetType().Name}"
+                WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
+                AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
+                AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
+                SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
+                WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
+                WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
+                WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
+                ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
+                ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
+                ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
+                SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
+                SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
+                RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
+                _ => $"Unknown event type: {evt.GetType().Name}"
         };
     }
 

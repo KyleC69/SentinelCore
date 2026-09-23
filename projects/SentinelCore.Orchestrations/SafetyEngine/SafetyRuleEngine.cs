@@ -2,11 +2,13 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyRuleEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
 using Microsoft.Extensions.Logging;
+
+using SentinelCore.Contracts.Abstractions;
 
 
 
@@ -26,7 +28,7 @@ public sealed class SafetyRuleEngine
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly SafetyEngineOptions _options;
-    private readonly IReadOnlyList<ISafetyRule> _rules;
+    private readonly ISystemReporter? _reporter;
 
 
 
@@ -41,15 +43,30 @@ public sealed class SafetyRuleEngine
     /// <param name="rules">The collection of safety rules to evaluate.</param>
     /// <param name="loggerFactory">The logger factory for creating loggers.</param>
     /// <param name="options">Configuration options for the engine.</param>
-    /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="rules" /> or <paramref name="loggerFactory" /> is
-    ///     null.
-    /// </exception>
-    public SafetyRuleEngine(IReadOnlyList<ISafetyRule> rules, ILoggerFactory loggerFactory, SafetyEngineOptions? options = null)
+    public SafetyRuleEngine(IReadOnlyList<ISafetyRule> rules, ILoggerFactory loggerFactory, SafetyEngineOptions? options = null) : this(rules, loggerFactory, reporter: null, options)
     {
-        _rules = rules ?? throw new ArgumentNullException(nameof(rules));
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="SafetyRuleEngine" />.
+    /// </summary>
+    /// <param name="rules">The collection of safety rules to evaluate.</param>
+    /// <param name="loggerFactory">The logger factory for creating loggers.</param>
+    /// <param name="reporter">Optional reporter used for workflow-level warnings.</param>
+    /// <param name="options">Configuration options for the engine.</param>
+    public SafetyRuleEngine(IReadOnlyList<ISafetyRule> rules, ILoggerFactory loggerFactory, ISystemReporter? reporter, SafetyEngineOptions? options = null)
+    {
+        Rules = rules ?? throw new ArgumentNullException(nameof(rules));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _options = options ?? SafetyEngineOptions.Default;
+        _reporter = reporter;
     }
 
 
@@ -67,10 +84,7 @@ public sealed class SafetyRuleEngine
     /// <summary>
     ///     Gets the configured rules.
     /// </summary>
-    public IReadOnlyList<ISafetyRule> Rules
-    {
-        get => _rules;
-    }
+    public IReadOnlyList<ISafetyRule> Rules { get; }
 
 
 
@@ -86,11 +100,12 @@ public sealed class SafetyRuleEngine
     /// <returns>The aggregate evaluation result.</returns>
     public SafetyEvaluationResult Evaluate(SafetyEvaluationContext context)
     {
-        Logger.LogDebug("Starting synchronous safety rule evaluation with {RuleCount} rules", _rules.Count);
+        //don't use ILogger directly
+        // Logger.LogDebug("Starting synchronous safety rule evaluation with {RuleCount} rules", Rules.Count);
+        _reporter?.ReportInfo("Starting Safety rule engine");
+        List<SafetyRuleResult> results = new(Rules.Count);
 
-        List<SafetyRuleResult> results = new(_rules.Count);
-
-        foreach (ISafetyRule rule in _rules)
+        foreach (ISafetyRule rule in Rules)
         {
             try
             {
@@ -134,11 +149,11 @@ public sealed class SafetyRuleEngine
     /// <returns>The aggregate evaluation result.</returns>
     public async Task<SafetyEvaluationResult> EvaluateAsync(SafetyEvaluationContext context, CancellationToken cancellationToken = default)
     {
-        Logger.LogDebug("Starting safety rule evaluation with {RuleCount} rules", _rules.Count);
+        Logger.LogDebug("Starting safety rule evaluation with {RuleCount} rules", Rules.Count);
 
-        List<SafetyRuleResult> results = new(_rules.Count);
+        List<SafetyRuleResult> results = new(Rules.Count);
 
-        foreach (ISafetyRule rule in _rules)
+        foreach (ISafetyRule rule in Rules)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -157,8 +172,14 @@ public sealed class SafetyRuleEngine
                 // Short-circuit on block
                 if (result.Action == SafetyAction.Block && _options.StopOnFirstBlock)
                 {
-                    Logger.LogDebug("Stopping evaluation early due to block from rule: {RuleName}", rule.Name);
-                    break;
+                    //ALL BLOCKED MESSAGES SHOULD BE TAGGED LIKE SO
+                    //   message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyResult"), "blocked");
+                    // TODO: All messages should have a score attached.
+                    //   message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyScore"), "6");
+
+                    //SYSTEMREPORTER IS USED FOR ALL OUTPUT IT IS AN AGGREGATE LOGGER
+                    _reporter?.ReportWarning($"[{rule.Name}]- Stopping evaluation early due to block from rule: {rule.Name}");
+
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

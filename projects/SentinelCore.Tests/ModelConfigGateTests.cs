@@ -2,9 +2,13 @@
 // Project:   SentinelCore.Tests
 // File:         ModelConfigGateTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
+
+using System.Collections;
+
+using Microsoft.Extensions.Options;
 
 using Moq;
 
@@ -99,7 +103,7 @@ public sealed class ModelConfigGateTests
         SentinelCoreSettings settings = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ModelConfigGate(null!, new AgentProfileBuilder(Microsoft.Extensions.Options.Options.Create(settings)), settings));
+        Assert.Throws<ArgumentNullException>(() => new ModelConfigGate(null!, new AgentProfileBuilder(Options.Create(settings)), settings));
     }
 
 
@@ -114,7 +118,7 @@ public sealed class ModelConfigGateTests
     {
         // Arrange
         Mock<ISentinelAgentCatalog> catalog = new();
-        AgentProfileBuilder builder = new(Microsoft.Extensions.Options.Options.Create(new SentinelCoreSettings()));
+        AgentProfileBuilder builder = new(Options.Create(new SentinelCoreSettings()));
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ModelConfigGate(catalog.Object, builder, null!));
@@ -139,7 +143,7 @@ public sealed class ModelConfigGateTests
         Mock<ISentinelAgentCatalog> catalog = new();
         catalog.Setup(c => c.GetAgentNamesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(agentNames);
 
-        AgentProfileBuilder builder = new(Microsoft.Extensions.Options.Options.Create(settings));
+        AgentProfileBuilder builder = new(Options.Create(settings));
 
         return new ModelConfigGate(catalog.Object, builder, settings);
     }
@@ -162,7 +166,7 @@ public sealed class ModelConfigGateTests
 
         // Act & Assert
         Assert.IsFalse(gate.IsConfigurationComplete);
-        CollectionAssert.AreEquivalent(new[] { "Manager", "Worker1" }, (System.Collections.ICollection)gate.UnconfiguredAgents);
+        CollectionAssert.AreEquivalent(new[] { "Manager", "Worker1" }, (ICollection)gate.UnconfiguredAgents);
 
         string message = gate.BuildGateMessage();
         StringAssert.Contains(message, "Manager");

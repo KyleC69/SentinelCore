@@ -2,11 +2,12 @@
 // Project:   SentinelCore.Orchestrations
 // File:         JsonLoggerProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
@@ -145,16 +146,16 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
             LogEnvelope envelope = new()
             {
-                Timestamp = DateTimeOffset.Now,
-                Level = logLevel.ToString(),
-                Category = _category,
-                EventId = eventId.Id,
-                Message = formatter(state, exception!),
-                Exception = exception?.ToString(),
-                Scopes = scopes
+                    Timestamp = DateTimeOffset.Now,
+                    Level = logLevel.ToString(),
+                    Category = _category,
+                    EventId = eventId.Id,
+                    Message = formatter(state, exception!),
+                    Exception = exception?.ToString(),
+                    Scopes = scopes
             };
 
-            string json = JsonSerializer.Serialize(envelope, new JsonSerializerOptions { WriteIndented = _options.Indented, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+            string json = JsonSerializer.Serialize(envelope, new JsonSerializerOptions { WriteIndented = _options.Indented, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
             Write(json);
         }

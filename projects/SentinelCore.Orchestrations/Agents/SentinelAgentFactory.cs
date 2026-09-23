@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  092200
+// Build Num:  092308
 
 
 
@@ -10,11 +10,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
-
 using SentinelCore.Abstractions;
-using SentinelCore.Contracts.Contracts;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Providers;
@@ -268,7 +264,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
                 TopP = context.Model.TopP,
                 TopK = context.Model.TopK,
                 ModelId = context.Model.ModelId,
-                AllowMultipleToolCalls = true,
+                AllowMultipleToolCalls = true
                 // ResponseFormat is NOT set here — it is a per-call concern.
                 // Executors pass it via AgentRunOptions or typed RunAsync<T> at invocation time.
         };
@@ -293,7 +289,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
                 EnableMessageInjection = false,
                 DisableApprovalNotRequiredFunctionBypassing = false,
                 DisableApprovalResponseBinding = false,
-                ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider(),
+                ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider()
         });
     }
 

@@ -2,11 +2,13 @@
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
+using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Windows;
@@ -17,6 +19,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using SentinelCore.Abstractions;
@@ -94,17 +97,11 @@ public partial class App
         // Model configuration is owned by the Model Configuration page — loaded
         // from the persisted document. There is no hardcoded fallback: agents
         // without configuration are gated at the factory.
-        SentinelCoreSettings sentinelSettings = new()
-        {
-            SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
-            TraceEnabled = true,
-            TraceLogLevel = LogLevel.Trace,
-            OrchestrationType = OrchestrationType.TheCore
-        };
+        SentinelCoreSettings sentinelSettings = new() { SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty, TraceEnabled = true, TraceLogLevel = LogLevel.Trace, OrchestrationType = OrchestrationType.TheCore };
 
         // Seed per-agent models from the persisted configuration document so the
         // first orchestration after startup uses the user's saved configuration.
-        FileModelConfigStore seedStore = new(Microsoft.Extensions.Logging.Abstractions.NullLogger<FileModelConfigStore>.Instance);
+        FileModelConfigStore seedStore = new(NullLogger<FileModelConfigStore>.Instance);
         ModelConfigDocument? document = seedStore.Load();
 
         if (document is not null)
@@ -192,7 +189,7 @@ public partial class App
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error stopping host: {ex}");
+                Debug.WriteLine($"Error stopping host: {ex}");
             }
 
             _host.Dispose();
@@ -321,7 +318,7 @@ public partial class App
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[FATAL] Startup failed: {ex}");
+            Debug.WriteLine($"[FATAL] Startup failed: {ex}");
 
             // Ensure the shutdown token is cancelled so in-flight work stops.
             if (!_shutdownCts.IsCancellationRequested)
@@ -376,7 +373,7 @@ public partial class App
     private async Task StartApplicationAsync(StartupEventArgs e)
     {
         // Startup breadcrumb — visible in the VS Output window.
-        System.Diagnostics.Debug.WriteLine("Starting host…");
+        Debug.WriteLine("Starting host…");
 
         // Fail fast with a clear message when required configuration is missing;
         // otherwise EF Core surfaces a cryptic activation error much later.
@@ -388,7 +385,7 @@ public partial class App
             throw new InvalidOperationException("Required environment variables are missing. Set SENTINEL_CORE (case flow database connection string) " + "and REMOTEKB (remote knowledge base connection string) before starting SentinelCore.");
         }
 
-        string? appLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly()?.Location);
+        string? appLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 
         _host = Host.CreateDefaultBuilder(e.Args)
                 .ConfigureAppConfiguration(c => { c.SetBasePath(appLocation ?? string.Empty); })

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CaseGenerator.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -63,6 +63,12 @@ public class CaseGenerator : ICaseGenerator, IDisposable
     private readonly ISystemReporter _reporter;
 
 
+
+
+
+
+
+
     public CaseGenerator(ILoggerFactory factory, ICaseFlowEngine engine, ISystemReporter reporter, ISentinelAgentFactory agentFactory, IAgentProfileBuilder profileBuilder, IOptions<SentinelCoreSettings> settings)
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
@@ -92,13 +98,10 @@ public class CaseGenerator : ICaseGenerator, IDisposable
 
         //Start mcp server tooling
         _client = await McpClient.CreateAsync(new StdioClientTransport(new()
-        {
-            //Should be running from the output directory
-            Name = "SentinelCoreMCP",
-            Command = "SentinelCoreMCP.exe",
-            WorkingDirectory = AppContext.BaseDirectory,
-            Arguments = ["--stdio"]
-        }, _factory))
+                {
+                        //Should be running from the output directory
+                        Name = "SentinelCoreMCP", Command = "SentinelCoreMCP.exe", WorkingDirectory = AppContext.BaseDirectory, Arguments = ["--stdio"]
+                }, _factory))
                 .ConfigureAwait(false);
 
 
@@ -108,11 +111,7 @@ public class CaseGenerator : ICaseGenerator, IDisposable
         // CaseGenerator is a special case — it constructs its own agent directly
         // because it needs per-call MCP tools and case-specific instructions.
         // Instructions are set at invocation time via ChatMessages, not baked into the profile.
-        AgentProfile profile = new()
-        {
-            AgentName = "CaseGenerator",
-            AgentId = "CaseGenerator"
-        };
+        AgentProfile profile = new() { AgentName = "CaseGenerator", AgentId = "CaseGenerator" };
 
         // The model is owned by the Model Configuration page.
         // The factory gates the build when unconfigured.

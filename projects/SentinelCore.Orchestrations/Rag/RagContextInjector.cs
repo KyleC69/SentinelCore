@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RagContextInjector.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -28,6 +28,8 @@ namespace SentinelCore.Orchestrations.Rag;
 public sealed class RagContextInjector : MessageAIContextProvider
 {
     private readonly ILogger<RagContextInjector> _logger;
+    private readonly RagSearchOptions _options;
+    private readonly IRagSearchService _searchService;
 
 
 
@@ -60,7 +62,6 @@ public sealed class RagContextInjector : MessageAIContextProvider
 
 
 
-
     protected override async ValueTask<AIContext> ProvideAIContextAsync(AIContextProvider.InvokingContext context, CancellationToken cancellationToken = default)
     {
         // TODO: Implement RAG context injection when MAF context API is stable
@@ -82,7 +83,6 @@ public sealed class RagContextInjector : MessageAIContextProvider
 
 
 
-
     protected override async ValueTask<IEnumerable<ChatMessage>> ProvideMessagesAsync(InvokingContext context, CancellationToken cancellationToken = default)
     {
         // TODO: Implement RAG message injection when MAF context API is stable
@@ -90,6 +90,4 @@ public sealed class RagContextInjector : MessageAIContextProvider
 
         return await base.ProvideMessagesAsync(context, cancellationToken).ConfigureAwait(false);
     }
-    private readonly IRagSearchService _searchService;
-    private readonly RagSearchOptions _options;
 }

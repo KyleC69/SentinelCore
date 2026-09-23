@@ -2,13 +2,14 @@
 // Project:   SentinelCore.UI
 // File:         CoreChatPage.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 using SentinelCore.UI.ViewModels;
 
@@ -88,9 +89,9 @@ public partial class CoreChatPage
     ///     Scrolls the feed to the newest message whenever the collection changes.
     /// </summary>
     /// <summary>
-    /// Handles changes to the Messages collection. When items are added,
-    /// schedules a deferred scroll to the newest message so layout and
-    /// the ItemContainerGenerator complete before calling ScrollIntoView.
+    ///     Handles changes to the Messages collection. When items are added,
+    ///     schedules a deferred scroll to the newest message so layout and
+    ///     the ItemContainerGenerator complete before calling ScrollIntoView.
     /// </summary>
     /// <param name="sender">The collection raising the event.</param>
     /// <param name="e">The collection change arguments.</param>
@@ -102,9 +103,7 @@ public partial class CoreChatPage
             // collection-change processing and layout pass complete before we
             // call ScrollIntoView. This avoids ItemContainerGenerator
             // inconsistencies when virtualization/layout are still updating.
-            MessagesListBox.Dispatcher.InvokeAsync(
-                ScrollToBottom,
-                System.Windows.Threading.DispatcherPriority.Background);
+            MessagesListBox.Dispatcher.InvokeAsync(ScrollToBottom, DispatcherPriority.Background);
         }
     }
 

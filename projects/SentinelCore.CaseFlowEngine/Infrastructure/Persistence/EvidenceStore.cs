@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         EvidenceStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -76,12 +76,12 @@ public sealed class EvidenceStore : IEvidenceStore
 
         EvidenceEntity entity = new()
         {
-            EvidenceId = item.EvidenceId,
-            Type = item.Type,
-            Source = item.Source,
-            ContentJson = item.ContentJson,
-            Provenance = item.Provenance,
-            Timestamp = item.Timestamp
+                EvidenceId = item.EvidenceId,
+                Type = item.Type,
+                Source = item.Source,
+                ContentJson = item.ContentJson,
+                Provenance = item.Provenance,
+                Timestamp = item.Timestamp
         };
 
         db.EvidenceEntities!.Add(entity);
@@ -107,23 +107,18 @@ public sealed class EvidenceStore : IEvidenceStore
 
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
-        List<EvidenceEntity> entities = await db.EvidenceEntities!.AsNoTracking()
-            .Join(db.CaseEntities!.Where(c => c.CaseId == caseIdGuid),
-                e => e.EvidenceId,
-                c => c.EvidenceId,
-                (e, c) => e)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        List<EvidenceEntity> entities = await db.EvidenceEntities!.AsNoTracking().Join(db.CaseEntities!.Where(c => c.CaseId == caseIdGuid), e => e.EvidenceId, c => c.EvidenceId, (e, c) => e).ToListAsync(cancellationToken).ConfigureAwait(false);
 
         return entities.Select(e => new Evidence
-        {
-            Id = e.Id,
-            EvidenceId = e.EvidenceId!,
-            Type = e.Type!,
-            Source = e.Source!,
-            ContentJson = e.ContentJson!,
-            Provenance = e.Provenance!,
-            Timestamp = e.Timestamp
-        })
+                {
+                        Id = e.Id,
+                        EvidenceId = e.EvidenceId!,
+                        Type = e.Type!,
+                        Source = e.Source!,
+                        ContentJson = e.ContentJson!,
+                        Provenance = e.Provenance!,
+                        Timestamp = e.Timestamp
+                })
                 .ToList();
     }
 

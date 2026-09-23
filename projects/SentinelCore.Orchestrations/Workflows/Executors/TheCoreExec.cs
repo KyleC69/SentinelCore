@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -28,13 +28,8 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 internal sealed partial class TheCoreExec : Executor
 {
     private readonly AIAgent _agent;
-    private readonly AgentSession _session;
     private readonly ISystemReporter _reporter;
-
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
+    private readonly AgentSession _session;
 
 
 
@@ -56,6 +51,30 @@ internal sealed partial class TheCoreExec : Executor
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private ChatMessage CreateFallbackResult() => new(ChatRole.Assistant, "The Core agent was unable to process the signal. Please try again.");
 
 
 
@@ -157,16 +176,4 @@ internal sealed partial class TheCoreExec : Executor
         // an explicit yield would duplicate the message in the chat.
         return outMsg;
     }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    /// </summary>
-    private ChatMessage CreateFallbackResult() => new(ChatRole.Assistant, "The Core agent was unable to process the signal. Please try again.");
 }

@@ -2,7 +2,9 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
+
+
 
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +13,14 @@ using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.SafetyEngine;
 using SentinelCore.Orchestrations.SafetyEngine.Rules;
 
+
+
+
 namespace SentinelCore.Orchestrations.Workflows.Executors;
+
+
+
+
 
 /// <summary>
 ///     An executor that evaluates incoming messages against configured safety rules
@@ -22,18 +31,16 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 [YieldsOutput(typeof(ChatMessage))]
 public sealed partial class SafetyExecutor : Executor
 {
-    // TODO: Remove pragma when safety agent creation is implemented
-#pragma warning disable S1144 // Unused private field - reserved for future safety agent creation
     private readonly ISentinelAgentFactory _agentFactory;
-#pragma warning restore S1144
-    private readonly ILogger<SafetyExecutor> _logger;
     private readonly ISystemReporter _reporter;
     private readonly SafetyRuleEngine _ruleEngine;
 
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
+
+
+
+
+
+
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SafetyExecutor" />.
@@ -41,18 +48,103 @@ public sealed partial class SafetyExecutor : Executor
     /// <param name="reporter">The system reporter for logging safety events.</param>
     /// <param name="agentFactory">The agent factory for creating safety agents.</param>
     /// <param name="loggerFactory">The logger factory for creating safety engine loggers.</param>
-    /// <param name="logger">The logger for this executor.</param>
-    public SafetyExecutor(ISystemReporter reporter, ISentinelAgentFactory agentFactory, ILoggerFactory loggerFactory, ILogger<SafetyExecutor> logger) : base("SafetyExecutor")
+    public SafetyExecutor(ISystemReporter reporter, ISentinelAgentFactory agentFactory, ILoggerFactory loggerFactory) : base("SafetyExecutor")
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         Name = Id;
 
         // Initialize the rule engine with default safety rules
         IReadOnlyList<ISafetyRule> rules = CreateDefaultRules();
-        _ruleEngine = new SafetyRuleEngine(rules, loggerFactory);
+        _ruleEngine = new SafetyRuleEngine(rules, loggerFactory, reporter: _reporter);
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates the default set of safety rules for evaluation.
+    /// </summary>
+    /// <returns>A read-only list of safety rules.</returns>
+    [Obsolete("")]
+    private static IReadOnlyList<ISafetyRule> CreateDefaultRules()
+    {
+        return new List<ISafetyRule>
+        {
+                new BlocklistRule("DefaultBlocklist", SafetyTriggerTerms.GetAllIndicators()),
+
+                // Code Injection Detection
+                new CodeInjectionRule(),
+
+                // Data Exfiltration Detection
+                new DataExfiltrationRule(),
+
+                // Encoding Evasion Detection
+                new EncodingEvasionRule(),
+
+                // Harmful Content Detection
+                new HarmfulContentRule(),
+
+                // Max Length Rule
+                new MaxLengthRule(),
+
+                // PII Detection
+                new PIIDetectionRule(),
+
+                // Prompt Injection Detection
+                new PromptInjectionRule(),
+
+                // Repetition Attack Detection
+                new RepetitionAttackRule(),
+
+                // Role Escalation Detection
+                new RoleEscalationRule(),
+
+                // System Prompt Extraction Detection
+                new SystemPromptExtractionRule(),
+
+                // Token Limit Rule
+                new TokenLimitRule(),
+
+                // URL Block Rule
+                new UrlBlockRule()
+        };
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private ChatMessage CreateFallbackResult() => new(ChatRole.Assistant, $"[{Name}]Safety evaluation could not be completed. The message has been allowed through as a precaution.");
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Handles the safety evaluation of an incoming message.
@@ -114,13 +206,19 @@ public sealed partial class SafetyExecutor : Executor
         }
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Core processing logic: evaluates the message against safety rules.
     /// </summary>
     private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
     {
-        _reporter.ReportInfo("Starting Safety filter");
-        _logger.LogDebug("SafetyExecutor processing message");
+        _reporter.ReportInfo($"[{Name}] Starting safety evaluation.");
 
         // Create evaluation context from the message
         IReadOnlyList<ChatMessage> messages = new List<ChatMessage> { message };
@@ -128,74 +226,42 @@ public sealed partial class SafetyExecutor : Executor
 
         // Evaluate the message against safety rules
         SafetyEvaluationResult result = await _ruleEngine.EvaluateAsync(evalContext, cancellationToken).ConfigureAwait(false);
+        ChatMessage taggedMessage = ApplySafetyTags(message, result);
 
         if (!result.IsAllowed)
         {
-            _logger.LogWarning("Message blocked by safety policy. Severity: {Severity}, Summary: {Summary}", result.HighestSeverity, result.Summary);
             _reporter.ReportWarning($"Safety block: {result.Summary}");
 
             // Return a blocked response message
             ChatMessage blockedMessage = new(ChatRole.Assistant, $"Request blocked by safety policy: {result.Summary}");
-            return blockedMessage;
+            return SafetyTagger.Attach(blockedMessage, result.TotalScore, "blocked");
         }
 
-        _logger.LogDebug("Message passed safety evaluation. Rule results: {ResultCount}", result.RuleResults.Count);
-        _reporter.ReportInfo("Message passed safety filter");
+        if (result.TotalScore > 0)
+        {
+            _reporter.ReportWarning($"Safety warning: {result.Summary}");
+        }
 
-        return message;
+        _reporter.ReportInfo($"[{Name}] Message passed safety evaluation with {result.RuleResults.Count} rule result(s).");
+
+        return taggedMessage;
     }
 
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    /// </summary>
-    private ChatMessage CreateFallbackResult() => new(ChatRole.Assistant, "Safety evaluation could not be completed. The message has been allowed through as a precaution.");
 
-    /// <summary>
-    ///     Creates the default set of safety rules for evaluation.
-    /// </summary>
-    /// <returns>A read-only list of safety rules.</returns>
-    private static IReadOnlyList<ISafetyRule> CreateDefaultRules()
+
+
+
+
+
+
+    private static ChatMessage ApplySafetyTags(ChatMessage message, SafetyEvaluationResult result)
     {
-        return new List<ISafetyRule>
+        if (result.TotalScore <= 0 && result.IsAllowed)
         {
-                // Blocklist Rule - blocks specific terms
-                new BlocklistRule("DefaultBlocklist", new[] { "malicious", "harmful", "exploit" }, SafetySeverity.High, "Blocks prompts containing blocklisted terms"),
+            return message;
+        }
 
-                // Code Injection Detection
-                new CodeInjectionRule(),
-
-                // Data Exfiltration Detection
-                new DataExfiltrationRule(),
-
-                // Encoding Evasion Detection
-                new EncodingEvasionRule(),
-
-                // Harmful Content Detection
-                new HarmfulContentRule(),
-
-                // Max Length Rule
-                new MaxLengthRule(),
-
-                // PII Detection
-                new PIIDetectionRule(),
-
-                // Prompt Injection Detection
-                new PromptInjectionRule(),
-
-                // Repetition Attack Detection
-                new RepetitionAttackRule(),
-
-                // Role Escalation Detection
-                new RoleEscalationRule(),
-
-                // System Prompt Extraction Detection
-                new SystemPromptExtractionRule(),
-
-                // Token Limit Rule
-                new TokenLimitRule(),
-
-                // URL Block Rule
-                new UrlBlockRule()
-        };
+        string safetyResult = result.IsAllowed ? "warn" : "blocked";
+        return SafetyTagger.Attach(message, result.TotalScore, safetyResult);
     }
 }

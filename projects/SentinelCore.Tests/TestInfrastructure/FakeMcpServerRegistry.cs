@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         FakeMcpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -35,10 +35,8 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-
     public Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<AITool>>([]);
-
 
 
 
@@ -57,10 +55,8 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-
     public Task RegisterAsync(McpServerDefinition definition, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
-
 
 
 
@@ -79,7 +75,6 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-
     public Task StartAsync(string serverId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
@@ -90,10 +85,8 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-
     public Task StopAsync(string serverId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
-
 
 
 

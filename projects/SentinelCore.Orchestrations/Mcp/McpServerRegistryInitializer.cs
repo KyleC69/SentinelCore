@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpServerRegistryInitializer.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -57,7 +57,6 @@ public sealed class McpServerRegistryInitializer : IHostedService
 
 
 
-
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (_registry is McpServerRegistry serverRegistry)
@@ -70,7 +69,6 @@ public sealed class McpServerRegistryInitializer : IHostedService
             _logger.LogWarning("MCP registry initializer expected {ExpectedType} but received {ActualType}.", typeof(McpServerRegistry).Name, _registry.GetType().Name);
         }
     }
-
 
 
 

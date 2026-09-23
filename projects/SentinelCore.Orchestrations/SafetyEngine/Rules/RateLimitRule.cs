@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RateLimitRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -91,9 +91,7 @@ public sealed class RateLimitRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -122,7 +120,6 @@ public sealed class RateLimitRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Block(Name, _severity, reason));
     }
-
 
 
 

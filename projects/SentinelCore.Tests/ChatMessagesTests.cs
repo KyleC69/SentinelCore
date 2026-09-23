@@ -2,50 +2,29 @@
 // Project:   SentinelCore.Tests
 // File:         ChatMessagesTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
+
+
 
 using SentinelCore.Orchestrations.Agents.Models;
 
+
+
+
 namespace SentinelCore.Tests;
+
+
+
+
 
 [TestClass]
 public class ChatMessagesTests
 {
-    [TestMethod]
-    public void ChatMessages_ShouldInitializeEmpty()
-    {
-        var messages = new ChatMessages();
-        Assert.AreEqual(0, messages.Count);
-    }
-
-    [TestMethod]
-    public void ChatMessages_ShouldAddMessages()
-    {
-        var messages = new ChatMessages();
-        var message = new ChatMessage(ChatRole.User, "Hello");
-
-        messages.Add(message);
-
-        Assert.AreEqual(1, messages.Count);
-        Assert.AreEqual("Hello", messages[0].Text);
-    }
-
-    [TestMethod]
-    public void ChatMessages_ShouldAddUserMessage()
-    {
-        var messages = new ChatMessages();
-
-        messages.AddUserMessage("Hello");
-
-        Assert.AreEqual(1, messages.Count);
-        Assert.AreEqual(ChatRole.User, messages[0].Role);
-        Assert.AreEqual("Hello", messages[0].Text);
-    }
 
     [TestMethod]
     public void ChatMessages_ShouldAddAssistantMessage()
     {
-        var messages = new ChatMessages();
+        ChatMessages messages = new();
 
         messages.AddAssistantMessage("Hi there");
 
@@ -54,10 +33,36 @@ public class ChatMessagesTests
         Assert.AreEqual("Hi there", messages[0].Text);
     }
 
+
+
+
+
+
+
+
+    [TestMethod]
+    public void ChatMessages_ShouldAddMessages()
+    {
+        ChatMessages messages = new();
+        ChatMessage message = new(ChatRole.User, "Hello");
+
+        messages.Add(message);
+
+        Assert.AreEqual(1, messages.Count);
+        Assert.AreEqual("Hello", messages[0].Text);
+    }
+
+
+
+
+
+
+
+
     [TestMethod]
     public void ChatMessages_ShouldAddSystemMessage()
     {
-        var messages = new ChatMessages();
+        ChatMessages messages = new();
 
         messages.AddSystemMessage("You are a helpful assistant");
 
@@ -66,10 +71,36 @@ public class ChatMessagesTests
         Assert.AreEqual("You are a helpful assistant", messages[0].Text);
     }
 
+
+
+
+
+
+
+
+    [TestMethod]
+    public void ChatMessages_ShouldAddUserMessage()
+    {
+        ChatMessages messages = new();
+
+        messages.AddUserMessage("Hello");
+
+        Assert.AreEqual(1, messages.Count);
+        Assert.AreEqual(ChatRole.User, messages[0].Role);
+        Assert.AreEqual("Hello", messages[0].Text);
+    }
+
+
+
+
+
+
+
+
     [TestMethod]
     public void ChatMessages_ShouldClear()
     {
-        var messages = new ChatMessages();
+        ChatMessages messages = new();
         messages.AddUserMessage("Hello");
 
         messages.Clear();
@@ -77,10 +108,31 @@ public class ChatMessagesTests
         Assert.AreEqual(0, messages.Count);
     }
 
+
+
+
+
+
+
+
+    [TestMethod]
+    public void ChatMessages_ShouldInitializeEmpty()
+    {
+        ChatMessages messages = new();
+        Assert.AreEqual(0, messages.Count);
+    }
+
+
+
+
+
+
+
+
     [TestMethod]
     public void ChatMessages_ShouldRemoveAt()
     {
-        var messages = new ChatMessages();
+        ChatMessages messages = new();
         messages.AddUserMessage("1");
         messages.AddUserMessage("2");
 

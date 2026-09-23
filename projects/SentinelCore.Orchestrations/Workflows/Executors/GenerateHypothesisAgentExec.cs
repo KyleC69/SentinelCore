@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         GenerateHypothesisAgentExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -27,6 +27,35 @@ public sealed partial class GenerateHypothesisAgentExec : Executor
     private readonly AIAgent _agent;
     private readonly ISystemReporter _reporter;
 
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="GenerateHypothesisAgentExec" /> class.
+    /// </summary>
+    /// <param name="agent">The AI agent used to generate the hypothesis.</param>
+    /// <param name="reporter">
+    ///     An <see cref="ISystemReporter" /> used to log informational messages and errors during
+    ///     execution.
+    /// </param>
+    public GenerateHypothesisAgentExec(AIAgent agent, ISystemReporter reporter) : base("GenerateHypothesis")
+    {
+        _agent = agent ?? throw new ArgumentNullException(nameof(agent));
+        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
+        Name = Id;
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
     /// </summary>
@@ -40,16 +69,9 @@ public sealed partial class GenerateHypothesisAgentExec : Executor
 
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="GenerateHypothesisAgentExec" /> class.
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
     /// </summary>
-    /// <param name="agent">The AI agent used to generate the hypothesis.</param>
-    /// <param name="reporter">An <see cref="ISystemReporter" /> used to log informational messages and errors during execution.</param>
-    public GenerateHypothesisAgentExec(AIAgent agent, ISystemReporter reporter) : base("GenerateHypothesis")
-    {
-        _agent = agent ?? throw new ArgumentNullException(nameof(agent));
-        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
-        Name = Id;
-    }
+    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: hypothesis generation did not produce a result." };
 
 
 
@@ -135,16 +157,4 @@ public sealed partial class GenerateHypothesisAgentExec : Executor
         // TODO: Shape prompt and extract structured hypothesis from response
         return CreateFallbackResult();
     }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    /// </summary>
-    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: hypothesis generation did not produce a result." };
 }

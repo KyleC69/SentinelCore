@@ -21,7 +21,7 @@ last_updated: 2026-07-19
 | DOC-008 | Memory & Evidence layer | Active | 2026-07-13 | v0.02 |
 | DOC-010 | Canonical terminology for SentinelCore | Active | 2026-07-13 | v0.02 |
 | DOC-011 | This file — index of all documentation in /docs | Active | 2026-07-19 | v0.03 |
-| DOC-012 | Safety Rails Engine | Draft | 2026-07-13 | v0.02 |
+| DOC-012 | Safety Engine Component | Active | 2026-09-23 | v1.0 |
 | DOC-013 | Configuration & Customization Guide for integrators | Active | 2026-07-16 | v1.0 |
 | DOC-014 | Contracts & Abstractions Component | Active | 2026-07-19 | v1.0 |
 | DOC-015 | Domain Agent Surfaces Component | Active | 2026-07-19 | v1.0 |

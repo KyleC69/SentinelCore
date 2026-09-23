@@ -2,7 +2,7 @@
 // Project:   SentinelCoreService
 // File:         AssemblyInfo.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 

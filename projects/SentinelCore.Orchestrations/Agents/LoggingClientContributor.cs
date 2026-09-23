@@ -2,13 +2,10 @@
 // Project:   SentinelCore.Orchestrations
 // File:         LoggingClientContributor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092200
+// Build Num:  092308
 
 
 
-#nullable enable
-
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Orchestrations.Agents.AgentPresets;
@@ -39,6 +36,9 @@ public sealed class LoggingClientContributor : IAgentConstructionContributor
 
 
 
+
+
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="LoggingClientContributor" /> class.
     /// </summary>
@@ -53,10 +53,6 @@ public sealed class LoggingClientContributor : IAgentConstructionContributor
 
 
 
-    /// <inheritdoc />
-    public int Order => 20;
-
-
 
 
 
@@ -67,11 +63,22 @@ public sealed class LoggingClientContributor : IAgentConstructionContributor
 
         if (context.Preset.UseLogging)
         {
-            context.WrappedClient = new LoggingChatClient(
-                context.WrappedClient,
-                _loggerFactory.CreateLogger("InnerClientLogger"));
+            context.WrappedClient = new LoggingChatClient(context.WrappedClient, _loggerFactory.CreateLogger("InnerClientLogger"));
         }
 
         return Task.CompletedTask;
+    }
+
+
+
+
+
+
+
+
+    /// <inheritdoc />
+    public int Order
+    {
+        get => 20;
     }
 }

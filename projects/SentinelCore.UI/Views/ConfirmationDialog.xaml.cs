@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         ConfirmationDialog.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 

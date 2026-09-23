@@ -2,13 +2,10 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PatternMemoryContributor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092200
+// Build Num:  092308
 
 
 
-#nullable enable
-
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Orchestrations.Agents.AgentPresets;
@@ -30,8 +27,11 @@ namespace SentinelCore.Orchestrations.Agents;
 /// </summary>
 public sealed class PatternMemoryContributor : IAgentConstructionContributor
 {
-    private readonly IPatternMatcher _patternMatcher;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IPatternMatcher _patternMatcher;
+
+
+
 
 
 
@@ -53,10 +53,6 @@ public sealed class PatternMemoryContributor : IAgentConstructionContributor
 
 
 
-    /// <inheritdoc />
-    public int Order => 30;
-
-
 
 
 
@@ -67,10 +63,22 @@ public sealed class PatternMemoryContributor : IAgentConstructionContributor
 
         if (context.Preset.UsePatternMemory)
         {
-            context.ContextProviders.Add(
-                new PatternMemoryInjector(_patternMatcher, _loggerFactory.CreateLogger<PatternMemoryInjector>()));
+            context.ContextProviders.Add(new PatternMemoryInjector(_patternMatcher, _loggerFactory.CreateLogger<PatternMemoryInjector>()));
         }
 
         return Task.CompletedTask;
+    }
+
+
+
+
+
+
+
+
+    /// <inheritdoc />
+    public int Order
+    {
+        get => 30;
     }
 }

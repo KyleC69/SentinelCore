@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -80,7 +80,9 @@ internal sealed class ExecutorFactory
             AggregationExecutor = Create<AggregationExecutor>(),
             MoreInformationExecutor = Create<MoreInformationExecutor>(),
             CriticalAlert = Create<CriticalAlert>(),
-            TerminateWorkflow = Create<TerminateWorkflow>()
+            TerminateWorkflow = Create<TerminateWorkflow>(),
+            SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
+
         };
     }
 }
@@ -102,7 +104,8 @@ internal sealed class ExecutorCollection
     public required MoreInformationExecutor MoreInformationExecutor { get; init; }
     public required NewCaseExecutor NewCaseExecutor { get; init; }
     public required PatternCheckExecutor PatternCheckExecutor { get; init; }
-    public required SafetyExecutor SafetyExecutor { get; init; }
     public required PersistEvidence PersistEvidenceExecutor { get; init; }
+    public required SafetyExecutor SafetyExecutor { get; init; }
     public required TerminateWorkflow TerminateWorkflow { get; init; }
+    public SafetyReviewExecutor SafetyReviewExecutor { get; init; }
 }

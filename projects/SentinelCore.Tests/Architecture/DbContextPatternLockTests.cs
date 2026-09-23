@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         DbContextPatternLockTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 

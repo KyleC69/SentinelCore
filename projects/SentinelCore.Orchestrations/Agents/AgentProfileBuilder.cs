@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfileBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -35,14 +35,6 @@ public interface IAgentProfileBuilder
     ///     If a preset exists for the agent name, it will be used to populate defaults.
     /// </summary>
     /// <param name="agentName">The name of the agent to be created.</param>
-
-
-
-
-
-
-
-
     /// <summary>
     ///     Builds an <see cref="AgentProfile" /> from an agent preset definition.
     ///     This is the preferred method for creating agent profiles.
@@ -50,6 +42,13 @@ public interface IAgentProfileBuilder
     /// <param name="preset">The agent preset definition containing default configuration.</param>
     /// <returns>An <see cref="AgentProfile" /> configured from the preset.</returns>
     AgentProfile BuildFromPreset(AgentPresetDefinition preset);
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Builds an <see cref="AgentProfile" /> from an agent preset definition,
@@ -141,41 +140,6 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
     /// <summary>
-    /// Builds an agent profile from a preset when one exists; otherwise creates a default profile and applies any
-    /// overrides.
-    /// </summary>
-    /// <param name="agentName">The agent name used to resolve a preset or create the default profile.</param>
-    /// <param name="personaOverride">Optional persona to apply to the generated profile.</param>
-    /// <returns>The generated agent profile.</returns>
-    public AgentProfile BuildAgentSpec(string agentName, AgentPersona? personaOverride = null)
-    {
-        // Try to get a preset for this agent name
-        AgentPresetDefinition? preset = _presetProvider.GetPreset(agentName);
-        if (preset != null)
-        {
-            return BuildFromPreset(preset, personaOverride);
-        }
-
-        // No preset found - build with minimal defaults
-        AgentProfile profile = BuildDefaultAgentSpec(agentName);
-
-        if (personaOverride != null)
-        {
-            profile.Persona = personaOverride;
-        }
-
-        return profile;
-    }
-
-
-
-
-
-
-
-
-
-    /// <summary>
     ///     Builds an <see cref="AgentProfile" /> from an <see cref="AgentPresetDefinition" />,
     ///     optionally overriding the default persona.
     /// </summary>
@@ -208,6 +172,24 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
 
+    public AgentProfile BuildFromPreset(AgentPresetDefinition preset)
+    {
+        Throw.IfNull(preset);
+
+        AgentProfile profile = new() { AgentName = preset.AgentName, AgentId = preset.AgentId };
+
+        // Model configuration comes from settings
+        profile.Model = TryGetModel(preset.AgentName);
+
+        return profile;
+    }
+
+
+
+
+
+
+
 
     public ModelProfile? TryGetModel(string agentName)
     {
@@ -221,6 +203,40 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
         // Fall back to default model
         return _options.DefaultModel;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Builds an agent profile from a preset when one exists; otherwise creates a default profile and applies any
+    ///     overrides.
+    /// </summary>
+    /// <param name="agentName">The agent name used to resolve a preset or create the default profile.</param>
+    /// <param name="personaOverride">Optional persona to apply to the generated profile.</param>
+    /// <returns>The generated agent profile.</returns>
+    public AgentProfile BuildAgentSpec(string agentName, AgentPersona? personaOverride = null)
+    {
+        // Try to get a preset for this agent name
+        AgentPresetDefinition? preset = _presetProvider.GetPreset(agentName);
+        if (preset != null)
+        {
+            return BuildFromPreset(preset, personaOverride);
+        }
+
+        // No preset found - build with minimal defaults
+        AgentProfile profile = BuildDefaultAgentSpec(agentName);
+
+        if (personaOverride != null)
+        {
+            profile.Persona = personaOverride;
+        }
+
+        return profile;
     }
 
 
@@ -253,25 +269,6 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
         // No hardcoded fallback — the factory gate rejects unconfigured agents.
         profile.Model = _options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent) ? perAgent : null;
-
-        return profile;
-    }
-
-
-
-
-
-
-
-
-    public AgentProfile BuildFromPreset(AgentPresetDefinition preset)
-    {
-        Throw.IfNull(preset);
-
-        AgentProfile profile = new() { AgentName = preset.AgentName, AgentId = preset.AgentId };
-
-        // Model configuration comes from settings
-        profile.Model = TryGetModel(preset.AgentName);
 
         return profile;
     }

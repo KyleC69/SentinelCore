@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  091419
+// Build Num:  092308
 
 
 
@@ -11,7 +11,6 @@ using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Events;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
-using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Exceptions;
 using SentinelCore.Orchestrations.Workflows.Executors;
@@ -43,22 +42,22 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     private AIAgent? _classifierAgent;
     private readonly ISentinelCoreEvents _events;
     private readonly ExecutorFactory _executorFactory;
-    private volatile bool _isInitialized;
     private readonly object _initLock = new();
+    private volatile bool _isInitialized;
 
     // Pre-created sub-workflow agents (initialized once via InitializeAsync)
     private AIAgent? _magManagerAgent;
     private AIAgent? _networkWorkerAgent;
     private AIAgent? _safetyAgent;
 
-    // Unified workflow execution engine — all orchestration classes delegate
-    // streaming execution here rather than running private StreamingRun loops.
-    private readonly ISentinelWorkflowExecution _workflowExecution;
-
     // Pre-created agents and sessions (initialized once via InitializeAsync)
     private AIAgent? _sentinelCoreAgent;
     private AgentSession? _sentinelCoreSession;
     private AIAgent? _windowsOsWorkerAgent;
+
+    // Unified workflow execution engine — all orchestration classes delegate
+    // streaming execution here rather than running private StreamingRun loops.
+    private readonly ISentinelWorkflowExecution _workflowExecution;
 
 
 
@@ -165,13 +164,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // --- Pre-Agent ---------
         builder.AddEdge(executors.PatternCheckExecutor, executors.SafetyExecutor);
         builder.AddEdge(executors.SafetyExecutor, classifierExec);
-        builder.AddSwitch(classifierExec,
-                switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), executors.NewCaseExecutor)
-                        .AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec)
-                        .AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert)
-                        .AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor)
-                        .AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.EscalatedExecutor)
-                        .WithDefault(executors.HumanOperatorExecutor));
+        builder.AddSwitch(classifierExec, switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), executors.NewCaseExecutor).AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec).AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert).AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor).AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.EscalatedExecutor).WithDefault(executors.HumanOperatorExecutor));
 
         // ------- RedAlert Branch -------------------------
         // Alert UI to critical error and mark case urgent
@@ -219,25 +212,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
     /// <summary>
-    ///     Creates Graphviz representations of the workflow and saves them to files.
-    /// </summary>
-    /// <param name="workflow">The workflow to visualize.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken" /> to observe while waiting for the task to complete.</param>
-    private async Task VisualizeWorkflowAsync(Workflow workflow, CancellationToken cancellationToken)
-    {
-        string flow = workflow.ToDotString();
-        await File.WriteAllTextAsync("workflow.dot", flow, cancellationToken).ConfigureAwait(false);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///
     /// </summary>
     public string Description { get; } = """
                                          TheCore is a multi-agent and non-agent workflow that starts with a set of safeties, classifies an incoming signal and routes it
@@ -522,9 +496,22 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
             throw new InvalidOperationException("Workflow could not be built.");
         }
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates Graphviz representations of the workflow and saves them to files.
+    /// </summary>
+    /// <param name="workflow">The workflow to visualize.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken" /> to observe while waiting for the task to complete.</param>
+    private async Task VisualizeWorkflowAsync(Workflow workflow, CancellationToken cancellationToken)
+    {
+        string flow = workflow.ToDotString();
+        await File.WriteAllTextAsync("workflow.dot", flow, cancellationToken).ConfigureAwait(false);
+    }
 }
-
-
-
-
-

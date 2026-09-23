@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ClassifierAgentExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -31,11 +31,6 @@ public sealed partial class ClassifierAgentExec : Executor
     private readonly AIAgent _agent;
     private readonly ISystemReporter _reporter;
 
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
-
 
 
 
@@ -54,6 +49,30 @@ public sealed partial class ClassifierAgentExec : Executor
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    /// </summary>
+    private SignalHypothesis CreateFallbackResult(string? prompt = null, string? reasoning = null) => new() { NextStep = NextStep.EscalateToHumanOperator, OrigPrompt = prompt ?? string.Empty, Reasoning = reasoning ?? "Fallback: classifier did not produce a result." };
 
 
 
@@ -153,7 +172,11 @@ public sealed partial class ClassifierAgentExec : Executor
 
         AgentResponse<SignalHypothesis> response = await _agent.RunAsync<SignalHypothesis>(msg, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        if (response.Messages.Count ==0)
+        //
+
+
+
+        if (response.Messages.Count == 0)
         {
             await context.YieldOutputAsync(new ChatMessage(ChatRole.User, "Agent did not return a response, retry request in a bit."), cancellationToken).ConfigureAwait(false);
             return CreateFallbackResult(message.Text);
@@ -165,16 +188,4 @@ public sealed partial class ClassifierAgentExec : Executor
 
         return response.Result;
     }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
-    /// </summary>
-    private SignalHypothesis CreateFallbackResult(string? prompt = null, string? reasoning = null) => new() { NextStep = NextStep.EscalateToHumanOperator, OrigPrompt = prompt ?? string.Empty, Reasoning = reasoning ?? "Fallback: classifier did not produce a result." };
 }

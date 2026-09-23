@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -54,21 +54,29 @@ public sealed record AgentProfile
     public IList<AIContextProvider> AIContextProviders { get; set; } = new List<AIContextProvider>();
 
     /// <summary>
-    /// Gets or sets the unique identifier for the agent.
+    ///     Gets or sets the unique identifier for the agent.
     /// </summary>
     /// <value>
-    /// A <see cref="string"/> representing the unique identifier of the agent.
+    ///     A <see cref="string" /> representing the unique identifier of the agent.
     /// </value>
     public string AgentId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the name of the agent.
-    /// BOTH AgentId and AgentName are required for the agent to be valid.
+    ///     Gets or sets the name of the agent.
+    ///     BOTH AgentId and AgentName are required for the agent to be valid.
     /// </summary>
     /// <value>
-    /// A <see cref="string"/> representing the name of the agent.
+    ///     A <see cref="string" /> representing the name of the agent.
     /// </value>
     public string AgentName { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     The model profile for this agent. <c>null</c> means the agent is not
+    ///     configured — <see cref="SentinelAgentFactory.BuildFromProfileAsync" />
+    ///     rejects such agents with a descriptive error pointing at the Model
+    ///     Configuration page.
+    /// </summary>
+    public ModelProfile? Model { get; set; }
 
     /// <summary>
     ///     Gets or sets the model-specific instructions for the agent.
@@ -81,14 +89,6 @@ public sealed record AgentProfile
     ///     </para>
     /// </summary>
     public ChatMessages ModelInstructions { get; set; } = new ChatMessages();
-
-    /// <summary>
-    ///     The model profile for this agent. <c>null</c> means the agent is not
-    ///     configured — <see cref="SentinelAgentFactory.BuildFromProfileAsync" />
-    ///     rejects such agents with a descriptive error pointing at the Model
-    ///     Configuration page.
-    /// </summary>
-    public ModelProfile? Model { get; set; }
 
     /// <summary>
     ///     A persona is a unique feature within this platform. It provides an agent with a strong personality characteristic.

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         SentinelCoreUIServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -62,12 +62,12 @@ public static class SentinelCoreUiServiceExtensions
         // Navigation — ViewLocator holds the ViewModel→Page type map
         Dictionary<string, Type> pageTypeMap = new()
         {
-            [typeof(CoreChatViewModel).FullName!] = typeof(CoreChatPage),
-            [typeof(CaseListViewModel).FullName!] = typeof(CaseListPage),
-            [typeof(CaseDetailViewModel).FullName!] = typeof(CaseDetailPage),
-            [typeof(CreateCaseViewModel).FullName!] = typeof(CreateCasePage),
-            [typeof(McpServersViewModel).FullName!] = typeof(McpServersPage),
-            [typeof(ModelConfigViewModel).FullName!] = typeof(ModelConfigPage)
+                [typeof(CoreChatViewModel).FullName!] = typeof(CoreChatPage),
+                [typeof(CaseListViewModel).FullName!] = typeof(CaseListPage),
+                [typeof(CaseDetailViewModel).FullName!] = typeof(CaseDetailPage),
+                [typeof(CreateCaseViewModel).FullName!] = typeof(CreateCasePage),
+                [typeof(McpServersViewModel).FullName!] = typeof(McpServersPage),
+                [typeof(ModelConfigViewModel).FullName!] = typeof(ModelConfigPage)
         };
 
         services.AddSingleton<IViewLocator>(sp => new ViewLocator(sp, pageTypeMap));

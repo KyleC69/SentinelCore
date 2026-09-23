@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelChatClientFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
+
+using System.ClientModel;
 
 using Azure;
 using Azure.AI.OpenAI;
@@ -58,17 +60,24 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
 
     private static ILoggerFactory? LoggerFactory { get; set; }
 
+
+
+
+
+
+
+
     public IChatClient CreateChatClient(ModelProfile model)
     {
         IChatClient baseClient = model.Provider switch
         {
-            ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
-            ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
-            ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
-            ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
-            ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
-            ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
-            _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
+                ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
+                ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
+                ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
+                ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
+                ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
+                ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
+                _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
         };
 
         return baseClient;
@@ -109,10 +118,11 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
 
     private static IChatClient CreateGitHubModelsClient(ModelProfile model)
     {
-        OpenAIClient client = new(new System.ClientModel.ApiKeyCredential(model.ApiKey ?? throw new ArgumentException("GitHub token required")), new OpenAIClientOptions { Endpoint = new Uri(model.Endpoint ?? "https://models.inference.ai.azure.com") });
+        OpenAIClient client = new(new ApiKeyCredential(model.ApiKey ?? throw new ArgumentException("GitHub token required")), new OpenAIClientOptions { Endpoint = new Uri(model.Endpoint ?? "https://models.inference.ai.azure.com") });
         ChatClient? chatClient = client.GetChatClient(model.ModelId ?? throw new ArgumentException("GitHub model ID required"));
         return chatClient.AsIChatClient()!;
     }
+
 
 
 

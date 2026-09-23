@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         NavigationService.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -59,12 +59,10 @@ public sealed class NavigationService : INavigationService
 
 
 
-
     public void Initialize(Frame shellFrame)
     {
         _shellFrame = shellFrame;
     }
-
 
 
 

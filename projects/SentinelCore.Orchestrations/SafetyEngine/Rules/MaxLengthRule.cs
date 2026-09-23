@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MaxLengthRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -54,9 +54,7 @@ public sealed class MaxLengthRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -76,7 +74,6 @@ public sealed class MaxLengthRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Allow(Name, $"Prompt length ({text.Length:N0}) is within limit."));
     }
-
 
 
 

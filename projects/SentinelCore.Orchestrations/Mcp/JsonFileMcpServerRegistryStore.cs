@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         JsonFileMcpServerRegistryStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -60,7 +60,6 @@ public sealed class JsonFileMcpServerRegistryStore : IMcpServerRegistryStore
 
 
 
-
     public async Task<IReadOnlyList<McpServerDefinition>> LoadAsync(CancellationToken cancellationToken = default)
     {
         if (!File.Exists(_filePath))
@@ -82,7 +81,6 @@ public sealed class JsonFileMcpServerRegistryStore : IMcpServerRegistryStore
             return Array.Empty<McpServerDefinition>();
         }
     }
-
 
 
 

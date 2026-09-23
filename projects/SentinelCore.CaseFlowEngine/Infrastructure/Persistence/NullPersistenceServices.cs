@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         NullPersistenceServices.cs
 // Author: Kyle L. Crowder
-// Build Num:  091419
+// Build Num:  092308
 
 
 
@@ -10,7 +10,6 @@ using SentinelCore.CaseFlowEngine.Cfe;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Contracts.Cfe;
-
 
 
 
@@ -37,6 +36,13 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
         return Task.CompletedTask;
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Returns <see cref="Guid.Empty" /> — no case can be created without persistence.
     /// </summary>
@@ -44,6 +50,13 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
     {
         return Guid.Empty;
     }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Returns <see cref="Guid.Empty" /> — no case can be created without persistence.
@@ -53,6 +66,13 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
         return Task.FromResult(Guid.Empty);
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Returns an empty transition set — no lifecycle is enforced without persistence.
     /// </summary>
@@ -60,6 +80,13 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
     {
         return [];
     }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Returns <c>null</c> — no case can be found without persistence.
@@ -69,6 +96,13 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
         return Task.FromResult<Case?>(null);
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Returns zero — no cases exist without persistence.
     /// </summary>
@@ -76,6 +110,13 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
     {
         return Task.FromResult(0);
     }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Returns zero for every status — no cases exist without persistence.
@@ -85,6 +126,13 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
         IReadOnlyDictionary<CaseStatus, int> counts = new Dictionary<CaseStatus, int>();
         return Task.FromResult(counts);
     }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Returns an empty list — no cases exist without persistence.
@@ -115,6 +163,13 @@ public sealed class NullEvidenceStore : IEvidenceStore
     {
         return Task.CompletedTask;
     }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Returns an empty list — no evidence exists without persistence.
@@ -147,6 +202,13 @@ public sealed class NullPatternMemoryStore : IPatternMemoryStore
         return Task.FromResult(results);
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Returns an empty list — no pattern memory exists without persistence.
     /// </summary>
@@ -155,6 +217,13 @@ public sealed class NullPatternMemoryStore : IPatternMemoryStore
         IReadOnlyList<PatternMemoryResult> results = [];
         return Task.FromResult(results);
     }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     No-op: pattern memory cannot be stored without persistence.

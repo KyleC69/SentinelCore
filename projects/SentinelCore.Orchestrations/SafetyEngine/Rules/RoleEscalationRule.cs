@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RoleEscalationRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
 
 
 
@@ -91,9 +91,7 @@ public sealed class RoleEscalationRule : ISafetyRule
 
 
 
-
     public string Description { get; }
-
 
 
 
@@ -114,7 +112,6 @@ public sealed class RoleEscalationRule : ISafetyRule
 
         return Task.FromResult(SafetyRuleResult.Allow(Name));
     }
-
 
 
 

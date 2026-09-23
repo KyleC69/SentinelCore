@@ -2,11 +2,20 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PersistEvidence.cs
 // Author: Kyle L. Crowder
-// Build Num:  091418
+// Build Num:  092308
+
+
 
 using SentinelCore.Contracts.Abstractions;
 
+
+
+
 namespace SentinelCore.Orchestrations.Workflows.Executors;
+
+
+
+
 
 // TODO: Implement saving the findings to database — stub for now
 /// <summary>
@@ -18,10 +27,12 @@ public sealed partial class PersistEvidence : Executor
 {
     private readonly ISystemReporter _reporter;
 
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
+
+
+
+
+
+
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="PersistEvidence" /> class.
@@ -32,6 +43,25 @@ public sealed partial class PersistEvidence : Executor
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Handles evidence persistence.
