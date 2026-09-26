@@ -6,7 +6,7 @@
 
 
 
-namespace SentinelCore.Orchestrations.Workflows.Executors;
+namespace SentinelCore.Orchestrations.Workflows;
 
 
 

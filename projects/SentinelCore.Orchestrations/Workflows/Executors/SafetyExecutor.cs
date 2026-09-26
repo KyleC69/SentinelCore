@@ -28,14 +28,14 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     This executor uses the <see cref="SafetyRuleEngine" /> to orchestrate rule evaluation
 ///     and leverages the agent factory to create safety-specific agents when needed.
 /// </summary>
-[YieldsOutput(typeof(ChatMessage))]
+[YieldsOutput(typeof(DetectionResult))]
 public sealed partial class SafetyExecutor : Executor
 {
     private readonly ISentinelAgentFactory _agentFactory;
     private readonly ISystemReporter _reporter;
     private readonly SafetyRuleEngine _ruleEngine;
 
-
+    public bool NeedsReview { get; init; } = false;
 
 
 
@@ -82,7 +82,6 @@ public sealed partial class SafetyExecutor : Executor
     ///     Creates the default set of safety rules for evaluation.
     /// </summary>
     /// <returns>A read-only list of safety rules.</returns>
-    [Obsolete("")]
     private static IReadOnlyList<ISafetyRule> CreateDefaultRules()
     {
         return new List<ISafetyRule>
@@ -156,7 +155,7 @@ public sealed partial class SafetyExecutor : Executor
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The original message if allowed, or a blocked response message.</returns>
     [MessageHandler]
-    public async ValueTask<ChatMessage> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask<DetectionResult> HandleChatMessageAsync(ChatMessage? message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // --- Status: Executor start ---
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(ChatMessage).Name}");
@@ -166,7 +165,7 @@ public sealed partial class SafetyExecutor : Executor
         {
             _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
-            return CreateFallbackResult();
+            return new DetectionResult(message, false);
         }
 
         try
@@ -174,18 +173,23 @@ public sealed partial class SafetyExecutor : Executor
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
-            ChatMessage result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
+            ChatMessage? result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
-            if (result is null)
+
+            var output = new DetectionResult(message, false);
+            //No response from model
+            if (string.IsNullOrEmpty(result.Text))
             {
                 _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(ChatMessage)}.");
-                result = CreateFallbackResult();
+
+                // create output obj
+
             }
 
             // --- Status: Final output ---
             _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(ChatMessage)}");
 
-            return result;
+            return output;
         }
         catch (OperationCanceledException)
         {
@@ -198,11 +202,12 @@ public sealed partial class SafetyExecutor : Executor
             // --- Robust error handling ---
             _reporter.ReportError($"[{Name}] Exception: {ex.Message}", ex);
 
-            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
+            var msg = new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}");
+            await context.YieldOutputAsync(msg);
 
             _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
 
-            return CreateFallbackResult();
+            return new DetectionResult(msg, false);
         }
     }
 
@@ -220,6 +225,8 @@ public sealed partial class SafetyExecutor : Executor
     {
         _reporter.ReportInfo($"[{Name}] Starting safety evaluation.");
 
+
+
         // Create evaluation context from the message
         IReadOnlyList<ChatMessage> messages = new List<ChatMessage> { message };
         SafetyEvaluationContext evalContext = new(messages);
@@ -228,9 +235,10 @@ public sealed partial class SafetyExecutor : Executor
         SafetyEvaluationResult result = await _ruleEngine.EvaluateAsync(evalContext, cancellationToken).ConfigureAwait(false);
         ChatMessage taggedMessage = ApplySafetyTags(message, result);
 
+
         if (!result.IsAllowed)
         {
-            _reporter.ReportWarning($"Safety block: {result.Summary}");
+            _reporter.ReportWarning($"[{Name}] - Safety block: {result.Summary}");
 
             // Return a blocked response message
             ChatMessage blockedMessage = new(ChatRole.Assistant, $"Request blocked by safety policy: {result.Summary}");
@@ -239,7 +247,7 @@ public sealed partial class SafetyExecutor : Executor
 
         if (result.TotalScore > 0)
         {
-            _reporter.ReportWarning($"Safety warning: {result.Summary}");
+            _reporter.ReportWarning($"[{Name}] - Safety warning: {result.Summary}");
         }
 
         _reporter.ReportInfo($"[{Name}] Message passed safety evaluation with {result.RuleResults.Count} rule result(s).");

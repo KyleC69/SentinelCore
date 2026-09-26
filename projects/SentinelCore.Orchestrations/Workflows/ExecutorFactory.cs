@@ -82,6 +82,8 @@ internal sealed class ExecutorFactory
             CriticalAlert = Create<CriticalAlert>(),
             TerminateWorkflow = Create<TerminateWorkflow>(),
             SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
+            WhiteListExecutor = Create<WhiteListExecutor>(),
+            GenerateHypothesisAgentExec = Create<GenerateHypothesisAgentExec>()
 
         };
     }
@@ -107,5 +109,7 @@ internal sealed class ExecutorCollection
     public required PersistEvidence PersistEvidenceExecutor { get; init; }
     public required SafetyExecutor SafetyExecutor { get; init; }
     public required TerminateWorkflow TerminateWorkflow { get; init; }
-    public SafetyReviewExecutor SafetyReviewExecutor { get; init; }
+    public required SafetyReviewExecutor SafetyReviewExecutor { get; init; }
+    public required WhiteListExecutor WhiteListExecutor { get; init; }
+    public required GenerateHypothesisAgentExec GenerateHypothesisAgentExec { get; init; }
 }

@@ -42,9 +42,9 @@ public sealed partial class GenerateHypothesisAgentExec : Executor
     ///     An <see cref="ISystemReporter" /> used to log informational messages and errors during
     ///     execution.
     /// </param>
-    public GenerateHypothesisAgentExec(AIAgent agent, ISystemReporter reporter) : base("GenerateHypothesis")
+    public GenerateHypothesisAgentExec( ISystemReporter reporter) : base("GenerateHypothesis")
     {
-        _agent = agent ?? throw new ArgumentNullException(nameof(agent));
+        //_agent = agent ?? throw new ArgumentNullException(nameof(agent));
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
     }

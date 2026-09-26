@@ -23,7 +23,6 @@ namespace SentinelCore.Orchestrations.Application;
 
 
 
-
 /// <summary>
 ///     Represents the control mechanism for managing investigations within the SentinelCore system.
 ///     Will be primary entry point for initiating an investigation and control optional components such as the Case Flow
@@ -79,6 +78,7 @@ public sealed class OrchestrationControl : IOrchestrationControl
     /// <exception cref="InvalidOperationException">
     ///     Thrown when no orchestration instance is available.
     /// </exception>
+    [Obsolete("Initialization method should NOT be executing the workflow The selected orchestration should initialize on startup/change- Refactor")]
     public async Task<WorkflowExecutionResult?> InitializeOrchestrationAsync(ChatMessage promptSignal, CancellationToken token)
     {
         if (_orchestration is null)
@@ -94,7 +94,19 @@ public sealed class OrchestrationControl : IOrchestrationControl
         // Raising an event to notify that the orchestration process is starting. This can be useful for logging, monitoring, or triggering other actions in response to the start of the orchestration.
         _sentinelCoreEvents.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(_orchestration.Name, "Starting orchestration", ActivityType.Orchestration));
 
-        return await _orchestration.ExecuteAsync(promptSignal, token).ConfigureAwait(false);
+        //   return await _orchestration.ExecuteAsync(promptSignal, token).ConfigureAwait(false);
+    }
+
+
+
+
+
+
+
+
+    public Task<object> ExecuteStreamingAsync(ChatMessage msg, CancellationToken linkedCtsToken)
+    {
+        throw new NotImplementedException();
     }
 
 

@@ -6,7 +6,7 @@
 
 
 
-using SentinelCore.Orchestrations.Application;
+using SentinelCore.Orchestrations.Workflows;
 
 
 
@@ -16,28 +16,18 @@ namespace SentinelCore.Orchestrations.Abstractions;
 
 
 
-
+/// <summary>
+/// Main interface for any workflow in application. Encapsulates execution and event handling for workflows within its owning class.
+/// allows for flexible execution and event processing.
+/// See <see cref="WorkflowBase" /> for helpers and handlers
+/// </summary>
 public interface IOrchestration
 {
     string Description { get; }
     string Name { get; }
 
-
+    [Obsolete("Move to Initialize. Each workflow independant from each other. Init and Execution self contained. Allows for running various workflows in app with shared interface/base")]
     Task<Workflow> BuildWorkflow();
-
-
-    /*
-        Task<WorkflowExecutionResult> ExecuteAsync(
-                ISentinelWorkflowExecution workflowExecution,
-                ChatMessage promptSignal,
-                CancellationToken token);
-        */
-
-
-    Task<WorkflowExecutionResult?> ExecuteAsync(ChatMessage promptSignal, CancellationToken token);
-
-
-    // The underlying workflow (Magentic, group, single agent, etc.)
 
 
 
@@ -47,9 +37,38 @@ public interface IOrchestration
 
 
     /// <summary>
-    ///     Initializes agents and other resources required for workflow execution.
-    ///     Should be called once before any calls to <see cref="ExecuteAsync" />.
+    /// Executes the workflow asynchronously based on the provided input message.
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="inputMessage">
+    /// The input message that serves as the context or payload for the workflow execution.
+    /// </param>
+    /// <param name="token">
+    /// A <see cref="CancellationToken"/> to observe while waiting for the task to complete.
+    /// </param>
+    /// <returns>
+    /// An asynchronous stream of <see cref="WorkflowEvent"/> instances representing the events
+    /// generated during the workflow execution, or <c>null</c> if no events are produced.
+    /// </returns>
+    Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteAsync(ChatMessage inputMessage, CancellationToken token);
+
+
+
+
+
+
+
+
+    /// <summary>
+    /// Initializes the necessary agents and resources required for the execution of the workflow.
+    /// This method should be invoked once before any calls to <see cref="ExecuteAsync"/> to ensure
+    /// the workflow is properly prepared for execution.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests. This allows the initialization process
+    /// to be gracefully terminated if required.
+    /// </param>
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
     Task InitializeAsync(CancellationToken cancellationToken = default);
 }

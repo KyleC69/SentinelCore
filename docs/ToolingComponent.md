@@ -112,7 +112,7 @@ private static readonly Dictionary<string, string[]> DomainToolNames = new(Strin
 ### Domain Categories
 
 | Category | Domains |
-|----------|---------|
+| ---------- | --------- |
 | **Core OS** | registry, filesystem, environment, bootconfig |
 | **User Experience** | accessibility, searchindexing, shellexplorer, notifications, display, fonts |
 | **Security** | certificates, applocker, firewall, localaccounts, rdp, credentials, uac, defender, bitlocker |
@@ -171,7 +171,7 @@ private static readonly Dictionary<AgentRole, string[]> RoleToolNames = new()
 ### Role Toolset Summary
 
 | Role | Tool Count | Purpose |
-|------|------------|---------|
+| ------ | ------------ | --------- |
 | `Core` | ~40 | Full forensic investigation toolkit |
 | `Manager` | 0 | Pure orchestration |
 | `Domain` | Dynamic (3 typical) | Per-domain via `GetToolByDomain` |
@@ -270,7 +270,7 @@ Tools are **not defined in ToolRegistry** — they are created by name via `AIFu
 ### Expected Tool Signatures (by name pattern)
 
 | Tool Name Pattern | Expected Signature |
-|-------------------|-------------------|
+| ------------------- | ------------------- |
 | `read_*` | `string ReadX(string path/key/id)` |
 | `list_*` | `IEnumerable<X> ListX(string filter?)` |
 | `search_*` | `IEnumerable<X> SearchX(string query)` |
@@ -344,7 +344,7 @@ var critic = _agentBuilder.Build(_specBuilder.BuildAgentSpec(AgentRole.General))
 ## 6. Pattern-Lock Compliance
 
 | Rule | Status | Notes |
-|------|--------|-------|
+| ------ | -------- | ------- |
 | Static tool registry | ✅ | `ToolRegistry` is static class |
 | Domain → tools mapping | ✅ | `DomainToolNames` dictionary |
 | Role → tools mapping | ✅ | `RoleToolNames` dictionary |
@@ -358,7 +358,7 @@ var critic = _agentBuilder.Build(_specBuilder.BuildAgentSpec(AgentRole.General))
 ## 7. Open Items / TODOs
 
 | Item | Location | Status |
-|------|----------|--------|
+| ------ | ---------- | -------- |
 | `AIFunctionFactory` registration | DI setup | ⚠️ Not in this component |
 | Tool implementations | Separate project | ❌ Not in Orchestrations |
 | Tool validation at startup | `ToolRegistry` | ❌ No validation |
@@ -372,7 +372,7 @@ var critic = _agentBuilder.Build(_specBuilder.BuildAgentSpec(AgentRole.General))
 ## 8. Related Documentation
 
 | Document | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `DynamicAgentsComponent.md` | AgentSpecBuilder, AgentSpec, role-based construction |
 | `DomainAgentSurfaces.md` | DomainAgentFactory, CoreAgentFactory, tool integration |
 | `OrchestrationComponent.md` | MagneticCoopOrchestration, agent construction pipeline |

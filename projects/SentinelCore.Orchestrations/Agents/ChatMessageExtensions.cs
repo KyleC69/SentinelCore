@@ -1,5 +1,3 @@
-#nullable enable
-
 // Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
 // File:         ChatMessageExtensions.cs
@@ -45,14 +43,28 @@ public static class ChatMessageExtensions
         return new ChatMessage(ChatRole.Assistant, content).WithAgentRequestMessageSource(new AgentRequestMessageSourceType("Origin"), "SystemGenerated");
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Tags a prompt with the cumulative weighted safety score for the current turn.
     /// </summary>
     public static ChatMessage WithSafetyScore(this ChatMessage message, int score)
     {
         ArgumentNullException.ThrowIfNull(message);
-        return message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyScore"), score.ToString(CultureInfo.InvariantCulture));
+        return message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyScore"), score.ToString());
     }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Tags a prompt with the resulting safety action for the current turn.
@@ -62,6 +74,13 @@ public static class ChatMessageExtensions
         ArgumentNullException.ThrowIfNull(message);
         return message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyResult"), result);
     }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Applies both provenance tags required for safety-scored prompt messages.

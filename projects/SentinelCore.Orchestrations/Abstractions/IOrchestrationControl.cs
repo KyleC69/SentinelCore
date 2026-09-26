@@ -29,4 +29,13 @@ public interface IOrchestrationControl
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task<WorkflowExecutionResult?> InitializeOrchestrationAsync(ChatMessage promptSignal, CancellationToken token);
+
+
+
+
+
+
+
+
+    Task<object> ExecuteStreamingAsync(ChatMessage msg, CancellationToken linkedCtsToken);
 }

@@ -459,7 +459,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
             AddToMessages(msg);
             InputText = string.Empty;
 
-            WorkflowExecutionResult? result = await _orchestrationControl.InitializeOrchestrationAsync(msg, _linkedCts.Token);
+            WorkflowExecutionResult? result = await _orchestrationControl.ExecuteStreamingAsync(msg, _linkedCts.Token);
 
             if (result?.OutputMessages is not null)
             {

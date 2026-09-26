@@ -84,7 +84,11 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
         _reporter.ReportInfo($"CustomGroup agent response: {response.Text}");
 
-        return new WorkflowExecutionResult([new ChatMessage(ChatRole.Assistant, response.Text)], eventLog: []);
+        return new WorkflowExecutionResult([
+                        new ChatMessage(ChatRole.Assistant, response.Text)
+                ], eventLog:
+                [
+                ]);
     }
 
 
