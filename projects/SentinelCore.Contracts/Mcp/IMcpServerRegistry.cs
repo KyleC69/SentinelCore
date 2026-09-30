@@ -44,13 +44,14 @@ public interface IMcpServerRegistry
     ///     Gets the tools from connected MCP servers that are available to the specified agent.
     /// </summary>
     /// <param name="agentName">The logical agent name used to filter server assignments.</param>
+    /// <param name="agentId">The unique agent identifier used to filter server assignments.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
     ///     A task that resolves to a read-only list of <see cref="AITool" /> instances. A server is included
     ///     when it is connected and either has no assigned agent names or its assignments include
-    ///     <paramref name="agentName" />.
+    ///     <paramref name="agentName" /> or <paramref name="agentId" />.
     /// </returns>
-    Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, string agentId, CancellationToken cancellationToken = default);
 
 
 

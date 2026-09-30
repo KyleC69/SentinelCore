@@ -7,6 +7,7 @@
 
 
 using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Orchestrations.Agents;
 
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
@@ -59,6 +60,40 @@ internal sealed partial class TheCoreExec : Executor
 
 
 
+    private string taskinstruct = """
+                                  For this task you are to analyze the signal and provide a clear and concise hypothesis about what the signal is trying to indicate. Your response should be structured as follows:
+
+                                  Example output:
+
+                                  Given a signal like: database service crashed as 12:32am
+
+                                  Hypothesis:
+                                  Database connection pool exhaustion caused service failure.
+
+                                  Confidence:
+                                  0.68
+
+                                  Predictions:
+                                  - Spike in active SQL connections
+                                  - Increased connection timeout errors
+                                  - Elevated request latency before failure
+                                  - Application recovered after pool recycle
+
+                                  Suggested Evidence Domains:
+                                  - Application Logs
+                                  - SQL Metrics
+                                  - Performance Counters
+                                  - Event Logs
+
+                                  Contradictory Indicators:
+                                  - Host resource exhaustion
+                                  - Process termination by OS
+                                  - Network failure between service and database
+
+                                  """;
+
+
+
     /// <summary>
     ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
     /// </summary>
@@ -72,7 +107,7 @@ internal sealed partial class TheCoreExec : Executor
 
 
     /// <summary>
-    ///     Creates a fallback result when the executor encounters an error or receives null input.
+    ///     Creates an empty message to return and will fall through event processing so it doesn't clutter chat bubble. The failure message should have preceded this.
     /// </summary>
     private ChatMessage CreateFallbackResult() => new(ChatRole.Assistant, "The Core agent was unable to process the signal. Please try again.");
 
@@ -93,15 +128,19 @@ internal sealed partial class TheCoreExec : Executor
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The agent's response as a <see cref="ChatMessage" />.</returns>
     [MessageHandler]
-    public async ValueTask<ChatMessage> HandleSignalHypothesisAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask<ChatMessage> HandleInvestigationObjectiveAsync(InvestigationObjective message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // --- Status: Executor start ---
-        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(SignalHypothesis)}");
+        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(InvestigationObjective)}");
+
+
+        var hypo = await context.ReadStateAsync<InvestigationObjective>(WorkFlowStateKeys.SIGNAL_HYPOTHESIS, "SharedState", cancellationToken);
+
 
         // --- Null validation ---
         if (message is null)
         {
-            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
+            _reporter.ReportError($"[{Name}] Input message was null. Gracefully falling back to {nameof(ChatMessage)}.");
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
             return CreateFallbackResult();
         }
@@ -113,16 +152,15 @@ internal sealed partial class TheCoreExec : Executor
 
             ChatMessage result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
-            if (result is null)
-            {
-                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(ChatMessage)}.");
-                result = CreateFallbackResult();
-            }
+
 
             // --- Status: Final output ---
             _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(ChatMessage)}");
 
             return result;
+
+
+
         }
         catch (OperationCanceledException)
         {
@@ -151,20 +189,24 @@ internal sealed partial class TheCoreExec : Executor
 
 
     /// <summary>
-    ///     Core processing logic: invokes the Core agent with the hypothesis and returns the response.
+    ///     Core processing logic: invokes the Core agent with the signal and TheCore generates the hypothesis and returns the structured response.
     /// </summary>
-    private async ValueTask<ChatMessage> ProcessMessageAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken)
+    private async ValueTask<ChatMessage> ProcessMessageAsync(InvestigationObjective message, IWorkflowContext context, CancellationToken cancellationToken)
     {
+        // This will be the original message received, which is a InvestigationObjective. We need to convert it to an InvestigationObjective for the agent. 
+        //Phasing out the signal hypo object in favor of new shape
         // Log the received message
-        _reporter.ReportInfo($"Handling SignalHypothesis: {message.Hypothesis}");
+        _reporter.ReportInfo($"Handling InvestigationObjective: {message}");
 
-        // Create chatmessage with hypothesis
-        ChatMessage msg = new(ChatRole.User, message.Hypothesis);
+        var prompt = await context.ReadStateAsync<ChatMessage>(WorkFlowStateKeys.PROMPT, "SharedState", cancellationToken).ConfigureAwait(false);
+
+        var cms = InstructionLayerBuilder.Build(AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S, AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS, taskinstruct);
+        cms.Add(prompt);
 
         // Delegate execution to the internal executor implementation
         AgentRunOptions aro = new();
 
-        AgentResponse result = await _agent.RunAsync(msg, _session, aro, cancellationToken).ConfigureAwait(false);
+        var result = await _agent.RunAsync<InvestigationObjective>(cms, _session, null, aro, cancellationToken).ConfigureAwait(false);
 
         // Log the result
         _reporter.ReportInfo($"Execution completed with result: {result.Text}");

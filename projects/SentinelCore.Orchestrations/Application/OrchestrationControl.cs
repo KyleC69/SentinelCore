@@ -11,9 +11,8 @@ using Microsoft.Extensions.Options;
 using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Contracts.Events;
-using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
+using SentinelCore.Orchestrations.Services;
 
 
 
@@ -32,11 +31,8 @@ namespace SentinelCore.Orchestrations.Application;
 /// </summary>
 public sealed class OrchestrationControl : IOrchestrationControl
 {
-    private readonly IMcpServerRegistry _mcpServerRegistry;
     private readonly IOrchestration? _orchestration;
-    private readonly ISentinelCoreEvents _sentinelCoreEvents;
     private readonly ISystemReporter _systemReporter;
-    private readonly ISentinelWorkflowExecution _workflowExecution;
 
 
 
@@ -44,14 +40,11 @@ public sealed class OrchestrationControl : IOrchestrationControl
 
 
 
-
-    public OrchestrationControl(IOrchestrationFactory orchestrationFactory, IOptions<SentinelCoreSettings> settings, ISentinelCoreEvents events, ISystemReporter systemReporter, ISentinelWorkflowExecution workflowExecution, IMcpServerRegistry mcpServerRegistry)
+    //TODO: Incorrect settings param needs to come from UI settings page- Orchestration Factory can read options directly for selected orchestration
+    public OrchestrationControl(IOrchestrationFactory orchestrationFactory, IOptions<SentinelCoreSettings> settings, ISystemReporter systemReporter, IWorkflowEventProcessor eventProcessor)
     {
         SentinelCoreSettings settings1 = settings.Value != null ? settings.Value : Throw.IfNull(settings.Value);
-        _sentinelCoreEvents = events;
         _systemReporter = systemReporter;
-        _workflowExecution = workflowExecution;
-        _mcpServerRegistry = mcpServerRegistry;
         Throw.IfNull(orchestrationFactory);
         _orchestration = orchestrationFactory.CreateOrchestrationInstance(settings1.OrchestrationType);
     }
@@ -61,80 +54,51 @@ public sealed class OrchestrationControl : IOrchestrationControl
 
 
 
+    /// <summary>
+    /// Executes a streaming operation asynchronously, producing a sequence of workflow events.
+    /// </summary>
+    /// <param name="input">The <see cref="ChatMessage"/> containing the input data for the operation.</param>
+    /// <param name="linkedCtsToken">A <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
+    /// <returns>
+    /// An asynchronous enumerable of <see cref="WorkflowEvent"/> representing the sequence of events produced by the operation,
+    /// or <c>null</c> if the operation does not produce any events.
+    /// </returns>
+    /// <remarks>
+    /// This method delegates the execution to the underlying orchestration component.
+    /// </remarks>
+    public async Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage input, CancellationToken linkedCtsToken)
+    {
+        return await _orchestration.ExecuteStreamingAsync(input, linkedCtsToken);
+    }
+
+
+
+
+
+
 
 
     /// <summary>
-    ///     Initializes the orchestration process asynchronously with the provided signal and cancellation token.
+    /// Called from Background Service at startup
     /// </summary>
-    /// <param name="promptSignal">
-    ///     The <see cref="ChatMessage" /> that serves as the initial signal for the orchestration process.
-    /// </param>
-    /// <param name="token">
-    ///     A <see cref="CancellationToken" /> to observe while waiting for the task to complete.
-    /// </param>
-    /// <returns>
-    ///     A <see cref="Task" /> representing the asynchronous operation.
-    /// </returns>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when no orchestration instance is available.
-    /// </exception>
-    [Obsolete("Initialization method should NOT be executing the workflow The selected orchestration should initialize on startup/change- Refactor")]
-    public async Task<WorkflowExecutionResult?> InitializeOrchestrationAsync(ChatMessage promptSignal, CancellationToken token)
+    /// <param name="linkedCtsToken"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public async Task InitializeOrchestrationAsync(CancellationToken linkedCtsToken)
     {
         if (_orchestration is null)
         {
             throw new InvalidOperationException("No orchestration instance is available.");
         }
 
-        await EnsureMcpServersStartedAsync(token).ConfigureAwait(false);
 
         // Initialize agents once (idempotent — repeated calls are safe no-ops)
-        await _orchestration.InitializeAsync(token).ConfigureAwait(false);
+        await _orchestration.InitializeAsync(linkedCtsToken).ConfigureAwait(false);
 
         // Raising an event to notify that the orchestration process is starting. This can be useful for logging, monitoring, or triggering other actions in response to the start of the orchestration.
-        _sentinelCoreEvents.RaiseSentinelOutputEvent(new SentinelOutputEventArgs(_orchestration.Name, "Starting orchestration", ActivityType.Orchestration));
-
-        //   return await _orchestration.ExecuteAsync(promptSignal, token).ConfigureAwait(false);
+        _systemReporter.ReportInfo($"Starting orchestration {_orchestration.Name}");
     }
 
 
 
-
-
-
-
-
-    public Task<object> ExecuteStreamingAsync(ChatMessage msg, CancellationToken linkedCtsToken)
-    {
-        throw new NotImplementedException();
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Ensures all registered MCP servers are started before the orchestration executes.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task EnsureMcpServersStartedAsync(CancellationToken cancellationToken)
-    {
-        IReadOnlyList<McpServerInfo> servers = await _mcpServerRegistry.ListAsync(cancellationToken).ConfigureAwait(false);
-
-        foreach (McpServerInfo server in servers)
-        {
-            try
-            {
-                await _mcpServerRegistry.StartAsync(server.Definition.Id, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _systemReporter.ReportWarning($"Failed to start MCP server '{server.Definition.Id}': {ex.Message}");
-            }
-        }
-    }
 }

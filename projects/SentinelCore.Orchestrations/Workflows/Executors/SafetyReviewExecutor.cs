@@ -34,7 +34,7 @@ public sealed partial class SafetyReviewExecutor : Executor
     /// </summary>
     /// <param name="reporter">The system reporter for logging and event publishing.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="reporter" /> is <c>null</c>.</exception>
-    public SafetyReviewExecutor(ISystemReporter reporter) : base("ExecutorTemplate")
+    public SafetyReviewExecutor(ISystemReporter reporter) : base("SafetyReviewExecutor")
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;
@@ -69,7 +69,7 @@ public sealed partial class SafetyReviewExecutor : Executor
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The result of processing, or a fallback value on error.</returns>
     [MessageHandler]
-    public async ValueTask<SignalHypothesis> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask<ChatMessage> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // --- Status: Executor start ---
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(ChatMessage).Name}");
@@ -80,9 +80,9 @@ public sealed partial class SafetyReviewExecutor : Executor
         // --- Null validation ---
         if (message is null)
         {
-            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}.");
-            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}."), cancellationToken).ConfigureAwait(false);
-            return CreateFallbackResult();
+            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
+            return new ChatMessage(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
         }
 
         try
@@ -91,16 +91,16 @@ public sealed partial class SafetyReviewExecutor : Executor
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
             // --- Core logic ---
-            SignalHypothesis result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
+            ChatMessage result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
             if (result is null)
             {
-                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(SignalHypothesis)}.");
-                result = CreateFallbackResult();
+                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(ChatMessage)}.");
+                result = new ChatMessage(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
             }
 
             // --- Status: Final output ---
-            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(SignalHypothesis)}");
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(ChatMessage)}");
 
             return result;
         }
@@ -119,9 +119,9 @@ public sealed partial class SafetyReviewExecutor : Executor
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
 
             // --- Status: fallback output ---
-            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(SignalHypothesis)} due to error.");
+            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
 
-            return CreateFallbackResult();
+            return new ChatMessage(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
         }
     }
 
@@ -132,37 +132,17 @@ public sealed partial class SafetyReviewExecutor : Executor
 
 
 
-    /// <summary>
-    ///     Creates a safe fallback review decision when the review executor cannot determine the route.
-    /// </summary>
-    private SignalHypothesis CreateFallbackResult() => new()
-    {
-        NextStep = NextStep.EscalateToHumanOperator,
-        ConfidenceScore = 0.0,
-        OrigPrompt = string.Empty,
-        Reasoning = "Fallback: safety review could not determine a workflow route."
-    };
 
     /// <summary>
     ///     Core processing logic for the review path. This executor is intentionally a small,
     ///     conditional workflow branch used when a prompt is flagged for manual review.
     /// </summary>
-    private async ValueTask<SignalHypothesis> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
+    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
     {
         await Task.Delay(10, cancellationToken).ConfigureAwait(false);
 
-        string promptText = message.ToString();
-        bool requiresEscalation = promptText.Contains("bomb", StringComparison.OrdinalIgnoreCase)
-            || promptText.Contains("kill", StringComparison.OrdinalIgnoreCase)
-            || promptText.Contains("ransomware", StringComparison.OrdinalIgnoreCase);
+        // Not Yet Implemented: This is a placeholder for the actual safety review logic.
 
-        return new SignalHypothesis
-        {
-            ConfidenceScore = requiresEscalation ? 0.99 : 0.65,
-            Hypothesis = requiresEscalation ? "Critical safety signal requiring human review" : "Low-confidence safety review required",
-            NextStep = requiresEscalation ? NextStep.EscalateToHumanOperator : NextStep.MoreInformationRequired,
-            OrigPrompt = promptText,
-            Reasoning = requiresEscalation ? "The prompt triggered a serious safety signal and should be escalated to a human reviewer." : "The prompt triggered a review flag but did not clearly meet the escalation threshold."
-        };
+        return message;
     }
 }

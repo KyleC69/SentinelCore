@@ -24,8 +24,8 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 [YieldsOutput(typeof(SignalHypothesis))]
 public sealed partial class GenerateHypothesisAgentExec : Executor
 {
-    private readonly AIAgent _agent;
     private readonly ISystemReporter _reporter;
+    private AIAgent _agent;
 
 
 
@@ -35,14 +35,16 @@ public sealed partial class GenerateHypothesisAgentExec : Executor
 
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="GenerateHypothesisAgentExec" /> class.
+    /// Initializes a new instance of the <see cref="GenerateHypothesisAgentExec"/> class.
     /// </summary>
-    /// <param name="agent">The AI agent used to generate the hypothesis.</param>
     /// <param name="reporter">
-    ///     An <see cref="ISystemReporter" /> used to log informational messages and errors during
-    ///     execution.
+    /// An <see cref="ISystemReporter"/> instance used to log informational messages and errors
+    /// during the execution of the hypothesis generation process.
     /// </param>
-    public GenerateHypothesisAgentExec( ISystemReporter reporter) : base("GenerateHypothesis")
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when the <paramref name="reporter"/> parameter is <c>null</c>.
+    /// </exception>
+    public GenerateHypothesisAgentExec(ISystemReporter reporter) : base("GenerateHypothesis")
     {
         //_agent = agent ?? throw new ArgumentNullException(nameof(agent));
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));

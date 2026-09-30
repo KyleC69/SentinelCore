@@ -50,6 +50,18 @@ public static class ChatMessageExtensions
 
 
 
+    public static string GetMetaTagByKey(this ChatMessage message, string key)
+    {
+        if (message.AdditionalProperties != null && message.AdditionalProperties.TryGetValue(key, out var value))
+        {
+            return value?.ToString() ?? string.Empty;
+        }
+        return string.Empty;
+    }
+
+
+
+
     /// <summary>
     ///     Tags a prompt with the cumulative weighted safety score for the current turn.
     /// </summary>

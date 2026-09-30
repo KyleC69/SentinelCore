@@ -22,6 +22,7 @@ namespace SentinelCore.Orchestrations.Workflows;
 ///     Represents a signal classification hypothesis used by the classifier agent to determine
 ///     the appropriate next step in the workflow.
 /// </summary>
+[Obsolete("SignalHypothesis is being phased out in favor of InvestigationObjective.")]
 public sealed class SignalHypothesis
 {
 

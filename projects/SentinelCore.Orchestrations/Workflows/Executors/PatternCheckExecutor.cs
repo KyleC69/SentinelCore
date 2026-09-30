@@ -7,6 +7,7 @@
 
 
 using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Orchestrations.Workflows.Helpers;
 
 
 
@@ -84,25 +85,27 @@ public sealed partial class PatternCheckExecutor : Executor
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The message, passed through unchanged (pattern check, not transformation).</returns>
     [MessageHandler]
-    public async ValueTask<ChatMessage> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask<ChatMessage> HandleChatMessageAsync(DetectionBoolResult decision, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // --- Status: Executor start ---
-        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(ChatMessage).Name}");
+        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(DetectionBoolResult).Name} ");
 
         // --- Null validation ---
-        if (message is null)
+        if (decision is null)
         {
-            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
-            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
-            return CreateFallbackResult();
+            var ret = new ChatMessage(ChatRole.Assistant, $"[{Name}] Input decision was null. Returning fallback {nameof(ChatMessage)}.");
+            _reporter.ReportError($"[{Name}] Input decision was null. Returning fallback {nameof(ChatMessage)}.");
+            await context.YieldOutputAsync(ret, cancellationToken).ConfigureAwait(false);
+            return ret;
         }
+        var prompt = decision.Prompt;
 
         try
         {
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
-            ChatMessage result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
+            ChatMessage result = await ProcessMessageAsync(prompt, context, cancellationToken).ConfigureAwait(false);
 
             if (result is null)
             {
@@ -151,7 +154,7 @@ public sealed partial class PatternCheckExecutor : Executor
         _reporter.ReportInfo("Starting pattern check executor");
         _reporter.ReportInfo("Saving initial message to context");
 
-        await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message.Text, "SharedState", cancellationToken).ConfigureAwait(false);
+
 
         // Intentionally pass the message through to the next executor — this is a
         // check, not a transformation. No output is yielded: pattern matching is not

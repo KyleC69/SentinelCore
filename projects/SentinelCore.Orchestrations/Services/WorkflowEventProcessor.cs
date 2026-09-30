@@ -4,9 +4,12 @@
 // Author: AI Agent
 // Build Num:  20260925
 
-using SentinelCore.Abstractions;
-using SentinelCore.Contracts.Events;
 using System.Text;
+
+using SentinelCore.Contracts.Abstractions;
+
+
+
 
 namespace SentinelCore.Orchestrations.Services;
 
@@ -18,11 +21,30 @@ namespace SentinelCore.Orchestrations.Services;
 public class WorkflowEventProcessor : IWorkflowEventProcessor
 {
     private readonly ISystemReporter _reporter;
+    private readonly object _lock = new();
     private readonly Dictionary<string, StringBuilder> _responseAccumulators = new(StringComparer.Ordinal);
+    private readonly Stack<StringBuilder> _pool = new();
 
     public WorkflowEventProcessor(ISystemReporter reporter)
     {
         _reporter = reporter;
+    }
+
+    private StringBuilder GetStringBuilder()
+    {
+        lock (_lock)
+        {
+            return _pool.Count > 0 ? _pool.Pop() : new StringBuilder();
+        }
+    }
+
+    private void ReturnStringBuilder(StringBuilder sb)
+    {
+        sb.Clear();
+        lock (_lock)
+        {
+            _pool.Push(sb);
+        }
     }
 
     /// <summary>
@@ -38,40 +60,36 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
             throw new ArgumentNullException(nameof(evt));
         }
 
-        // Subworkflow error handling
-        if (evt is SubworkflowErrorEvent subError)
-        {
-            _reporter.ReportError($"Sub-workflow '{subError.SubworkflowId}' failed: {subError.Data}", subError.Exception);
-        }
-
         // Buffer streaming update chunks; they are reported as part of the complete message
         if (evt is AgentResponseUpdateEvent updateEvent)
         {
             AccumulateUpdate(updateEvent.ExecutorId, updateEvent.Update.Text);
-            return $"Agent response update buffered: {updateEvent.ExecutorId}";
+            return string.Empty; // Don't clutter UI with "buffered" messages
         }
 
-        // Flush any accumulated chunks when the executor completes
-        if (evt is ExecutorCompletedEvent completedEvent)
-        {
-            string accumulated = FlushAccumulatedResponse(completedEvent.ExecutorId);
-            if (!string.IsNullOrEmpty(accumulated))
-            {
-                _reporter.ReportInfo($"Agent response (accumulated): {completedEvent.ExecutorId}, Output: {accumulated}");
-            }
-        }
+
 
         // Process event based on its type
         string? eventDetails = GetEventDetails(evt);
 
-        // Publish event details using the system reporter (skip nulls from buffered events)
-        if (eventDetails is not null)
+        if (eventDetails is null) return string.Empty;
+
+        // Route error events to ReportError, others to ReportInfo
+        if (evt is SubworkflowErrorEvent or ExecutorFailedEvent or WorkflowErrorEvent)
+        {
+            _reporter.ReportError(eventDetails, (evt as WorkflowErrorEvent)?.Exception ?? (evt as SubworkflowErrorEvent)?.Exception);
+        }
+        else if (evt is WorkflowOutputEvent)
+        {
+            //output to viewmodel to be added to chat Messages
+            return eventDetails;
+        }
+        else
         {
             _reporter.ReportInfo(eventDetails);
         }
 
-        // Return the processed event details
-        return eventDetails ?? string.Empty;
+        return string.Empty;
     }
 
     /// <summary>
@@ -79,42 +97,75 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
     /// </summary>
     public void ResetEventAccumulators()
     {
-        _responseAccumulators.Clear();
+        lock (_lock)
+        {
+            foreach (var sb in _responseAccumulators.Values)
+            {
+                ReturnStringBuilder(sb);
+            }
+            _responseAccumulators.Clear();
+        }
     }
 
-    // --- Private Helper Methods (Copied from WorkflowBase) ---
+    // --- Private Helper Methods ---
 
     private void AccumulateUpdate(string executorId, string chunk)
     {
-        if (!_responseAccumulators.TryGetValue(executorId, out StringBuilder? sb))
+        lock (_lock)
         {
-            sb = new StringBuilder();
-            _responseAccumulators[executorId] = sb;
-        }
+            if (!_responseAccumulators.TryGetValue(executorId, out StringBuilder? sb))
+            {
+                sb = GetStringBuilder();
+                _responseAccumulators[executorId] = sb;
+            }
 
-        sb.Append(chunk);
+            sb.Append(chunk);
+        }
     }
 
     private string FlushAccumulatedResponse(string executorId)
     {
-        if (!_responseAccumulators.Remove(executorId, out StringBuilder? sb))
+        StringBuilder? sb;
+        lock (_lock)
         {
-            return string.Empty;
+            if (!_responseAccumulators.Remove(executorId, out sb))
+            {
+                return string.Empty;
+            }
         }
 
         string accumulated = sb.ToString();
-        sb.Clear();
+        ReturnStringBuilder(sb);
         return accumulated;
     }
 
     private string FormatAgentResponseEvent(AgentResponseEvent evt)
     {
         string accumulated = FlushAccumulatedResponse(evt.ExecutorId);
-        return string.IsNullOrEmpty(accumulated) ? $"Agent response: {evt.ExecutorId}, Output: {evt.Response.Text}" : $"Agent response: {evt.ExecutorId}, Accumulated: {accumulated}, Output: {evt.Response.Text}";
+        string text = evt.Response.Text;
+
+        if (string.IsNullOrEmpty(accumulated))
+        {
+            return $"Agent response: {evt.ExecutorId}, Output: {text}";
+        }
+
+        // If text is already contained in accumulated, don't duplicate it.
+        // Some frameworks put the whole thing in Response.Text at the end.
+        if (accumulated.EndsWith(text, StringComparison.Ordinal) || text.StartsWith(accumulated, StringComparison.Ordinal))
+        {
+            return $"Agent response: {evt.ExecutorId}, Output: {(accumulated.Length >= text.Length ? accumulated : text)}";
+        }
+
+        return $"Agent response: {evt.ExecutorId}, Accumulated: {accumulated}, Output: {text}";
     }
 
     private string FormatExecutorCompletedEvent(ExecutorCompletedEvent evt)
     {
+        string accumulated = FlushAccumulatedResponse(evt.ExecutorId);
+        if (!string.IsNullOrEmpty(accumulated))
+        {
+            return $"Executor completed: {evt.ExecutorId}, Accumulated Output: {accumulated}";
+        }
         return $"Executor completed: {evt.ExecutorId}";
     }
 
@@ -177,20 +228,21 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
     {
         return evt switch
         {
-                WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
-                AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
-                AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
-                SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
-                WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
-                WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
-                WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
-                ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
-                ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
-                ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
-                SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
-                SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
-                RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
-                _ => $"Unknown event type: {evt.GetType().Name}"
+            WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
+            AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
+            AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
+            SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
+
+            WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
+            WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
+            WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
+            ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
+            ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
+            ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
+            SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
+            SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
+            RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
+            _ => $"Unknown event type: {evt.GetType().Name}"
         };
     }
 }

@@ -253,20 +253,20 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// </summary>
     /// <param name="context">The construction context containing all accumulated decisions.</param>
     /// <returns>A fully configured <see cref="ChatClientAgent" />.</returns>
-    private ChatClientAgent BuildAgent(AgentConstructionContext context)
+    private static ChatClientAgent BuildAgent(AgentConstructionContext context)
     {
         ChatOptions chatOptions = new()
         {
-                ConversationId = Guid.NewGuid().ToString("N"),
-                Instructions = "", // Per PL-3: instructions are set at call site, not here
-                Temperature = context.Model.Temperature,
-                MaxOutputTokens = context.Model.MaxOutputTokens ?? 16000,
-                TopP = context.Model.TopP,
-                TopK = context.Model.TopK,
-                ModelId = context.Model.ModelId,
-                AllowMultipleToolCalls = true
-                // ResponseFormat is NOT set here — it is a per-call concern.
-                // Executors pass it via AgentRunOptions or typed RunAsync<T> at invocation time.
+            ConversationId = Guid.NewGuid().ToString("N"),
+            Instructions = "", // Per PL-3: instructions are set at call site, not here
+            Temperature = context.Model.Temperature,
+            MaxOutputTokens = context.Model.MaxOutputTokens ?? 16000,
+            TopP = context.Model.TopP,
+            TopK = context.Model.TopK,
+            ModelId = context.Model.ModelId,
+            AllowMultipleToolCalls = true
+            // ResponseFormat is NOT set here — it is a per-call concern.
+            // Executors pass it via AgentRunOptions or typed RunAsync<T> at invocation time.
         };
 
         if (context.Tools.Count > 0)
@@ -276,20 +276,20 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         return new ChatClientAgent(context.WrappedClient, new ChatClientAgentOptions
         {
-                Id = context.Preset.AgentId,
-                Name = context.Preset.AgentName,
-                Description = "An AI Agent",
-                ChatOptions = chatOptions,
-                AIContextProviders = context.ContextProviders.Count > 0 ? context.ContextProviders : null,
-                UseProvidedChatClientAsIs = false,
-                ClearOnChatHistoryProviderConflict = false,
-                WarnOnChatHistoryProviderConflict = false,
-                ThrowOnChatHistoryProviderConflict = true,
-                RequirePerServiceCallChatHistoryPersistence = false,
-                EnableMessageInjection = false,
-                DisableApprovalNotRequiredFunctionBypassing = false,
-                DisableApprovalResponseBinding = false,
-                ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider()
+            Id = context.Preset.AgentId,
+            Name = context.Preset.AgentName,
+            Description = "An AI Agent",
+            ChatOptions = chatOptions,
+            AIContextProviders = context.ContextProviders.Count > 0 ? context.ContextProviders : null,
+            UseProvidedChatClientAsIs = false,
+            ClearOnChatHistoryProviderConflict = false,
+            WarnOnChatHistoryProviderConflict = false,
+            ThrowOnChatHistoryProviderConflict = true,
+            RequirePerServiceCallChatHistoryPersistence = false,
+            EnableMessageInjection = false,
+            DisableApprovalNotRequiredFunctionBypassing = false,
+            DisableApprovalResponseBinding = false,
+            ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider()
         });
     }
 

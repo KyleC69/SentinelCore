@@ -112,7 +112,7 @@ public sealed partial class ClassifierAgentExec : Executor
         {
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
-
+            //TODO: transient error recovery
             SignalHypothesis result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
             if (result is null)
@@ -150,11 +150,6 @@ public sealed partial class ClassifierAgentExec : Executor
 
 
 
-
-
-
-
-
     /// <summary>
     ///     Core processing logic: invokes the classifier agent and attaches the original prompt.
     /// </summary>
@@ -169,7 +164,7 @@ public sealed partial class ClassifierAgentExec : Executor
 
 
         await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message.Text, "SharedState", cancellationToken).ConfigureAwait(false);
-
+        // First fail point when ollama cannot be reached - need to add safe UI msgbox to operator
         AgentResponse<SignalHypothesis> response = await _agent.RunAsync<SignalHypothesis>(msg, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         //

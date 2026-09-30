@@ -11,14 +11,16 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.Contracts.Events;
 using SentinelCore.Orchestrations.Abstractions;
-using SentinelCore.Orchestrations.Application;
+using SentinelCore.Orchestrations.Services;
 using SentinelCore.UI.Services;
 
 
@@ -39,7 +41,9 @@ namespace SentinelCore.UI.ViewModels;
 /// </summary>
 public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, INavigationAware
 {
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _alertedCount;
 
     /// <summary>
@@ -48,7 +52,9 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// </summary>
     private readonly CancellationToken _appShutdownToken;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _blockedCount;
 
     private readonly ICaseFlowEngine _caseFlowEngine;
@@ -59,17 +65,23 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private bool _disposed;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _escalatedCount;
 
-    private readonly ISentinelCoreEvents _events;
+    private readonly ISystemReporter _reporter;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private string _inputText = string.Empty;
 
     [ObservableProperty] private int _investigationCount;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private bool _isBusy;
 
     /// <summary>
@@ -87,6 +99,8 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     private readonly IOrchestrationControl _orchestrationControl;
 
     [ObservableProperty] private string _statusMessage = string.Empty;
+    private ISentinelCoreEvents _events;
+    private readonly IWorkflowEventProcessor _workflowEventProcessor;
 
 
 
@@ -98,12 +112,14 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// <summary>
     ///     Initializes a new instance of the <see cref="CoreChatViewModel" /> class.
     /// </summary>
+    /// <param name="workflowEventProcessor"></param>
     /// <param name="orchestrationControl">
     ///     The orchestration control used to initialize and manage workflows.
     /// </param>
     /// <param name="events">
     ///     The event bus for handling SentinelCore output and error events.
     /// </param>
+    /// <param name="reporter"></param>
     /// <param name="caseFlowEngine">
     ///     The case flow engine responsible for querying and managing case status counts.
     /// </param>
@@ -125,22 +141,25 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// <exception cref="ArgumentNullException">
     ///     Thrown if any of the required parameters are <c>null</c>.
     /// </exception>
-    public CoreChatViewModel(IOrchestrationControl orchestrationControl, ISentinelCoreEvents events, ICaseFlowEngine caseFlowEngine, ILogger<CoreChatViewModel> logger, IDispatcherService dispatcher, IClipboardService clipboardService, IModelConfigGate modelConfigGate, CancellationToken appShutdownToken)
+    public CoreChatViewModel(IWorkflowEventProcessor workflowEventProcessor, IOrchestrationControl orchestrationControl, ISystemReporter reporter, ICaseFlowEngine caseFlowEngine, ILogger<CoreChatViewModel> logger, IDispatcherService dispatcher, IClipboardService clipboardService,ISentinelCoreEvents events, IModelConfigGate modelConfigGate, CancellationToken appShutdownToken)
     {
-        _orchestrationControl = orchestrationControl ?? throw new ArgumentNullException(nameof(orchestrationControl));
-        _events = events ?? throw new ArgumentNullException(nameof(events));
+        //  _orchestrationControl = orchestrationControl ?? throw new ArgumentNullException(nameof(orchestrationControl));
+        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         _caseFlowEngine = caseFlowEngine ?? throw new ArgumentNullException(nameof(caseFlowEngine));
+        _workflowEventProcessor = workflowEventProcessor ?? throw new ArgumentNullException(nameof(workflowEventProcessor));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
         _modelConfigGate = modelConfigGate ?? throw new ArgumentNullException(nameof(modelConfigGate));
         _appShutdownToken = appShutdownToken;
+        _orchestrationControl = orchestrationControl;
 
 
         _logger.LogInformation("CoreChatViewModel initialized.");
 
+        _events = events;
+
         _events.SentinelOutputEvent += OnSentinelOutput;
-        _events.ErrorOccurred += OnErrorOccurred;
 
         AddWelcomeMessage();
         _logger.LogTrace("CoreChatViewModel ready for user input.");
@@ -205,9 +224,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         _linkedCts?.Dispose();
         _linkedCts = null;
 
-        // Unsubscribe from events to prevent memory leaks and callbacks after disposal
-        _events.SentinelOutputEvent -= OnSentinelOutput;
-        _events.ErrorOccurred -= OnErrorOccurred;
+
     }
 
 
@@ -458,12 +475,14 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
             ChatMessage msg = new(ChatRole.User, InputText);
             AddToMessages(msg);
             InputText = string.Empty;
-
-            WorkflowExecutionResult? result = await _orchestrationControl.ExecuteStreamingAsync(msg, _linkedCts.Token);
-
-            if (result?.OutputMessages is not null)
+            IAsyncEnumerable<WorkflowEvent> result = await _orchestrationControl.ExecuteStreamingAsync(msg, _linkedCts.Token);
+            await foreach (WorkflowEvent evt in result)
             {
-                foreach (ChatMessage response in result.OutputMessages) AddToMessages(response);
+                string output = _workflowEventProcessor.ProcessEvent(evt);
+                if (!string.IsNullOrEmpty(output))
+                {
+                    AddToMessages(new ChatMessage(ChatRole.Assistant, output));
+                }
             }
         }
         catch (OperationCanceledException) when (_appShutdownToken.IsCancellationRequested)

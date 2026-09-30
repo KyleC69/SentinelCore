@@ -127,7 +127,6 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<IAgentPresetProvider, AgentPresetProvider>();
         services.AddSingleton<IAgentProfileBuilder, AgentProfileBuilder>();
         services.AddSingleton<ISystemReporter, SystemReporter>();
-        services.AddSingleton<ISentinelWorkflowExecution, SentinelWorkflowExecution>();
         services.AddSingleton<TheCoreWorkflow>();
         services.AddSingleton<ISentinelAgentFactory, SentinelAgentFactory>();
 

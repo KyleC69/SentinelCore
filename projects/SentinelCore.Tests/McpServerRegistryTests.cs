@@ -169,8 +169,8 @@ public sealed class McpServerRegistryTests
         await registry.StartAsync("server-1");
 
         // Act
-        IReadOnlyList<AITool> coreChatTools = await registry.GetToolsForAgentAsync("CoreChat");
-        IReadOnlyList<AITool> otherTools = await registry.GetToolsForAgentAsync("OtherAgent");
+        IReadOnlyList<AITool> coreChatTools = await registry.GetToolsForAgentAsync("CoreChat", "id-1");
+        IReadOnlyList<AITool> otherTools = await registry.GetToolsForAgentAsync("OtherAgent", "id-2");
 
         // Assert
         Assert.AreEqual(1, coreChatTools.Count);
@@ -197,7 +197,7 @@ public sealed class McpServerRegistryTests
         await registry.RegisterAsync(definition);
 
         // Act
-        IReadOnlyList<AITool> tools = await registry.GetToolsForAgentAsync("AnyAgent");
+        IReadOnlyList<AITool> tools = await registry.GetToolsForAgentAsync("AnyAgent", "id-1");
 
         // Assert
         Assert.AreEqual(0, tools.Count);
@@ -224,7 +224,7 @@ public sealed class McpServerRegistryTests
         await registry.StartAsync("server-1");
 
         // Act
-        IReadOnlyList<AITool> tools = await registry.GetToolsForAgentAsync("AnyAgent");
+        IReadOnlyList<AITool> tools = await registry.GetToolsForAgentAsync("AnyAgent", "id-1");
 
         // Assert
         Assert.AreEqual(1, tools.Count);

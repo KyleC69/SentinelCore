@@ -35,7 +35,7 @@ public sealed class FakeMcpServerRegistry : IMcpServerRegistry
 
 
 
-    public Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, CancellationToken cancellationToken = default) =>
+    public Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, string agentId, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<AITool>>([]);
 
 

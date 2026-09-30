@@ -49,12 +49,28 @@ public sealed class McpToolContributor : IAgentConstructionContributor
 
 
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Contributes tools to the agent construction process by retrieving tools associated with the specified agent
+    /// from the MCP server registry and adding them to the provided construction context.
+    /// </summary>
+    /// <param name="context">
+    /// The <see cref="AgentConstructionContext"/> that accumulates agent construction decisions.
+    /// This context is used to add tools retrieved for the agent.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
+    /// </param>
+    /// <returns>
+    /// A <see cref="Task"/> that represents the asynchronous operation.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when the <paramref name="context"/> is <c>null</c>.
+    /// </exception>
     public async Task ContributeAsync(AgentConstructionContext context, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        IReadOnlyList<AITool> serverTools = await _mcpServerRegistry.GetToolsForAgentAsync(context.Preset.AgentName, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<AITool> serverTools = await _mcpServerRegistry.GetToolsForAgentAsync(context.Preset.AgentName, context.Preset.AgentId, cancellationToken).ConfigureAwait(false);
 
         if (serverTools.Count > 0)
         {

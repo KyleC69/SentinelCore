@@ -36,48 +36,8 @@ namespace SentinelCore.Orchestrations.Agents;
 ///         layering and makes instruction composition testable.
 ///     </para>
 /// </summary>
-public sealed class InstructionLayerBuilder
+public static class InstructionLayerBuilder
 {
-
-
-
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="InstructionLayerBuilder" /> class.
-    /// </summary>
-    /// <param name="platformDomain">
-    ///     The platform domain instruction that grounds every agent in the system's domain.
-    ///     This is always Layer 1 in the instruction stack.
-    /// </param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="platformDomain" /> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="platformDomain" /> is whitespace.</exception>
-    public InstructionLayerBuilder(string platformDomain)
-    {
-        ArgumentNullException.ThrowIfNull(platformDomain);
-
-        if (string.IsNullOrWhiteSpace(platformDomain))
-        {
-            throw new ArgumentException("Platform domain instructions must not be empty or whitespace.", nameof(platformDomain));
-        }
-
-        PlatformDomain = platformDomain;
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Gets the platform domain instruction string used by this builder.
-    ///     Useful for testing and diagnostics.
-    /// </summary>
-    public string PlatformDomain { get; }
-
-
-
-
 
 
 
@@ -85,6 +45,10 @@ public sealed class InstructionLayerBuilder
     /// <summary>
     ///     Builds the standard 3-layer instruction stack.
     /// </summary>
+    /// <param name="platformDomain">
+    ///     The platform domain instruction that grounds every agent in the system's domain.
+    ///     This is always Layer 1 in the instruction stack.
+    /// </param>
     /// <param name="presetInstructions">
     ///     The preset/role instructions for the agent (Layer 2).
     ///     May be <c>null</c> or empty if the agent has no preset instructions.
@@ -97,12 +61,21 @@ public sealed class InstructionLayerBuilder
     ///     A <see cref="ChatMessages" /> instance containing the assembled system messages
     ///     in order: platform domain, preset instructions (if any), then task instructions (if any).
     /// </returns>
-    public ChatMessages Build(string? presetInstructions = null, string? taskInstructions = null)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="platformDomain" /> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="platformDomain" /> is whitespace.</exception>
+    public static ChatMessages Build(string platformDomain, string? presetInstructions = null, string? taskInstructions = null)
     {
+        ArgumentNullException.ThrowIfNull(platformDomain);
+
+        if (string.IsNullOrWhiteSpace(platformDomain))
+        {
+            throw new ArgumentException("Platform domain instructions must not be empty or whitespace.", nameof(platformDomain));
+        }
+
         ChatMessages messages = new();
 
         // Layer 1: Platform domain (always present, grounds the agent)
-        messages.AddSystemMessage(PlatformDomain);
+        messages.AddSystemMessage(platformDomain);
 
         // Layer 2: Preset/role instructions (from preset or override)
         if (!string.IsNullOrWhiteSpace(presetInstructions))

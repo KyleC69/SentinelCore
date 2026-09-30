@@ -4,13 +4,6 @@
 // Author: Kyle L. Crowder
 // Build Num:  092308
 
-
-
-using System.Diagnostics.CodeAnalysis;
-
-
-
-
 namespace SentinelCore.Orchestrations.Application;
 
 
@@ -31,12 +24,12 @@ namespace SentinelCore.Orchestrations.Application;
 ///     Constructed exclusively by the workflow execution engine — the internal
 ///     constructor is the only creation path, so callers cannot fabricate results.
 /// </summary>
-public sealed class WorkflowExecutionResult
+public sealed class WorkflowExecutionOutput
 {
-    internal WorkflowExecutionResult(List<ChatMessage>? outputMessages, [NotNull] List<WorkflowEventEntry> eventLog)
+    internal WorkflowExecutionOutput(ChatMessage outputMessage, WorkflowEvent? sourcEvent)
     {
-        OutputMessages = outputMessages;
-        EventLog = eventLog;
+        OutputMessage = outputMessage;
+        EventLog.Add(sourcEvent);
     }
 
 
@@ -49,7 +42,7 @@ public sealed class WorkflowExecutionResult
     /// <summary>
     ///     A chronological log of all workflow events captured during execution.
     /// </summary>
-    public IReadOnlyList<WorkflowEventEntry> EventLog { get; }
+    public IList<WorkflowEvent> EventLog { get; }
 
     /// <summary>
     ///     Whether the workflow produced output messages.
@@ -80,4 +73,10 @@ public sealed class WorkflowExecutionResult
     ///     The final output messages from the workflow, if any were produced.
     /// </summary>
     public List<ChatMessage>? OutputMessages { get; }
+
+    public ChatMessage OutputMessage { get; }
 }
+
+
+
+

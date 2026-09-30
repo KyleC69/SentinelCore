@@ -114,6 +114,8 @@ public partial class App
 
         services.AddSentinelCore(sentinelSettings);
 
+
+
         // Case Flow Engine — optional module (PL-4/PL-5). The UI host opts in to the
         // real EF Core-backed engine, overriding the null-object defaults registered
         // by AddSentinelCore. Requires the DbContext factory registration below (PL-7).
@@ -406,7 +408,7 @@ public partial class App
                 })
                 .Build();
 
-        await StartHostOnceAsync();
+        await StartHostOnceAsync(ShutdownToken);
     }
 
 

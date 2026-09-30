@@ -1,5 +1,3 @@
-
-using System.Globalization;
 using System.Text;
 
 namespace SentinelCore.Orchestrations.SafetyEngine;
@@ -20,15 +18,16 @@ public static class SafetyTagger
         ArgumentNullException.ThrowIfNull(message);
 
         ChatMessage taggedMessage = message;
+        taggedMessage.AdditionalProperties = new AdditionalPropertiesDictionary();
 
         if (score > 0)
         {
-            taggedMessage = taggedMessage.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyScore"), Obfuscate(score.ToString(CultureInfo.InvariantCulture)));
+            taggedMessage.AdditionalProperties["SafetyScore"] = score;
         }
 
         if (!string.IsNullOrWhiteSpace(result))
         {
-            taggedMessage = taggedMessage.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyResult"), Obfuscate(result));
+            taggedMessage.AdditionalProperties["IsAllowed"] = result;
         }
 
         return taggedMessage;

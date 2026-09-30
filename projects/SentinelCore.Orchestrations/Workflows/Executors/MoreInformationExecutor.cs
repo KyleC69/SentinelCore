@@ -20,7 +20,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 
 
 /// <summary>
-///     Handles the MoreInformationRequired branch: advances the case (if any) to
+///     Handles the MoreInformationRequired branch: advances the case (if any) to Needs to add logic
 ///     <see cref="CaseStatus.AwaitingInput" /> and yields a user-visible request for
 ///     additional information. The hypothesis is passed through to the next executor.
 /// </summary>

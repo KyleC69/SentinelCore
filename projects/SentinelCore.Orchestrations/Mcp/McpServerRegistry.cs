@@ -89,9 +89,10 @@ public sealed class McpServerRegistry : IMcpServerRegistry
     /// <param name="agentName"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, string agentId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
 
         List<AITool> tools = [];
 
@@ -102,7 +103,9 @@ public sealed class McpServerRegistry : IMcpServerRegistry
                 continue;
             }
 
-            bool assigned = entry.Definition.AssignedAgentNames.Count == 0 || entry.Definition.AssignedAgentNames.Contains(agentName, StringComparer.OrdinalIgnoreCase);
+            bool assigned = entry.Definition.AssignedAgentNames.Count == 0 
+                            || entry.Definition.AssignedAgentNames.Contains(agentName, StringComparer.OrdinalIgnoreCase)
+                            || entry.Definition.AssignedAgentNames.Contains(agentId, StringComparer.OrdinalIgnoreCase);
 
             if (!assigned)
             {
@@ -120,7 +123,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to list tools from MCP server {ServerId} for agent {AgentName}.", entry.Definition.Id, agentName);
+                _logger.LogError(ex, "Failed to list tools from MCP server {ServerId} for agent {AgentName} ({AgentId}).", entry.Definition.Id, agentName, agentId);
             }
         }
 

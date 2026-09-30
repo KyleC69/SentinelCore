@@ -26,9 +26,6 @@ public interface IOrchestration
     string Description { get; }
     string Name { get; }
 
-    [Obsolete("Move to Initialize. Each workflow independant from each other. Init and Execution self contained. Allows for running various workflows in app with shared interface/base")]
-    Task<Workflow> BuildWorkflow();
-
 
 
 
@@ -49,7 +46,7 @@ public interface IOrchestration
     /// An asynchronous stream of <see cref="WorkflowEvent"/> instances representing the events
     /// generated during the workflow execution, or <c>null</c> if no events are produced.
     /// </returns>
-    Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteAsync(ChatMessage inputMessage, CancellationToken token);
+    Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage inputMessage, CancellationToken token);
 
 
 

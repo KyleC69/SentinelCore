@@ -4,13 +4,6 @@
 // Author: Kyle L. Crowder
 // Build Num:  092308
 
-
-
-using SentinelCore.Orchestrations.Application;
-
-
-
-
 namespace SentinelCore.Orchestrations.Abstractions;
 
 
@@ -28,7 +21,6 @@ public interface IOrchestrationControl
     /// <param name="promptSignal">The prompt signal that starts the orchestration.</param>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task<WorkflowExecutionResult?> InitializeOrchestrationAsync(ChatMessage promptSignal, CancellationToken token);
 
 
 
@@ -37,5 +29,16 @@ public interface IOrchestrationControl
 
 
 
-    Task<object> ExecuteStreamingAsync(ChatMessage msg, CancellationToken linkedCtsToken);
+    Task<IAsyncEnumerable<WorkflowEvent>> ExecuteStreamingAsync(ChatMessage msg, CancellationToken linkedCtsToken);
+
+
+
+
+
+
+
+
+    Task InitializeOrchestrationAsync(CancellationToken linkedCtsToken);
+
+
 }

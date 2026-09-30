@@ -24,7 +24,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     pathways.
 ///     If it is on the list, it will be logged and the flow terminated.
 /// </summary>
-[YieldsOutput(typeof(SuppressionDecision))]
+[YieldsOutput(typeof(ChatMessage))]
 public sealed partial class WhiteListExecutor : Executor
 {
     private readonly ISystemReporter _reporter;
@@ -68,7 +68,7 @@ public sealed partial class WhiteListExecutor : Executor
     /// <summary>
     ///     Creates a fallback result when the executor encounters an error or receives null input.
     /// </summary>
-    private SuppressionDecision CreateFallbackResult() => new() { Command = CommandValue.OTHER, Prompt = string.Empty, Suppress = false };
+    private ChatMessage CreateFallbackResult() => new(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)}.");
 
 
 
@@ -78,16 +78,38 @@ public sealed partial class WhiteListExecutor : Executor
 
 
     /// <summary>
-    ///     Main executor entry point called by the MAF dispatcher.
-    ///     Provides uniform cross-cutting concerns: logging, null validation,
-    ///     cooperative cancellation propagation, and structured error handling.
+    ///     Core processing logic: checks the signal against the operator's whitelist.
     /// </summary>
-    /// <param name="message">The input message to process.</param>
-    /// <param name="context">The workflow context for shared-state updates and output yielding.</param>
-    /// <param name="ct">A token to monitor for cancellation requests.</param>
-    /// <returns>A <see cref="SuppressionDecision" /> indicating whether the signal should be suppressed.</returns>
+    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct)
+    {
+        _reporter.ReportInfo("Starting whitelist executor...");
+        return message;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    /// Handles the suppression of a chat message by evaluating it against the operator's whitelist.
+    /// </summary>
+    /// <param name="message">The chat message to be evaluated.</param>
+    /// <param name="context">The workflow context providing execution details.</param>
+    /// <param name="ct">The cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>
+    /// A <see cref="ChatMessage"/> indicating the result of the suppression process.
+    /// </returns>
+    /// <exception cref="OperationCanceledException">Thrown when the operation is canceled.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is null.</exception>
+    /// <remarks>
+    /// If the message is not on the whitelist, it will proceed through normal processing.
+    /// If it is on the whitelist, the flow will be terminated, and the message will be logged.
+    /// </remarks>
     [MessageHandler]
-    public async ValueTask<SuppressionDecision> HandleAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct = default)
+    public async ValueTask<ChatMessage> HandleSuppressAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct = default)
     {
         // --- Status: Executor start ---
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(ChatMessage).Name}");
@@ -95,8 +117,8 @@ public sealed partial class WhiteListExecutor : Executor
         // --- Null validation ---
         if (message is null)
         {
-            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(SuppressionDecision)}.");
-            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(SuppressionDecision)}."), ct).ConfigureAwait(false);
+            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), ct).ConfigureAwait(false);
             return CreateFallbackResult();
         }
 
@@ -105,16 +127,16 @@ public sealed partial class WhiteListExecutor : Executor
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
-            SuppressionDecision result = await ProcessMessageAsync(message, context, ct).ConfigureAwait(false);
+            ChatMessage result = await ProcessMessageAsync(message, context, ct).ConfigureAwait(false);
 
             if (result is null)
             {
-                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(SuppressionDecision)}.");
+                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(ChatMessage)}.");
                 result = CreateFallbackResult();
             }
 
             // --- Status: Final output ---
-            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(SuppressionDecision)}");
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(ChatMessage)}");
 
             return result;
         }
@@ -131,7 +153,7 @@ public sealed partial class WhiteListExecutor : Executor
 
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), ct).ConfigureAwait(false);
 
-            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(SuppressionDecision)} due to error.");
+            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
 
             return CreateFallbackResult();
         }
@@ -141,75 +163,8 @@ public sealed partial class WhiteListExecutor : Executor
 
 
 
-
-
-
-    /// <summary>
-    ///     Core processing logic: checks the signal against the operator's whitelist.
-    /// </summary>
-    private async ValueTask<SuppressionDecision> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct)
-    {
-        _reporter.ReportInfo("Starting whitelist executor...");
-
-        SuppressionDecision results = new();
-        if (message.Text.StartsWith("CASEGEN:", StringComparison.CurrentCulture))
-        {
-            _reporter.ReportInfo("Detected CASEGEN command. Bypassing whitelist check.");
-            results.Command = CommandValue.CASEGEN;
-            results.Prompt = message.Text.Substring(8); // Extract the prompt after "CASEGEN:"
-        }
-        else
-        {
-            results.Command = CommandValue.OTHER;
-            results.Prompt = message.Text;
-        }
-
-        await context.SendMessageAsync(results, cancellationToken: ct).ConfigureAwait(false);
-        return results;
-    }
 }
 
 
 
 
-
-/// <summary>
-///     Represents a decision about whether a signal should be suppressed.
-/// </summary>
-public class SuppressionDecision
-{
-    /// <summary>
-    ///     Gets or sets the command value indicating the type of signal.
-    /// </summary>
-    public CommandValue Command { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the prompt text extracted from the signal.
-    /// </summary>
-    public string Prompt { get; set; } = string.Empty;
-
-    /// <summary>
-    ///     Gets or sets whether the signal should be suppressed.
-    /// </summary>
-    public bool Suppress { get; set; }
-}
-
-
-
-
-
-/// <summary>
-///     Enumerates the possible command values for signal classification.
-/// </summary>
-public enum CommandValue
-{
-    /// <summary>
-    ///     Indicates a case generation command.
-    /// </summary>
-    CASEGEN,
-
-    /// <summary>
-    ///     Indicates any other command type.
-    /// </summary>
-    OTHER
-}

@@ -9,7 +9,7 @@
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
-using SentinelCore.Orchestrations.Application;
+using SentinelCore.Orchestrations.Services;
 
 
 
@@ -40,7 +40,10 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public CustomGroupWorkflow(ICaseGenerator generator, ISystemReporter systemReporter, IAgentProfileBuilder agentSpecBuilder, ISentinelAgentFactory agentFactory) : base(systemReporter)
+    public CustomGroupWorkflow(ICaseGenerator generator,
+            ISystemReporter systemReporter,
+            IAgentProfileBuilder agentSpecBuilder,
+            ISentinelAgentFactory agentFactory, IWorkflowEventProcessor processor) : base(systemReporter, processor)
     {
         _agentSpecBuilder = agentSpecBuilder;
         _agentFactory = agentFactory;
@@ -78,17 +81,30 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public async Task<WorkflowExecutionResult?> ExecuteAsync(ChatMessage promptSignal, CancellationToken token)
+
+
+
+
+
+
+
+
+    /// <summary>
+    /// Executes the workflow asynchronously based on the provided input message.
+    /// </summary>
+    /// <param name="inputMessage">
+    /// The input message that serves as the context or payload for the workflow execution.
+    /// </param>
+    /// <param name="token">
+    /// A <see cref="CancellationToken"/> to observe while waiting for the task to complete.
+    /// </param>
+    /// <returns>
+    /// An asynchronous stream of <see cref="WorkflowEvent"/> instances representing the events
+    /// generated during the workflow execution, or <c>null</c> if no events are produced.
+    /// </returns>
+    public Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage inputMessage, CancellationToken token)
     {
-        AgentResponse response = await GetAgentResponse(promptSignal.Text);
-
-        _reporter.ReportInfo($"CustomGroup agent response: {response.Text}");
-
-        return new WorkflowExecutionResult([
-                        new ChatMessage(ChatRole.Assistant, response.Text)
-                ], eventLog:
-                [
-                ]);
+        throw new NotImplementedException();
     }
 
 
@@ -98,9 +114,14 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public Task InitializeAsync(CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        await EnsureAgentInitializedAsync();
     }
 
 
