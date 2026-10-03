@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkFlowStateKeys.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -20,5 +20,5 @@ public class WorkFlowStateKeys
 {
     public const string CASE_ID = "CaseId";
     public const string PROMPT = "Prompt";
-    public const string SIGNAL_HYPOTHESIS = "SignalHypothesis";
+    public const string SIGNAL_HYPOTHESIS = "ChatMessage";
 }

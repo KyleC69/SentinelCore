@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ChatMessages.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -95,7 +95,7 @@ public class ChatMessages : IEnumerable<ChatMessage>
 
 
 
-    public void Add(ChatMessage message)
+    public void Add(ChatMessage? message)
     {
         _messages.Add(message);
     }

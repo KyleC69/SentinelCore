@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CustomGroup.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -40,26 +40,11 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public CustomGroupWorkflow(ICaseGenerator generator,
-            ISystemReporter systemReporter,
-            IAgentProfileBuilder agentSpecBuilder,
-            ISentinelAgentFactory agentFactory, IWorkflowEventProcessor processor) : base(systemReporter, processor)
+    public CustomGroupWorkflow(ICaseGenerator generator, ISystemReporter systemReporter, IAgentProfileBuilder agentSpecBuilder, ISentinelAgentFactory agentFactory, IWorkflowEventProcessor processor) : base(systemReporter, processor)
     {
         _agentSpecBuilder = agentSpecBuilder;
         _agentFactory = agentFactory;
         _generator = generator;
-    }
-
-
-
-
-
-
-
-
-    public Task<Workflow> BuildWorkflow()
-    {
-        throw new NotImplementedException();
     }
 
 
@@ -81,26 +66,18 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-
-
-
-
-
-
-
-
     /// <summary>
-    /// Executes the workflow asynchronously based on the provided input message.
+    ///     Executes the workflow asynchronously based on the provided input message.
     /// </summary>
     /// <param name="inputMessage">
-    /// The input message that serves as the context or payload for the workflow execution.
+    ///     The input message that serves as the context or payload for the workflow execution.
     /// </param>
     /// <param name="token">
-    /// A <see cref="CancellationToken"/> to observe while waiting for the task to complete.
+    ///     A <see cref="CancellationToken" /> to observe while waiting for the task to complete.
     /// </param>
     /// <returns>
-    /// An asynchronous stream of <see cref="WorkflowEvent"/> instances representing the events
-    /// generated during the workflow execution, or <c>null</c> if no events are produced.
+    ///     An asynchronous stream of <see cref="WorkflowEvent" /> instances representing the events
+    ///     generated during the workflow execution, or <c>null</c> if no events are produced.
     /// </returns>
     public Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage inputMessage, CancellationToken token)
     {
@@ -134,6 +111,18 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
     public string Name
     {
         get => "Custom Group Workflow";
+    }
+
+
+
+
+
+
+
+
+    public Task<Workflow> BuildWorkflow()
+    {
+        throw new NotImplementedException();
     }
 
 

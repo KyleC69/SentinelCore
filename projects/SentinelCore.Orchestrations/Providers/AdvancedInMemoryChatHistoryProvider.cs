@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AdvancedInMemoryChatHistoryProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -63,7 +63,7 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
 
         // Since we are receiving all messages that were contributed earlier, including those from chat history, we need to filter out the messages that came from chat history
         // so that we don't store message we already have in storage.
-        var filteredRequestMessages = context.RequestMessages.Where(m => m.GetAgentRequestMessageSourceType() != AgentRequestMessageSourceType.ChatHistory);
+        IEnumerable<ChatMessage> filteredRequestMessages = context.RequestMessages.Where(m => m.GetAgentRequestMessageSourceType() != AgentRequestMessageSourceType.ChatHistory);
 
         State state = _sessionState.GetOrInitializeState(context.Session);
 

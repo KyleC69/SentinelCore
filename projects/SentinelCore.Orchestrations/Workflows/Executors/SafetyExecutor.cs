@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -35,46 +35,6 @@ public sealed partial class SafetyExecutor : Executor
     private readonly ISentinelAgentFactory _agentFactory;
     private readonly ISystemReporter _reporter;
     private readonly SafetyRuleEngine _ruleEngine;
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="SafetyExecutor" />.
-    /// </summary>
-    /// <param name="reporter">The system reporter for logging safety events.</param>
-    /// <param name="agentFactory">The agent factory for creating safety agents.</param>
-    /// <param name="loggerFactory">The logger factory for creating safety engine loggers.</param>
-    public SafetyExecutor(ISystemReporter reporter, ISentinelAgentFactory agentFactory, ILoggerFactory loggerFactory, IEnumerable<ISafetyRule>? rules = null) : base("SafetyExecutor")
-    {
-        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
-        _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
-        Name = Id;
-
-        // Initialize the rule engine with provided or default safety rules
-        var ruleList = rules?.ToList() ?? DefaultRules.ToList();
-        _ruleEngine = new SafetyRuleEngine(ruleList, loggerFactory, reporter: _reporter);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
-    /// </summary>
-    public string Name { get; init; }
-
-
-
-
-
 
 
 
@@ -126,6 +86,77 @@ public sealed partial class SafetyExecutor : Executor
 
 
 
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="SafetyExecutor" />.
+    /// </summary>
+    /// <param name="reporter">The system reporter for logging safety events.</param>
+    /// <param name="agentFactory">The agent factory for creating safety agents.</param>
+    /// <param name="loggerFactory">The logger factory for creating safety engine loggers.</param>
+    public SafetyExecutor(ISystemReporter reporter, ISentinelAgentFactory agentFactory, ILoggerFactory loggerFactory, IEnumerable<ISafetyRule>? rules = null) : base("SafetyExecutor")
+    {
+        _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
+        _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
+        Name = Id;
+
+        // Initialize the rule engine with provided or default safety rules
+        var ruleList = rules?.ToList() ?? DefaultRules.ToList();
+        _ruleEngine = new SafetyRuleEngine(ruleList, loggerFactory, reporter: _reporter);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
+    /// </summary>
+    public string Name { get; init; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Applies safety evaluation results to a chat message by attaching safety-related metadata.
+    /// </summary>
+    /// <param name="message">
+    ///     The chat message to which safety tags will be applied.
+    /// </param>
+    /// <param name="result">
+    ///     The safety evaluation result containing the safety score, evaluation status, and other metadata.
+    /// </param>
+    /// <returns>
+    ///     A new <see cref="ChatMessage" /> instance with safety tags applied to its additional properties.
+    /// </returns>
+    /// <remarks>
+    ///     This method determines the safety result IsAllowed: (e.g., "True" or "False") based on the evaluation result
+    ///     and attaches it to the message along with the total safety score.
+    /// </remarks>
+    private static ChatMessage ApplySafetyTags(ChatMessage message, SafetyEvaluationResult result)
+    {
+        message.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+
+        // Apply standard safety metadata
+        message.AdditionalProperties["SafetyScore"] = result.TotalScore;
+        message.AdditionalProperties["IsAllowed"] = result.IsAllowed.ToString();
+
+        // Apply tags expected by existing tests and for backward compatibility
+        message.AdditionalProperties["safetyScore"] = result.TotalScore;
+        message.AdditionalProperties["safetyResult"] = result.IsAllowed ? "allowed" : "blocked";
+
+        return message;
+    }
+
+
+
+
+
 
 
 
@@ -148,27 +179,29 @@ public sealed partial class SafetyExecutor : Executor
         if (message is null)
         {
             _reporter.ReportError($"[{Name}] Input message was null.");
-            var fallback = new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null.");
+            ChatMessage fallback = new(ChatRole.Assistant, $"[{Name}] Input message was null.");
             await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
             return new DetectionBoolResult(fallback, true);
         }
 
         try
         {
+
+            await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message.Text, "SharedState", cancellationToken);
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
             ChatMessage? result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
-            if (result is null)
+            if (string.IsNullOrEmpty(result?.Text))
             {
                 _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Defaulting to blocked for safety.");
                 return new DetectionBoolResult(message, true);
             }
 
             // DetectionBoolResult.IsTrue = true means the message IS blocked/detected
-            var isBlocked = result.GetMetaTagByKey("IsAllowed") == "False";
-            var output = new DetectionBoolResult(result, isBlocked);
+            bool isBlocked = result.GetMetaTagByKey("IsAllowed") == "False";
+            DetectionBoolResult output = new(result, isBlocked);
             _reporter.ReportInfo($"[{Name}] Message processed. IsBlocked: {output.IsTrue}");
 
             return output;
@@ -184,7 +217,7 @@ public sealed partial class SafetyExecutor : Executor
             // --- Robust error handling ---
             _reporter.ReportError($"[{Name}] Exception: {ex.Message}", ex);
 
-            var msg = new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}");
+            ChatMessage msg = new(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}");
             await context.YieldOutputAsync(msg, cancellationToken).ConfigureAwait(false);
 
             _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
@@ -220,60 +253,13 @@ public sealed partial class SafetyExecutor : Executor
 
         _reporter.ReportInfo($"[{Name}] DEBUG: SafetyRuleEngine result - IsAllowed: {result.IsAllowed}, Score: {result.TotalScore}, Summary: {result.Summary}");
 
-        ChatMessage taggedMessage = ApplySafetyTags(message, result); // <------ This line applies safety result to the additional properties of the message
-        await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, taggedMessage, "SharedState", cancellationToken);
+        // ChatMessage taggedMessage = ApplySafetyTags(message, result); // <------ This line applies safety result to the additional properties of the message
+        await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message, "SharedState", cancellationToken);
 
-        //Verifying a result was attached to the message and if it was blocked, return a blocked response message
-        if (taggedMessage.GetMetaTagByKey("IsAllowed") == "False")
-        {
-            _reporter.ReportWarning($"[{Name}] - Safety block: {result.Summary}");
 
-        }
-
-        if (int.TryParse(taggedMessage.GetMetaTagByKey("SafetyScore"), out int safetyScore) && safetyScore > 0)
-        {
-            _reporter.ReportWarning($"[{Name}] - Safety warning: {result.Summary}");
-        }
 
         _reporter.ReportInfo($"[{Name}] Message passed safety evaluation with {result.RuleResults.Count} rule result(s).");
 
-        return taggedMessage;
-    }
-
-
-
-
-
-
-
-    /// <summary>
-    /// Applies safety evaluation results to a chat message by attaching safety-related metadata.
-    /// </summary>
-    /// <param name="message">
-    /// The chat message to which safety tags will be applied.
-    /// </param>
-    /// <param name="result">
-    /// The safety evaluation result containing the safety score, evaluation status, and other metadata.
-    /// </param>
-    /// <returns>
-    /// A new <see cref="ChatMessage"/> instance with safety tags applied to its additional properties.
-    /// </returns>
-    /// <remarks>
-    /// This method determines the safety result IsAllowed: (e.g., "True" or "False") based on the evaluation result
-    /// and attaches it to the message along with the total safety score.
-    /// </remarks>
-    private static ChatMessage ApplySafetyTags(ChatMessage message, SafetyEvaluationResult result)
-    {
-        message.AdditionalProperties ??= new AdditionalPropertiesDictionary();
-        
-        // Apply standard safety metadata
-        message.AdditionalProperties["SafetyScore"] = result.TotalScore;
-        message.AdditionalProperties["IsAllowed"] = result.IsAllowed.ToString();
-        
-        // Apply tags expected by existing tests and for backward compatibility
-        message.AdditionalProperties["safetyScore"] = result.TotalScore;
-        message.AdditionalProperties["safetyResult"] = result.IsAllowed ? "allowed" : "blocked";
-        
         return message;
     }
 }

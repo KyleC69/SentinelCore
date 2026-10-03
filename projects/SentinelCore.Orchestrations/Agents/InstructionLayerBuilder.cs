@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         InstructionLayerBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -41,21 +41,28 @@ public static class InstructionLayerBuilder
 
 
 
-
     /// <summary>
     ///     Builds the standard 3-layer instruction stack.
     /// </summary>
     /// <param name="platformDomain">
     ///     The platform domain instruction that grounds every agent in the system's domain.
     ///     This is always Layer 1 in the instruction stack.
+    ///     This core system instruction ground the agents to *How* the system is being used. This platform can be used
+    ///     in many different scenarios from factories to auto industry. This is a key instruction - instead of giving a model
+    ///     the entire world
+    ///     to work in, they operate more efficiently when given a structured more targeted domain to work in.
     /// </param>
     /// <param name="presetInstructions">
     ///     The preset/role instructions for the agent (Layer 2).
     ///     May be <c>null</c> or empty if the agent has no preset instructions.
+    ///     This system message should be narrowed to general expectations of the agent in this role
+    ///     for example a reviewer should have an outline to follow but maybe not what it was reviewing.
     /// </param>
     /// <param name="taskInstructions">
     ///     Optional task-specific instructions for the current invocation (Layer 3).
     ///     May be <c>null</c> or empty if no task-specific instructions are needed.
+    ///     These are user level messages and are specific to the task
+    ///     for example the reviewer is reviewing a gospel song now and needs to know this.
     /// </param>
     /// <returns>
     ///     A <see cref="ChatMessages" /> instance containing the assembled system messages
@@ -86,7 +93,7 @@ public static class InstructionLayerBuilder
         // Layer 3: Task-specific instructions (executor-specific)
         if (!string.IsNullOrWhiteSpace(taskInstructions))
         {
-            messages.AddSystemMessage(taskInstructions);
+            messages.AddUserMessage(taskInstructions);
         }
 
         return messages;

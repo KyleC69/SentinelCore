@@ -2,13 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         Ledger.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
 using System.Text.Json.Serialization;
-
-using SentinelCore.Orchestrations.Workflows;
 
 
 
@@ -62,7 +60,7 @@ public sealed class InvestigationStep
 public sealed class InvestigationLedger
 {
 
-    [JsonPropertyName("hypothesis")] public SignalHypothesis Hypothesis { get; set; } = default!;
+    [JsonPropertyName("hypothesis")] public ChatMessage Hypothesis { get; set; } = default!;
 
     [JsonPropertyName("signalId")] public string SignalId { get; set; } = string.Empty;
 
@@ -90,7 +88,7 @@ public sealed class AgentCapabilities
 
 public sealed class CoreDirective
 {
-    [JsonPropertyName("hypothesis")] public SignalHypothesis Hypothesis { get; set; } = default!;
+    [JsonPropertyName("hypothesis")] public ChatMessage Hypothesis { get; set; } = default!;
 
     [JsonPropertyName("intent")] public DirectiveIntent Intent { get; set; }
 

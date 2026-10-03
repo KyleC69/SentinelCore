@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         HumanOperatorExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -24,7 +24,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     passes the hypothesis through so downstream consumers can inspect it.
 /// </summary>
 [YieldsOutput(typeof(ChatMessage))]
-[YieldsOutput(typeof(SignalHypothesis))]
+[YieldsOutput(typeof(ChatMessage))]
 public sealed partial class HumanOperatorExecutor : Executor
 {
     private readonly ISystemReporter _reporter;
@@ -68,15 +68,6 @@ public sealed partial class HumanOperatorExecutor : Executor
     /// <summary>
     ///     Creates a fallback result when the executor encounters an error or receives null input.
     /// </summary>
-    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: human operator executor did not produce a result." };
-
-
-
-
-
-
-
-
     /// <summary>
     ///     Handles the escalation of a signal to a human operator.
     ///     Provides uniform cross-cutting concerns: logging, null validation,
@@ -87,17 +78,16 @@ public sealed partial class HumanOperatorExecutor : Executor
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The hypothesis, passed through unchanged.</returns>
     [MessageHandler]
-    public async ValueTask<SignalHypothesis> HandleSignalHypothesisAsync(SignalHypothesis input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask HandleChatMessageAsync(ChatMessage input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // --- Status: Executor start ---
-        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(SignalHypothesis)}");
+        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(ChatMessage)}");
 
         // --- Null validation ---
         if (input is null)
         {
-            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}.");
-            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}."), cancellationToken).ConfigureAwait(false);
-            return CreateFallbackResult();
+            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
         }
 
         try
@@ -105,18 +95,16 @@ public sealed partial class HumanOperatorExecutor : Executor
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
-            SignalHypothesis result = await ProcessMessageAsync(input, context, cancellationToken).ConfigureAwait(false);
+            ChatMessage result = new(); //await ProcessMessageAsync(input, context, cancellationToken).ConfigureAwait(false);
 
             if (result is null)
             {
-                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(SignalHypothesis)}.");
-                result = CreateFallbackResult();
+                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(ChatMessage)}.");
             }
 
             // --- Status: Final output ---
-            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(SignalHypothesis)}");
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(ChatMessage)}");
 
-            return result;
         }
         catch (OperationCanceledException)
         {
@@ -131,10 +119,10 @@ public sealed partial class HumanOperatorExecutor : Executor
 
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
 
-            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(SignalHypothesis)} due to error.");
+            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
 
-            return CreateFallbackResult();
         }
+
     }
 
 
@@ -147,20 +135,9 @@ public sealed partial class HumanOperatorExecutor : Executor
     /// <summary>
     ///     Core processing logic: acknowledges the escalation and yields a user-visible message.
     /// </summary>
-    private async ValueTask<SignalHypothesis> ProcessMessageAsync(SignalHypothesis input, IWorkflowContext context, CancellationToken cancellationToken)
+    private async ValueTask ProcessMessageAsync(ChatMessage input, IWorkflowContext context, CancellationToken cancellationToken)
     {
-        _reporter.ReportInfo($"Signal escalated to human operator. NextStep: {input.NextStep}, Reasoning: {input.Reasoning ?? "(none)"}");
+        await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, "message"), cancellationToken).ConfigureAwait(false);
 
-        string prompt = string.IsNullOrWhiteSpace(input.OrigPrompt) ? "the signal" : $"\"{input.OrigPrompt}\"";
-        string message = input.NextStep switch
-        {
-                NextStep.RedAlert => $"🚨 **Red Alert** — {prompt} was classified as a critical event and requires immediate human attention.",
-                NextStep.MoreInformationRequired => $"ℹ️ More information is required to investigate {prompt}. Please provide additional details so the investigation can proceed.",
-                _ => $"👤 {prompt} has been escalated to a human operator for review."
-        };
-
-        await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, message), cancellationToken).ConfigureAwait(false);
-
-        return input;
     }
 }

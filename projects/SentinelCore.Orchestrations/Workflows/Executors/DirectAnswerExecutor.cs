@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         DirectAnswerExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -83,7 +83,7 @@ public sealed partial class DirectAnswerExecutor : Executor
     /// <summary>
     ///     Handles the direct answer workflow step by invoking an AIAgent to produce a textual response.
     /// </summary>
-    /// <param name="input">The <see cref="SignalHypothesis" /> containing the prompt for the agent.</param>
+    /// <param name="input">The <see cref="ChatMessage" /> containing the prompt for the agent.</param>
     /// <param name="context">The <see cref="IWorkflowContext" /> for yielding output.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A <see cref="ValueTask" /> representing the asynchronous operation.</returns>
@@ -94,7 +94,7 @@ public sealed partial class DirectAnswerExecutor : Executor
     ///     fallback message and returns early; it never falls through to a null response dereference.
     /// </remarks>
     [MessageHandler]
-    public async ValueTask<ChatMessage?> HandleAnswerAsync(SignalHypothesis? input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask<ChatMessage?> HandleAnswerAsync(ChatMessage? input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(ChatMessage).Name}");
 
@@ -103,7 +103,7 @@ public sealed partial class DirectAnswerExecutor : Executor
             if (input is null)
             {
                 _reporter.ReportWarning($"[{Name}] received null input.");
-                var fallback = new ChatMessage(ChatRole.Assistant, "I am unable to process your request due to missing information.");
+                ChatMessage fallback = new(ChatRole.Assistant, "I am unable to process your request due to missing information.");
                 await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
                 return fallback;
             }
@@ -111,12 +111,12 @@ public sealed partial class DirectAnswerExecutor : Executor
             if (_agent.Name is not "TheCore")
             {
                 _reporter.ReportError($"[{Name}] Agent is null.");
-                var fallback = new ChatMessage(ChatRole.Assistant, "An internal error prevented me from providing a response.");
+                ChatMessage fallback = new(ChatRole.Assistant, "An internal error prevented me from providing a response.");
                 await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
                 return fallback;
             }
 
-            string prompt = input.OrigPrompt;
+            string prompt = ""!;
             if (string.IsNullOrWhiteSpace(prompt))
             {
                 prompt = await context.ReadStateAsync<string>(WorkFlowStateKeys.PROMPT, "SharedState", cancellationToken).ConfigureAwait(false) ?? string.Empty;
@@ -127,7 +127,7 @@ public sealed partial class DirectAnswerExecutor : Executor
             if (string.IsNullOrWhiteSpace(prompt))
             {
                 _reporter.ReportWarning($"[{Name}] had no prompt on the hypothesis or in shared state.");
-                var fallback = new ChatMessage(ChatRole.Assistant, "I am unable to provide a response at this time.");
+                ChatMessage fallback = new(ChatRole.Assistant, "I am unable to provide a response at this time.");
                 await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
                 return fallback;
             }
@@ -143,13 +143,13 @@ public sealed partial class DirectAnswerExecutor : Executor
             {
                 Debugger.Break();
                 _reporter.ReportWarning("DirectAnswerExecutor agent returned a null response.");
-                var fallback = new ChatMessage(ChatRole.Assistant, "I am unable to provide a response at this time.");
+                ChatMessage fallback = new(ChatRole.Assistant, "I am unable to provide a response at this time.");
                 await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
                 return fallback;
             }
 
             _reporter.ReportInfo("Finished HandleAsync in DirectAnswerExecutor successfully");
-            var result = new ChatMessage(ChatRole.Assistant, agResponse.Text);
+            ChatMessage result = new(ChatRole.Assistant, agResponse.Text);
             await context.YieldOutputAsync(result, cancellationToken).ConfigureAwait(false);
             return result;
         }
@@ -162,7 +162,7 @@ public sealed partial class DirectAnswerExecutor : Executor
             _reporter.ReportError($"[CRITICAL WORKFLOW ERROR] Failed at {this}", ex);
             _reporter.ReportError($"Exception Type: {ex.GetType().Name}", ex);
             _reporter.ReportError($"Stack Trace: {ex.StackTrace}", ex);
-            var fallback = new ChatMessage(ChatRole.Assistant, "An error occurred while processing your request.");
+            ChatMessage fallback = new(ChatRole.Assistant, "An error occurred while processing your request.");
             await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
             return fallback;
         }

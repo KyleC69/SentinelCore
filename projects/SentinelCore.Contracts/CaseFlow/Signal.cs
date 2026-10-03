@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         Signal.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -21,6 +21,7 @@ public sealed class Signal
         Timestamp = DateTime.UtcNow;
         // Initialize non-nullable Notes to an empty string to satisfy CS8618.
         Notes = string.Empty;
+        OrigPrompt = string.Empty;
     }
 
 
@@ -32,6 +33,7 @@ public sealed class Signal
 
     public int Id { get; set; }
     public string Notes { get; set; }
+    public string OrigPrompt { get; set; }
     public int SignalId { get; set; }
 
     public string SignalText { get; set; }

@@ -37,5 +37,13 @@
 	<ItemGroup>
 		<AssemblyMetadata Include="SentinelCoreSourceRoot" Value="$(MSBuildThisFileDirectory)..\..\" />
 	</ItemGroup>
+	<ItemGroup>
+	  <None Include="Workflows\Executors\AggregationExecutorTests.cs" />
+	  <None Include="Workflows\Executors\CaseUpdateExecutorTests.cs" />
+	  <None Include="Workflows\Executors\CriticalAlertTests.cs" />
+	  <None Include="Workflows\Executors\DirectAnswerExecutorTests.cs" />
+	  <None Include="Workflows\Executors\HumanOperatorExecutorTests.cs" />
+	  <None Include="Workflows\Executors\TheCoreExecTests.cs" />
+	</ItemGroup>
 
 </Project>

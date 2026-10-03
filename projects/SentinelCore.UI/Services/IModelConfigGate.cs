@@ -2,9 +2,11 @@
 // Project:   SentinelCore.UI
 // File:         IModelConfigGate.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
+
+using System.Net.Sockets;
 
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Mcp;
@@ -31,6 +33,11 @@ public interface IModelConfigGate
     ///     profile (per-agent entry or role tier).
     /// </summary>
     bool IsConfigurationComplete { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether the Ollama service is reachable and responding.
+    /// </summary>
+    bool IsOllamaAvailable { get; }
 
     /// <summary>
     ///     Gets the names of the catalog agents that have no model configuration.
@@ -97,6 +104,11 @@ public sealed class ModelConfigGate : IModelConfigGate
 
     public string BuildGateMessage()
     {
+        if (!IsOllamaAvailable)
+        {
+            return "Ollama service is not available. Please ensure Ollama is running and accessible at the configured endpoint.";
+        }
+
         IReadOnlyList<string> missing = UnconfiguredAgents;
 
         if (missing.Count == 0)
@@ -116,7 +128,25 @@ public sealed class ModelConfigGate : IModelConfigGate
 
     public bool IsConfigurationComplete
     {
-        get => UnconfiguredAgents.Count == 0;
+        get => IsOllamaAvailable && UnconfiguredAgents.Count == 0;
+    }
+
+    public bool IsOllamaAvailable
+    {
+        get
+        {
+            try
+            {
+                using TcpClient client = new();
+                IAsyncResult result = client.BeginConnect("127.0.0.1", 11434, null, null);
+                bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2));
+                return success;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 
 
@@ -127,12 +157,10 @@ public sealed class ModelConfigGate : IModelConfigGate
             List<string> missing = [];
 
             foreach (string agentName in _agentCatalog.GetAgentNamesAsync().GetAwaiter().GetResult())
-            {
                 if (!_settings.AgentModels.ContainsKey(agentName))
                 {
                     missing.Add(agentName);
                 }
-            }
 
             return missing;
         }

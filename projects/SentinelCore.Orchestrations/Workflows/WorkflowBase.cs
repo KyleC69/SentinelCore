@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowBase.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -24,16 +24,19 @@ namespace SentinelCore.Orchestrations.Workflows;
 /// </summary>
 public abstract class WorkflowBase
 {
-    protected ISystemReporter _reporter;
     protected IWorkflowEventProcessor _eventProcessor;
+    protected ISystemReporter _reporter;
+
+
+
+
+
+
+
 
     protected WorkflowBase(ISystemReporter reporter, IWorkflowEventProcessor eventProcessor)
     {
         _reporter = reporter;
         _eventProcessor = eventProcessor;
     }
-
-
-
 }
-

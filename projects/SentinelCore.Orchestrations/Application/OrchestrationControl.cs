@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         OrchestrationControl.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -18,6 +18,7 @@ using SentinelCore.Orchestrations.Services;
 
 
 namespace SentinelCore.Orchestrations.Application;
+
 
 
 
@@ -40,6 +41,7 @@ public sealed class OrchestrationControl : IOrchestrationControl
 
 
 
+
     //TODO: Incorrect settings param needs to come from UI settings page- Orchestration Factory can read options directly for selected orchestration
     public OrchestrationControl(IOrchestrationFactory orchestrationFactory, IOptions<SentinelCoreSettings> settings, ISystemReporter systemReporter, IWorkflowEventProcessor eventProcessor)
     {
@@ -54,19 +56,25 @@ public sealed class OrchestrationControl : IOrchestrationControl
 
 
 
+
+
     /// <summary>
-    /// Executes a streaming operation asynchronously, producing a sequence of workflow events.
+    ///     Executes a streaming operation asynchronously, producing a sequence of workflow events.
     /// </summary>
-    /// <param name="input">The <see cref="ChatMessage"/> containing the input data for the operation.</param>
-    /// <param name="linkedCtsToken">A <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
+    /// <param name="input">The <see cref="ChatMessage" /> containing the input data for the operation.</param>
+    /// <param name="linkedCtsToken">
+    ///     A <see cref="CancellationToken" /> used to propagate notifications that the operation
+    ///     should be canceled.
+    /// </param>
     /// <returns>
-    /// An asynchronous enumerable of <see cref="WorkflowEvent"/> representing the sequence of events produced by the operation,
-    /// or <c>null</c> if the operation does not produce any events.
+    ///     An asynchronous enumerable of <see cref="WorkflowEvent" /> representing the sequence of events produced by the
+    ///     operation,
+    ///     or <c>null</c> if the operation does not produce any events.
     /// </returns>
     /// <remarks>
-    /// This method delegates the execution to the underlying orchestration component.
+    ///     This method delegates the execution to the underlying orchestration component.
     /// </remarks>
-    public async Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage input, CancellationToken linkedCtsToken)
+    public async Task<IAsyncEnumerable<WorkflowEvent>> ExecuteStreamingAsync(ChatMessage input, CancellationToken linkedCtsToken)
     {
         return await _orchestration.ExecuteStreamingAsync(input, linkedCtsToken);
     }
@@ -79,7 +87,7 @@ public sealed class OrchestrationControl : IOrchestrationControl
 
 
     /// <summary>
-    /// Called from Background Service at startup
+    ///     Called from Background Service at startup
     /// </summary>
     /// <param name="linkedCtsToken"></param>
     /// <returns></returns>
@@ -98,7 +106,4 @@ public sealed class OrchestrationControl : IOrchestrationControl
         // Raising an event to notify that the orchestration process is starting. This can be useful for logging, monitoring, or triggering other actions in response to the start of the orchestration.
         _systemReporter.ReportInfo($"Starting orchestration {_orchestration.Name}");
     }
-
-
-
 }

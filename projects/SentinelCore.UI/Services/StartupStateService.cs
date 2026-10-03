@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         StartupStateService.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -37,6 +37,69 @@ internal class StartupStateService : IHostedService
     public StartupStateService(ILogger<StartupStateService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Triggered when the application host is ready to start the service.
+    /// </summary>
+    /// <param name="stoppingToken">
+    ///     A <see cref="CancellationToken" /> that indicates the start process has been aborted.
+    /// </param>
+    /// <returns>
+    ///     A <see cref="Task" /> that represents the asynchronous Start operation.
+    /// </returns>
+    /// <exception cref="Exception">
+    ///     Thrown if an error occurs during the startup process.
+    /// </exception>
+    public async Task StartAsync(CancellationToken stoppingToken)
+    {
+
+        try
+        {
+
+            await CheckStartupStateAsync();
+            // Perform any necessary cleanup or shutdown logic here
+            _logger.LogInformation("StartupStateService stopped successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while stopping StartupStateService.");
+            throw;
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Triggered when the application host is performing a graceful shutdown.
+    /// </summary>
+    /// <param name="cancellationToken">
+    ///     A <see cref="CancellationToken" /> that indicates the shutdown process should no longer be graceful.
+    /// </param>
+    /// <returns>
+    ///     A <see cref="Task" /> that represents the asynchronous Stop operation.
+    /// </returns>
+    /// <remarks>
+    ///     This method is responsible for executing any necessary cleanup or shutdown logic to ensure
+    ///     the application stops gracefully.
+    /// </remarks>
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Stopping StartupStateService...");
+
+
     }
 
 
@@ -112,68 +175,5 @@ internal class StartupStateService : IHostedService
         await CheckExternalServiceAvailabilityAsync();
 
         _logger.LogInformation("Startup state checks completed.");
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    /// Triggered when the application host is ready to start the service.
-    /// </summary>
-    /// <param name="stoppingToken">
-    /// A <see cref="CancellationToken" /> that indicates the start process has been aborted.
-    /// </param>
-    /// <returns>
-    /// A <see cref="Task" /> that represents the asynchronous Start operation.
-    /// </returns>
-    /// <exception cref="Exception">
-    /// Thrown if an error occurs during the startup process.
-    /// </exception>
-    public async Task StartAsync(CancellationToken stoppingToken)
-    {
-
-        try
-        {
-
-            await CheckStartupStateAsync();
-            // Perform any necessary cleanup or shutdown logic here
-            _logger.LogInformation("StartupStateService stopped successfully.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while stopping StartupStateService.");
-            throw;
-        }
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    /// Triggered when the application host is performing a graceful shutdown.
-    /// </summary>
-    /// <param name="cancellationToken">
-    /// A <see cref="CancellationToken" /> that indicates the shutdown process should no longer be graceful.
-    /// </param>
-    /// <returns>
-    /// A <see cref="Task" /> that represents the asynchronous Stop operation.
-    /// </returns>
-    /// <remarks>
-    /// This method is responsible for executing any necessary cleanup or shutdown logic to ensure
-    /// the application stops gracefully.
-    /// </remarks>
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Stopping StartupStateService...");
-
-
     }
 }

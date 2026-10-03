@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         DetectionBoolResult.cs
 // Author: Kyle L. Crowder
-// Build Num:  092603
+// Build Num:  100310
 
 
 

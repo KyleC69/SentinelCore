@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         BlockPhrases.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -169,13 +169,20 @@ public static class SafetyTriggerTerms
     /// <param name="Term">The word or phrase</param>
     /// <param name="Category">A descriptive name for the group of terms, hate, sex, violence etc.</param>
     /// <param name="Weight">
-    ///     An accumulative weight for all the identified terms in the prompt, when the weight exceeds a threshold the prompt is flagged for review.  The
-    ///     accumulation of weights trigger when limit is hit. This is designed to catch pattern of behavior that may be dangerous or harmful.
-    ///     The prompt is not blocked, but should be reviewed to ensure nothing slips by and a warning issued just to alert user they are approaching a guardrail.
-    ///     A system message is also passed into the users context so TheCore will be aware of the potential risk and can adjust its responses accordingly.
-    ///     A perfect example of this scenario might be someone with a potty mouth, they may use a lot of curse words and the weight of those words may offend others.
-    ///     The value should be set with this in mind: the value should be bumped up the more deterministic the term is, and leaves very little room for interpretation.
-    ///     The value should be lowered the more ambiguous the term is, and leaves a lot of room for interpretation, the review agent fills this gap to ensure accurate assessment.
+    ///     An accumulative weight for all the identified terms in the prompt, when the weight exceeds a threshold the prompt
+    ///     is flagged for review.  The
+    ///     accumulation of weights trigger when limit is hit. This is designed to catch pattern of behavior that may be
+    ///     dangerous or harmful.
+    ///     The prompt is not blocked, but should be reviewed to ensure nothing slips by and a warning issued just to alert
+    ///     user they are approaching a guardrail.
+    ///     A system message is also passed into the users context so TheCore will be aware of the potential risk and can
+    ///     adjust its responses accordingly.
+    ///     A perfect example of this scenario might be someone with a potty mouth, they may use a lot of curse words and the
+    ///     weight of those words may offend others.
+    ///     The value should be set with this in mind: the value should be bumped up the more deterministic the term is, and
+    ///     leaves very little room for interpretation.
+    ///     The value should be lowered the more ambiguous the term is, and leaves a lot of room for interpretation, the review
+    ///     agent fills this gap to ensure accurate assessment.
     /// </param>
     /// <param name="RequiresImmediateReview">
     ///     Determines if term immediately triggers review or if more terms are required

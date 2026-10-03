@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MoreInformationExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -25,7 +25,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     additional information. The hypothesis is passed through to the next executor.
 /// </summary>
 [YieldsOutput(typeof(ChatMessage))]
-[YieldsOutput(typeof(SignalHypothesis))]
+[YieldsOutput(typeof(ChatMessage))]
 public sealed partial class MoreInformationExecutor : Executor
 {
     private readonly ICaseFlowEngine _caseFlowEngine;
@@ -72,15 +72,6 @@ public sealed partial class MoreInformationExecutor : Executor
     /// <summary>
     ///     Creates a fallback result when the executor encounters an error or receives null input.
     /// </summary>
-    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.MoreInformationRequired, Reasoning = "Fallback: more information executor did not produce a result." };
-
-
-
-
-
-
-
-
     /// <summary>
     ///     Handles the request for more information by advancing the case and yielding a user-visible notice.
     ///     Provides uniform cross-cutting concerns: logging, null validation,
@@ -91,17 +82,16 @@ public sealed partial class MoreInformationExecutor : Executor
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The hypothesis, passed through unchanged.</returns>
     [MessageHandler]
-    public async ValueTask<SignalHypothesis> HandleSignalHypothesisAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // --- Status: Executor start ---
-        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(SignalHypothesis)}");
+        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(ChatMessage)}");
 
         // --- Null validation ---
         if (message is null)
         {
-            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}.");
-            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}."), cancellationToken).ConfigureAwait(false);
-            return CreateFallbackResult();
+            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
         }
 
         try
@@ -109,18 +99,11 @@ public sealed partial class MoreInformationExecutor : Executor
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
-            SignalHypothesis result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
-
-            if (result is null)
-            {
-                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(SignalHypothesis)}.");
-                result = CreateFallbackResult();
-            }
+            ChatMessage result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
             // --- Status: Final output ---
-            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(SignalHypothesis)}");
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(ChatMessage)}");
 
-            return result;
         }
         catch (OperationCanceledException)
         {
@@ -135,9 +118,8 @@ public sealed partial class MoreInformationExecutor : Executor
 
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
 
-            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(SignalHypothesis)} due to error.");
+            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
 
-            return CreateFallbackResult();
         }
     }
 
@@ -151,7 +133,7 @@ public sealed partial class MoreInformationExecutor : Executor
     /// <summary>
     ///     Core processing logic: advances the case to AwaitingInput and yields a request for more information.
     /// </summary>
-    private async ValueTask<SignalHypothesis> ProcessMessageAsync(SignalHypothesis message, IWorkflowContext context, CancellationToken cancellationToken)
+    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage? message, IWorkflowContext context, CancellationToken cancellationToken)
     {
         _reporter.ReportInfo("More information required — advancing case to AwaitingInput where applicable.");
 
@@ -171,8 +153,6 @@ public sealed partial class MoreInformationExecutor : Executor
             }
         }
 
-        string prompt = string.IsNullOrWhiteSpace(message.OrigPrompt) ? "the signal" : $"\"{message.OrigPrompt}\"";
-        await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"ℹ️ More information is required to investigate {prompt}. {message.Reasoning ?? string.Empty}"), cancellationToken).ConfigureAwait(false);
 
         return message;
     }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TerminateWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -32,6 +32,7 @@ public partial class TerminateWorkflow : Executor
     public TerminateWorkflow(ISystemReporter reporter) : base("TerminateWorkflow")
     {
         _reporter = reporter;
+        Name = Id;
     }
 
 
@@ -57,15 +58,6 @@ public partial class TerminateWorkflow : Executor
     ///     Creates a fallback result when the executor encounters an error or receives null input.
     ///     Override this in your real executor to provide a domain-appropriate fallback value.
     /// </summary>
-    private SignalHypothesis CreateFallbackResult() => new() { NextStep = NextStep.EscalateToHumanOperator, Reasoning = "Fallback: executor did not produce a result." };
-
-
-
-
-
-
-
-
     /// <summary>
     ///     Main executor entry point called by the MAF dispatcher.
     ///     Provides uniform cross-cutting concerns: logging, null validation,
@@ -87,8 +79,8 @@ public partial class TerminateWorkflow : Executor
         // --- Null validation ---
         if (message is null)
         {
-            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}.");
-            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(SignalHypothesis)}."), cancellationToken).ConfigureAwait(false);
+            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
+            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -98,16 +90,10 @@ public partial class TerminateWorkflow : Executor
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
             // --- Core logic ---
-            SignalHypothesis result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
-
-            if (result is null)
-            {
-                _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(SignalHypothesis)}.");
-                result = CreateFallbackResult();
-            }
+            await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
             // --- Status: Final output ---
-            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(SignalHypothesis)}");
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(ChatMessage)}");
 
         }
         catch (OperationCanceledException)
@@ -125,7 +111,7 @@ public partial class TerminateWorkflow : Executor
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
 
             // --- Status: fallback output ---
-            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(SignalHypothesis)} due to error.");
+            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
 
         }
 
@@ -143,12 +129,12 @@ public partial class TerminateWorkflow : Executor
     ///     Core processing logic for the executor.
     ///     Replace this method with your actual domain logic.
     /// </summary>
-    private async ValueTask<SignalHypothesis> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
+    private async ValueTask ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
     {
         // Example placeholder logic:
         await Task.Delay(10, cancellationToken).ConfigureAwait(false);
 
         // Always return a valid result instance.
-        return CreateFallbackResult();
+
     }
 }

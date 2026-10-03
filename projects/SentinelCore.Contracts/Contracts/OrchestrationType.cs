@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         OrchestrationType.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 

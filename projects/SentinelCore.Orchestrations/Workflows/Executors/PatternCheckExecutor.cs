@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PatternCheckExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -93,12 +93,17 @@ public sealed partial class PatternCheckExecutor : Executor
         // --- Null validation ---
         if (decision is null)
         {
-            var ret = new ChatMessage(ChatRole.Assistant, $"[{Name}] Input decision was null. Returning fallback {nameof(ChatMessage)}.");
+            ChatMessage ret = new(ChatRole.Assistant, $"[{Name}] Input decision was null. Returning fallback {nameof(ChatMessage)}.");
             _reporter.ReportError($"[{Name}] Input decision was null. Returning fallback {nameof(ChatMessage)}.");
             await context.YieldOutputAsync(ret, cancellationToken).ConfigureAwait(false);
             return ret;
         }
-        var prompt = decision.Prompt;
+
+        ChatMessage prompt = decision.Prompt;
+
+
+
+
 
         try
         {

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CoreChatViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -41,9 +41,7 @@ namespace SentinelCore.UI.ViewModels;
 /// </summary>
 public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, INavigationAware
 {
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _alertedCount;
 
     /// <summary>
@@ -52,9 +50,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// </summary>
     private readonly CancellationToken _appShutdownToken;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _blockedCount;
 
     private readonly ICaseFlowEngine _caseFlowEngine;
@@ -65,23 +61,17 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private bool _disposed;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private int _escalatedCount;
 
-    private readonly ISystemReporter _reporter;
+    private ISentinelCoreEvents _events;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private string _inputText = string.Empty;
 
     [ObservableProperty] private int _investigationCount;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private bool _isBusy;
 
     /// <summary>
@@ -98,8 +88,9 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private readonly IOrchestrationControl _orchestrationControl;
 
+    private readonly ISystemReporter _reporter;
+
     [ObservableProperty] private string _statusMessage = string.Empty;
-    private ISentinelCoreEvents _events;
     private readonly IWorkflowEventProcessor _workflowEventProcessor;
 
 
@@ -141,7 +132,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// <exception cref="ArgumentNullException">
     ///     Thrown if any of the required parameters are <c>null</c>.
     /// </exception>
-    public CoreChatViewModel(IWorkflowEventProcessor workflowEventProcessor, IOrchestrationControl orchestrationControl, ISystemReporter reporter, ICaseFlowEngine caseFlowEngine, ILogger<CoreChatViewModel> logger, IDispatcherService dispatcher, IClipboardService clipboardService,ISentinelCoreEvents events, IModelConfigGate modelConfigGate, CancellationToken appShutdownToken)
+    public CoreChatViewModel(IWorkflowEventProcessor workflowEventProcessor, IOrchestrationControl orchestrationControl, ISystemReporter reporter, ICaseFlowEngine caseFlowEngine, ILogger<CoreChatViewModel> logger, IDispatcherService dispatcher, IClipboardService clipboardService, ISentinelCoreEvents events, IModelConfigGate modelConfigGate, CancellationToken appShutdownToken)
     {
         //  _orchestrationControl = orchestrationControl ?? throw new ArgumentNullException(nameof(orchestrationControl));
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
@@ -476,6 +467,8 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
             AddToMessages(msg);
             InputText = string.Empty;
             IAsyncEnumerable<WorkflowEvent> result = await _orchestrationControl.ExecuteStreamingAsync(msg, _linkedCts.Token);
+
+
             await foreach (WorkflowEvent evt in result)
             {
                 string output = _workflowEventProcessor.ProcessEvent(evt);

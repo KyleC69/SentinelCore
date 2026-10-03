@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyReviewExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -124,7 +124,6 @@ public sealed partial class SafetyReviewExecutor : Executor
             return new ChatMessage(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
         }
     }
-
 
 
 

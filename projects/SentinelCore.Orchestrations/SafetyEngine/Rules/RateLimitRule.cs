@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RateLimitRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -276,10 +276,7 @@ public sealed class RateLimitRule : ISafetyRule
         {
             DateTimeOffset cutoff = now - _window;
 
-            while (_requests.Count > 0 && _requests.Peek() < cutoff)
-            {
-                _requests.Dequeue();
-            }
+            while (_requests.Count > 0 && _requests.Peek() < cutoff) _requests.Dequeue();
         }
 
 

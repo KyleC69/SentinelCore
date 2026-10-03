@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         ISystemReporter.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -21,7 +21,7 @@ public interface ISystemReporter
     ///     Logs a debug-level message through the logging pipeline.
     /// </summary>
     /// <param name="message">The debug message to log.</param>
-    void DebugMsg(string message);
+    void ReportDebug(string message);
 
 
 

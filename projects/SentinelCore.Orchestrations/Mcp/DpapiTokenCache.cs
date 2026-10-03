@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         DpapiTokenCache.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -116,10 +116,7 @@ public sealed class DpapiTokenCache : ITokenCache
             {
                 lock (_lock)
                 {
-                    foreach (KeyValuePair<string, TokenContainer> entry in tokens)
-                    {
-                        _tokens[entry.Key] = entry.Value;
-                    }
+                    foreach (KeyValuePair<string, TokenContainer> entry in tokens) _tokens[entry.Key] = entry.Value;
                 }
             }
         }

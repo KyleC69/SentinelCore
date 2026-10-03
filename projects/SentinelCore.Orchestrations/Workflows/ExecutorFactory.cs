@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -71,20 +71,18 @@ internal sealed class ExecutorFactory
     {
         return new ExecutorCollection
         {
-            SafetyExecutor = Create<SafetyExecutor>(),
-            EscalatedExecutor = Create<EscalatedExecutor>(),
-            PatternCheckExecutor = Create<PatternCheckExecutor>(),
-            HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
-            PersistEvidenceExecutor = Create<PersistEvidence>(),
-            NewCaseExecutor = Create<NewCaseExecutor>(),
-            AggregationExecutor = Create<AggregationExecutor>(),
-            MoreInformationExecutor = Create<MoreInformationExecutor>(),
-            CriticalAlert = Create<CriticalAlert>(),
-            TerminateWorkflow = Create<TerminateWorkflow>(),
-            SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
-            WhiteListExecutor = Create<WhiteListExecutor>(),
-            GenerateHypothesisAgentExec = Create<GenerateHypothesisAgentExec>()
-
+                SafetyExecutor = Create<SafetyExecutor>(),
+                EscalatedExecutor = Create<EscalatedExecutor>(),
+                PatternCheckExecutor = Create<PatternCheckExecutor>(),
+                HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
+                PersistEvidenceExecutor = Create<PersistEvidence>(),
+                NewCaseExecutor = Create<NewCaseExecutor>(),
+                AggregationExecutor = Create<AggregationExecutor>(),
+                MoreInformationExecutor = Create<MoreInformationExecutor>(),
+                CriticalAlert = Create<CriticalAlert>(),
+                TerminateWorkflow = Create<TerminateWorkflow>(),
+                SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
+                WhiteListExecutor = Create<WhiteListExecutor>()
         };
     }
 }
@@ -108,8 +106,7 @@ internal sealed class ExecutorCollection
     public required PatternCheckExecutor PatternCheckExecutor { get; init; }
     public required PersistEvidence PersistEvidenceExecutor { get; init; }
     public required SafetyExecutor SafetyExecutor { get; init; }
-    public required TerminateWorkflow TerminateWorkflow { get; init; }
     public required SafetyReviewExecutor SafetyReviewExecutor { get; init; }
+    public required TerminateWorkflow TerminateWorkflow { get; init; }
     public required WhiteListExecutor WhiteListExecutor { get; init; }
-    public required GenerateHypothesisAgentExec GenerateHypothesisAgentExec { get; init; }
 }

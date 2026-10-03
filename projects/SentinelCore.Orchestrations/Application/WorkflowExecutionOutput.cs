@@ -1,8 +1,10 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
-// File:         WorkflowExecutionResult.cs
+// File:         WorkflowExecutionOutput.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
+
+
 
 namespace SentinelCore.Orchestrations.Application;
 
@@ -69,14 +71,10 @@ public sealed class WorkflowExecutionOutput
         }
     }
 
+    public ChatMessage OutputMessage { get; }
+
     /// <summary>
     ///     The final output messages from the workflow, if any were produced.
     /// </summary>
     public List<ChatMessage>? OutputMessages { get; }
-
-    public ChatMessage OutputMessage { get; }
 }
-
-
-
-

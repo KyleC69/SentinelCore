@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfileBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -102,24 +102,6 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
     ///     The <see cref="IOptions{TOptions}" /> instance containing the <see cref="SentinelCoreSettings" />
     ///     used to configure the agent profile builder.
     /// </param>
-    public AgentProfileBuilder(IOptions<SentinelCoreSettings> options) : this(options, new AgentPresetProvider())
-    {
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="AgentProfileBuilder" /> class.
-    /// </summary>
-    /// <param name="options">
-    ///     The <see cref="IOptions{TOptions}" /> instance containing the <see cref="SentinelCoreSettings" />
-    ///     used to configure the agent profile builder.
-    /// </param>
     /// <param name="presetProvider">
     ///     The preset provider for resolving agent presets. Defaults to <see cref="AgentPresetProvider" />.
     /// </param>
@@ -195,6 +177,14 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(agentName);
 
+        if (agentName.Contains("worker", StringComparison.OrdinalIgnoreCase))
+        {
+            // Try common worker configuration keys
+            if (_options.AgentModels.TryGetValue("Worker", out ModelProfile? workerModel)) return workerModel;
+            if (_options.AgentModels.TryGetValue("Worker1", out ModelProfile? worker1Model)) return worker1Model;
+            if (_options.AgentModels.TryGetValue("worker", out ModelProfile? lowerWorkerModel)) return lowerWorkerModel;
+        }
+
         // Try per-agent configuration first
         if (_options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent))
         {
@@ -267,8 +257,8 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
     {
         AgentProfile profile = new() { AgentName = agentName, AgentId = agentName };
 
-        // No hardcoded fallback — the factory gate rejects unconfigured agents.
-        profile.Model = _options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent) ? perAgent : null;
+        // Use TryGetModel to ensure worker agents and others resolve their models correctly
+        profile.Model = TryGetModel(agentName);
 
         return profile;
     }

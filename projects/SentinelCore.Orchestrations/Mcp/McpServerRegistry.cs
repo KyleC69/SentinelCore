@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -103,9 +103,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
                 continue;
             }
 
-            bool assigned = entry.Definition.AssignedAgentNames.Count == 0 
-                            || entry.Definition.AssignedAgentNames.Contains(agentName, StringComparer.OrdinalIgnoreCase)
-                            || entry.Definition.AssignedAgentNames.Contains(agentId, StringComparer.OrdinalIgnoreCase);
+            bool assigned = entry.Definition.AssignedAgentNames.Count == 0 || entry.Definition.AssignedAgentNames.Contains(agentName, StringComparer.OrdinalIgnoreCase) || entry.Definition.AssignedAgentNames.Contains(agentId, StringComparer.OrdinalIgnoreCase);
 
             if (!assigned)
             {
@@ -116,10 +114,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
             {
                 IList<McpClientTool> serverTools = await entry.Client.ListToolsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                foreach (McpClientTool serverTool in serverTools)
-                {
-                    tools.Add(serverTool);
-                }
+                foreach (McpClientTool serverTool in serverTools) tools.Add(serverTool);
             }
             catch (Exception ex)
             {
@@ -328,10 +323,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
     {
         IReadOnlyList<McpServerDefinition> definitions = await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
 
-        foreach (McpServerDefinition definition in definitions)
-        {
-            _entries[definition.Id] = new McpServerEntry(definition);
-        }
+        foreach (McpServerDefinition definition in definitions) _entries[definition.Id] = new McpServerEntry(definition);
 
         _logger.LogInformation("Loaded {Count} persisted MCP server definition(s).", definitions.Count);
     }

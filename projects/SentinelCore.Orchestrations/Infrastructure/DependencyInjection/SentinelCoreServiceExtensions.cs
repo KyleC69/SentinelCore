@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -134,6 +134,7 @@ public static class SentinelCoreServiceExtensions
         // Each contributor owns exactly one concern. Adding a new middleware type
         // requires only a new contributor class and DI registration — no factory changes.
         services.AddSingleton<IAgentConstructionContributor, LoggingClientContributor>();
+        services.AddSingleton<IAgentConstructionContributor, ResilienceClientContributor>();
         services.AddSingleton<IAgentConstructionContributor, PatternMemoryContributor>();
         services.AddSingleton<IAgentConstructionContributor, McpToolContributor>();
         services.AddSingleton<IAgentConstructionContributor, CompactionContributor>();

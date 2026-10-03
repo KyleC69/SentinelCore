@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -195,9 +195,13 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         }
 
         // Run the contributor pipeline — each contributor adds its piece.
-        foreach (IAgentConstructionContributor contributor in _contributors)
+        foreach (IAgentConstructionContributor contributor in _contributors) await contributor.ContributeAsync(context, cancellationToken).ConfigureAwait(false);
+
+        // Per PL-3: The Manager must not have tools. 
+        // Explicitly clear tools if this is a Manager role to prevent contributor leakage.
+        if (presetDef.Tier == ModelTier.Manager)
         {
-            await contributor.ContributeAsync(context, cancellationToken).ConfigureAwait(false);
+            context.Tools.Clear();
         }
 
         // Build the final agent from accumulated context.
@@ -231,11 +235,39 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         // Validate input
         Throw.IfNullOrWhitespace(presetName);
 
+        string resolvedPresetName = presetName;
+        string workerSuffix = string.Empty;
+
+        if (presetName.Contains("worker", StringComparison.OrdinalIgnoreCase))
+        {
+            // All worker agents are identically equipped and use the same base preset.
+            resolvedPresetName = "worker";
+
+            // Extract a unique suffix for identity purposes. 
+            // If it starts with 'worker', use the part after 'worker'. 
+            // Otherwise, use the whole name as the suffix to ensure uniqueness.
+            if (presetName.StartsWith("worker", StringComparison.OrdinalIgnoreCase))
+            {
+                workerSuffix = presetName.Length > 6 ? presetName.Substring(6) : string.Empty;
+            }
+            else
+            {
+                workerSuffix = $"_{presetName}";
+            }
+        }
+
         // Resolve the preset
-        AgentPresetDefinition preset = ResolvePreset(presetName);
+        AgentPresetDefinition preset = ResolvePreset(resolvedPresetName);
 
         // Build the agent profile
         AgentProfile profile = BuildAgentProfile(preset, cancellationToken);
+
+        if (presetName.Contains("worker", StringComparison.OrdinalIgnoreCase))
+        {
+            // Set the unique identity for this specific worker instance.
+            profile.AgentName = $"worker{workerSuffix}";
+            profile.AgentId = $"worker{workerSuffix}";
+        }
 
         // Build and return the agent via the contributor pipeline
         return await BuildFromProfileAsync(profile, cancellationToken).ConfigureAwait(false);
@@ -257,16 +289,16 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     {
         ChatOptions chatOptions = new()
         {
-            ConversationId = Guid.NewGuid().ToString("N"),
-            Instructions = "", // Per PL-3: instructions are set at call site, not here
-            Temperature = context.Model.Temperature,
-            MaxOutputTokens = context.Model.MaxOutputTokens ?? 16000,
-            TopP = context.Model.TopP,
-            TopK = context.Model.TopK,
-            ModelId = context.Model.ModelId,
-            AllowMultipleToolCalls = true
-            // ResponseFormat is NOT set here — it is a per-call concern.
-            // Executors pass it via AgentRunOptions or typed RunAsync<T> at invocation time.
+                ConversationId = Guid.NewGuid().ToString("N"),
+                Instructions = "", // Per PL-3: instructions are set at call site, not here
+                Temperature = context.Model.Temperature,
+                MaxOutputTokens = context.Model.MaxOutputTokens ?? 16000,
+                TopP = context.Model.TopP,
+                TopK = context.Model.TopK,
+                ModelId = context.Model.ModelId,
+                AllowMultipleToolCalls = true
+                // ResponseFormat is NOT set here — it is a per-call concern.
+                // Executors pass it via AgentRunOptions or typed RunAsync<T> at invocation time.
         };
 
         if (context.Tools.Count > 0)
@@ -276,20 +308,20 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         return new ChatClientAgent(context.WrappedClient, new ChatClientAgentOptions
         {
-            Id = context.Preset.AgentId,
-            Name = context.Preset.AgentName,
-            Description = "An AI Agent",
-            ChatOptions = chatOptions,
-            AIContextProviders = context.ContextProviders.Count > 0 ? context.ContextProviders : null,
-            UseProvidedChatClientAsIs = false,
-            ClearOnChatHistoryProviderConflict = false,
-            WarnOnChatHistoryProviderConflict = false,
-            ThrowOnChatHistoryProviderConflict = true,
-            RequirePerServiceCallChatHistoryPersistence = false,
-            EnableMessageInjection = false,
-            DisableApprovalNotRequiredFunctionBypassing = false,
-            DisableApprovalResponseBinding = false,
-            ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider()
+                Id = context.Preset.AgentId,
+                Name = context.Preset.AgentName,
+                Description = "An AI Agent",
+                ChatOptions = chatOptions,
+                AIContextProviders = context.ContextProviders.Count > 0 ? context.ContextProviders : null,
+                UseProvidedChatClientAsIs = false,
+                ClearOnChatHistoryProviderConflict = false,
+                WarnOnChatHistoryProviderConflict = false,
+                ThrowOnChatHistoryProviderConflict = true,
+                RequirePerServiceCallChatHistoryPersistence = false,
+                EnableMessageInjection = false,
+                DisableApprovalNotRequiredFunctionBypassing = false,
+                DisableApprovalResponseBinding = false,
+                ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider()
         });
     }
 
@@ -330,6 +362,11 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         AgentPresetDefinition? preset = _presetProvider.GetPreset(presetName);
         if (preset is null)
         {
+            if (presetName.Contains("worker", StringComparison.OrdinalIgnoreCase))
+            {
+                return AgentPresetDefinition.UtilityRole("worker", "worker");
+            }
+
             string availablePresets = string.Join(", ", _presetProvider.ListPresets());
             throw new ArgumentException($"No preset found for name '{presetName}'. Available presets: {availablePresets}.", nameof(presetName));
         }

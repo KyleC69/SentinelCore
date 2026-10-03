@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ContentFilterRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -152,7 +152,6 @@ public sealed class ContentFilterRule : ISafetyRule
 
         // Check blocklist strings
         foreach (string term in _blocklist)
-        {
             if (text.Contains(term, _comparison))
             {
                 // Check if this term is overridden by allowlist
@@ -164,16 +163,13 @@ public sealed class ContentFilterRule : ISafetyRule
 
                 violations.Add($"Blocked string: '{term}'");
             }
-        }
 
         // Check allowlist strings (for reporting purposes when requireAllowlistMatch is true)
         foreach (string term in _allowlist)
-        {
             if (text.Contains(term, _comparison))
             {
                 allowlistMatches.Add($"Allowlist match: '{term}'");
             }
-        }
 
         // Check regex patterns
         foreach (Regex pattern in _blocklistPatterns)
@@ -197,10 +193,7 @@ public sealed class ContentFilterRule : ISafetyRule
         foreach (Regex pattern in _allowlistPatterns)
         {
             MatchCollection matches = pattern.Matches(text);
-            foreach (Match match in matches)
-            {
-                allowlistMatches.Add($"Allowlist pattern '{pattern}' matched: '{TruncateForDisplay(match.Value)}'");
-            }
+            foreach (Match match in matches) allowlistMatches.Add($"Allowlist pattern '{pattern}' matched: '{TruncateForDisplay(match.Value)}'");
         }
 
         // Determine result

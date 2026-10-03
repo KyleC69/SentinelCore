@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpToolContributor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -50,21 +50,21 @@ public sealed class McpToolContributor : IAgentConstructionContributor
 
 
     /// <summary>
-    /// Contributes tools to the agent construction process by retrieving tools associated with the specified agent
-    /// from the MCP server registry and adding them to the provided construction context.
+    ///     Contributes tools to the agent construction process by retrieving tools associated with the specified agent
+    ///     from the MCP server registry and adding them to the provided construction context.
     /// </summary>
     /// <param name="context">
-    /// The <see cref="AgentConstructionContext"/> that accumulates agent construction decisions.
-    /// This context is used to add tools retrieved for the agent.
+    ///     The <see cref="AgentConstructionContext" /> that accumulates agent construction decisions.
+    ///     This context is used to add tools retrieved for the agent.
     /// </param>
     /// <param name="cancellationToken">
-    /// A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
+    ///     A <see cref="CancellationToken" /> to observe while waiting for the operation to complete.
     /// </param>
     /// <returns>
-    /// A <see cref="Task"/> that represents the asynchronous operation.
+    ///     A <see cref="Task" /> that represents the asynchronous operation.
     /// </returns>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when the <paramref name="context"/> is <c>null</c>.
+    ///     Thrown when the <paramref name="context" /> is <c>null</c>.
     /// </exception>
     public async Task ContributeAsync(AgentConstructionContext context, CancellationToken cancellationToken)
     {

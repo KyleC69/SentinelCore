@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpConnectionFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -146,10 +146,7 @@ public sealed class McpConnectionFactory : IMcpConnectionFactory
 
         if (definition.EnvironmentVariables is not null)
         {
-            foreach (KeyValuePair<string, string> entry in definition.EnvironmentVariables)
-            {
-                environment[entry.Key] = entry.Value;
-            }
+            foreach (KeyValuePair<string, string> entry in definition.EnvironmentVariables) environment[entry.Key] = entry.Value;
         }
 
         StdioClientTransportOptions options = new()

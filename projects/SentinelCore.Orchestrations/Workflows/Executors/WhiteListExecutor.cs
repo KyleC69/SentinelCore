@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WhiteListExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -78,35 +78,19 @@ public sealed partial class WhiteListExecutor : Executor
 
 
     /// <summary>
-    ///     Core processing logic: checks the signal against the operator's whitelist.
-    /// </summary>
-    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct)
-    {
-        _reporter.ReportInfo("Starting whitelist executor...");
-        return message;
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    /// Handles the suppression of a chat message by evaluating it against the operator's whitelist.
+    ///     Handles the suppression of a chat message by evaluating it against the operator's whitelist.
     /// </summary>
     /// <param name="message">The chat message to be evaluated.</param>
     /// <param name="context">The workflow context providing execution details.</param>
     /// <param name="ct">The cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>
-    /// A <see cref="ChatMessage"/> indicating the result of the suppression process.
+    ///     A <see cref="ChatMessage" /> indicating the result of the suppression process.
     /// </returns>
     /// <exception cref="OperationCanceledException">Thrown when the operation is canceled.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message" /> is null.</exception>
     /// <remarks>
-    /// If the message is not on the whitelist, it will proceed through normal processing.
-    /// If it is on the whitelist, the flow will be terminated, and the message will be logged.
+    ///     If the message is not on the whitelist, it will proceed through normal processing.
+    ///     If it is on the whitelist, the flow will be terminated, and the message will be logged.
     /// </remarks>
     [MessageHandler]
     public async ValueTask<ChatMessage> HandleSuppressAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct = default)
@@ -163,8 +147,15 @@ public sealed partial class WhiteListExecutor : Executor
 
 
 
+
+
+
+    /// <summary>
+    ///     Core processing logic: checks the signal against the operator's whitelist.
+    /// </summary>
+    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken ct)
+    {
+        _reporter.ReportInfo("Starting whitelist executor...");
+        return message;
+    }
 }
-
-
-
-

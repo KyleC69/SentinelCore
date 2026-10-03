@@ -1,4 +1,12 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿// Solution: SentinelCore
+// Project:   SentinelCore.Orchestrations
+// File:         AISystemsInitialization.cs
+// Author: Kyle L. Crowder
+// Build Num:  100310
+
+
+
+using Microsoft.Extensions.Hosting;
 
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Mcp;
@@ -9,11 +17,16 @@ using SentinelCore.Orchestrations.Abstractions;
 
 namespace SentinelCore.Orchestrations.Application;
 
+
+
+
+
 public sealed class AISystemsInitialization : BackgroundService
 {
+    private readonly IMcpServerRegistry _mcpRegistry;
     private readonly IOrchestrationControl _orchestrationControl;
     private readonly ISystemReporter _reporter;
-    private readonly IMcpServerRegistry _mcpRegistry;
+
 
 
 
@@ -22,7 +35,7 @@ public sealed class AISystemsInitialization : BackgroundService
 
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="AISystemsInitialization"/> class.
+    ///     Initializes a new instance of the <see cref="AISystemsInitialization" /> class.
     /// </summary>
     /// <param name="orchestrationControl">The orchestration control.</param>
     /// <param name="reporter">The system reporter.</param>
@@ -37,18 +50,36 @@ public sealed class AISystemsInitialization : BackgroundService
 
 
 
+
+
+
+
+
     /// <summary>
-    /// This method is called when the <see cref="T:Microsoft.Extensions.Hosting.IHostedService" /> starts. The implementation should return a task that represents
-    /// the lifetime of the long running operation(s) being performed.
+    ///     This method is called when the <see cref="T:Microsoft.Extensions.Hosting.IHostedService" /> starts. The
+    ///     implementation should return a task that represents
+    ///     the lifetime of the long running operation(s) being performed.
     /// </summary>
-    /// <param name="stoppingToken">Triggered when <see cref="M:Microsoft.Extensions.Hosting.IHostedService.StopAsync(System.Threading.CancellationToken)" /> is called.</param>
+    /// <param name="stoppingToken">
+    ///     Triggered when
+    ///     <see cref="M:Microsoft.Extensions.Hosting.IHostedService.StopAsync(System.Threading.CancellationToken)" /> is
+    ///     called.
+    /// </param>
     /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> that represents the long running operations.</returns>
-    /// <remarks>See <see href="https://learn.microsoft.com/dotnet/core/extensions/workers">Worker Services in .NET</see> for implementation guidelines.</remarks>
+    /// <remarks>
+    ///     See <see href="https://learn.microsoft.com/dotnet/core/extensions/workers">Worker Services in .NET</see> for
+    ///     implementation guidelines.
+    /// </remarks>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await EnsureMcpServersStartedAsync(stoppingToken);
         await _orchestrationControl.InitializeOrchestrationAsync(stoppingToken);
     }
+
+
+
+
+
 
 
 
@@ -73,6 +104,4 @@ public sealed class AISystemsInitialization : BackgroundService
             }
         }
     }
-
-
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SemanticPatternMatcher.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 

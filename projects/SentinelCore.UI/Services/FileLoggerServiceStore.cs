@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         FileLoggerServiceStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -20,7 +20,7 @@ namespace SentinelCore.UI.Services;
 
 
 
-internal class FileLoggerServiceStore : ILogger
+internal sealed class FileLoggerServiceStore : ILogger
 {
     private static readonly object Lock = new();
 
@@ -69,7 +69,7 @@ internal class FileLoggerServiceStore : ILogger
 
 
 
-internal class FileLoggerProvider : ILoggerProvider
+internal sealed class FileLoggerProvider : ILoggerProvider
 {
     public ILogger CreateLogger(string categoryName) => new FileLoggerServiceStore();
 
@@ -82,6 +82,8 @@ internal class FileLoggerProvider : ILoggerProvider
 
     public void Dispose()
     {
+        // No resources to dispose in the current implementation.
+        // This method is provided for future extensibility.
     }
 }
 

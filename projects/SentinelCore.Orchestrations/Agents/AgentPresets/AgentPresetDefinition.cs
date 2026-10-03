@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentPresetDefinition.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -54,7 +54,7 @@ public sealed record AgentPresetDefinition
     ///     These are used when no per-call override is provided by the executor.
     ///     Executors layer instructions at call time: platform domain → preset → task.
     /// </summary>
-    public string? DefaultSystemInstructions { get; init; }
+    public string? DefaultSystemInstructions { get; init; } = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S;
 
     /// <summary>
     ///     Gets the model tier for this agent, used to select the default model

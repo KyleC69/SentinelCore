@@ -1,10 +1,14 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Orchestrations.Services
+// Project:   SentinelCore.Orchestrations
 // File:         WorkflowEventProcessor.cs
-// Author: AI Agent
-// Build Num:  20260925
+// Author: Kyle L. Crowder
+// Build Num:  100310
+
+
 
 using System.Text;
+
+using Microsoft.Agents.AI.Workflows.Specialized.Magentic;
 
 using SentinelCore.Contracts.Abstractions;
 
@@ -13,42 +17,43 @@ using SentinelCore.Contracts.Abstractions;
 
 namespace SentinelCore.Orchestrations.Services;
 
+
+
+
+
 /// <summary>
-/// Concrete implementation of IWorkflowEventProcessor.
-/// Handles the formatting and reporting of all workflow events,
-/// including streaming accumulation and flushing.
+///     Concrete implementation of IWorkflowEventProcessor.
+///     Handles the formatting and reporting of all workflow events,
+///     including streaming accumulation and flushing.
 /// </summary>
 public class WorkflowEventProcessor : IWorkflowEventProcessor
 {
-    private readonly ISystemReporter _reporter;
     private readonly object _lock = new();
-    private readonly Dictionary<string, StringBuilder> _responseAccumulators = new(StringComparer.Ordinal);
     private readonly Stack<StringBuilder> _pool = new();
+    private readonly ISystemReporter _reporter;
+    private readonly Dictionary<string, StringBuilder> _responseAccumulators = new(StringComparer.Ordinal);
+
+
+
+
+
+
+
 
     public WorkflowEventProcessor(ISystemReporter reporter)
     {
         _reporter = reporter;
     }
 
-    private StringBuilder GetStringBuilder()
-    {
-        lock (_lock)
-        {
-            return _pool.Count > 0 ? _pool.Pop() : new StringBuilder();
-        }
-    }
 
-    private void ReturnStringBuilder(StringBuilder sb)
-    {
-        sb.Clear();
-        lock (_lock)
-        {
-            _pool.Push(sb);
-        }
-    }
+
+
+
+
+
 
     /// <summary>
-    /// Processes a single workflow event, handling formatting and reporting.
+    ///     Processes a single workflow event, handling formatting and reporting.
     /// </summary>
     /// <param name="evt">The workflow event to process.</param>
     /// <returns>A string containing the formatted event details, or an empty string if none.</returns>
@@ -92,22 +97,40 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
         return string.Empty;
     }
 
+
+
+
+
+
+
+
     /// <summary>
-    /// Clears all accumulated streaming response chunks.
+    ///     Clears all accumulated streaming response chunks.
     /// </summary>
     public void ResetEventAccumulators()
     {
         lock (_lock)
         {
-            foreach (var sb in _responseAccumulators.Values)
-            {
-                ReturnStringBuilder(sb);
-            }
+            foreach (StringBuilder sb in _responseAccumulators.Values) ReturnStringBuilder(sb);
             _responseAccumulators.Clear();
         }
     }
 
+
+
+
+
+
+
+
     // --- Private Helper Methods ---
+
+
+
+
+
+
+
 
     private void AccumulateUpdate(string executorId, string chunk)
     {
@@ -122,6 +145,13 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
             sb.Append(chunk);
         }
     }
+
+
+
+
+
+
+
 
     private string FlushAccumulatedResponse(string executorId)
     {
@@ -138,6 +168,13 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
         ReturnStringBuilder(sb);
         return accumulated;
     }
+
+
+
+
+
+
+
 
     private string FormatAgentResponseEvent(AgentResponseEvent evt)
     {
@@ -159,6 +196,13 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
         return $"Agent response: {evt.ExecutorId}, Accumulated: {accumulated}, Output: {text}";
     }
 
+
+
+
+
+
+
+
     private string FormatExecutorCompletedEvent(ExecutorCompletedEvent evt)
     {
         string accumulated = FlushAccumulatedResponse(evt.ExecutorId);
@@ -166,8 +210,46 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
         {
             return $"Executor completed: {evt.ExecutorId}, Accumulated Output: {accumulated}";
         }
+
         return $"Executor completed: {evt.ExecutorId}";
     }
+
+
+
+
+
+
+
+
+    private string? FormatExecutorEvent(ExecutorEvent evt)
+    {
+        if (evt == null)
+        {
+            throw new ArgumentNullException(nameof(evt));
+        }
+
+
+
+        StringBuilder sb = GetStringBuilder();
+        try
+        {
+            sb.AppendLine($"Executor Event: {evt.ExecutorId}");
+            sb.AppendLine($"Timestamp: {evt.Data}");
+
+            return sb.ToString();
+        }
+        finally
+        {
+            ReturnStringBuilder(sb);
+        }
+    }
+
+
+
+
+
+
+
 
     private string FormatExecutorFailedEvent(ExecutorFailedEvent evt)
     {
@@ -176,15 +258,142 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
         return $"Executor failed: {evt.ExecutorId}, Error: {message}";
     }
 
+
+
+
+
+
+
+
     private string FormatExecutorInvokedEvent(ExecutorInvokedEvent evt)
     {
         return $"Executor invoked: {evt.ExecutorId}";
     }
 
+
+
+
+
+
+
+
+    private string? FormatMagenticPlanCreatedEvent(MagenticPlanCreatedEvent evt)
+    {
+        if (evt == null)
+        {
+            throw new ArgumentNullException(nameof(evt));
+        }
+
+        StringBuilder sb = GetStringBuilder();
+        try
+        {
+
+            sb.AppendLine("Magentic Plan Created Event:");
+            sb.AppendLine($"Details: {evt.FullTaskLedger}");
+            sb.AppendLine($"Created By: {evt.Data}");
+
+            return sb.ToString();
+        }
+        finally
+        {
+            ReturnStringBuilder(sb);
+        }
+    }
+
+
+
+
+
+
+
+
+    private string? FormatOrchestratorEvent(MagenticOrchestratorEvent evt)
+    {
+        if (evt == null)
+        {
+            throw new ArgumentNullException(nameof(evt));
+        }
+
+        return $"Orchestrator Event: {evt.Data}";
+    }
+
+
+
+
+
+
+
+
+    private string? FormatProgressLedger(MagenticProgressLedgerUpdatedEvent magenticProgressLedgerUpdatedEvent)
+    {
+        if (magenticProgressLedgerUpdatedEvent == null)
+        {
+            throw new ArgumentNullException(nameof(magenticProgressLedgerUpdatedEvent));
+        }
+
+        StringBuilder stringBuilder = GetStringBuilder();
+        try
+        {
+            stringBuilder.AppendLine("Progress Ledger Updated:");
+            stringBuilder.AppendLine($"Timestamp: {magenticProgressLedgerUpdatedEvent.ProgressLedger}");
+            stringBuilder.AppendLine($"Executor ID: {magenticProgressLedgerUpdatedEvent.Data}");
+
+            return stringBuilder.ToString();
+        }
+        finally
+        {
+            ReturnStringBuilder(stringBuilder);
+        }
+    }
+
+
+
+
+
+
+
+
+    private string? FormatReplannedEvent(MagenticReplannedEvent evt)
+    {
+        if (evt == null)
+        {
+            throw new ArgumentNullException(nameof(evt));
+        }
+
+        StringBuilder stringBuilder = GetStringBuilder();
+        try
+        {
+            stringBuilder.AppendLine("Magentic Replanned Event:");
+            stringBuilder.AppendLine($"- Plan ID: {evt.FullTaskLedger}");
+            stringBuilder.AppendLine($"- Timestamp: {evt.Data}");
+            stringBuilder.AppendLine($"- Reason: {evt.ToString()}");
+
+            return stringBuilder.ToString();
+        }
+        finally
+        {
+            ReturnStringBuilder(stringBuilder);
+        }
+    }
+
+
+
+
+
+
+
+
     private string FormatRequestInfoEvent(RequestInfoEvent evt)
     {
         return $"Request info: {evt.Request.RequestId} {evt.Request.Data}";
     }
+
+
+
+
+
+
+
 
     private string FormatSubWorkflowErrorEvent(SubworkflowErrorEvent subworkflowError)
     {
@@ -192,15 +401,65 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
         return $"SubWorkflow error: {subworkflowError.SubworkflowId}, Error: {subworkflowError.Data}";
     }
 
+
+
+
+
+
+
+
     private string FormatSuperStepCompletedEvent(SuperStepCompletedEvent evt)
     {
         return $"Superstep completed: {evt.CompletionInfo}, data: {evt.Data}";
     }
 
+
+
+
+
+
+
+
+    private string? FormatSuperStepEvent(SuperStepEvent superStepEvent)
+    {
+        if (superStepEvent == null)
+        {
+            throw new ArgumentNullException(nameof(superStepEvent));
+        }
+
+        StringBuilder stringBuilder = GetStringBuilder();
+        try
+        {
+            stringBuilder.AppendLine($"SuperStep Event StepNum: {superStepEvent.StepNumber}");
+            stringBuilder.AppendLine($"Data: {superStepEvent.Data}");
+            stringBuilder.AppendLine($"Details: {superStepEvent.ToString()}");
+
+            return stringBuilder.ToString();
+        }
+        finally
+        {
+            ReturnStringBuilder(stringBuilder);
+        }
+    }
+
+
+
+
+
+
+
+
     private string FormatSuperStepStartedEvent(SuperStepStartedEvent evt)
     {
         return $"Superstep started: {evt.StepNumber}";
     }
+
+
+
+
+
+
+
 
     private string FormatWorkflowErrorEvent(WorkflowErrorEvent evt)
     {
@@ -209,40 +468,107 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
         return $"Workflow error: {msg}";
     }
 
+
+
+
+
+
+
+
     private string FormatWorkflowOutputEvent(WorkflowOutputEvent evt)
     {
         return $"Workflow output: {evt.ExecutorId} {evt.Data}";
+
     }
+
+
+
+
+
+
+
 
     private string FormatWorkflowStartedEvent(WorkflowStartedEvent evt)
     {
         return $"Workflow started: {evt.Data}";
     }
 
+
+
+
+
+
+
+
     private string FormatWorkflowWarningEvent(WorkflowWarningEvent evt)
     {
         return $"Workflow warning: {evt.Data}";
     }
 
+
+
+
+
+
+
+
     private string? GetEventDetails(WorkflowEvent evt)
     {
         return evt switch
         {
-            WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
-            AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
-            AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
-            SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
+                WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
+                AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
+                AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
+                SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
+                SubworkflowWarningEvent subworkflowWarningEvent => throw new NotImplementedException(),
 
-            WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
-            WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
-            WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
-            ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
-            ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
-            ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
-            SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
-            SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
-            RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
-            _ => $"Unknown event type: {evt.GetType().Name}"
+                ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
+                WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
+                WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
+                ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
+                WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
+                ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
+                SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
+                SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
+                RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
+                MagenticPlanCreatedEvent magenticPlanCreatedEvent => FormatMagenticPlanCreatedEvent(magenticPlanCreatedEvent),
+                SuperStepEvent superStepEvent => FormatSuperStepEvent(superStepEvent),
+                ExecutorEvent executorEvent => FormatExecutorEvent(executorEvent),
+                MagenticProgressLedgerUpdatedEvent magenticProgressLedgerUpdatedEvent => FormatProgressLedger(magenticProgressLedgerUpdatedEvent),
+                MagenticReplannedEvent magenticReplannedEvent => FormatReplannedEvent(magenticReplannedEvent),
+                MagenticOrchestratorEvent magenticOrchestratorEvent => FormatOrchestratorEvent(magenticOrchestratorEvent),
+                _ => $"Unknown event type: {evt.GetType().Name}"
         };
+    }
+
+
+
+
+
+
+
+
+    private StringBuilder GetStringBuilder()
+    {
+        lock (_lock)
+        {
+            return _pool.Count > 0 ? _pool.Pop() : new StringBuilder();
+        }
+    }
+
+
+
+
+
+
+
+
+    private void ReturnStringBuilder(StringBuilder sb)
+    {
+        sb.Clear();
+        lock (_lock)
+        {
+            _pool.Push(sb);
+        }
     }
 }

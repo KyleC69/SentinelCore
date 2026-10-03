@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SystemReporter.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -58,11 +58,19 @@ public sealed class SystemReporter : ISystemReporter
 
 
     /// <summary>
-    ///     Logs a debug-level message through the logging pipeline.
+    ///     Logs a debug-level message through the logging pipeline as long as LogLevel debug is enabled.
+    ///     NOTE: LogLevel filter applies to SentinelCore events also.
     /// </summary>
     /// <param name="message">The debug message to log.</param>
-    public void DebugMsg(string message)
+    public void ReportDebug(string message)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        if (!_logger.IsEnabled(LogLevel.Debug))
+        {
+            return;
+
+        }
+
         _logger.LogDebug("[DEBUG] {Message}", message);
         _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
     }

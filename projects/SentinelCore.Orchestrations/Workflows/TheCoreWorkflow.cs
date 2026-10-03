@@ -39,21 +39,30 @@ namespace SentinelCore.Orchestrations.Workflows;
 public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 {
     private readonly ISentinelAgentFactory _agentFactory;
-    private AIAgent? _applicationWorkerAgent;
     private AIAgent? _classifierAgent;
     private readonly ExecutorFactory _executorFactory;
     private readonly object _initLock = new();
     private volatile bool _isInitialized;
 
     // Pre-created sub-workflow agents (initialized once via InitializeAsync)
-    private AIAgent? _magManagerAgent;
-    private AIAgent? _networkWorkerAgent;
     private AIAgent? _safetyAgent;
     private Workflow _theCoreWorkflow;
     // Pre-created agents and sessions (initialized once via InitializeAsync)
-    private AIAgent? _sentinelCoreAgent;
-    private AgentSession? _sentinelCoreSession;
-    private AIAgent? _windowsOsWorkerAgent;
+
+
+    // TheCore and sub-workflow agents (initialized once via InitializeAsync)
+    private AIAgent? _theCoreAgent;
+
+
+
+    private AIAgent? _magManagerAgent;
+
+    private AIAgent? _windowsWorkerAgent1;
+    private AIAgent? _windowsWorkerAgent2;
+    private AIAgent? _windowsWorkerAgent3;
+    private AIAgent? _windowsWorkerAgent4;
+    private AgentSession _theCoreSession;
+    private AIAgent? _objectGenExec;
 
 
 
@@ -114,33 +123,33 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// </exception>
     private Task<Workflow> BuildWorkflow()
     {
-        Throw.IfNull(_sentinelCoreAgent);
+        Throw.IfNull(_theCoreAgent);
         Throw.IfNull(_classifierAgent);
         Throw.IfNull(_safetyAgent);
-        Throw.IfNull(_sentinelCoreSession);
+        Throw.IfNull(_theCoreSession);
         Throw.IfNull(_magManagerAgent);
-        Throw.IfNull(_windowsOsWorkerAgent);
-        Throw.IfNull(_networkWorkerAgent);
-        Throw.IfNull(_applicationWorkerAgent);
+        Throw.IfNull(_windowsWorkerAgent1);
+        Throw.IfNull(_windowsWorkerAgent2);
+        Throw.IfNull(_windowsWorkerAgent3);
+        Throw.IfNull(_windowsWorkerAgent4);
 
         // ── Construct NON-Agent executors ────────────────────────────────────────────────────
 
         ExecutorCollection executors = _executorFactory.CreateAllExecutors();
 
         // ── Build sub-workflow ──────────────────────────────────────────────────────────────────
-
+        SubWorkflowExecutor subWorkflowExecutor = new SubWorkflowExecutor(BuildEvidenceGatheringSubWorkflow());
         Workflow evidenceGatheringWorkflow = BuildEvidenceGatheringSubWorkflow();
-        ExecutorBinding evidenceGatheringBinding = evidenceGatheringWorkflow.BindAsExecutor("EvidenceSubWorkflow");
+        //   ExecutorBinding evidenceGatheringBinding = evidenceGatheringWorkflow.BindAsExecutor("EvidenceSubWorkflow");
 
-        ExecutorBinding safetyAgentBinding = _safetyAgent.BindAsExecutor();
+        ExecutorBinding safetyAgentBinding = _safetyAgent.BindAsExecutor(emitEvents: true);
 
         // ── Create agent executors ─────────────────────────────────────────────────────────────
         ClassifierAgentExec classifierExec = new(_classifierAgent, _reporter);
-
-        // SentinelCore agent with session
-        TheCoreExec sentinelCoreExec = new(_sentinelCoreAgent, _sentinelCoreSession, _reporter);
-        DirectAnswerExecutor directAnswerAgentExec = new(_sentinelCoreAgent, _sentinelCoreSession, _reporter);
-
+        // TheCore agent with session
+        TheCoreExec theCoreExec = new(_theCoreAgent, _theCoreSession, _reporter);
+        DirectAnswerExecutor directAnswerAgentExec = new(_theCoreAgent, _theCoreSession, _reporter);
+        GenerateObjectiveExec generateObjectiveExec = new(_theCoreAgent, _theCoreSession, _reporter);
 
         // ── Compose the switch-based routing graph ─────────────────────────────────────────
         // First stop Safety gate
@@ -151,45 +160,50 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         builder.AddEdge(executors.PatternCheckExecutor, executors.WhiteListExecutor); // Check whitelist for pattern - Operator created list to ignore
         builder.AddEdge(executors.WhiteListExecutor, classifierExec);
-        builder.AddSwitch(classifierExec,
-                switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), executors.NewCaseExecutor)
+
+
+        builder.AddSwitch(classifierExec, switchBuilder => switchBuilder
+                        .AddCase(GetCondition(NextStep.Investigate), generateObjectiveExec)
                         .AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec)
                         .AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert)
-                        .AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor));
+                        .AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor)
+                        .AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.HumanOperatorExecutor));
 
         builder.AddEdge(executors.MoreInformationExecutor, executors.TerminateWorkflow);
 
         // ------- RedAlert Branch -------------------------
         // Alert UI to critical error and mark case urgent
-        builder.AddEdge(executors.CriticalAlert, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow)
+        builder.AddEdge(executors.CriticalAlert, executors.HumanOperatorExecutor)
+                .AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
 
-                // -- ------- MoreInformation Branch -------------------------
-                //Mark case needs more info and alert operator
-                .AddEdge(executors.MoreInformationExecutor, executors.HumanOperatorExecutor)
-                .AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow)
+        // -- ------- MoreInformation Branch -------------------------
+        //Mark case needs more info and alert operator
+        builder.AddEdge(executors.MoreInformationExecutor, executors.HumanOperatorExecutor)
+                .AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
 
-                // --------- EscalateToHumanOperator Branch -------------------------
-                // Need to justify branch
-                //              .AddEdge(executors.EscalatedExecutor, executors.HumanOperatorExecutor)
+        // -- ------- DirectAnswer Branch -------------------------
+        builder.AddEdge(directAnswerAgentExec, executors.TerminateWorkflow);
 
-                // -- ------- DirectAnswer Branch -------------------------
-                .AddEdge(directAnswerAgentExec, executors.TerminateWorkflow)
+        // -- ------- Investigate Branch -------------------------
+        //Open case send to TheCore
+        builder.AddEdge(generateObjectiveExec, executors.NewCaseExecutor)   // TheCore generate the initial hypothesis objective
+                .AddEdge(executors.NewCaseExecutor, subWorkflowExecutor)    // NewCase creates a new case and sends objective to the sub-workflow for evidence gathering
+                .AddEdge(subWorkflowExecutor, executors.TerminateWorkflow); // Sub-workflow evidence gathering Magnetic orchestration
 
-                // -- ------- Investigate Branch -------------------------
-                //Open case send to TheCore
-                .AddEdge(executors.NewCaseExecutor, sentinelCoreExec) // Create case and have TheCore generate the initial hypothesis to Magnetic orchestration
-                .AddEdge(sentinelCoreExec, evidenceGatheringBinding) // Sub-workflow evidence gathering Magnetic orchestration
-                .AddEdge(evidenceGatheringBinding, executors.AggregationExecutor)
-                .AddEdge(executors.AggregationExecutor, executors.PersistEvidenceExecutor) // Evidence gathered — hand the synthesized results to a human for review
-                .AddEdge(executors.PersistEvidenceExecutor, sentinelCoreExec)
+        //     .AddEdge(executors.AggregationExecutor, executors.PersistEvidenceExecutor)
+        //     .AddEdge(executors.PersistEvidenceExecutor, executors.TerminateWorkflow); // Evidence is gathered — hand the synthesized results back to core for final synopsis.
+        //.AddEdge(theCoreExec, executors.TerminateWorkflow)
 
-                .WithName("TheCoreFlow")
-                .WithDescription("The main investigation and case management workflow");
+        // ---------------  EscalateToHumanOperator Branch -------------------------
+        builder.AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
+
+        builder.WithName("TheCoreWorkflow")
+        .WithDescription("The main investigation and case management workflow");
 
         // ── Register output sources ─────────────────────────────────────────────────────────
         // MAF only surfaces yielded values from executors registered via WithOutputFrom;
         // without this registration no executor output ever reaches the WorkflowOutputEvent stream.
-        builder.WithOutputFrom(classifierExec, directAnswerAgentExec, sentinelCoreExec, executors.SafetyExecutor, executors.NewCaseExecutor, executors.CriticalAlert, executors.MoreInformationExecutor, executors.TerminateWorkflow, executors.HumanOperatorExecutor, executors.AggregationExecutor, executors.PersistEvidenceExecutor);
+        builder.WithOutputFrom(classifierExec, directAnswerAgentExec, executors.SafetyExecutor, executors.CriticalAlert, executors.MoreInformationExecutor, executors.TerminateWorkflow, executors.HumanOperatorExecutor);
 
         Workflow flow = builder.Build();
 
@@ -234,22 +248,22 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// <summary>
     ///     Executes the core workflow asynchronously.
     /// </summary>
-    /// <param name="message">The input message for the workflow, represented as a <see cref="ChatMessage" />.</param>
+    /// <param name="input"></param>
     /// <param name="cancellationToken">A <see cref="CancellationToken" /> to observe while waiting for the task to complete.</param>
     /// <returns>
     ///     A task representing the asynchronous operation, which upon completion provides a
     ///     <see cref="WorkflowExecutionOutput" />.
     /// </returns>
-    public async Task<IAsyncEnumerable<WorkflowEvent>> ExecuteStreamingAsync(ChatMessage input, CancellationToken cancellationToken)
+    public async Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage input, CancellationToken cancellationToken)
     {
         Throw.IfNull(input);
         try
         {
-
             // Streaming execution — delegate the stream to the caller
             StreamingRun run = await InProcessExecution.Lockstep.RunStreamingAsync(_theCoreWorkflow, input, cancellationToken: cancellationToken);
             await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
-            return run.WatchStreamAsync();
+            // Return the async-enumerable directly (do not await it)
+            return run.WatchStreamAsync(cancellationToken);
         }
         catch (Exception ex)
         {
@@ -275,7 +289,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     may safely invoke this before every execution.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(CancellationToken cancellationToken = default(CancellationToken))
     {
         if (_isInitialized)
         {
@@ -296,23 +310,23 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         // ── Build main workflow agents ─────────────────────────────────────────────────────────
 
-        _sentinelCoreAgent = await _agentFactory.CreateAgentAsync("TheCore", cancellationToken);
+        _theCoreAgent = await _agentFactory.CreateAgentAsync("TheCore", cancellationToken);
 
         _classifierAgent = await _agentFactory.CreateAgentAsync("Classifier", cancellationToken);
 
         _safetyAgent = await _agentFactory.CreateAgentAsync("SafetyAgent", cancellationToken);
 
-        _sentinelCoreSession = await _sentinelCoreAgent.CreateSessionAsync(cancellationToken);
+        _theCoreSession = await _theCoreAgent.CreateSessionAsync(cancellationToken);
 
         // ── Build MAG sub-workflow agents ─────────────────────────────────────────────────────
-
         _magManagerAgent = await _agentFactory.CreateAgentAsync("Manager", cancellationToken);
 
-        _windowsOsWorkerAgent = await _agentFactory.CreateAgentAsync("Worker1", cancellationToken);
+        _windowsWorkerAgent1 = await _agentFactory.CreateAgentAsync("Worker1", cancellationToken);
 
-        _networkWorkerAgent = await _agentFactory.CreateAgentAsync("Worker2", cancellationToken);
+        _windowsWorkerAgent2 = await _agentFactory.CreateAgentAsync("Worker2", cancellationToken);
 
-        _applicationWorkerAgent = await _agentFactory.CreateAgentAsync("Worker3", cancellationToken);
+        _windowsWorkerAgent3 = await _agentFactory.CreateAgentAsync("Worker3", cancellationToken);
+        _windowsWorkerAgent4 = await _agentFactory.CreateAgentAsync("Worker4", cancellationToken);
 
         _reporter.ReportInfo("Agent profiles constructed.");
         _theCoreWorkflow = await BuildWorkflow();
@@ -358,17 +372,27 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     A fully configured <see cref="Workflow" /> instance representing the evidence gathering sub-workflow.
     /// </returns>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown if any of the required agents (_magManagerAgent, _windowsOsWorkerAgent, _networkWorkerAgent, or
-    ///     _applicationWorkerAgent) are null.
+    ///     Thrown if any of the required agents (_magManagerAgent, _windowsWorkerAgent1, _windowsWorkerAgent2, _windowsWorkerAgent3, or
+    ///     _windowsWorkerAgent4) are null.
     /// </exception>
     private Workflow BuildEvidenceGatheringSubWorkflow()
     {
         Throw.IfNull(_magManagerAgent);
-        Throw.IfNull(_windowsOsWorkerAgent);
-        Throw.IfNull(_networkWorkerAgent);
-        Throw.IfNull(_applicationWorkerAgent);
+        Throw.IfNull(_windowsWorkerAgent1);
+        Throw.IfNull(_windowsWorkerAgent2);
+        Throw.IfNull(_windowsWorkerAgent3);
+        Throw.IfNull(_windowsWorkerAgent4);
 
-        Workflow subWorkflow = new MagenticWorkflowBuilder(_magManagerAgent).AddParticipants(_windowsOsWorkerAgent, _networkWorkerAgent, _applicationWorkerAgent).WithMaxResets(3).WithMaxRounds(3).WithMaxStalls(2).RequirePlanSignoff(false).WithDescription("MAG sub-workflow for collecting evidence to support TheCore\'s hypothesis of the signal").WithName("EvidenceCollection").Build();
+        Workflow subWorkflow = new MagenticWorkflowBuilder(_magManagerAgent)
+                .AddParticipants(_windowsWorkerAgent1, _windowsWorkerAgent2, _windowsWorkerAgent3, _windowsWorkerAgent4)
+                .WithMaxResets(3)
+                .WithMaxRounds(5)
+                .WithMaxStalls(2)
+                .RequirePlanSignoff(false)
+                .WithDescription("MAG investigation team - sub-workflow for collecting evidence to support TheCore\'s hypothesis of the signal")
+                .WithName("EvidenceCollection")
+                .WithOutputFrom(_windowsWorkerAgent4)
+                .Build();
 
         return subWorkflow;
     }
@@ -405,10 +429,10 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     matches the expected next step decision.
     /// </summary>
     /// <param name="expectedDecision">The expected next step decision.</param>
-    /// <returns>A function that evaluates whether a message meets the expected result.</returns>
+    /// <returns>A function that evaluates whether output meets the expected result.</returns>
     private static Func<object?, bool> GetCondition(NextStep expectedDecision)
     {
-        return detectionResult => detectionResult is SignalHypothesis result && result.NextStep == expectedDecision;
+        return detectionResult => detectionResult is NextStep result && result == expectedDecision;
     }
 
 

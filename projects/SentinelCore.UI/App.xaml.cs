@@ -2,15 +2,13 @@
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -402,7 +400,7 @@ public partial class App
                     logging.AddFilter("Microsoft.Extensions", LogLevel.Warning);
                     logging.AddFilter("Microsoft.Hosting", LogLevel.Warning);
                     logging.AddDebug();
-                    logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }; });
+                    //  logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }; });
                     logging.AddFileLogger();
                     logging.SetMinimumLevel(LogLevel.Trace);
                 })

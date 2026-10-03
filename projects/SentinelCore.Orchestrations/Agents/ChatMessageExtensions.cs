@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ChatMessageExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  092308
+// Build Num:  100310
 
 
 
@@ -50,41 +50,27 @@ public static class ChatMessageExtensions
 
 
 
+    public static ChatMessage AddUserMessage(this ChatMessage message, string content)
+    {
+        Throw.IfNullOrEmpty(content);
+        return new ChatMessage(ChatRole.User, content).WithAgentRequestMessageSource(new AgentRequestMessageSourceType("Origin"), "SystemGenerated");
+    }
+
+
+
+
+
+
+
+
     public static string GetMetaTagByKey(this ChatMessage message, string key)
     {
-        if (message.AdditionalProperties != null && message.AdditionalProperties.TryGetValue(key, out var value))
+        if (message.AdditionalProperties != null && message.AdditionalProperties.TryGetValue(key, out object? value))
         {
             return value?.ToString() ?? string.Empty;
         }
+
         return string.Empty;
-    }
-
-
-
-
-    /// <summary>
-    ///     Tags a prompt with the cumulative weighted safety score for the current turn.
-    /// </summary>
-    public static ChatMessage WithSafetyScore(this ChatMessage message, int score)
-    {
-        ArgumentNullException.ThrowIfNull(message);
-        return message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyScore"), score.ToString());
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Tags a prompt with the resulting safety action for the current turn.
-    /// </summary>
-    public static ChatMessage WithSafetyResult(this ChatMessage message, string result)
-    {
-        ArgumentNullException.ThrowIfNull(message);
-        return message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyResult"), result);
     }
 
 
@@ -112,5 +98,37 @@ public static class ChatMessageExtensions
         }
 
         return taggedMessage;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Tags a prompt with the resulting safety action for the current turn.
+    /// </summary>
+    public static ChatMessage WithSafetyResult(this ChatMessage message, string result)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        return message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyResult"), result);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Tags a prompt with the cumulative weighted safety score for the current turn.
+    /// </summary>
+    public static ChatMessage WithSafetyScore(this ChatMessage message, int score)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        return message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyScore"), score.ToString());
     }
 }

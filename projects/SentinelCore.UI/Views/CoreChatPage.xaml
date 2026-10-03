@@ -85,10 +85,10 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
-                                        FontWeight="SemiBold"
-                                        Foreground="{DynamicResource ChatTextMuted}"
-                                        FontSize="11"
-                                        Text="{Binding Role}" />
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource ChatTextMuted}"
+                                       FontSize="11"
+                                       Text="{Binding Role}" />
                             <Button Grid.Column="1"
                                     Content="Copy"
                                     FontSize="10"
@@ -102,17 +102,17 @@
                                     CommandParameter="{Binding Text}" />
                         </Grid>
                         <mdv:MarkdownView Grid.Row="1" x:Name="MessageMarkdown"
-                                           MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBoxItem}, AncestorLevel=1}, Converter={StaticResource PercentageWidthConverter}, ConverterParameter=0.75}"
-                                           Margin="1,6,1,1"
-                                           Foreground="{DynamicResource ChatTextPrimary}"
-                                           Markdown="{Binding Text}"
-                                           IsHitTestVisible="True"
-                                           IsEnabled="True"
-                                           Focusable="True"
-                                           IsManipulationEnabled="True"
-                                           HorizontalScrollBarVisibility="Disabled"
-                                           VerticalScrollBarVisibility="Disabled"
-                                           WordWrap="True" />
+                                          MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBoxItem}, AncestorLevel=1}, Converter={StaticResource PercentageWidthConverter}, ConverterParameter=0.75}"
+                                          Margin="1,6,1,1"
+                                          Foreground="{DynamicResource ChatTextPrimary}"
+                                          Markdown="{Binding Text}"
+                                          IsHitTestVisible="True"
+                                          IsEnabled="True"
+                                          Focusable="True"
+                                          IsManipulationEnabled="True"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          WordWrap="True" />
                     </Grid>
                 </Border>
             </DataTemplate>

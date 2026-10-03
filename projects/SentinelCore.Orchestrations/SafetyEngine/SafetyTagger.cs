@@ -1,6 +1,21 @@
+// Solution: SentinelCore
+// Project:   SentinelCore.Orchestrations
+// File:         SafetyTagger.cs
+// Author: Kyle L. Crowder
+// Build Num:  100310
+
+
+
 using System.Text;
 
+
+
+
 namespace SentinelCore.Orchestrations.SafetyEngine;
+
+
+
+
 
 /// <summary>
 ///     Encapsulates the metadata tags that carry safety decisions.
@@ -9,6 +24,13 @@ namespace SentinelCore.Orchestrations.SafetyEngine;
 public static class SafetyTagger
 {
     private const string ObfuscationKey = "SentinelCore.Safety.Tagging";
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Adds the score and verdict tags for the current safety evaluation.
@@ -33,33 +55,12 @@ public static class SafetyTagger
         return taggedMessage;
     }
 
-    /// <summary>
-    ///     Verifies that a safety tag was created by the security module and remains unmodified.
-    /// </summary>
-    public static bool Verify(string? encryptedValue, string expectedPlainText)
-    {
-        if (string.IsNullOrWhiteSpace(encryptedValue))
-        {
-            return false;
-        }
 
-        string? decryptedValue = Deobfuscate(encryptedValue);
-        return string.Equals(decryptedValue, expectedPlainText, StringComparison.Ordinal);
-    }
 
-    private static string Obfuscate(string plainText)
-    {
-        byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
-        byte[] keyBytes = Encoding.UTF8.GetBytes(ObfuscationKey);
-        byte[] result = new byte[plainBytes.Length];
 
-        for (int i = 0; i < plainBytes.Length; i++)
-        {
-            result[i] = (byte)(plainBytes[i] ^ keyBytes[i % keyBytes.Length]);
-        }
 
-        return Convert.ToBase64String(result);
-    }
+
+
 
     private static string? Deobfuscate(string encryptedValue)
     {
@@ -80,5 +81,47 @@ public static class SafetyTagger
         {
             return null;
         }
+    }
+
+
+
+
+
+
+
+
+    private static string Obfuscate(string plainText)
+    {
+        byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+        byte[] keyBytes = Encoding.UTF8.GetBytes(ObfuscationKey);
+        byte[] result = new byte[plainBytes.Length];
+
+        for (int i = 0; i < plainBytes.Length; i++)
+        {
+            result[i] = (byte)(plainBytes[i] ^ keyBytes[i % keyBytes.Length]);
+        }
+
+        return Convert.ToBase64String(result);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Verifies that a safety tag was created by the security module and remains unmodified.
+    /// </summary>
+    public static bool Verify(string? encryptedValue, string expectedPlainText)
+    {
+        if (string.IsNullOrWhiteSpace(encryptedValue))
+        {
+            return false;
+        }
+
+        string? decryptedValue = Deobfuscate(encryptedValue);
+        return string.Equals(decryptedValue, expectedPlainText, StringComparison.Ordinal);
     }
 }
