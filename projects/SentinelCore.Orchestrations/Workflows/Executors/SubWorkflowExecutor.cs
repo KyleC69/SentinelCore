@@ -54,12 +54,20 @@ public sealed partial class SubWorkflowExecutor : Executor
     [MessageHandler]
     public async ValueTask<ChatMessage> HandleMessage(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
     {
-        // Implement the logic for handling the ChatMessage here
-        // For example, you can log the message or perform some processing
+        try
+        {
+            // Implement the logic for handling the ChatMessage here
+            // For example, you can log the message or perform some processing
 
-        Run response = await InProcessExecution.RunAsync(_evidence, message);
+            Run response = await InProcessExecution.RunAsync(_evidence, message, cancellationToken: cancellationToken).ConfigureAwait(false);
 
 
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
 
         return message;
     }

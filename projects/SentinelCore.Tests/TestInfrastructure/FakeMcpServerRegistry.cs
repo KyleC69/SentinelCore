@@ -1,4 +1,4 @@
-// Solution: SentinelCore
+﻿// Solution: SentinelCore
 // Project:   SentinelCore.Tests
 // File:         FakeMcpServerRegistry.cs
 // Author: Kyle L. Crowder
@@ -7,6 +7,7 @@
 
 
 using SentinelCore.Contracts.Mcp;
+using SentinelCore.Orchestrations.Mcp;
 
 
 

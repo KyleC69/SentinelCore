@@ -28,7 +28,7 @@ namespace SentinelCore.Orchestrations.Agents;
 ///         not by a chat-client decorator.
 ///     </para>
 /// </summary>
-public sealed class LoggingClientContributor : IAgentConstructionContributor
+public sealed class LoggingClientContributor
 {
     private readonly ILoggerFactory _loggerFactory;
 
@@ -56,7 +56,14 @@ public sealed class LoggingClientContributor : IAgentConstructionContributor
 
 
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Wraps the construction context's chat client in a logging decorator when logging is enabled.
+    /// </summary>
+    /// <remarks>Throws ArgumentNullException if context is null. If context.Preset.UseLogging is true, assigns a
+    /// LoggingChatClient to context.WrappedClient using the configured logger factory.</remarks>
+    /// <param name="context">Agent construction context that provides the wrapped chat client and preset settings.</param>
+    /// <param name="cancellationToken">Cancellation token to observe for cancellation; not used by this implementation.</param>
+    /// <returns>A completed Task representing the contribution operation.</returns>
     public Task ContributeAsync(AgentConstructionContext context, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -81,4 +88,8 @@ public sealed class LoggingClientContributor : IAgentConstructionContributor
     {
         get => 20;
     }
+
+
+
+
 }

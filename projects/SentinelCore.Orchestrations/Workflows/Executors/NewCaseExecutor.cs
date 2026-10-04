@@ -44,7 +44,7 @@ public sealed partial class NewCaseExecutor : Executor
     /// </summary>
     /// <param name="caseEng">The case flow engine for case lifecycle operations.</param>
     /// <param name="reporter">The system reporter for logging.</param>
-    public NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter reporter) : base("NewCase")
+    public NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter reporter) : base("CreateNewCase")
     {
         _caseEng = caseEng ?? throw new ArgumentNullException(nameof(caseEng));
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
@@ -87,6 +87,8 @@ public sealed partial class NewCaseExecutor : Executor
 
         // --- Null validation ---
         ChatMessage prompt = await context.ReadStateAsync<ChatMessage>(WorkFlowStateKeys.PROMPT, "SharedState", cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException();
+
+        _reporter.ReportDebug($"[{Name}] Loaded prompt from state: {prompt.Text}");
 
 
         if (string.IsNullOrEmpty(prompt.Text))

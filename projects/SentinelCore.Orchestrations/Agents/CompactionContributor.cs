@@ -24,7 +24,7 @@ namespace SentinelCore.Orchestrations.Agents;
 ///     Compaction manages conversation context window by trimming older messages
 ///     when token limits are exceeded.
 /// </summary>
-public sealed class CompactionContributor : IAgentConstructionContributor
+public sealed class CompactionContributor
 {
 
 
@@ -52,6 +52,25 @@ public sealed class CompactionContributor : IAgentConstructionContributor
     public int Order
     {
         get => 50;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Contributes to the agent construction context. The contributor inspects
+    ///     the preset and adds its piece (client wrappers, context providers, tools).
+    /// </summary>
+    /// <param name="context">The accumulator for construction decisions.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public Task ContributeAsync(CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
     }
 }
 

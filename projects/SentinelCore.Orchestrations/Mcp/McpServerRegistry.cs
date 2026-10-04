@@ -31,8 +31,9 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 {
     private readonly IMcpConnectionFactory _connectionFactory;
     private readonly ConcurrentDictionary<string, McpServerEntry> _entries = new();
-    private readonly ILogger<McpServerRegistry> _logger;
+    private static ILogger<McpServerRegistry> _logger;
     private readonly IMcpServerRegistryStore _store;
+    private static ConcurrentDictionary<string, McpServerEntry> _entries_s = new();
 
 
 
@@ -74,7 +75,71 @@ public sealed class McpServerRegistry : IMcpServerRegistry
             return Task.FromResult<McpServerInfo?>(entry.ToInfo());
         }
 
+        _entries_s = _entries;
         return Task.FromResult<McpServerInfo?>(null);
+    }
+
+
+
+
+
+
+
+
+    public IList<AITool> GetAllTools(CancellationToken token)
+    {
+        List<AITool> tools = new();
+
+        foreach (McpServerEntry entry in _entries_s.Values)
+        {
+            if (entry.Status != McpServerStatus.Connected || entry.Client is null)
+            {
+                continue;
+            }
+
+            try
+            {
+                IList<McpClientTool> serverTools = entry.Client.ListToolsAsync(cancellationToken: token).GetAwaiter().GetResult();
+
+                foreach (McpClientTool serverTool in serverTools) tools.Add(serverTool);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to list tools from MCP server {ServerId} for agent.", entry.Definition.Id);
+            }
+        }
+
+        return tools;
+    }
+
+
+
+
+
+    public async Task<IReadOnlyList<AITool>> GetAllToolsAsync(CancellationToken token)
+    {
+        List<AITool> tools = [];
+
+        foreach (McpServerEntry entry in _entries.Values)
+        {
+            if (entry.Status != McpServerStatus.Connected || entry.Client is null)
+            {
+                continue;
+            }
+
+            try
+            {
+                IList<McpClientTool> serverTools = await entry.Client.ListToolsAsync(cancellationToken: token).ConfigureAwait(false);
+
+                foreach (McpClientTool serverTool in serverTools) tools.Add(serverTool);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to list tools from MCP server {ServerId} for agent.", entry.Definition.Id);
+            }
+        }
+
+        return tools;
     }
 
 

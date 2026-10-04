@@ -26,7 +26,6 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
     private readonly ISentinelAgentFactory _agentFactory;
     private bool _agentInitialized;
     private readonly IAgentProfileBuilder _agentSpecBuilder;
-    private readonly ICaseGenerator _generator;
 
     // Session used for running the core agent. Initialized lazily.
     private AgentSession? _session;
@@ -40,11 +39,10 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public CustomGroupWorkflow(ICaseGenerator generator, ISystemReporter systemReporter, IAgentProfileBuilder agentSpecBuilder, ISentinelAgentFactory agentFactory, IWorkflowEventProcessor processor) : base(systemReporter, processor)
+    public CustomGroupWorkflow(ISystemReporter systemReporter, IAgentProfileBuilder agentSpecBuilder, ISentinelAgentFactory agentFactory, IWorkflowEventProcessor processor) : base(systemReporter, processor)
     {
         _agentSpecBuilder = agentSpecBuilder;
         _agentFactory = agentFactory;
-        _generator = generator;
     }
 
 
@@ -143,7 +141,6 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
             return;
         }
 
-        _theCore = await _generator.BuildAgentAsync().ConfigureAwait(false);
         _session = await _theCore.CreateSessionAsync().ConfigureAwait(false);
         _agentInitialized = true;
     }

@@ -137,8 +137,10 @@ public sealed class ModelConfigGate : IModelConfigGate
         {
             try
             {
+                var OllamaHost = Environment.GetEnvironmentVariable("OLLAMA_HOST", EnvironmentVariableTarget.User) ?? "http://127.0.0.1:11434";
+                var ollamaUri = new Uri(OllamaHost);
                 using TcpClient client = new();
-                IAsyncResult result = client.BeginConnect("127.0.0.1", 11434, null, null);
+                IAsyncResult result = client.BeginConnect(ollamaUri.Host, ollamaUri.Port, null, null);
                 bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2));
                 return success;
             }

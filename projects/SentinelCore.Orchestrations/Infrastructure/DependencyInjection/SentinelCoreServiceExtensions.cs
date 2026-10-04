@@ -122,9 +122,7 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<IOrchestrationControl, OrchestrationControl>();
         services.AddTransient<IChatClientFactory, SentinelChatClientFactory>();
         services.AddTransient<CustomGroupWorkflow>();
-        services.AddTransient<ICaseGenerator, CaseGenerator>();
         services.AddSingleton<ISentinelCoreEvents, SentinelCoreEvents>();
-        services.AddSingleton<IAgentPresetProvider, AgentPresetProvider>();
         services.AddSingleton<IAgentProfileBuilder, AgentProfileBuilder>();
         services.AddSingleton<ISystemReporter, SystemReporter>();
         services.AddSingleton<TheCoreWorkflow>();
@@ -133,11 +131,6 @@ public static class SentinelCoreServiceExtensions
         // -- Agent construction contributors (pipeline) --
         // Each contributor owns exactly one concern. Adding a new middleware type
         // requires only a new contributor class and DI registration — no factory changes.
-        services.AddSingleton<IAgentConstructionContributor, LoggingClientContributor>();
-        services.AddSingleton<IAgentConstructionContributor, ResilienceClientContributor>();
-        services.AddSingleton<IAgentConstructionContributor, PatternMemoryContributor>();
-        services.AddSingleton<IAgentConstructionContributor, McpToolContributor>();
-        services.AddSingleton<IAgentConstructionContributor, CompactionContributor>();
 
         services.AddSingleton<IOrchestrationFactory, OrchestrationFactory>();
         services.RegisterExecutors();
@@ -150,10 +143,10 @@ public static class SentinelCoreServiceExtensions
         string registryPath = Environment.GetEnvironmentVariable("SENTINEL_MCP_REGISTRY_PATH") ?? defaultRegistryPath;
         string tokenCachePath = Path.Combine(Path.GetDirectoryName(registryPath)!, "mcp-tokens.bin");
 
+        services.AddSingleton<IMcpServerRegistry, McpServerRegistry>();
         services.AddSingleton<IMcpServerRegistryStore>(sp => new JsonFileMcpServerRegistryStore(registryPath, sp.GetRequiredService<ILogger<JsonFileMcpServerRegistryStore>>()));
         services.AddSingleton<ITokenCache>(_ => new DpapiTokenCache(tokenCachePath));
         services.AddSingleton<IMcpConnectionFactory, McpConnectionFactory>();
-        services.AddSingleton<IMcpServerRegistry, McpServerRegistry>();
         services.AddSingleton<ISentinelAgentCatalog, SentinelAgentCatalog>();
         services.AddHostedService<McpServerRegistryInitializer>();
 

@@ -33,7 +33,7 @@ public sealed record AgentPresetDefinition
 
     /// <summary>
     ///     Gets the unique, stable identifier for the agent. Suitable for lookup
-    ///     and event routing. Must be globally unique.
+    ///     and event routing. Must be globally unique. Each role preset has these set but can be overridden
     /// </summary>
     public required string AgentId { get; init; }
 
@@ -50,15 +50,18 @@ public sealed record AgentPresetDefinition
     public PersonaType? DefaultPersona { get; init; }
 
     /// <summary>
-    ///     Gets the default system instructions for this agent role.
-    ///     These are used when no per-call override is provided by the executor.
-    ///     Executors layer instructions at call time: platform domain → preset → task.
+    ///    
+    ///   The innermost core system instructions are always applied, these must not be overridden ever.
+    ///     They are to be attached at the base chat client level and are not to be overridden by any other system instructions. They carry the most weight in the reasoning.
+    ///    These are intentionally broad but targeted to ground the agent in how the platform is currently configured and what it is expected to do.
+    ///     This improves the agent's ability to reason about the platform and its capabilities, and to make decisions that are consistent with the platform's intended use and ultimately speeds up performance.
+    ///     Without these the agent is more likely to hallucinate, may stall, and may make decisions that are inconsistent with the platform's intended use.
     /// </summary>
-    public string? DefaultSystemInstructions { get; init; } = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S;
+    public string? DefaultSystemInstructions { get; } = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S;
 
     /// <summary>
     ///     Gets the model tier for this agent, used to select the default model
-    ///     from <see cref="SentinelCoreSettings" />.
+    ///     from <see cref="SentinelCoreSettings" />. Tiers allows you to set different default models for different agent roles, and to change the default model for a role without changing the agent's preset.
     /// </summary>
     public ModelTier Tier { get; init; } = ModelTier.Utility;
 
@@ -83,6 +86,8 @@ public sealed record AgentPresetDefinition
     /// </summary>
     public bool UseRagSearch { get; init; }
 
+    public bool UseContextEnrichers { get; init; }
+
 
 
 
@@ -94,14 +99,19 @@ public sealed record AgentPresetDefinition
     ///     Factory method for Core reasoning agents (TheCore, CoreChat).
     ///     Core agents use the frontier model, pattern memory, and logging.
     /// </summary>
-    public static AgentPresetDefinition CoreRole(string name, string id) => new()
+    public static AgentPresetDefinition CoreRole(string? name = null, string? id = null)
     {
-            AgentName = name,
-            AgentId = id,
+        return new AgentPresetDefinition
+        {
+            AgentName = name ?? "TheCore",
+            AgentId = id ?? "TheCore",
             Tier = ModelTier.Core,
-            UsePatternMemory = true,
-            UseLogging = true
-    };
+            UsePatternMemory = false,
+            UseLogging = true,
+            UseRagSearch = false,
+            UseContextEnrichers = false
+        };
+    }
 
 
 
@@ -115,7 +125,21 @@ public sealed record AgentPresetDefinition
     ///     Manager agents use the manager model and logging only.
     ///     Per PL-3, the Manager must not have tools.
     /// </summary>
-    public static AgentPresetDefinition ManagerRole(string name, string id) => new() { AgentName = name, AgentId = id, Tier = ModelTier.Manager, UseLogging = true };
+    public static AgentPresetDefinition ManagerRole(string? name = null, string? id = null)
+    {
+        return new AgentPresetDefinition
+        {
+            AgentName = name ?? "GroupManagerAgent",
+            AgentId = id ?? "GroupManagerAgent",
+            DefaultPersona = null,
+            Tier = ModelTier.Manager,
+            ToolSet = null,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false
+        };
+    }
 
 
 
@@ -128,7 +152,67 @@ public sealed record AgentPresetDefinition
     ///     Factory method for Utility/worker agents.
     ///     Utility agents use the utility model and logging.
     /// </summary>
-    public static AgentPresetDefinition UtilityRole(string name, string id) => new() { AgentName = name, AgentId = id, Tier = ModelTier.Utility, UseLogging = true };
+    public static AgentPresetDefinition UtilityRole(string? name = null, string? id = null)
+    {
+        return new AgentPresetDefinition
+        {
+            AgentId = id ?? "UtilityAgent",
+            AgentName = name ?? "UtilityAgent",
+            DefaultPersona = null,
+            Tier = ModelTier.Utility,
+            ToolSet = null,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false
+        };
+    }
+
+
+
+
+
+
+
+
+    public static AgentPresetDefinition ClassifierRole(string? id = null, string? name = null)
+    {
+        return new AgentPresetDefinition
+        {
+            AgentId = id ?? "ClassifierAgent",
+            AgentName = name ?? "ClassifierAgent",
+            DefaultPersona = null,
+            Tier = ModelTier.Utility,
+            ToolSet = null,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false
+        };
+    }
+
+
+
+
+
+
+
+
+    public static AgentPresetDefinition SafetyAgent(string? id = null, string? name = null)
+    {
+        return new AgentPresetDefinition
+        {
+            AgentId = id ?? "SafetyAgent",
+            AgentName = name ?? "SafetyAgent",
+            DefaultPersona = null,
+            Tier = ModelTier.Utility,
+            ToolSet = null,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false
+        };
+    }
 }
 
 

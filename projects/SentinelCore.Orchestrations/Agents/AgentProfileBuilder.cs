@@ -86,7 +86,6 @@ public interface IAgentProfileBuilder
 public sealed class AgentProfileBuilder : IAgentProfileBuilder
 {
     private readonly SentinelCoreSettings _options;
-    private readonly IAgentPresetProvider _presetProvider;
 
 
 
@@ -102,16 +101,11 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
     ///     The <see cref="IOptions{TOptions}" /> instance containing the <see cref="SentinelCoreSettings" />
     ///     used to configure the agent profile builder.
     /// </param>
-    /// <param name="presetProvider">
-    ///     The preset provider for resolving agent presets. Defaults to <see cref="AgentPresetProvider" />.
-    /// </param>
-    public AgentProfileBuilder(IOptions<SentinelCoreSettings> options, IAgentPresetProvider presetProvider)
+    public AgentProfileBuilder(IOptions<SentinelCoreSettings> options)
     {
         Throw.IfNull(options);
-        Throw.IfNull(presetProvider);
 
         _options = options.Value;
-        _presetProvider = presetProvider;
     }
 
 
@@ -180,10 +174,11 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
         if (agentName.Contains("worker", StringComparison.OrdinalIgnoreCase))
         {
             // Try common worker configuration keys
-            if (_options.AgentModels.TryGetValue("Worker", out ModelProfile? workerModel)) return workerModel;
-            if (_options.AgentModels.TryGetValue("Worker1", out ModelProfile? worker1Model)) return worker1Model;
             if (_options.AgentModels.TryGetValue("worker", out ModelProfile? lowerWorkerModel)) return lowerWorkerModel;
         }
+        if (_options.AgentModels.TryGetValue("thecore", out ModelProfile? worker1Model)) return worker1Model;
+
+        if (_options.AgentModels.TryGetValue("manager", out ModelProfile? workerModel)) return workerModel;
 
         // Try per-agent configuration first
         if (_options.AgentModels.TryGetValue(agentName, out ModelProfile? perAgent))
@@ -202,49 +197,7 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
 
-    /// <summary>
-    ///     Builds an agent profile from a preset when one exists; otherwise creates a default profile and applies any
-    ///     overrides.
-    /// </summary>
-    /// <param name="agentName">The agent name used to resolve a preset or create the default profile.</param>
-    /// <param name="personaOverride">Optional persona to apply to the generated profile.</param>
-    /// <returns>The generated agent profile.</returns>
-    public AgentProfile BuildAgentSpec(string agentName, AgentPersona? personaOverride = null)
-    {
-        // Try to get a preset for this agent name
-        AgentPresetDefinition? preset = _presetProvider.GetPreset(agentName);
-        if (preset != null)
-        {
-            return BuildFromPreset(preset, personaOverride);
-        }
 
-        // No preset found - build with minimal defaults
-        AgentProfile profile = BuildDefaultAgentSpec(agentName);
-
-        if (personaOverride != null)
-        {
-            profile.Persona = personaOverride;
-        }
-
-        return profile;
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Builds an <see cref="AgentProfile" /> using settings from the SentinelCore configuration
-    ///     or system defaults. This method is for creating agents with users or system defaults.
-    /// </summary>
-    /// <returns>An <see cref="AgentProfile" /> instance containing the configuration for the agent.</returns>
-    public AgentProfile BuildAgentSpec()
-    {
-        return BuildDefaultAgentSpec("AIAgent");
-    }
 
 
 

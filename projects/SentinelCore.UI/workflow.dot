@@ -1,0 +1,38 @@
+digraph Workflow {
+  rankdir=TD;
+  node [shape=box, style=filled, fillcolor=lightblue];
+  edge [color=black, arrowhead=vee];
+
+  "SafetyExecutor" [fillcolor=lightgreen, label="SafetyExecutor\n(Start)"];
+  "SafetyReviewExecutor" [label="SafetyReviewExecutor"];
+  "PatternCheckExecutor" [label="PatternCheckExecutor"];
+  "WhitelistExecutor" [label="WhitelistExecutor"];
+  "ClassifierExec" [label="ClassifierExec"];
+  "GenerateObjectExec" [label="GenerateObjectExec"];
+  "DirectAnswer" [label="DirectAnswer"];
+  "CriticalError" [label="CriticalError"];
+  "MoreInformationStep" [label="MoreInformationStep"];
+  "HumanOperator" [label="HumanOperator"];
+  "TerminateWorkflow" [label="TerminateWorkflow"];
+  "NewCase" [label="NewCase"];
+  "SubWorkflowExecutor" [label="SubWorkflowExecutor"];
+  "SafetyExecutor" -> "SafetyReviewExecutor" [style=dashed, label="conditional"];
+  "SafetyExecutor" -> "PatternCheckExecutor" [style=dashed, label="conditional"];
+  "PatternCheckExecutor" -> "WhitelistExecutor";
+  "WhitelistExecutor" -> "ClassifierExec";
+  "ClassifierExec" -> "GenerateObjectExec";
+  "ClassifierExec" -> "DirectAnswer";
+  "ClassifierExec" -> "CriticalError";
+  "ClassifierExec" -> "MoreInformationStep";
+  "ClassifierExec" -> "HumanOperator";
+  "MoreInformationStep" -> "TerminateWorkflow";
+  "MoreInformationStep" -> "HumanOperator";
+  "CriticalError" -> "HumanOperator";
+  "HumanOperator" -> "TerminateWorkflow";
+  "HumanOperator" -> "TerminateWorkflow";
+  "HumanOperator" -> "TerminateWorkflow";
+  "DirectAnswer" -> "TerminateWorkflow";
+  "GenerateObjectExec" -> "NewCase";
+  "NewCase" -> "SubWorkflowExecutor";
+  "SubWorkflowExecutor" -> "TerminateWorkflow";
+}

@@ -17,18 +17,14 @@ namespace SentinelCore.Orchestrations.Workflows;
 
 
 
-
 /// <summary>
-///     Represents a candidate investigative hypothesis that explains an observed signal, encapsulating a concise
-///     hypothesis
-///     statement, numeric confidence, supporting reasoning, predicted observable outcomes, implicated entities, suggested
-///     evidence domains, and any known contradictory indicators.
+/// Represents a single investigative objective: a hypothesis about an observed signal together with metadata used to
+/// validate or refute it.
 /// </summary>
-/// <remarks>
-///     Immutable data transfer object intended for exchange between investigative agents and workflows. Use
-///     concise, evidence‑linked fields; treat Confidence as a probability in the range 0.0 to 1.0. ObservablePredictions
-///     and SuggestedEvidenceDomains are intended to guide evidence collection and validation.
-/// </remarks>
+/// <remarks>Instances are constructed with required values and are effectively immutable; the Id is generated at
+/// construction. Confidence is a numeric score in the range 0.0–1.0. Use ObservablePredictions, KeyEntities,
+/// SuggestedEvidenceDomains, and ContradictoryIndicators to guide evidence collection and hypothesis
+/// validation.</remarks>
 public sealed class InvestigationObjective
 {
 
@@ -38,66 +34,28 @@ public sealed class InvestigationObjective
     ///     Creates a new instance of <see cref="InvestigationObjective" /> with all required properties.
     /// </summary>
     [JsonConstructor]
-    public InvestigationObjective(string signalSummary, string hypothesisStatement, double confidence, string reasoningSummary, IReadOnlyList<string> observablePredictions, IReadOnlyList<string> keyEntities, IReadOnlyList<string> suggestedEvidenceDomains, IReadOnlyList<string> contradictoryIndicators)
+    public InvestigationObjective()
     {
-        Id = Guid.NewGuid().ToString("D"); // Assign a new GUID for the ID
-        SignalSummary = signalSummary;
-        HypothesisStatement = hypothesisStatement;
-        Confidence = confidence;
-        ReasoningSummary = reasoningSummary;
-        ObservablePredictions = observablePredictions;
-        KeyEntities = keyEntities;
-        SuggestedEvidenceDomains = suggestedEvidenceDomains;
-        ContradictoryIndicators = contradictoryIndicators;
+
     }
-
-
-
-
-
-
-
-
-    public InvestigationObjective() : this("", "", 0.0, "", Array.Empty<string>(), Array.Empty<string>(), Array.Empty<string>(), Array.Empty<string>())
-    {
-    }
-
-
-
-
-
-
-
-
-    [JsonPropertyName("confidence")]
-    [Description("Numeric confidence score (0.0 to 1.0) indicating the probability that the hypothesis is correct.")]
-    public double Confidence { get; init; }
-
-    [JsonPropertyName("contradictoryIndicators")]
-    [Description("Known indicators or evidence that contradict this hypothesis.")]
-    public IReadOnlyList<string> ContradictoryIndicators { get; init; }
-
-    [JsonPropertyName("hypothesisStatement")]
-    [Description("The primary hypothesis statement explaining the observed signal.")]
-    public string HypothesisStatement { get; init; }
-
 
 
     [JsonPropertyName("id")]
-    [Description("Unique identifier for the investigative hypothesis. Assigned by the Case Flow Engine")]
+    [Description("Unique identifier for the investigative objective. Assigned by the Case Flow Engine")]
     public string Id { get; }
 
+
+
+
+
+    [JsonPropertyName("InitialStatement")]
+    [Description("The initial impression of the signal and what it might be an indication of.")]
+    public string HypothesisStatement { get; init; }
+
     [JsonPropertyName("keyEntities")]
-    [Description("Key system entities (files, processes, registry keys) implicated by the hypothesis.")]
-    public IReadOnlyList<string> KeyEntities { get; init; }
+    [Description("possible properties or areas to interrogate the system and what to look for. (files, processes, registry keys) implicated by the hypothesis.")]
+    public IList<string> KeyEntities { get; init; }
 
-    [JsonPropertyName("observablePredictions")]
-    [Description("Predicted observable outcomes that would validate the hypothesis.")]
-    public IReadOnlyList<string> ObservablePredictions { get; init; }
-
-    [JsonPropertyName("reasoningSummary")]
-    [Description("Summary of the reasoning and logic used to derive the hypothesis.")]
-    public string ReasoningSummary { get; init; }
 
     [JsonPropertyName("signalSummary")]
     [Description("Concise summary of the original signal that triggered the investigation.")]
@@ -105,7 +63,7 @@ public sealed class InvestigationObjective
 
     [JsonPropertyName("suggestedEvidenceDomains")]
     [Description("Suggested evidence domains (e.g., Network, FileSystem) to query for validation.")]
-    public IReadOnlyList<string> SuggestedEvidenceDomains { get; init; }
+    public IList<string> SuggestedEvidenceDomains { get; init; }
 }
 
 

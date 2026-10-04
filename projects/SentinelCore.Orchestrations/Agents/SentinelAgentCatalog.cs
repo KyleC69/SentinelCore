@@ -48,7 +48,7 @@ public sealed class SentinelAgentCatalog : ISentinelAgentCatalog
         // Names are intentionally stable and match the names used when building profiles in
         // TheCoreWorkflow and the TheCore agent. Add new entries here when new agents
         // or workflow agents are introduced.
-        IReadOnlyList<string> names = new[] { "TheCore", "Manager", "Worker1", "Worker2", "Worker3", "Classifier", "SafetyAgent" };
+        IReadOnlyList<string> names = new[] { "TheCore", "Manager", "Worker1", "Classifier", "SafetyAgent" };
 
         return Task.FromResult(names);
     }

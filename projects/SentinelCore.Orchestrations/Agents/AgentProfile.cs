@@ -7,7 +7,6 @@
 
 
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Personas;
 
 
@@ -78,17 +77,7 @@ public sealed record AgentProfile
     /// </summary>
     public ModelProfile? Model { get; set; }
 
-    /// <summary>
-    ///     Gets or sets the model-specific instructions for the agent.
-    ///     These instructions are represented as a collection of <see cref="ChatMessage" /> objects
-    ///     and define the contextual guidelines or directives for the agent's behavior.
-    ///     <para>
-    ///         Instructions are assembled at the call site (executor) using <see cref="InstructionLayerBuilder" />,
-    ///         not baked into the agent at construction time. This allows the same agent instance
-    ///         to be reused with different instructions per invocation.
-    ///     </para>
-    /// </summary>
-    public ChatMessages ModelInstructions { get; set; } = new ChatMessages();
+
 
     /// <summary>
     ///     A persona is a unique feature within this platform. It provides an agent with a strong personality characteristic.

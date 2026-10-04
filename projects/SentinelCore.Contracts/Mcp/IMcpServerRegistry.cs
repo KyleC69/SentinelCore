@@ -1,56 +1,57 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Contracts
+// Project:   SentinelCore.Orchestrations
 // File:         IMcpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100322
 
 
 
 using Microsoft.Extensions.AI;
 
-
-
-
-namespace SentinelCore.Contracts.Mcp;
-
+using SentinelCore.Contracts.Mcp;
 
 
 
 
-/// <summary>
-///     Provides add/remove/start/stop/query operations for managed MCP servers.
-/// </summary>
+namespace SentinelCore.Orchestrations.Mcp;
+
+
+
+
+
 public interface IMcpServerRegistry
 {
-
-    /// <summary>
-    ///     Gets runtime information for a registered MCP server.
-    /// </summary>
-    /// <param name="id">Unique identifier of the server.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>
-    ///     A task that resolves to the <see cref="McpServerInfo" /> if registered; otherwise <c>null</c>.
-    /// </returns>
     Task<McpServerInfo?> GetAsync(string id, CancellationToken cancellationToken = default);
 
 
 
+    /// <summary>
+    /// Asynchronously retrieves all registered AITool instances.
+    /// </summary>
+    /// <param name="token">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a read-only list of available AITool
+    /// instances.</returns>
+    IList<AITool> GetAllTools(CancellationToken token);
+    /// <summary>
+    /// Asynchronously retrieves all registered AITool instances.
+    /// </summary>
+    /// <param name="token">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a read-only list of available AITool
+    /// instances.</returns>
+    Task<IReadOnlyList<AITool>> GetAllToolsAsync(CancellationToken token);
+
+
+
 
 
 
 
 
     /// <summary>
-    ///     Gets the tools from connected MCP servers that are available to the specified agent.
     /// </summary>
-    /// <param name="agentName">The logical agent name used to filter server assignments.</param>
-    /// <param name="agentId">The unique agent identifier used to filter server assignments.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>
-    ///     A task that resolves to a read-only list of <see cref="AITool" /> instances. A server is included
-    ///     when it is connected and either has no assigned agent names or its assignments include
-    ///     <paramref name="agentName" /> or <paramref name="agentId" />.
-    /// </returns>
+    /// <param name="agentName"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, string agentId, CancellationToken cancellationToken = default);
 
 
@@ -59,57 +60,22 @@ public interface IMcpServerRegistry
 
 
 
-
     /// <summary>
-    ///     Lists all registered MCP servers.
+    /// Gets a read-only list of available McpServerInfo objects asynchronously.
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that resolves to a read-only list of all registered server information.</returns>
+    /// <remarks>The returned list is a snapshot of server information at the time of the call and is not
+    /// updated thereafter.</remarks>
+    /// <param name="cancellationToken">A CancellationToken to observe while waiting for the operation to complete.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a read-only list of McpServerInfo.</returns>
     Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default);
 
 
-
-
-
-
-
-
-    /// <summary>
-    ///     Registers a new MCP server definition.
-    /// </summary>
-    /// <param name="definition">Server definition to register.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous registration operation.</returns>
     Task RegisterAsync(McpServerDefinition definition, CancellationToken cancellationToken = default);
 
 
-
-
-
-
-
-
-    /// <summary>
-    ///     Removes a registered MCP server and disconnects it if currently connected.
-    /// </summary>
-    /// <param name="id">Unique identifier of the server.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous removal operation.</returns>
     Task RemoveAsync(string id, CancellationToken cancellationToken = default);
 
 
-
-
-
-
-
-
-    /// <summary>
-    ///     Starts a registered MCP server and enumerates its tools.
-    /// </summary>
-    /// <param name="id">Unique identifier of the server.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous start operation.</returns>
     Task StartAsync(string id, CancellationToken cancellationToken = default);
 
 
@@ -120,10 +86,14 @@ public interface IMcpServerRegistry
 
 
     /// <summary>
-    ///     Stops a connected MCP server.
+    ///     Stops the MCP server identified by the specified id and disposes its client.
     /// </summary>
-    /// <param name="id">Unique identifier of the server.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    ///     Validates id, disposes the MCP client if present, updates the server status to Stopped, clears
+    ///     tool names, and logs operations. Exceptions thrown while disposing the client are caught and logged.
+    /// </remarks>
+    /// <param name="id">Server identifier.</param>
+    /// <param name="cancellationToken">Cancellation token to observe while stopping the server.</param>
     /// <returns>A task that represents the asynchronous stop operation.</returns>
     Task StopAsync(string id, CancellationToken cancellationToken = default);
 
@@ -135,16 +105,30 @@ public interface IMcpServerRegistry
 
 
     /// <summary>
-    ///     Replaces the per-agent assignments of a registered MCP server.
+    ///     Updates the assigned agent names for the specified MCP server and persists the change.
     /// </summary>
-    /// <param name="id">Unique identifier of the server.</param>
-    /// <param name="assignedAgentNames">
-    ///     The logical agent names allowed to use the server. An empty collection makes the
-    ///     server available to all agents.
-    /// </param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous update operation.</returns>
-    /// <exception cref="ArgumentException"><paramref name="id" /> is null or whitespace.</exception>
-    /// <exception cref="InvalidOperationException">The server is not registered.</exception>
+    /// <remarks>
+    ///     Validates inputs, replaces the server definition with updated assignments, persists the registry,
+    ///     and logs the update.
+    /// </remarks>
+    /// <param name="id">Identifier of the MCP server to update.</param>
+    /// <param name="assignedAgentNames">New list of agent names to assign to the server.</param>
+    /// <param name="cancellationToken">Token to observe while awaiting the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the specified MCP server is not registered.</exception>
     Task UpdateAssignmentsAsync(string id, IReadOnlyList<string> assignedAgentNames, CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Loads persisted definitions into the in-memory registry without starting connections.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that represents the asynchronous load operation.</returns>
+    Task LoadPersistedAsync(CancellationToken cancellationToken = default);
 }

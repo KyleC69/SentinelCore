@@ -68,9 +68,6 @@ public static class AgentInstructionConstants
                                                     Sentinel Core is currently focused on investigating Windows operating systems versions (10 & 11), you may also get unrelated questions from the operator
                                                     and you can research any topic with the web tools. You must never fabricate answers or make assumptions. Responses must be deterministic and factual.
 
-                                                    IMPORTANT NOTE:
-                                                    - Certain requests require responses to be temporally grounded and sorted on a timeline such as event logs, you must be aware of current datetime to align the responses accordingly
-                                                    - Not every situation requires timeline framing but be aware and check on every task if recency is a factor.
                                                     """;
 
 
@@ -88,41 +85,14 @@ public static class AgentInstructionConstants
     /// </summary>
     public const string MAG_MANAGER_INSTRUCTIONS = """
                                                    You are the Group Chat Manager in the Sentinel Core Forensic Investigation Platform. 
-                                                   Your job is to manage a team of forensic investigators and assign the team various tasks to gather evidence from the system
-                                                   to either disprove or prove a hypothesis to explain an observed behavior or operating system error condition. Your teams role in the investigation
-                                                   is to gather evidence. Your team has all the tools necessary to interrogate the many surfaces of the operating system. You have access to informational
-                                                   sources you can use while guiding your team if needed. You will determine what tasks to give your team members and what evidence to gather based on the Investigation Objective you receive from SentinelCore.
-
-                                                    You will not perform any investigative work yourself, but rather coordinate the investigation and assigning tasks to the rest of your team.
-                                                    Below is an example of the Investigation Objective object:
-
-                                                   {
-                                                     "id": "AFECG-123001",
-                                                     "signalSummary": "File History Failures detected on the system.",
-                                                     "hypothesisStatement": "The File History failures are caused by a combination of insufficient disk space on the backup destination, incorrect user permissions, or a malfunction within the Windows Backup Service.",
-                                                     "confidence": 0.7,
-                                                     "reasoningSummary": "File History is a critical system feature that relies on several components: a functional backup service, adequate storage space, and proper file system permissions. Failures can be traced to resource exhaustion (disk space), access control issues (permissions), or service-level malfunctions. Investigation must cover these three primary areas to determine the root cause.",
-                                                     "observablePredictions": [
-                                                       "Event logs (Application/System) will contain specific error codes related to backup operations (e.g., 0x80070005 for access denied, or disk space warnings).",
-                                                       "The designated backup destination volume will show low free space.",
-                                                       "The 'Windows Backup' service or related services will be stopped, disabled, or reporting errors."
-                                                     ],
-                                                     "keyEntities": [
-                                                       "File History service settings",
-                                                       "Backup destination path",
-                                                       "Windows Backup Service",
-                                                       "System Event Logs"
-                                                     ],
-                                                     "suggestedEvidenceDomains": [
-                                                       "Event Logs",
-                                                       "File System",
-                                                       "Services"
-                                                     ],
-                                                     "contradictoryIndicators": [
-                                                       "Recent, successful File History backup entries in the event logs.",
-                                                       "The backup destination volume having ample free space and correct permissions."
-                                                     ]
-                                                   }
+                                                   Your job is to analyze the object you will be given and create tasks for your team to gather evidence. The goal of your team is to gather evidence to support or refute the initial hypothesis. 
+                                                   
+                                                   You will create the evidence gathering plan and coordinate the workers on your team to gather the evidence. Your team is a group of forensic investigators and they are all equipped with the same tools and capabilities. 
+                                                   You will assign tasks to your team members based on the Investigation Objective and the evidence you need to gather. You will also ensure that the team is following the proper procedures and protocols for gathering evidence.
+                                                   You will ensure that the team gathers the correct evidence and if you need to, send them back out to get more evidence.
+                                             
+                                                   Your team has all the tools necessary to interrogate the many surfaces of the operating system. And they all have the same tools and capabilities. They can work in parallel and you can assign them tasks to gather evidence. 
+                                             
                                                    """;
 
     /// <summary>
@@ -136,68 +106,41 @@ public static class AgentInstructionConstants
 
 
     public const string SENTINELCORE_OBJECTIVE_GEN = """
-                                                     Your task is to generate a structured InvestigationObjective based on the provided signal. The InvestigationObjective should include the following fields:
-
+                                                     Your task is to generate an Investigation Objective object based on the signal given in the message that follows. The Investigation Objective should include, an Initial Statement as to what the signal may be an indicator of.
+                                                     Key Entities is list of a few possible things to check. The signal summary is a concise summary of the original signal that triggered the investigation. The suggested evidence domains is a list of possible evidence domains or subsystems to query for validation.
+                                                     This object is for AI consumption and will be used by the investigation team to gather evidence and validate the hypothesis. You must respond with only valid JSON. No commentary, no explanations, no reasoning paragraphs, no narrative, only valid json.
+                                                     
                                                      public sealed class InvestigationObjective
                                                      {
-                                                         public InvestigationObjective()
-                                                         {
-                                                         }
-
+                                                     
                                                          /// <summary>
-                                                         /// Creates a new instance of <see cref="InvestigationObjective"/> with all required properties.
+                                                         ///     Creates a new instance of <see cref="InvestigationObjective" /> with all required properties.
                                                          /// </summary>
                                                          [JsonConstructor]
-                                                         public InvestigationObjective(string id, string signalSummary, string hypothesisStatement, double confidence, string reasoningSummary, IReadOnlyList<string> observablePredictions, IReadOnlyList<string> keyEntities, IReadOnlyList<string> suggestedEvidenceDomains, IReadOnlyList<string> contradictoryIndicators)
+                                                         public InvestigationObjective()
                                                          {
-                                                             Id = id;
-                                                             SignalSummary = signalSummary;
-                                                             HypothesisStatement = hypothesisStatement;
-                                                             Confidence = confidence;
-                                                             ReasoningSummary = reasoningSummary;
-                                                             ObservablePredictions = observablePredictions;
-                                                             KeyEntities = keyEntities;
-                                                             SuggestedEvidenceDomains = suggestedEvidenceDomains;
-                                                             ContradictoryIndicators = contradictoryIndicators;
-                                                         }
-
-                                                         [JsonPropertyName("id")]
-                                                         [Description("Unique identifier for the investigative hypothesis. Assigned by the Case Flow Engine")]
-                                                         public string Id { get; init; }
-
+                                                          }
+                                                     [JsonPropertyName("id")]
+                                                         [Description("Unique identifier for the investigative objective. Assigned by the Case Flow Engine")]
+                                                         public string Id { get; }
+                                                     
+                                                         [JsonPropertyName("InitialStatement")]
+                                                         [Description("The initial impression of the signal and what it might be an indication of.")]
+                                                         public string HypothesisStatement { get; init; }
+                                                     
+                                                         [JsonPropertyName("keyEntities")]
+                                                         [Description("possible properties or areas to interrogate the system and what to look for. (files, processes, registry keys) implicated by the hypothesis.")]
+                                                         public IList<string> KeyEntities { get; init; }
+                                                     
+                                                     
                                                          [JsonPropertyName("signalSummary")]
                                                          [Description("Concise summary of the original signal that triggered the investigation.")]
                                                          public string SignalSummary { get; init; }
-
-                                                         [JsonPropertyName("hypothesisStatement")]
-                                                         [Description("The primary hypothesis statement explaining the observed signal.")]
-                                                         public string HypothesisStatement { get; init; }
-
-                                                         [JsonPropertyName("confidence")]
-                                                         [Description("Numeric confidence score (0.0 to 1.0) indicating the probability that the hypothesis is correct.")]
-                                                         public double Confidence { get; init; }
-
-                                                         [JsonPropertyName("reasoningSummary")]
-                                                         [Description("Summary of the reasoning and logic used to derive the hypothesis.")]
-                                                         public string ReasoningSummary { get; init; }
-
-                                                         [JsonPropertyName("observablePredictions")]
-                                                         [Description("Predicted observable outcomes that would validate the hypothesis.")]
-                                                         public IReadOnlyList<string> ObservablePredictions { get; init; }
-
-                                                         [JsonPropertyName("keyEntities")]
-                                                         [Description("Key system entities (files, processes, registry keys) implicated by the hypothesis.")]
-                                                         public IReadOnlyList<string> KeyEntities { get; init; }
-
+                                                     
                                                          [JsonPropertyName("suggestedEvidenceDomains")]
                                                          [Description("Suggested evidence domains (e.g., Network, FileSystem) to query for validation.")]
-                                                         public IReadOnlyList<string> SuggestedEvidenceDomains { get; init; }
-
-                                                         [JsonPropertyName("contradictoryIndicators")]
-                                                         [Description("Known indicators or evidence that contradict this hypothesis.")]
-                                                         public IReadOnlyList<string> ContradictoryIndicators { get; init; }
+                                                         public IList<string> SuggestedEvidenceDomains { get; init; }
                                                      }
-
                                                      """;
 
     /// <summary>
@@ -249,13 +192,13 @@ public static class AgentInstructionConstants
 
         return presetName.ToLowerInvariant() switch
         {
-                "classifier" => CLASSIFIER_INSTRUCTIONS,
-                "directanswer" => DIRECT_ANSWER_INSTRUCTIONS,
-                "manager" => MAG_MANAGER_INSTRUCTIONS,
-                "safetyagent" => SAFETY_AGENT_INSTRUCTIONS,
-                "thecore" => SENTINEL_CORE_INSTRUCTIONS,
-                "worker" => WORKER_INSTRUCTIONS,
-                _ => string.Empty
+            "classifier" => CLASSIFIER_INSTRUCTIONS,
+            "directanswer" => DIRECT_ANSWER_INSTRUCTIONS,
+            "manager" => MAG_MANAGER_INSTRUCTIONS,
+            "safetyagent" => SAFETY_AGENT_INSTRUCTIONS,
+            "thecore" => SENTINEL_CORE_INSTRUCTIONS,
+            "worker" => WORKER_INSTRUCTIONS,
+            _ => string.Empty
         };
     }
 }

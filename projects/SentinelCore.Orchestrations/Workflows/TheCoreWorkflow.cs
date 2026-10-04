@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  092520
+// Build Num:  100310
 
 
 
@@ -44,25 +44,25 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     private readonly object _initLock = new();
     private volatile bool _isInitialized;
 
+
+
+    private AIAgent? _magManagerAgent;
+    private AIAgent? _objectGenExec;
+
     // Pre-created sub-workflow agents (initialized once via InitializeAsync)
     private AIAgent? _safetyAgent;
-    private Workflow _theCoreWorkflow;
     // Pre-created agents and sessions (initialized once via InitializeAsync)
 
 
     // TheCore and sub-workflow agents (initialized once via InitializeAsync)
     private AIAgent? _theCoreAgent;
-
-
-
-    private AIAgent? _magManagerAgent;
+    private AgentSession _theCoreSession;
+    private Workflow _theCoreWorkflow;
 
     private AIAgent? _windowsWorkerAgent1;
     private AIAgent? _windowsWorkerAgent2;
     private AIAgent? _windowsWorkerAgent3;
     private AIAgent? _windowsWorkerAgent4;
-    private AgentSession _theCoreSession;
-    private AIAgent? _objectGenExec;
 
 
 
@@ -98,120 +98,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         _agentFactory = agentFactory;
         _executorFactory = new ExecutorFactory(serviceProvider);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Builds and returns the workflow for the current orchestration.
-    /// </summary>
-    /// <returns>
-    ///     A <see cref="Workflow" /> instance representing the constructed workflow.
-    /// </returns>
-    /// <remarks>
-    ///     This method is designed to define and construct the workflow logic specific to this orchestration.
-    ///     The method is synchronous internally but returns <see cref="Task{Workflow}" /> to satisfy the
-    ///     <see cref="IOrchestration" /> interface contract.
-    /// </remarks>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when the workflow cannot be built because agents have not been initialized.
-    /// </exception>
-    private Task<Workflow> BuildWorkflow()
-    {
-        Throw.IfNull(_theCoreAgent);
-        Throw.IfNull(_classifierAgent);
-        Throw.IfNull(_safetyAgent);
-        Throw.IfNull(_theCoreSession);
-        Throw.IfNull(_magManagerAgent);
-        Throw.IfNull(_windowsWorkerAgent1);
-        Throw.IfNull(_windowsWorkerAgent2);
-        Throw.IfNull(_windowsWorkerAgent3);
-        Throw.IfNull(_windowsWorkerAgent4);
-
-        // ── Construct NON-Agent executors ────────────────────────────────────────────────────
-
-        ExecutorCollection executors = _executorFactory.CreateAllExecutors();
-
-        // ── Build sub-workflow ──────────────────────────────────────────────────────────────────
-        SubWorkflowExecutor subWorkflowExecutor = new SubWorkflowExecutor(BuildEvidenceGatheringSubWorkflow());
-        Workflow evidenceGatheringWorkflow = BuildEvidenceGatheringSubWorkflow();
-        //   ExecutorBinding evidenceGatheringBinding = evidenceGatheringWorkflow.BindAsExecutor("EvidenceSubWorkflow");
-
-        ExecutorBinding safetyAgentBinding = _safetyAgent.BindAsExecutor(emitEvents: true);
-
-        // ── Create agent executors ─────────────────────────────────────────────────────────────
-        ClassifierAgentExec classifierExec = new(_classifierAgent, _reporter);
-        // TheCore agent with session
-        TheCoreExec theCoreExec = new(_theCoreAgent, _theCoreSession, _reporter);
-        DirectAnswerExecutor directAnswerAgentExec = new(_theCoreAgent, _theCoreSession, _reporter);
-        GenerateObjectiveExec generateObjectiveExec = new(_theCoreAgent, _theCoreSession, _reporter);
-
-        // ── Compose the switch-based routing graph ─────────────────────────────────────────
-        // First stop Safety gate
-        WorkflowBuilder builder = new(executors.SafetyExecutor);
-
-        builder.AddEdge(executors.SafetyExecutor, executors.SafetyReviewExecutor, GetCondition(true)); //safety triggers review
-        builder.AddEdge(executors.SafetyExecutor, executors.PatternCheckExecutor, GetCondition(false)); //Pass safety to next step
-
-        builder.AddEdge(executors.PatternCheckExecutor, executors.WhiteListExecutor); // Check whitelist for pattern - Operator created list to ignore
-        builder.AddEdge(executors.WhiteListExecutor, classifierExec);
-
-
-        builder.AddSwitch(classifierExec, switchBuilder => switchBuilder
-                        .AddCase(GetCondition(NextStep.Investigate), generateObjectiveExec)
-                        .AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec)
-                        .AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert)
-                        .AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor)
-                        .AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.HumanOperatorExecutor));
-
-        builder.AddEdge(executors.MoreInformationExecutor, executors.TerminateWorkflow);
-
-        // ------- RedAlert Branch -------------------------
-        // Alert UI to critical error and mark case urgent
-        builder.AddEdge(executors.CriticalAlert, executors.HumanOperatorExecutor)
-                .AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
-
-        // -- ------- MoreInformation Branch -------------------------
-        //Mark case needs more info and alert operator
-        builder.AddEdge(executors.MoreInformationExecutor, executors.HumanOperatorExecutor)
-                .AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
-
-        // -- ------- DirectAnswer Branch -------------------------
-        builder.AddEdge(directAnswerAgentExec, executors.TerminateWorkflow);
-
-        // -- ------- Investigate Branch -------------------------
-        //Open case send to TheCore
-        builder.AddEdge(generateObjectiveExec, executors.NewCaseExecutor)   // TheCore generate the initial hypothesis objective
-                .AddEdge(executors.NewCaseExecutor, subWorkflowExecutor)    // NewCase creates a new case and sends objective to the sub-workflow for evidence gathering
-                .AddEdge(subWorkflowExecutor, executors.TerminateWorkflow); // Sub-workflow evidence gathering Magnetic orchestration
-
-        //     .AddEdge(executors.AggregationExecutor, executors.PersistEvidenceExecutor)
-        //     .AddEdge(executors.PersistEvidenceExecutor, executors.TerminateWorkflow); // Evidence is gathered — hand the synthesized results back to core for final synopsis.
-        //.AddEdge(theCoreExec, executors.TerminateWorkflow)
-
-        // ---------------  EscalateToHumanOperator Branch -------------------------
-        builder.AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
-
-        builder.WithName("TheCoreWorkflow")
-        .WithDescription("The main investigation and case management workflow");
-
-        // ── Register output sources ─────────────────────────────────────────────────────────
-        // MAF only surfaces yielded values from executors registered via WithOutputFrom;
-        // without this registration no executor output ever reaches the WorkflowOutputEvent stream.
-        builder.WithOutputFrom(classifierExec, directAnswerAgentExec, executors.SafetyExecutor, executors.CriticalAlert, executors.MoreInformationExecutor, executors.TerminateWorkflow, executors.HumanOperatorExecutor);
-
-        Workflow flow = builder.Build();
-
-        // For debug purposes
-        VisualizeWorkflowAsync(flow, CancellationToken.None).Wait();
-
-        return Task.FromResult(flow);
-
     }
 
 
@@ -261,7 +147,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         {
             // Streaming execution — delegate the stream to the caller
             StreamingRun run = await InProcessExecution.Lockstep.RunStreamingAsync(_theCoreWorkflow, input, cancellationToken: cancellationToken);
-            await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
+            await run.TrySendMessageAsync(new TurnToken(true));
             // Return the async-enumerable directly (do not await it)
             return run.WatchStreamAsync(cancellationToken);
         }
@@ -278,9 +164,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
 
-
-
-
     /// <summary>
     ///     Initializes agents and other resources required for workflow execution.
     ///     Should be called once before any calls to <see cref="ExecuteAsync" />.
@@ -289,7 +172,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     may safely invoke this before every execution.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task InitializeAsync(CancellationToken cancellationToken = default(CancellationToken))
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         if (_isInitialized)
         {
@@ -372,7 +255,8 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     A fully configured <see cref="Workflow" /> instance representing the evidence gathering sub-workflow.
     /// </returns>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown if any of the required agents (_magManagerAgent, _windowsWorkerAgent1, _windowsWorkerAgent2, _windowsWorkerAgent3, or
+    ///     Thrown if any of the required agents (_magManagerAgent, _windowsWorkerAgent1, _windowsWorkerAgent2,
+    ///     _windowsWorkerAgent3, or
     ///     _windowsWorkerAgent4) are null.
     /// </exception>
     private Workflow BuildEvidenceGatheringSubWorkflow()
@@ -405,12 +289,118 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
     /// <summary>
-    /// Creates a condition function to evaluate if a detection result matches the specified expected outcome.
+    ///     Builds and returns the workflow for the current orchestration.
+    /// </summary>
+    /// <returns>
+    ///     A <see cref="Workflow" /> instance representing the constructed workflow.
+    /// </returns>
+    /// <remarks>
+    ///     This method is designed to define and construct the workflow logic specific to this orchestration.
+    ///     The method is synchronous internally but returns <see cref="Task{Workflow}" /> to satisfy the
+    ///     <see cref="IOrchestration" /> interface contract.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the workflow cannot be built because agents have not been initialized.
+    /// </exception>
+    private Task<Workflow> BuildWorkflow()
+    {
+        Throw.IfNull(_theCoreAgent);
+        Throw.IfNull(_classifierAgent);
+        Throw.IfNull(_safetyAgent);
+        Throw.IfNull(_theCoreSession);
+        Throw.IfNull(_magManagerAgent);
+        Throw.IfNull(_windowsWorkerAgent1);
+        Throw.IfNull(_windowsWorkerAgent2);
+        Throw.IfNull(_windowsWorkerAgent3);
+        Throw.IfNull(_windowsWorkerAgent4);
+
+        // ── Construct NON-Agent executors ────────────────────────────────────────────────────
+
+        ExecutorCollection executors = _executorFactory.CreateAllExecutors();
+
+        // ── Build sub-workflow ──────────────────────────────────────────────────────────────────
+        SubWorkflowExecutor subWorkflowExecutor = new(BuildEvidenceGatheringSubWorkflow());
+        Workflow evidenceGatheringWorkflow = BuildEvidenceGatheringSubWorkflow();
+        //   ExecutorBinding evidenceGatheringBinding = evidenceGatheringWorkflow.BindAsExecutor("EvidenceSubWorkflow");
+
+        ExecutorBinding safetyAgentBinding = _safetyAgent.BindAsExecutor(true);
+
+        // ── Create agent executors ─────────────────────────────────────────────────────────────
+        ClassifierAgentExec classifierExec = new(_classifierAgent, _reporter);
+        // TheCore agent with session
+        TheCoreExec theCoreExec = new(_theCoreAgent, _theCoreSession, _reporter);
+        DirectAnswerExecutor directAnswerAgentExec = new(_theCoreAgent, _theCoreSession, _reporter);
+        GenerateObjectiveExec generateObjectiveExec = new(_theCoreAgent, _theCoreSession, _reporter);
+
+        // ── Compose the switch-based routing graph ─────────────────────────────────────────
+        // First stop Safety gate
+        WorkflowBuilder builder = new(executors.SafetyExecutor);
+
+        builder.AddEdge(executors.SafetyExecutor, executors.SafetyReviewExecutor, GetCondition(true)); //safety triggers review
+        builder.AddEdge(executors.SafetyExecutor, executors.PatternCheckExecutor, GetCondition(false)); //Pass safety to next step
+
+        builder.AddEdge(executors.PatternCheckExecutor, executors.WhiteListExecutor); // Check whitelist for pattern - Operator created list to ignore
+        builder.AddEdge(executors.WhiteListExecutor, classifierExec);
+
+
+        builder.AddSwitch(classifierExec, switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), generateObjectiveExec).AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec).AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert).AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor).AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.HumanOperatorExecutor));
+
+        builder.AddEdge(executors.MoreInformationExecutor, executors.TerminateWorkflow);
+
+        // ------- RedAlert Branch -------------------------
+        // Alert UI to critical error and mark case urgent
+        builder.AddEdge(executors.CriticalAlert, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
+
+        // -- ------- MoreInformation Branch -------------------------
+        //Mark case needs more info and alert operator
+        builder.AddEdge(executors.MoreInformationExecutor, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
+
+        // -- ------- DirectAnswer Branch -------------------------
+        builder.AddEdge(directAnswerAgentExec, executors.TerminateWorkflow);
+
+        // -- ------- Investigate Branch -------------------------
+        //Open case send to TheCore
+        builder.AddEdge(generateObjectiveExec, executors.NewCaseExecutor) // TheCore generate the initial hypothesis objective
+                .AddEdge(executors.NewCaseExecutor, subWorkflowExecutor) // NewCase creates a new case and sends objective to the sub-workflow for evidence gathering
+                .AddEdge(subWorkflowExecutor, executors.TerminateWorkflow); // Sub-workflow evidence gathering Magnetic orchestration
+
+        //     .AddEdge(executors.AggregationExecutor, executors.PersistEvidenceExecutor)
+        //     .AddEdge(executors.PersistEvidenceExecutor, executors.TerminateWorkflow); // Evidence is gathered — hand the synthesized results back to core for final synopsis.
+        //.AddEdge(theCoreExec, executors.TerminateWorkflow)
+
+        // ---------------  EscalateToHumanOperator Branch -------------------------
+        builder.AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
+
+        builder.WithName("TheCoreWorkflow").WithDescription("The main investigation and case management workflow");
+
+        // ── Register output sources ─────────────────────────────────────────────────────────
+        // MAF only surfaces yielded values from executors registered via WithOutputFrom;
+        // without this registration no executor output ever reaches the WorkflowOutputEvent stream.
+        builder.WithOutputFrom(classifierExec, directAnswerAgentExec, executors.SafetyExecutor, executors.CriticalAlert, executors.MoreInformationExecutor, executors.TerminateWorkflow, executors.HumanOperatorExecutor);
+
+        Workflow flow = builder.Build();
+
+        // For debug purposes
+        VisualizeWorkflowAsync(flow, CancellationToken.None).Wait();
+
+        return Task.FromResult(flow);
+
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a condition function to evaluate if a detection result matches the specified expected outcome.
     /// </summary>
     /// <param name="expectedResult">The expected outcome to compare against the detection result.</param>
     /// <returns>
-    /// A <see cref="Func{T, TResult}"/> that takes an object as input and returns a boolean indicating
-    /// whether the detection result matches the expected outcome.
+    ///     A <see cref="Func{T, TResult}" /> that takes an object as input and returns a boolean indicating
+    ///     whether the detection result matches the expected outcome.
     /// </returns>
     private static Func<object?, bool> GetCondition(bool expectedResult)
     {
