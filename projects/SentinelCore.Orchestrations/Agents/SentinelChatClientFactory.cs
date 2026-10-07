@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelChatClientFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -71,13 +71,13 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
     {
         IChatClient baseClient = model.Provider switch
         {
-                ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
-                ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
-                ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
-                ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
-                ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
-                ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
-                _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
+            ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
+            ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
+            ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
+            ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
+            ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
+            ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
+            _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
         };
 
         return baseClient;
@@ -131,7 +131,7 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
 
 
     //TODO: Remove Fallback endpoints and model selection from all agent creation points. We cannot make assumptions about network conditions, that may cause other problems for environment and security issues. Force responsibility to the end user and UI.
-    private static IChatClient CreateOllamaClient(ModelProfile model)
+    private static OllamaApiClient CreateOllamaClient(ModelProfile model)
     {
         OllamaApiClient client = new(new Uri(model.Endpoint ?? "http://127.0.0.1:11434"), model.ModelId ?? "gemma4");
         client.SelectedModel = model.ModelId ?? "gemma4";

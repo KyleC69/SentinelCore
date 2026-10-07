@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -95,7 +95,7 @@ public partial class App
         // Model configuration is owned by the Model Configuration page — loaded
         // from the persisted document. There is no hardcoded fallback: agents
         // without configuration are gated at the factory.
-        SentinelCoreSettings sentinelSettings = new() { SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty, TraceEnabled = true, TraceLogLevel = LogLevel.Trace, OrchestrationType = OrchestrationType.TheCore };
+        SentinelCoreSettings sentinelSettings = new() { SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty, TraceEnabled = true, TraceLogLevel = LogLevel.Trace, OrchestrationType = OrchestrationType.CustomGroup };
 
         // Seed per-agent models from the persisted configuration document so the
         // first orchestration after startup uses the user's saved configuration.
@@ -399,6 +399,7 @@ public partial class App
                     logging.AddFilter("SentinelCore.UI", LogLevel.Warning);
                     logging.AddFilter("Microsoft.Extensions", LogLevel.Warning);
                     logging.AddFilter("Microsoft.Hosting", LogLevel.Warning);
+                    logging.AddConsole();
                     logging.AddDebug();
                     //  logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }; });
                     logging.AddFileLogger();

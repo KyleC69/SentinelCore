@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -31,9 +31,8 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 {
     private readonly IMcpConnectionFactory _connectionFactory;
     private readonly ConcurrentDictionary<string, McpServerEntry> _entries = new();
-    private static ILogger<McpServerRegistry> _logger;
     private readonly IMcpServerRegistryStore _store;
-    private static ConcurrentDictionary<string, McpServerEntry> _entries_s = new();
+    private static ILogger<McpServerRegistry> _logger;
 
 
 
@@ -66,31 +65,11 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-    public Task<McpServerInfo?> GetAsync(string id, CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(id);
-
-        if (_entries.TryGetValue(id, out McpServerEntry? entry))
-        {
-            return Task.FromResult<McpServerInfo?>(entry.ToInfo());
-        }
-
-        _entries_s = _entries;
-        return Task.FromResult<McpServerInfo?>(null);
-    }
-
-
-
-
-
-
-
-
     public IList<AITool> GetAllTools(CancellationToken token)
     {
         List<AITool> tools = new();
 
-        foreach (McpServerEntry entry in _entries_s.Values)
+        foreach (McpServerEntry entry in _entries.Values)
         {
             if (entry.Status != McpServerStatus.Connected || entry.Client is null)
             {
@@ -111,6 +90,9 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
         return tools;
     }
+
+
+
 
 
 
@@ -140,6 +122,25 @@ public sealed class McpServerRegistry : IMcpServerRegistry
         }
 
         return tools;
+    }
+
+
+
+
+
+
+
+
+    public Task<McpServerInfo?> GetAsync(string id, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+
+        if (_entries.TryGetValue(id, out McpServerEntry? entry))
+        {
+            return Task.FromResult<McpServerInfo?>(entry.ToInfo());
+        }
+
+        return Task.FromResult<McpServerInfo?>(null);
     }
 
 
@@ -211,6 +212,27 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
+    /// <summary>
+    ///     Loads persisted definitions into the in-memory registry without starting connections.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that represents the asynchronous load operation.</returns>
+    public async Task LoadPersistedAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<McpServerDefinition> definitions = await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (McpServerDefinition definition in definitions) _entries[definition.Id] = new McpServerEntry(definition);
+
+        _logger.LogInformation("Loaded {Count} persisted MCP server definition(s).", definitions.Count);
+    }
+
+
+
+
+
+
+
+
     public async Task RegisterAsync(McpServerDefinition definition, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definition);
@@ -251,7 +273,13 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-
+/// <summary>
+///     Starts the MCP server identified by the specified id. If the server is already running or in an error state, this method will attempt to connect it.
+/// </summary>
+/// <param name="id"></param>
+/// <param name="cancellationToken"></param>
+/// <returns></returns>
+/// <exception cref="InvalidOperationException"></exception>
     public async Task StartAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
@@ -370,27 +398,6 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
         await PersistAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Updated agent assignments for MCP server {ServerId}.", id);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Loads persisted definitions into the in-memory registry without starting connections.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous load operation.</returns>
-    public async Task LoadPersistedAsync(CancellationToken cancellationToken = default)
-    {
-        IReadOnlyList<McpServerDefinition> definitions = await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
-
-        foreach (McpServerDefinition definition in definitions) _entries[definition.Id] = new McpServerEntry(definition);
-
-        _logger.LogInformation("Loaded {Count} persisted MCP server definition(s).", definitions.Count);
     }
 
 

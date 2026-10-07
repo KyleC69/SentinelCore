@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ChatMessageExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 

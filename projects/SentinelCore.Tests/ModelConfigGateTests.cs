@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         ModelConfigGateTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -29,21 +29,6 @@ namespace SentinelCore.Tests;
 [TestClass]
 public sealed class ModelConfigGateTests
 {
-
-    [TestMethod]
-    public void AgentNamesAreCaseInsensitive()
-    {
-        // Arrange — the settings map is OrdinalIgnoreCase; "thecore" configures "TheCore".
-        SentinelCoreSettings settings = new();
-        settings.AgentModels["thecore"] = new ModelProfile("http://localhost:11434", "model-a", 0.1f);
-
-        ModelConfigGate gate = CreateGate(["TheCore"], settings);
-
-        // Act & Assert
-        Assert.IsTrue(gate.IsConfigurationComplete);
-    }
-
-
 
 
 

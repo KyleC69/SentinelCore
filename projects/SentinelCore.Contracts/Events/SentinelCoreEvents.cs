@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SentinelCoreEvents.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -25,6 +25,18 @@ public sealed class SentinelCoreEvents : ISentinelCoreEvents
     ///     Raised when an orchestration lifecycle event occurs.
     /// </summary>
     public event Action<OrchestrationActivityArgs>? OrchestrationEvent;
+
+    public event Action<WorkflowOutputEventArgs>? WorkflowOutputEvent;
+
+
+
+
+    public void RaiseWorkflowOutputEvent(WorkflowOutputEventArgs payload)
+    {
+        ArgumentNullException.ThrowIfNull(payload);
+        WorkflowOutputEvent?.Invoke(payload);
+    }
+
 
 
 

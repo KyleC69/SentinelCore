@@ -1,8 +1,8 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Orchestrations
+// Project:   SentinelCore.Contracts
 // File:         IMcpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  100322
+// Build Num:  100416
 
 
 
@@ -21,24 +21,44 @@ namespace SentinelCore.Orchestrations.Mcp;
 
 public interface IMcpServerRegistry
 {
-    Task<McpServerInfo?> GetAsync(string id, CancellationToken cancellationToken = default);
 
 
 
     /// <summary>
-    /// Asynchronously retrieves all registered AITool instances.
+    ///     Asynchronously retrieves all registered AITool instances.
     /// </summary>
     /// <param name="token">Cancellation token to cancel the operation.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains a read-only list of available AITool
-    /// instances.</returns>
+    /// <returns>
+    ///     A task that represents the asynchronous operation. The task result contains a read-only list of available AITool
+    ///     instances.
+    /// </returns>
     IList<AITool> GetAllTools(CancellationToken token);
+
+
+
+
+
+
+
+
     /// <summary>
-    /// Asynchronously retrieves all registered AITool instances.
+    ///     Asynchronously retrieves all registered AITool instances.
     /// </summary>
     /// <param name="token">Cancellation token to cancel the operation.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains a read-only list of available AITool
-    /// instances.</returns>
+    /// <returns>
+    ///     A task that represents the asynchronous operation. The task result contains a read-only list of available AITool
+    ///     instances.
+    /// </returns>
     Task<IReadOnlyList<AITool>> GetAllToolsAsync(CancellationToken token);
+
+
+
+
+
+
+
+
+    Task<McpServerInfo?> GetAsync(string id, CancellationToken cancellationToken = default);
 
 
 
@@ -60,14 +80,37 @@ public interface IMcpServerRegistry
 
 
 
+
     /// <summary>
-    /// Gets a read-only list of available McpServerInfo objects asynchronously.
+    ///     Gets a read-only list of available McpServerInfo objects asynchronously.
     /// </summary>
-    /// <remarks>The returned list is a snapshot of server information at the time of the call and is not
-    /// updated thereafter.</remarks>
+    /// <remarks>
+    ///     The returned list is a snapshot of server information at the time of the call and is not
+    ///     updated thereafter.
+    /// </remarks>
     /// <param name="cancellationToken">A CancellationToken to observe while waiting for the operation to complete.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a read-only list of McpServerInfo.</returns>
     Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Loads persisted definitions into the in-memory registry without starting connections.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that represents the asynchronous load operation.</returns>
+    Task LoadPersistedAsync(CancellationToken cancellationToken = default);
+
+
+
+
+
+
 
 
     Task RegisterAsync(McpServerDefinition definition, CancellationToken cancellationToken = default);
@@ -117,18 +160,4 @@ public interface IMcpServerRegistry
     /// <returns>A task that represents the asynchronous operation.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the specified MCP server is not registered.</exception>
     Task UpdateAssignmentsAsync(string id, IReadOnlyList<string> assignedAgentNames, CancellationToken cancellationToken = default);
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Loads persisted definitions into the in-memory registry without starting connections.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous load operation.</returns>
-    Task LoadPersistedAsync(CancellationToken cancellationToken = default);
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfileBuilder.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -152,7 +152,16 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
     {
         Throw.IfNull(preset);
 
-        AgentProfile profile = new() { AgentName = preset.AgentName, AgentId = preset.AgentId };
+        AgentProfile profile = new()
+        {
+            AIContextProviders = null,
+            AgentName = preset.AgentName,
+            Instructions = preset.DefaultSystemInstructions,
+            Model = null,
+            Persona = null,
+            Tools = null,
+            AgentId = preset.AgentId
+        };
 
         // Model configuration comes from settings
         profile.Model = TryGetModel(preset.AgentName);
@@ -176,6 +185,7 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
             // Try common worker configuration keys
             if (_options.AgentModels.TryGetValue("worker", out ModelProfile? lowerWorkerModel)) return lowerWorkerModel;
         }
+
         if (_options.AgentModels.TryGetValue("thecore", out ModelProfile? worker1Model)) return worker1Model;
 
         if (_options.AgentModels.TryGetValue("manager", out ModelProfile? workerModel)) return workerModel;
@@ -189,15 +199,6 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
         // Fall back to default model
         return _options.DefaultModel;
     }
-
-
-
-
-
-
-
-
-
 
 
 

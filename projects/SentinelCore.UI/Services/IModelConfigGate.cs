@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         IModelConfigGate.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -137,8 +137,8 @@ public sealed class ModelConfigGate : IModelConfigGate
         {
             try
             {
-                var OllamaHost = Environment.GetEnvironmentVariable("OLLAMA_HOST", EnvironmentVariableTarget.User) ?? "http://127.0.0.1:11434";
-                var ollamaUri = new Uri(OllamaHost);
+                string OllamaHost = Environment.GetEnvironmentVariable("OLLAMA_HOST", EnvironmentVariableTarget.User) ?? "http://127.0.0.1:11434";
+                Uri ollamaUri = new(OllamaHost);
                 using TcpClient client = new();
                 IAsyncResult result = client.BeginConnect(ollamaUri.Host, ollamaUri.Port, null, null);
                 bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2));

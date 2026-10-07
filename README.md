@@ -1,16 +1,18 @@
 # Sentinel Core
 
-**Advanced Agentic Investigation Platform for Windows**
+**Advanced AI Assisted Forensic Investigation Platform for Windows**
 
-![SignalFound](assets/signalfound.png)
+
 
 Sentinel Core is a multi-agent AI investigation platform that learns from every case and interaction to accelerate future resolutions. It takes a signal — a prompt, an event log error, an anomaly alert — and orchestrates a team of AI agents to investigate, gather evidence, and deliver a diagnosis with remediation steps.
 
 Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combines deterministic case lifecycle management, a rule-based safety engine, pattern memory, and 33 registered agent personas to deliver accurate, auditable investigations on Windows systems. Explore the power of MAF and versatility with this application using multi-agents, RAG, context enriching, workflows, executors, multi-provider flexibility. NOTE: MAF is still under development.
 
-## **RELEASE DATE:** I am expecting to release v1.0 by the end of the month. I expect to have all the features implemented, they may not be fully polished yet, but I should have both editions done, regular and deluxe done by October 1st
+### **UPDATED RELEASE DATE:** I am running into into a few snags and the first release is going to be a little later in the month. Also due to recently discovered exploits I am adding a security module that assures that any input has the correct signature and source provenance. Because this system can accept input from multiple external sources it is important to validate the source of the input. This will be a new feature that wasn't expected in the original design.
 
 ---
+![SignalFound](assets/signalfound.png)
+
 
 ## New Features
 

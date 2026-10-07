@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
+
+using System.Diagnostics.CodeAnalysis;
 
 using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Abstractions;
@@ -12,6 +14,7 @@ using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Exceptions;
+using SentinelCore.Orchestrations.Orchestrations;
 using SentinelCore.Orchestrations.Services;
 using SentinelCore.Orchestrations.Workflows.Executors;
 using SentinelCore.Orchestrations.Workflows.Helpers;
@@ -172,6 +175,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     may safely invoke this before every execution.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
+    [Experimental("MAAI001")]
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         if (_isInitialized)
@@ -259,8 +263,24 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     _windowsWorkerAgent3, or
     ///     _windowsWorkerAgent4) are null.
     /// </exception>
+    [Experimental("MAAI001")]
     private Workflow BuildEvidenceGatheringSubWorkflow()
     {
+        MagenticPromptOverrides over = new MagenticPromptOverrides()
+        {
+            TaskLedgerPlanPrompt = MagenticPromptDefaults.TaskLedgerPlanPrompt,
+            TaskLedgerPlanUpdatePrompt = MagenticPromptDefaults.TaskLedgerPlanUpdatePrompt,
+            ProgressLedgerPrompt = MagenticPromptDefaults.ProgressLedgerPrompt,
+            FinalAnswerPrompt = MagenticPromptDefaults.FinalAnswerPrompt,
+            TaskLedgerFactsPrompt = MagenticPromptDefaults.TaskLedgerFactsPrompt,
+            TaskLedgerFactsUpdatePrompt = MagenticPromptDefaults.TaskLedgerFactsUpdatePrompt,
+            TaskLedgerFullPrompt = MagenticPromptDefaults.TaskLedgerFullPrompt
+        };
+
+
+
+
+
         Throw.IfNull(_magManagerAgent);
         Throw.IfNull(_windowsWorkerAgent1);
         Throw.IfNull(_windowsWorkerAgent2);
@@ -273,9 +293,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
                 .WithMaxRounds(5)
                 .WithMaxStalls(2)
                 .RequirePlanSignoff(false)
-                .WithDescription("MAG investigation team - sub-workflow for collecting evidence to support TheCore\'s hypothesis of the signal")
+                .WithDescription(
+                        "Magentic investigation team - sub-workflow for collecting evidence to support TheCore\'s hypothesis of the signal")
                 .WithName("EvidenceCollection")
-                .WithOutputFrom(_windowsWorkerAgent4)
+                .WithPromptOverrides()
+
                 .Build();
 
         return subWorkflow;
@@ -302,6 +324,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// <exception cref="InvalidOperationException">
     ///     Thrown when the workflow cannot be built because agents have not been initialized.
     /// </exception>
+    [Experimental("MAAI001")]
     private Task<Workflow> BuildWorkflow()
     {
         Throw.IfNull(_theCoreAgent);
@@ -319,7 +342,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         ExecutorCollection executors = _executorFactory.CreateAllExecutors();
 
         // ── Build sub-workflow ──────────────────────────────────────────────────────────────────
-        SubWorkflowExecutor subWorkflowExecutor = new(BuildEvidenceGatheringSubWorkflow());
+        SubWorkflowExecutor subWorkflowExecutor = new(BuildEvidenceGatheringSubWorkflow(), _reporter);
         Workflow evidenceGatheringWorkflow = BuildEvidenceGatheringSubWorkflow();
         //   ExecutorBinding evidenceGatheringBinding = evidenceGatheringWorkflow.BindAsExecutor("EvidenceSubWorkflow");
 

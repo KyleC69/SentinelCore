@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         EventCapture.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -29,6 +29,7 @@ public sealed class EventCapture : ISentinelCoreEvents
 
     public event Action<string, Exception>? ErrorOccurred;
     public event Action<OrchestrationActivityArgs>? OrchestrationEvent;
+    public event Action<WorkflowOutputEventArgs>? WorkflowOutputEvent;
 
 
 
@@ -77,6 +78,23 @@ public sealed class EventCapture : ISentinelCoreEvents
 
 
     public event Action<SentinelOutputEventArgs>? SentinelOutputEvent;
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Raises a workflow output event.
+    /// </summary>
+    /// <param name="payload">The workflow output event payload.</param>
+    public void RaiseWorkflowOutputEvent(WorkflowOutputEventArgs payload)
+    {
+
+        WorkflowOutputEvent?.Invoke(payload);
+    }
 
 
 

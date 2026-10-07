@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         InvestigationObjective.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -17,14 +17,17 @@ namespace SentinelCore.Orchestrations.Workflows;
 
 
 
+
 /// <summary>
-/// Represents a single investigative objective: a hypothesis about an observed signal together with metadata used to
-/// validate or refute it.
+///     Represents a single investigative objective: a hypothesis about an observed signal together with metadata used to
+///     validate or refute it.
 /// </summary>
-/// <remarks>Instances are constructed with required values and are effectively immutable; the Id is generated at
-/// construction. Confidence is a numeric score in the range 0.0–1.0. Use ObservablePredictions, KeyEntities,
-/// SuggestedEvidenceDomains, and ContradictoryIndicators to guide evidence collection and hypothesis
-/// validation.</remarks>
+/// <remarks>
+///     Instances are constructed with required values and are effectively immutable; the Id is generated at
+///     construction. Confidence is a numeric score in the range 0.0–1.0. Use ObservablePredictions, KeyEntities,
+///     SuggestedEvidenceDomains, and ContradictoryIndicators to guide evidence collection and hypothesis
+///     validation.
+/// </remarks>
 public sealed class InvestigationObjective
 {
 
@@ -40,9 +43,7 @@ public sealed class InvestigationObjective
     }
 
 
-    [JsonPropertyName("id")]
-    [Description("Unique identifier for the investigative objective. Assigned by the Case Flow Engine")]
-    public string Id { get; }
+
 
 
 
@@ -51,6 +52,11 @@ public sealed class InvestigationObjective
     [JsonPropertyName("InitialStatement")]
     [Description("The initial impression of the signal and what it might be an indication of.")]
     public string HypothesisStatement { get; init; }
+
+
+    [JsonPropertyName("id")]
+    [Description("Unique identifier for the investigative objective. Assigned by the Case Flow Engine")]
+    public string Id { get; }
 
     [JsonPropertyName("keyEntities")]
     [Description("possible properties or areas to interrogate the system and what to look for. (files, processes, registry keys) implicated by the hypothesis.")]

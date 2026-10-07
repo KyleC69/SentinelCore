@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpConnectionFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -68,7 +68,7 @@ public sealed class McpConnectionFactory : IMcpConnectionFactory
                 McpServerTransportType.Http => CreateHttpTransport(definition),
                 _ => throw new InvalidOperationException($"Unsupported MCP transport type: {definition.TransportType}.")
         };
-
+// TODO: Remove this hardcoded client options once dynamic configuration is implemented.
         McpClientOptions clientOptions = new() { ClientInfo = new() { Name = "SentinelCore", Version = "1.0.0" } };
 
         McpClient client = await McpClient.CreateAsync(transport, clientOptions, _loggerFactory, cancellationToken).ConfigureAwait(false);

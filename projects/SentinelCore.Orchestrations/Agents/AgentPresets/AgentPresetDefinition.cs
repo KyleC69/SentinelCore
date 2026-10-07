@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentPresetDefinition.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -50,18 +50,22 @@ public sealed record AgentPresetDefinition
     public PersonaType? DefaultPersona { get; init; }
 
     /// <summary>
-    ///    
-    ///   The innermost core system instructions are always applied, these must not be overridden ever.
-    ///     They are to be attached at the base chat client level and are not to be overridden by any other system instructions. They carry the most weight in the reasoning.
-    ///    These are intentionally broad but targeted to ground the agent in how the platform is currently configured and what it is expected to do.
-    ///     This improves the agent's ability to reason about the platform and its capabilities, and to make decisions that are consistent with the platform's intended use and ultimately speeds up performance.
-    ///     Without these the agent is more likely to hallucinate, may stall, and may make decisions that are inconsistent with the platform's intended use.
+    ///     The innermost core system instructions are always applied, these must not be overridden ever.
+    ///     They are to be attached at the base chat client level and are not to be overridden by any other system
+    ///     instructions. They carry the most weight in the reasoning.
+    ///     These are intentionally broad but targeted to ground the agent in how the platform is currently configured and what
+    ///     it is expected to do.
+    ///     This improves the agent's ability to reason about the platform and its capabilities, and to make decisions that are
+    ///     consistent with the platform's intended use and ultimately speeds up performance.
+    ///     Without these the agent is more likely to hallucinate, may stall, and may make decisions that are inconsistent with
+    ///     the platform's intended use.
     /// </summary>
-    public string? DefaultSystemInstructions { get; } = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S;
+    public string? DefaultSystemInstructions { get; set; }
 
     /// <summary>
     ///     Gets the model tier for this agent, used to select the default model
-    ///     from <see cref="SentinelCoreSettings" />. Tiers allows you to set different default models for different agent roles, and to change the default model for a role without changing the agent's preset.
+    ///     from <see cref="SentinelCoreSettings" />. Tiers allows you to set different default models for different agent
+    ///     roles, and to change the default model for a role without changing the agent's preset.
     /// </summary>
     public ModelTier Tier { get; init; } = ModelTier.Utility;
 
@@ -69,6 +73,8 @@ public sealed record AgentPresetDefinition
     ///     Gets the tool names to include by default, or <c>null</c> for all available tools.
     /// </summary>
     public IReadOnlyList<string>? ToolSet { get; init; }
+
+    public bool UseContextEnrichers { get; init; }
 
     /// <summary>
     ///     Gets whether logging middleware should be applied to this agent's chat client.
@@ -86,7 +92,40 @@ public sealed record AgentPresetDefinition
     /// </summary>
     public bool UseRagSearch { get; init; }
 
-    public bool UseContextEnrichers { get; init; }
+
+
+
+
+
+
+
+    public static AgentPresetDefinition ClassifierRole(string? id = null, string? name = null)
+    {
+        return new AgentPresetDefinition
+        {
+            AgentId = id ?? "ClassifierAgent",
+            AgentName = name ?? "ClassifierAgent",
+            Description = "Agent responsible for classifying inputs. Primary usage is in complex workflow switching.",
+            DefaultPersona = null,
+            Tier = ModelTier.Utility,
+            ToolSet = null,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S + "\n" +
+                                        AgentInstructionConstants.CLASSIFIER_INSTRUCTIONS
+        };
+    }
+
+
+
+
+
+
+
+
+    public string Description { get; set; }
 
 
 
@@ -105,11 +144,14 @@ public sealed record AgentPresetDefinition
         {
             AgentName = name ?? "TheCore",
             AgentId = id ?? "TheCore",
+            Description = "Core reasoning agent responsible for advanced analytical tasks and operator support.",
             Tier = ModelTier.Core,
             UsePatternMemory = false,
             UseLogging = true,
             UseRagSearch = false,
-            UseContextEnrichers = false
+            UseContextEnrichers = false,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S + "\n" +
+                                        AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS
         };
     }
 
@@ -131,13 +173,43 @@ public sealed record AgentPresetDefinition
         {
             AgentName = name ?? "GroupManagerAgent",
             AgentId = id ?? "GroupManagerAgent",
+            Description = "Manager/orchestrator agent responsible for coordinating Magentic Group Orchestration workflows.",
             DefaultPersona = null,
             Tier = ModelTier.Manager,
             ToolSet = null,
             UseLogging = true,
             UsePatternMemory = false,
             UseRagSearch = false,
-            UseContextEnrichers = false
+            UseContextEnrichers = false,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S + "\n" +
+                                        AgentInstructionConstants.MAG_MANAGER_INSTRUCTIONS
+
+        };
+    }
+
+
+
+
+
+
+
+
+    public static AgentPresetDefinition SafetyAgent(string? id = null, string? name = null)
+    {
+        return new AgentPresetDefinition
+        {
+            AgentId = id ?? "SafetyAgent",
+            AgentName = name ?? "SafetyAgent",
+            Description = "Utility agent responsible for ensuring safety and compliance within workflows.",
+            DefaultPersona = null,
+            Tier = ModelTier.Utility,
+            ToolSet = null,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S + "\n" +
+                                        AgentInstructionConstants.SAFETY_AGENT_INSTRUCTIONS
         };
     }
 
@@ -158,59 +230,15 @@ public sealed record AgentPresetDefinition
         {
             AgentId = id ?? "UtilityAgent",
             AgentName = name ?? "UtilityAgent",
+            Description = "Utility agent responsible for performing auxiliary tasks and supporting core workflow operations.",
             DefaultPersona = null,
             Tier = ModelTier.Utility,
             ToolSet = null,
             UseLogging = true,
             UsePatternMemory = false,
             UseRagSearch = false,
-            UseContextEnrichers = false
-        };
-    }
-
-
-
-
-
-
-
-
-    public static AgentPresetDefinition ClassifierRole(string? id = null, string? name = null)
-    {
-        return new AgentPresetDefinition
-        {
-            AgentId = id ?? "ClassifierAgent",
-            AgentName = name ?? "ClassifierAgent",
-            DefaultPersona = null,
-            Tier = ModelTier.Utility,
-            ToolSet = null,
-            UseLogging = true,
-            UsePatternMemory = false,
-            UseRagSearch = false,
-            UseContextEnrichers = false
-        };
-    }
-
-
-
-
-
-
-
-
-    public static AgentPresetDefinition SafetyAgent(string? id = null, string? name = null)
-    {
-        return new AgentPresetDefinition
-        {
-            AgentId = id ?? "SafetyAgent",
-            AgentName = name ?? "SafetyAgent",
-            DefaultPersona = null,
-            Tier = ModelTier.Utility,
-            ToolSet = null,
-            UseLogging = true,
-            UsePatternMemory = false,
-            UseRagSearch = false,
-            UseContextEnrichers = false
+            UseContextEnrichers = false,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
     }
 }

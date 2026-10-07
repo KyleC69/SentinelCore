@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         LoggingClientContributor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -56,11 +56,26 @@ public sealed class LoggingClientContributor
 
 
 
+    /// <inheritdoc />
+    public int Order
+    {
+        get => 20;
+    }
+
+
+
+
+
+
+
+
     /// <summary>
-    /// Wraps the construction context's chat client in a logging decorator when logging is enabled.
+    ///     Wraps the construction context's chat client in a logging decorator when logging is enabled.
     /// </summary>
-    /// <remarks>Throws ArgumentNullException if context is null. If context.Preset.UseLogging is true, assigns a
-    /// LoggingChatClient to context.WrappedClient using the configured logger factory.</remarks>
+    /// <remarks>
+    ///     Throws ArgumentNullException if context is null. If context.Preset.UseLogging is true, assigns a
+    ///     LoggingChatClient to context.WrappedClient using the configured logger factory.
+    /// </remarks>
     /// <param name="context">Agent construction context that provides the wrapped chat client and preset settings.</param>
     /// <param name="cancellationToken">Cancellation token to observe for cancellation; not used by this implementation.</param>
     /// <returns>A completed Task representing the contribution operation.</returns>
@@ -75,21 +90,4 @@ public sealed class LoggingClientContributor
 
         return Task.CompletedTask;
     }
-
-
-
-
-
-
-
-
-    /// <inheritdoc />
-    public int Order
-    {
-        get => 20;
-    }
-
-
-
-
 }

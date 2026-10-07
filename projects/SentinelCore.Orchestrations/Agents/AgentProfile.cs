@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentProfile.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -90,4 +90,6 @@ public sealed record AgentProfile
     ///     The list of tools available to the agent. Default empty, set at runtime
     /// </summary>
     public IList<AITool> Tools { get; set; } = new List<AITool>();
+
+    public string? Instructions { get; set; }
 }

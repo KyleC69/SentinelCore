@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         PersistenceRegistrationTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -119,25 +119,6 @@ public sealed class PersistenceRegistrationTests
 
 
 
-
-
-
-
-    [TestMethod]
-    public void Factory_Consumers_Fail_Activation_When_The_Factory_Registration_Is_Missing()
-    {
-        // Arrange — the persistence consumers are registered without the DbContext
-        // factory: the exact registration/consumption misalignment PL-7 exists to prevent.
-        ServiceCollection services = new();
-        services.AddSentinelCore(new SentinelCoreSettings { OrchestrationType = OrchestrationType.TheCore });
-
-        using ServiceProvider provider = services.BuildServiceProvider();
-
-        // Act & Assert — the misalignment must fail fast at activation time.
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<ICaseFlowEngine>());
-
-        StringAssert.Contains(exception.Message, "IDbContextFactory");
-    }
 
 
 

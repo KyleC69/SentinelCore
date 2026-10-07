@@ -276,7 +276,7 @@
                     </Ellipse>
                     <TextBlock Text="Generating…"
                                Foreground="{DynamicResource ChatTextMuted}"
-                               FontSize="12"
+                               FontSize="14"
                                VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
@@ -384,7 +384,7 @@
                              Grid.Column="0"
                              Grid.ColumnSpan="3"
                              Margin="0,8,0,0"
-                             Height="3"
+                             Height="6"
                              HorizontalAlignment="Stretch"
                              IsIndeterminate="True"
                              Foreground="{DynamicResource ChatAccent}"

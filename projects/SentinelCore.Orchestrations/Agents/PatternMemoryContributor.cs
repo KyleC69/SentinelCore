@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PatternMemoryContributor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -56,11 +56,25 @@ public sealed class PatternMemoryContributor
 
 
 
+    public int Order
+    {
+        get => 30;
+    }
+
+
+
+
+
+
+
+
     /// <summary>
-    /// Adds a pattern-memory context provider to the agent construction context when enabled by the preset.
+    ///     Adds a pattern-memory context provider to the agent construction context when enabled by the preset.
     /// </summary>
-    /// <remarks>No asynchronous work is performed. When context.Preset.UsePatternMemory is true, a
-    /// PatternMemoryInjector is added to ContextProviders.</remarks>
+    /// <remarks>
+    ///     No asynchronous work is performed. When context.Preset.UsePatternMemory is true, a
+    ///     PatternMemoryInjector is added to ContextProviders.
+    /// </remarks>
     /// <param name="context">The agent construction context whose ContextProviders collection may be updated.</param>
     /// <param name="cancellationToken">A cancellation token to observe for operation cancellation.</param>
     /// <returns>A completed Task representing the operation.</returns>
@@ -74,19 +88,6 @@ public sealed class PatternMemoryContributor
         }
 
         return Task.CompletedTask;
-    }
-
-
-
-
-
-
-
-
-
-    public int Order
-    {
-        get => 30;
     }
 
 

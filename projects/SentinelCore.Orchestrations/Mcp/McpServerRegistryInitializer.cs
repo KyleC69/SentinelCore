@@ -2,14 +2,12 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpServerRegistryInitializer.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-
-using SentinelCore.Contracts.Mcp;
 
 
 

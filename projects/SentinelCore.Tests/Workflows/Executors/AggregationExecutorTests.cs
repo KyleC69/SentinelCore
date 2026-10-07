@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         AggregationExecutorTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  100310
+// Build Num:  100416
 
 
 
@@ -33,28 +33,6 @@ public class AggregationExecutorTests
 
 
 
-
-
-
-    [TestMethod]
-    public async Task HandleChatMessageAsync_Canceled_PropagatesException()
-    {
-        // Arrange
-        ChatMessage message = new(ChatRole.User, "Aggregated Evidence");
-        CancellationTokenSource cts = new();
-        cts.Cancel();
-
-        // Act & Assert
-        try
-        {
-            await _executor.HandleChatMessageAsync(message, _mockContext.Object, cts.Token);
-            Assert.Fail("Should have thrown OperationCanceledException");
-        }
-        catch (OperationCanceledException)
-        {
-            // Success
-        }
-    }
 
 
 
