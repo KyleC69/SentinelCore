@@ -266,15 +266,15 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     [Experimental("MAAI001")]
     private Workflow BuildEvidenceGatheringSubWorkflow()
     {
-        MagenticPromptOverrides over = new MagenticPromptOverrides()
+        Microsoft.Agents.AI.Workflows.MagenticPromptOverrides over = new Microsoft.Agents.AI.Workflows.MagenticPromptOverrides()
         {
-            TaskLedgerPlanPrompt = MagenticPromptDefaults.TaskLedgerPlanPrompt,
-            TaskLedgerPlanUpdatePrompt = MagenticPromptDefaults.TaskLedgerPlanUpdatePrompt,
-            ProgressLedgerPrompt = MagenticPromptDefaults.ProgressLedgerPrompt,
-            FinalAnswerPrompt = MagenticPromptDefaults.FinalAnswerPrompt,
-            TaskLedgerFactsPrompt = MagenticPromptDefaults.TaskLedgerFactsPrompt,
-            TaskLedgerFactsUpdatePrompt = MagenticPromptDefaults.TaskLedgerFactsUpdatePrompt,
-            TaskLedgerFullPrompt = MagenticPromptDefaults.TaskLedgerFullPrompt
+            TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt,
+            TaskLedgerPlanUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanUpdatePrompt,
+            ProgressLedgerPrompt = Orchestrations.MagenticPromptOverrides.ProgressLedgerPrompt,
+            FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt,
+            TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt,
+            TaskLedgerFactsUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsUpdatePrompt,
+            TaskLedgerFullPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFullPrompt
         };
 
 

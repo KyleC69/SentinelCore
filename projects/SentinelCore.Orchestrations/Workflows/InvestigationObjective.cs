@@ -7,6 +7,7 @@
 
 
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 
@@ -19,31 +20,24 @@ namespace SentinelCore.Orchestrations.Workflows;
 
 
 /// <summary>
-///     Represents a single investigative objective: a hypothesis about an observed signal together with metadata used to
-///     validate or refute it.
+/// Represents an investigative objective capturing an assigned identifier, the initial signal summary, the signal
+/// source and type, and the timestamp when the signal was observed.
 /// </summary>
-/// <remarks>
-///     Instances are constructed with required values and are effectively immutable; the Id is generated at
-///     construction. Confidence is a numeric score in the range 0.0–1.0. Use ObservablePredictions, KeyEntities,
-///     SuggestedEvidenceDomains, and ContradictoryIndicators to guide evidence collection and hypothesis
-///     validation.
-/// </remarks>
+/// <remarks>Identifier is assigned by the Case Flow Engine. Properties are immutable init-only DTO fields
+/// intended for serialization; JSON property names are specified via attributes.</remarks>
 public sealed class InvestigationObjective
 {
 
 
-
-    /// <summary>
-    ///     Creates a new instance of <see cref="InvestigationObjective" /> with all required properties.
-    /// </summary>
-    [JsonConstructor]
-    public InvestigationObjective()
-    {
-
-    }
+    [JsonPropertyName("id")]
+    [Description("Unique identifier for the investigative objective. Assigned by the Case Flow Engine")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public string Id { get; init; }
 
 
-
+    [JsonPropertyName("signal")]
+    [Description("The original signal that entered the system.")]
+    public string OriginalSignal { get; init; }
 
 
 
@@ -51,25 +45,25 @@ public sealed class InvestigationObjective
 
     [JsonPropertyName("InitialStatement")]
     [Description("The initial impression of the signal and what it might be an indication of.")]
-    public string HypothesisStatement { get; init; }
-
-
-    [JsonPropertyName("id")]
-    [Description("Unique identifier for the investigative objective. Assigned by the Case Flow Engine")]
-    public string Id { get; }
-
-    [JsonPropertyName("keyEntities")]
-    [Description("possible properties or areas to interrogate the system and what to look for. (files, processes, registry keys) implicated by the hypothesis.")]
-    public IList<string> KeyEntities { get; init; }
-
-
-    [JsonPropertyName("signalSummary")]
-    [Description("Concise summary of the original signal that triggered the investigation.")]
+    [JsonRequired]
     public string SignalSummary { get; init; }
 
-    [JsonPropertyName("suggestedEvidenceDomains")]
-    [Description("Suggested evidence domains (e.g., Network, FileSystem) to query for validation.")]
-    public IList<string> SuggestedEvidenceDomains { get; init; }
+
+    [JsonPropertyName("subsystem")]
+    [Description("possible subsystem sending the signal.")]
+    [JsonRequired]
+    public string Source { get; init; }
+
+
+    [Description("The type of source from which the signal originated. Event Log, Security Alert, Application Log, file log, Anomaly Detector etc.")]
+    [JsonPropertyName("sourceType")]
+    public string SourceType { get; init; }
+
+
+
+    [JsonPropertyName("timestap")]
+    [Description("Time date of when the signal was received. if known")]
+    public DateTime TimeStamp { get; init; }
 }
 
 
@@ -88,10 +82,12 @@ public sealed class Evidence
     public double Confidence { get; init; }
 
     [JsonPropertyName("evidenceId")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Description("Unique identifier for the piece of evidence.")]
     public Guid EvidenceId { get; init; }
 
     [JsonPropertyName("investigationId")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     [Description("The identifier of the investigation this evidence supports.")]
     public required string InvestigationId { get; init; }
 
@@ -103,7 +99,7 @@ public sealed class Evidence
     [Description("The human-readable observation derived from the evidence.")]
     public required string Observation { get; init; }
 
-    [JsonPropertyName("observedAt")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     [Description("The timestamp when the evidence was observed.")]
     public DateTimeOffset ObservedAt { get; init; }
 

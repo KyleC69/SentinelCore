@@ -4,26 +4,19 @@
 // Author: Kyle L. Crowder
 // Build Num:  100519
 
-
-
-using Microsoft.Extensions.AI;
-
-
-
-
 namespace SentinelCore.Contracts.Events;
 
 
 
 
 
-public class WorkflowOutputEventArgs
+public sealed class WorkflowOutputEventArgs
 {
 
-    public WorkflowOutputEventArgs(ChatMessage message)
+    public WorkflowOutputEventArgs(object message)
     {
         Message = message ?? throw new ArgumentNullException(nameof(message));
     }
 
-    public ChatMessage Message { get; set; }
+    public object Message { get; set; }
 }

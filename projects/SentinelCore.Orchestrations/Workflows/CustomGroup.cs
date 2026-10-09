@@ -1,19 +1,20 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
 // File:         CustomGroup.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100812
 
 
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
+using Microsoft.Agents.AI.Workflows.Specialized.Magentic;
+
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Events;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
-using SentinelCore.Orchestrations.Orchestrations;
 using SentinelCore.Orchestrations.Services;
 
 
@@ -30,17 +31,17 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 {
     private readonly ISentinelAgentFactory _agentFactory;
     private bool _agentInitialized;
-    private readonly IAgentProfileBuilder _agentSpecBuilder;
+    private AIAgent _aggregator;
+    private AIAgent _classifier;
+    private readonly ISentinelCoreEvents _coreEvents;
+
+    private AIAgent _mgr;
 
     // Session used for running the core agent. Initialized lazily.
-    private AgentSession? _session;
-
-    private AIAgent? _mgr;
-    private AIAgent? _worker1;
-    private AIAgent? _worker2;
-    private AIAgent? _worker3;
-    private AIAgent _aggregator;
-    private readonly ISentinelCoreEvents _coreEvents;
+    private AgentSession _session;
+    private AIAgent _worker1;
+    private AIAgent _worker2;
+    private AIAgent _worker3;
 
 
 
@@ -92,34 +93,95 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
     {
 
 
-        var workflow = buildWorkflow();
+        Workflow workflow = BuildWorkflow();
+        CheckpointManager mgr = CheckpointManager.CreateInMemory();
+
+        //   var wf = workflow.AsAIAgent(id: "evidence", name: "Evidence Agent", description: "Handles evidence-related tasks. testing mag group as agent", includeExceptionDetails: true, executionEnvironment: InProcessExecution.Lockstep);
+
+        string sessionid = Guid.NewGuid().ToString();
 
 
-        var wf = workflow.AsAIAgent(id: "evidence", name: "Evidence Agent", description: "Handles evidence-related tasks. testing mag group as agent", includeExceptionDetails: true, executionEnvironment: InProcessExecution.Lockstep);
-        try
-        {
+        StreamingRun run = await InProcessExecution.RunStreamingAsync(workflow, inputMessage, sessionid, token);
 
-            AgentSession session = await wf.CreateSessionAsync(token);
-            await foreach (AgentResponseUpdate update in wf.RunStreamingAsync(inputMessage, session))
+        await run.TrySendMessageAsync(new TurnToken(true));
+
+        string? lastResponseId = null;
+        WorkflowOutputEvent? finalOutput = null;
+
+        await foreach (WorkflowEvent workflowEvent in run.WatchStreamAsync(token))
+            switch (workflowEvent)
             {
-                // Process streaming updates from each agent in the workflow
-                if (!string.IsNullOrEmpty(update.Text))
-                {
-                    Debug.Write(update.Text);
-                    await SaveLinesToFileAsync(Path.Combine("F:\\Solutions", "SentinelTrace.md"), new[] { update.Text }, token);
-                }
+                case AgentResponseUpdateEvent updateEvent:
+
+
+                    // Log Tool content if present. This is useful for debugging tool calls and results.
+                    if (updateEvent.Update.Contents.Count > 0)
+                    {
+                        LogToolContent(updateEvent.ExecutorId, updateEvent.Update.Contents);
+
+                    }
+
+                    // Stream per-participant deltas. Group by ResponseId / MessageId / ExecutorId so
+                    // each new contiguous response prints its executor header once.
+                    string responseId = updateEvent.Update.ResponseId ?? updateEvent.Update.MessageId ?? updateEvent.ExecutorId;
+                    if (!string.Equals(responseId, lastResponseId, StringComparison.Ordinal))
+                    {
+                        if (lastResponseId is not null)
+                        {
+                            Debug.WriteLine(Environment.NewLine);
+                        }
+
+                        Debug.Write($"- {updateEvent.ExecutorId}: ");
+                        lastResponseId = responseId;
+                    }
+
+                    Debug.Write(updateEvent.Update.Text);
+                    // LogToolContent(updateEvent.ExecutorId, updateEvent.Update.Contents);
+                    break;
+                case ExecutorCompletedEvent executorCompletedEvent:
+                    //    Debug.WriteLine($"Executor '{executorCompletedEvent.ExecutorId}' completed.");
+                    //  PrintLogSpace();
+                    break;
+
+                case MagenticPlanCreatedEvent planCreated:
+                    Debug.WriteLine($"\n[Magentic Initial Plan]\n{planCreated.FullTaskLedger.Text}");
+                    PrintLogSpace();
+                    break;
+
+                case MagenticReplannedEvent replanned:
+                    Debug.WriteLine($"\n[Magentic Replanned]\n{replanned.FullTaskLedger.Text}");
+                    PrintLogSpace();
+                    break;
+
+                case MagenticProgressLedgerUpdatedEvent progressUpdated:
+                    MagenticProgressLedger ledger = progressUpdated.ProgressLedger;
+                    Debug.WriteLine($"\n[Magentic Progress Ledger] satisfied={ledger.IsRequestSatisfied}, " + $"inLoop={ledger.IsInLoop}, progressing={ledger.IsProgressBeingMade}, " + $"nextSpeaker={ledger.NextSpeaker}, instruction={ledger.InstructionOrQuestion}");
+                    PrintLogSpace();
+                    break;
+
+                case WorkflowOutputEvent outputEvent when outputEvent.Is<List<ChatMessage>>():
+                    finalOutput = outputEvent;
+                    PrintLogSpace();
+                    break;
+
+                case WorkflowErrorEvent workflowError:
+                    Debug.WriteLine(workflowError.Exception?.ToString() ?? "Unknown workflow error.");
+                    break;
+
+                case ExecutorFailedEvent executorFailed:
+                    Debug.WriteLine($"Executor '{executorFailed.ExecutorId}' failed: " + (executorFailed.Data?.ToString() ?? "unknown error"));
+                    break;
+                case ExecutorInvokedEvent executorInvokedEvent:
+                    ///           Debug.WriteLine($"Executor '{executorInvokedEvent.ExecutorId}' invoked.");
+                    // PrintLogSpace();
+                    break;
             }
 
-
-            _coreEvents.RaiseWorkflowOutputEvent(new WorkflowOutputEventArgs(inputMessage));
-
-        }
-        catch (Exception e)
+        if (finalOutput?.As<List<ChatMessage>>() is { } transcript)
         {
-            Debug.WriteLine(e);
-            throw;
+            Debug.WriteLine("\n\n=== Final Conversation Transcript ===\n");
+            foreach (ChatMessage message in transcript) Debug.WriteLine($"{message.AuthorName ?? message.Role.ToString()}: {message.Text}");
         }
-
 
 
         return null;
@@ -136,35 +198,14 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// <summary>
-    /// Initialize the agent asynchronously; returns immediately if cancellation is already requested.
+    ///     Initialize the agent asynchronously; returns immediately if cancellation is already requested.
     /// </summary>
     /// <remarks>Calls EnsureAgentInitializedAsync to perform the actual initialization work.</remarks>
-    /// <param name="cancellationToken">CancellationToken to observe while performing initialization; if already canceled the method returns without
-    /// performing work.</param>
+    /// <param name="cancellationToken">
+    ///     CancellationToken to observe while performing initialization; if already canceled the method returns without
+    ///     performing work.
+    /// </param>
     /// <returns>A Task that completes when initialization finishes or returns early if cancellation is observed.</returns>
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
@@ -186,13 +227,6 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-
-
-
-
-
-
-
     public string Name
     {
         get => "Custom Group Workflow";
@@ -205,9 +239,19 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public Task<Workflow> BuildWorkflow()
+    [Experimental("MAAI001")]
+    private Workflow BuildWorkflow()
     {
-        throw new NotImplementedException();
+        MagenticPromptOverrides over = new() { FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt };
+
+
+
+
+        Workflow workflow = new MagenticWorkflowBuilder(_mgr).AddParticipants(_worker1, _worker2, _worker3, _aggregator).WithName("Magentic Orchestration Workflow").WithDescription("Coordinates a researcher and coder to solve a complex analytical task.").WithOutputFrom(_aggregator).RequirePlanSignoff(false).WithPromptOverrides(over).WithMaxRounds(10).WithMaxStalls().WithMaxResets(2).Build();
+
+        var classflow = AgentWorkflowBuilder.BuildSequential(_classifier, workflow.AsAIAgent("Investigation-Group", "Investigators", "The magentic investigation group"));
+
+        return classflow;
     }
 
 
@@ -221,8 +265,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
     ///     Lazily initializes the agent on first use, avoiding sync-over-async
     ///     deadlocks that occur when building the agent in the constructor.
     /// </summary>
-
-    private async Task EnsureAgentInitializedAsync()
+    private async Task EnsureAgentInitializedAsync(CancellationToken token)
     {
         if (_agentInitialized)
         {
@@ -237,11 +280,10 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
             _worker1 = await _agentFactory.CreateAgentAsync("WindowsOSWorker1");
             _worker2 = await _agentFactory.CreateAgentAsync("WindowsOSWorker2");
             _worker3 = await _agentFactory.CreateAgentAsync("WindowsOSWorker3");
-            _aggregator = await _agentFactory.CreateAgentAsync("WindowsOSWorker4");
-
-
-
-
+            _aggregator = await _agentFactory.CreateAgentAsync("GroupChatAggregator");
+            _classifier = await _agentFactory.CreateAgentAsync("Classifier", ClassifierInstruction,ChatResponseFormatJson.ForJsonSchema<InvestigationObjective>(), CancellationToken.None).ConfigureAwait(false);
+            // Create a utility agent for additional support within the workflow.
+            var util = await _agentFactory.CreateAgentAsync("UtilityAgent",ClassifierInstruction,null,token);
             //Workflow in-memory session for the manager agent to coordinate the workflow.
             _session = await _mgr.CreateSessionAsync().ConfigureAwait(false);
 
@@ -255,63 +297,51 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
     }
 
 
+    private const string ClassifierInstruction = """
+                                                 You are a classifier agent that is responsible for determining what a signal is about and providing the investigation team
+                                                 with the Investigation Objective object. A signal in the Sentinel Core Forensic Investigation Platform (this application) can be an Event log entry, an alert from windows,
+                                                 a text file log entry, or other automated input device. Generally a signal is an indicator from any subsystem in a Windows Operating System
+                                                 that there may be a problem, or something happend. It is your task is to determine what subsystem the signal is from, and what the signal is trying to tell us.
+
+                                                 You will respond with the following information in a JSON object with the following fields:
+
+                                                 Source: The subsystem or component that generated the signal (e.g., "Windows Event Log", "Security Alert", "Application Log").
+                                                 Severity: The severity level of the signal (e.g., "Critical", "Warning", "Information").
+                                                 Timestamp: The date and time when the signal was generated (in ISO 8601 format). If Known, otherwise leave blank.
+                                                 Summary: A brief summary of the signal, describing what it may be indicating.
+                                                 """;
 
 
 
 
 
-
-    /// <summary>
-    ///     Appends the specified lines to a file asynchronously.
-    /// </summary>
-    /// <param name="filePath">The path to the file where lines should be saved.</param>
-    /// <param name="lines">The collection of lines to append to the file.</param>
-    /// <param name="token">A <see cref="CancellationToken" /> to observe while waiting for the task to complete.</param>
-    /// <returns>A <see cref="Task" /> representing the asynchronous operation.</returns>
-    public async Task SaveLinesToFileAsync(string filePath, IEnumerable<string> lines, CancellationToken token)
+    private static void LogToolContent(string? executorId, IEnumerable<AIContent> contents)
     {
-        try
-        {
-            await File.AppendAllLinesAsync(filePath, lines, token).ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            System.Diagnostics.Debug.WriteLine($"Failed to save lines to file {filePath}: {e.Message}");
-            throw;
-        }
-    }
-
-    [Experimental("MAAI001")]
-    private Workflow buildWorkflow()
-    {
-        MagenticPromptOverrides over = new MagenticPromptOverrides()
-        {
-            TaskLedgerPlanPrompt = MagenticPromptDefaults.TaskLedgerPlanPrompt,
-            TaskLedgerPlanUpdatePrompt = MagenticPromptDefaults.TaskLedgerPlanUpdatePrompt,
-            ProgressLedgerPrompt = MagenticPromptDefaults.ProgressLedgerPrompt,
-            FinalAnswerPrompt = MagenticPromptDefaults.FinalAnswerPrompt,
-            TaskLedgerFactsPrompt = MagenticPromptDefaults.TaskLedgerFactsPrompt,
-            TaskLedgerFactsUpdatePrompt = MagenticPromptDefaults.TaskLedgerFactsUpdatePrompt,
-            TaskLedgerFullPrompt = MagenticPromptDefaults.TaskLedgerFullPrompt
-        };
-
-        Workflow workflow = new MagenticWorkflowBuilder(_mgr)
-        .AddParticipants(_worker1, _worker2, _worker3, _aggregator)
-        .WithName("Magentic Orchestration Workflow")
-        .WithDescription("Coordinates a researcher and coder to solve a complex analytical task.")
-        .WithOutputFrom(_aggregator)
-        .RequirePlanSignoff(false)
-        .WithMaxRounds(10)
-        .WithMaxStalls(3)
-        .WithMaxResets(2)
-        .Build();
-
-
-        return workflow;
+        foreach (AIContent content in contents)
+            switch (content)
+            {
+                case FunctionCallContent call:
+                    Debug.WriteLine($"[tool-call]   {executorId}.{call.Name}({(call.Arguments is { } args ? string.Join(", ", args.Select(kv => $"{kv.Key}={kv.Value}")) : string.Empty)})");
+                    break;
+                case FunctionResultContent result:
+                    Debug.WriteLine($"[tool-result] {result.CallId} -> {result.Result}");
+                    break;
+            }
     }
 
 
 
+
+
+
+
+
+    private void PrintLogSpace()
+    {
+        Debug.WriteLine(Environment.NewLine);
+        Debug.WriteLine(new string('-', 60));
+        Debug.WriteLine(Environment.NewLine);
+    }
 
 
 
@@ -332,12 +362,32 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-
-
-
-
-
-
     }
 
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Appends the specified lines to a file asynchronously.
+    /// </summary>
+    /// <param name="filePath">The path to the file where lines should be saved.</param>
+    /// <param name="lines">The text to append to the file.</param>
+    /// <param name="token">A <see cref="CancellationToken" /> to observe while waiting for the task to complete.</param>
+    /// <returns>A <see cref="Task" /> representing the asynchronous operation.</returns>
+    public async Task SaveLinesToFileAsync(string filePath, string lines, CancellationToken token)
+    {
+        try
+        {
+            await File.AppendAllTextAsync(filePath, lines, token).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine($"Failed to save lines to file {filePath}: {e.Message}");
+            throw;
+        }
+    }
 }

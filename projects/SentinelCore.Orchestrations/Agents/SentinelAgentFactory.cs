@@ -2,12 +2,13 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100813
 
 
 
 #pragma warning disable MAAI001
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Agents.AI.Compaction;
@@ -35,58 +36,6 @@ namespace SentinelCore.Orchestrations.Agents;
 
 
 /// <summary>
-///     Defines the contract for building <see cref="AIAgent" /> instances from agent presets.
-/// </summary>
-public interface ISentinelAgentFactory
-{
-
-    /// <summary>
-    ///     Builds an <see cref="AIAgent" /> instance from the specified profile.
-    ///     <para>
-    ///         This method is for callers that need to construct an agent from a pre-built
-    ///         <see cref="AgentProfile" /> (e.g., <see cref="CaseGenerator" />).
-    ///         Prefer <see cref="CreateAgentAsync" /> for preset-based construction.
-    ///     </para>
-    /// </summary>
-    /// <param name="profile">The agent profile containing configuration details.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A fully configured <see cref="AIAgent" /> instance.</returns>
-    Task<AIAgent> BuildFromProfileAsync(AgentPresetDefinition preset, AgentProfile profile, CancellationToken cancellationToken = default);
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Asynchronously creates an instance of <see cref="AIAgent" /> based on the specified preset name.
-    ///     The agent is constructed with persistent infrastructure (chat client, wrappers, context providers, tools).
-    ///     Instructions and response format are per-call concerns handled by the executor at invocation time,
-    ///     not baked into the agent at construction time.
-    /// </summary>
-    /// <param name="presetName">
-    ///     The name of the preset to use for creating the agent (e.g., "Classifier", "TheCore").
-    /// </param>
-    /// <param name="cancellationToken">
-    ///     A token to observe while waiting for the task to complete, enabling cancellation of the operation.
-    /// </param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result is a fully configured
-    ///     <see cref="AIAgent" /> instance.
-    /// </returns>
-    /// <exception cref="ArgumentException">
-    ///     Thrown if the specified <paramref name="presetName" /> does not correspond to any registered preset.
-    /// </exception>
-    Task<AIAgent> CreateAgentAsync(string presetName, CancellationToken cancellationToken = default);
-}
-
-
-
-
-
-/// <summary>
 ///     Provides functionality to create and configure instances of <see cref="AIAgent" />
 ///     based on the provided <see cref="AgentProfile" /> or preset name.
 ///     <para>
@@ -107,13 +56,14 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
-    private readonly Dictionary<string, string> BuiltAgents = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
     private readonly object _builtAgentsLock = new();
     private readonly IChatClientFactory _chatClientFactory;
+    private readonly ILogger<SentinelAgentFactory> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IPatternMatcher _patternMatcher;
     private readonly IAgentProfileBuilder _profileBuilder;
-    private static IMcpServerRegistry _registry;
+    private readonly IMcpServerRegistry _registry;
 
 
 
@@ -137,7 +87,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         _profileBuilder = profileBuilder ?? throw new ArgumentNullException(nameof(profileBuilder));
         _patternMatcher = patternMatcher ?? throw new ArgumentNullException(nameof(patternMatcher));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        _registry = registry ?? Throw.IfNull(registry);
+        _logger = loggerFactory.CreateLogger<SentinelAgentFactory>();
+        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
     }
 
 
@@ -148,13 +99,12 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
-    ///     Asynchronously builds an <see cref="AIAgent" /> instance based on the provided <see cref="AgentProfile" />.
-    ///     <para>
-    ///         This method is for callers that need to construct an agent from a pre-built
-    ///         <see cref="AgentProfile" /> (e.g., <see cref="CaseGenerator" />).
-    ///         Prefer <see cref="CreateAgentAsync" /> for preset-based construction.
-    ///     </para>
+    ///     Asynchronously builds an <see cref="AIAgent" /> instance based on the provided
+    ///     <see cref="AgentProfile" /> and <see cref="AgentPresetDefinition" />.
     /// </summary>
+    /// <param name="preset">
+    ///     The <see cref="AgentPresetDefinition" /> used to configure the agent.
+    /// </param>
     /// <param name="profile">
     ///     The <see cref="AgentProfile" /> containing the configuration details required to build the agent.
     /// </param>
@@ -164,37 +114,33 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <returns>
     ///     A task representing the asynchronous operation. The task result contains the constructed <see cref="AIAgent" />.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when the <paramref name="profile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="InvalidOperationException">
     ///     Thrown when the provided <see cref="AgentProfile" /> does not contain a valid model configuration.
     /// </exception>
     [Experimental("MAAI001")]
-    public Task<AIAgent> BuildFromProfileAsync(AgentPresetDefinition preset, AgentProfile profile, CancellationToken cancellationToken = default)
+    public async Task<AIAgent> BuildFromProfileAsync(AgentPresetDefinition preset, AgentProfile profile, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(profile);
         cancellationToken.ThrowIfCancellationRequested();
-
-        // Configuration gate — an agent without a model profile cannot run.
-        // There is deliberately no fallback: the user must configure the agent
-        // on the Model Configuration page.
         if (profile.Model is null)
         {
-            throw new InvalidOperationException($"Agent '{profile.AgentName}' has no model configuration. " + "Open the Model Configuration page and set a provider, model, and endpoint for this agent.");
+            throw new InvalidOperationException("The provided AgentProfile does not contain a valid model configuration.");
         }
 
-        // Create the chat client from the profile's model configuration.
-        IChatClient chatClient = _chatClientFactory.CreateChatClient(profile.Model);
+        IChatClient chatclient = _chatClientFactory.CreateChatClient(profile.Model);
+        IChatClient loggingClient = chatclient.AsBuilder().UseLogging(_loggerFactory).Build();
 
-        IChatClient loggedChatClient = new LoggingChatClient(chatClient, _loggerFactory.CreateLogger<LoggingChatClient>());
-        List<AIContextProvider> contextProviders = new();
 
-        // Add profile-level context providers (set by callers like CaseGenerator).
-        if (profile.AIContextProviders is { Count: > 0 })
-        {
-            contextProviders.AddRange(profile.AIContextProviders);
-        }
+        List<AIContextProvider> aiContextProviders = new();
+        AddContextProviders(preset, profile, aiContextProviders);
 
-        AddPresetContextProviders(preset, contextProviders);
-        return Task.FromResult<AIAgent>(BuildAgent(preset, profile, loggedChatClient, contextProviders));
+        ChatClientAgent agent = BuildAgent(preset, profile, loggingClient, null, aiContextProviders);
+        return await Task.FromResult(agent).ConfigureAwait(false);
+
+
     }
 
 
@@ -224,8 +170,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         // Validate input
         Throw.IfNullOrWhitespace(presetName);
-        AgentPresetDefinition preset = null;
-        AgentProfile profile = null!;
+        AgentPresetDefinition? preset = null;
+        AgentProfile? profile = null;
         string workerBaseName = presetName;
         bool isWorker = presetName.Contains("worker", StringComparison.OrdinalIgnoreCase);
 
@@ -277,19 +223,57 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
                 profile = BuildAgentProfile(preset, cancellationToken);
                 break;
             default:
-                throw new ArgumentException($"Missing switch case named {presetName}");
+                _logger.LogWarning($"Missing switch case named {presetName}");
+                preset = AgentPresetDefinition.UtilityRole();
+                profile = BuildAgentProfile(preset, cancellationToken);
                 break;
         }
 
         // Track existing Id/Name pairs for non-worker agents.
         // Worker identities are registered inside RegisterUniqueWorkerAgent.
-        if (!isWorker)
+        if (!isWorker && profile != null)
         {
-            BuiltAgents.Add(profile.AgentName, profile.AgentId);
+            lock (_builtAgentsLock)
+            {
+                _builtAgents.Add(profile.AgentName, profile.AgentId);
+            }
         }
 
         // Build and return the agent via the contributor pipeline
-        return await BuildFromProfileAsync(preset, profile, cancellationToken).ConfigureAwait(false);
+        return await BuildFromProfileAsync(preset!, profile, cancellationToken).ConfigureAwait(false);
+    }
+
+
+
+
+
+
+
+
+    public async Task<AIAgent> CreateAgentAsync(string presetName, string classifierInstruction, ChatResponseFormatJson? forJsonSchema, CancellationToken token)
+    {
+        var preset = AgentPresetDefinition.ClassifierRole("Signal-Classifier", "SignalClassifierAgent");
+        var profile = BuildAgentProfile(preset, token);
+        profile.Instructions = classifierInstruction;
+
+        return await BuildFromProfileAsync(preset, profile, token).ConfigureAwait(false);
+    }
+
+
+
+
+
+
+
+
+    private void AddContextProviders(AgentPresetDefinition preset, AgentProfile profile, List<AIContextProvider> contextProviders)
+    {
+        if (profile.AIContextProviders is { Count: > 0 })
+        {
+            contextProviders.AddRange(profile.AIContextProviders);
+        }
+
+        AddPresetContextProviders(preset, contextProviders);
     }
 
 
@@ -335,45 +319,43 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="chatClient">The configured chat client that serves model requests.</param>
     /// <param name="contextProviders">The context providers that enrich agent invocations.</param>
     /// <returns>A fully configured <see cref="ChatClientAgent" />.</returns>
-    private static ChatClientAgent BuildAgent(AgentPresetDefinition preset, AgentProfile profile, IChatClient chatClient, List<AIContextProvider> contextProviders)
+    private static ChatClientAgent BuildAgent(AgentPresetDefinition preset, AgentProfile profile, IChatClient chatClient, ChatResponseFormatJson chatResponseFormat, List<AIContextProvider> contextProviders)
     {
         ChatOptions chatOptions = new()
         {
-            ConversationId = Guid.NewGuid().ToString("N"),
-            Instructions = profile.Instructions,
-            Temperature = profile.Model?.Temperature,
-            MaxOutputTokens = profile.Model?.MaxOutputTokens ?? 16000,
-            TopP = profile.Model?.TopP,
-            TopK = profile.Model?.TopK,
-
-            ModelId = profile.Model?.ModelId,
-            AllowMultipleToolCalls = true,
-            Tools = profile.Tools is { Count: > 0 } ? profile.Tools : null,
-            AllowBackgroundResponses = null,
-            ContinuationToken = null,
-            RawRepresentationFactory = null,
-            AdditionalProperties = null
-            // ResponseFormat is NOT set here — it is a per-call concern.
-            // Executors pass it via AgentRunOptions or typed RunAsync<T> at invocation time.
+                ConversationId = Guid.NewGuid().ToString("N"),
+                Instructions = preset.DefaultSystemInstructions,
+                Temperature = profile.Model?.Temperature,
+                MaxOutputTokens = profile.Model?.MaxOutputTokens ?? 16000,
+                TopP = profile.Model?.TopP,
+                TopK = profile.Model?.TopK,
+                ModelId = profile.Model?.ModelId,
+                AllowMultipleToolCalls = true,
+                Tools = profile.Tools is { Count: > 0 } ? profile.Tools : null,
+                AllowBackgroundResponses = null,
+                ContinuationToken = null,
+                RawRepresentationFactory = null,
+                AdditionalProperties = null,
+                ResponseFormat = chatResponseFormat,
         };
 
 
         return new ChatClientAgent(chatClient, new ChatClientAgentOptions
         {
-            Id = preset.AgentId,
-            Name = preset.AgentName,
-            Description = preset.Description,
-            ChatOptions = chatOptions,
-            AIContextProviders = contextProviders.Count > 0 ? contextProviders : null,
-            UseProvidedChatClientAsIs = false,
-            ClearOnChatHistoryProviderConflict = false,
-            WarnOnChatHistoryProviderConflict = false,
-            ThrowOnChatHistoryProviderConflict = true,
-            RequirePerServiceCallChatHistoryPersistence = false,
-            EnableMessageInjection = false,
-            DisableApprovalNotRequiredFunctionBypassing = false,
-            DisableApprovalResponseBinding = false,
-            ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider()
+                Id = preset.AgentId,
+                Name = preset.AgentName,
+                Description = preset.Description,
+                ChatOptions = chatOptions,
+                AIContextProviders = contextProviders.Count > 0 ? contextProviders : null,
+                UseProvidedChatClientAsIs = false,
+                ClearOnChatHistoryProviderConflict = false,
+                WarnOnChatHistoryProviderConflict = false,
+                ThrowOnChatHistoryProviderConflict = true,
+                RequirePerServiceCallChatHistoryPersistence = false,
+                EnableMessageInjection = false,
+                DisableApprovalNotRequiredFunctionBypassing = false,
+                DisableApprovalResponseBinding = false,
+                ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider()
         });
     }
 
@@ -388,7 +370,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     {
         // Build the agent profile from the preset. Both AgentId and AgentName are required.
         // Some internals use name and others use ID, ensure both are set for consistency.
-        AgentProfile profile = _profileBuilder.BuildFromPreset(preset);
+        AgentProfile profile = _profileBuilder.BuildFromPreset(preset, token);
 
 
         if (string.IsNullOrEmpty(profile.AgentName) || string.IsNullOrWhiteSpace(profile.AgentId))
@@ -432,10 +414,13 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
                 agentId = $"{preset.AgentId}{suffix}";
                 agentName = $"{preset.AgentName}{suffix}";
                 suffix++;
-            } while (BuiltAgents.ContainsKey(agentName) || BuiltAgents.ContainsValue(agentId));
+            } while (_builtAgents.ContainsKey(agentName) || _builtAgents.ContainsValue(agentId));
 
-            BuiltAgents.Add(agentName, agentId);
+            _builtAgents.Add(agentName, agentId);
             return preset with { AgentId = agentId, AgentName = agentName };
         }
     }
+
+
+
 }

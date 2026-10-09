@@ -41,7 +41,7 @@ public interface IAgentProfileBuilder
     /// </summary>
     /// <param name="preset">The agent preset definition containing default configuration.</param>
     /// <returns>An <see cref="AgentProfile" /> configured from the preset.</returns>
-    AgentProfile BuildFromPreset(AgentPresetDefinition preset);
+    AgentProfile BuildFromPreset(AgentPresetDefinition preset, CancellationToken token);
 
 
 
@@ -148,7 +148,7 @@ public sealed class AgentProfileBuilder : IAgentProfileBuilder
 
 
 
-    public AgentProfile BuildFromPreset(AgentPresetDefinition preset)
+    public AgentProfile BuildFromPreset(AgentPresetDefinition preset, CancellationToken token)
     {
         Throw.IfNull(preset);
 

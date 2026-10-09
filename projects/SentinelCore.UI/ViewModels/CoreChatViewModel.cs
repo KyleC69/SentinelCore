@@ -7,10 +7,12 @@
 
 
 using System.Collections.ObjectModel;
+using System.Text;
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
@@ -20,6 +22,7 @@ using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.Contracts.Events;
 using SentinelCore.Orchestrations.Abstractions;
+using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Services;
 using SentinelCore.UI.Services;
 
@@ -199,7 +202,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     ///     Gets the observable collection of chat messages displayed in the UI.
     ///     All mutations are marshaled to the UI thread by <see cref="AddToMessages" />.
     /// </summary>
-    public ObservableCollection<ChatMessage> Messages { get; } = [];
+    public ObservableCollection<ChatMessage> Messages { get; } = new ObservableCollection<ChatMessage>();
 
 
 
@@ -411,7 +414,19 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private void OnWorkFlowOutput(WorkflowOutputEventArgs obj)
     {
-        AddToMessages(obj.Message);
+        AgentResponseUpdate? evt = obj.Message as AgentResponseUpdate;
+        if (!ReferenceEquals(evt, null))
+        {
+
+            StringBuilder sb = new();
+            sb.AppendLine($"MsgId: {evt.MessageId}");
+            sb.AppendLine($"Agent: {evt.AgentId}");
+            sb.AppendLine($"ResponseId:  {evt.ResponseId}");
+            sb.AppendLine($"Reason: {evt.FinishReason}");
+            sb.AppendLine($"Message: {evt.Text}");
+            AddToMessages(new ChatMessage().AddAssistantMessage(sb.ToString()));
+        }
+
     }
 
 
@@ -491,13 +506,15 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
             InputText = string.Empty;
             IAsyncEnumerable<WorkflowEvent> result = await _orchestrationControl.ExecuteStreamingAsync(msg, _linkedCts.Token);
 
-
-            await foreach (WorkflowEvent evt in result)
+            if (result != null)
             {
-                string output = _workflowEventProcessor.ProcessEvent(evt);
-                if (!string.IsNullOrEmpty(output))
+                await foreach (WorkflowEvent evt in result)
                 {
-                    AddToMessages(new ChatMessage(ChatRole.Assistant, output));
+                    string output = _workflowEventProcessor.ProcessEvent(evt);
+                    if (!string.IsNullOrEmpty(output))
+                    {
+                        AddToMessages(new ChatMessage(ChatRole.Assistant, output));
+                    }
                 }
             }
         }

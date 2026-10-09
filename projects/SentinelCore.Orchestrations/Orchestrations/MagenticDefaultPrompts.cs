@@ -1,28 +1,51 @@
-﻿namespace SentinelCore.Orchestrations.Orchestrations;
+﻿// Copyright (c) Microsoft. All rights reserved.
 
+namespace Microsoft.Agents.AI.Workflows;
 
-public static class MagenticPromptDefaults
+/// <summary>
+/// The built-in English prompt templates the Magentic manager uses. These are exposed so callers can read them and
+/// base a <see cref="MagenticPromptOverrides"/> value on the default (for example, translating it or appending a
+/// language instruction) instead of writing a prompt from scratch.
+/// </summary>
+/// <remarks>
+/// Each template uses named single-brace placeholders (e.g. <c>{task}</c>) that the framework substitutes at render
+/// time; the available placeholders per prompt are documented on the corresponding <see cref="MagenticPromptOverrides"/>
+/// property. A progress-ledger override must keep the <c>{schema}</c> placeholder so the JSON schema can be injected.
+/// </remarks>
+
+public static class MagenticDefaultPrompts
 {
     /// <summary>The default template for gathering the initial fact sheet. Placeholders: <c>{task}</c>.</summary>
     public static readonly string TaskLedgerFactsPrompt = """
-                                                          You will be presented with an Investigation Objective object that contains a hypothesis or an educated guess as to what the root cause of a problem or event may be. 
-                                                          The object will also contain a Signal Summary field that contains an observed problem or event log entry or other automated input device. 
-                                                          Your task is to devise a plan to gather evidence from the system to prove or refute TheCore's hypothesis.
+Below I will present you a request.
 
-                                                              Here is the signal object:
+Before we begin addressing the request, please answer the following pre-survey to the best of your ability.
+        Keep in mind that you are Ken Jennings-level with trivia, and Mensa-level with puzzles, so there should be
+        a deep well to draw from.
 
-                                                          {task}
+        Here is the request:
 
-                                                    
+{task}
 
-                                                          DO NOT fabricate any facts. You must be able to show the evidence for any fact you present.
-                                                          """;
+    Here is the pre-survey:
 
+    1. Please list any specific facts or figures that are GIVEN in the request itself. It is possible that
+       there are none.
+    2. Please list any facts that may need to be looked up, and WHERE SPECIFICALLY they might be found.
+       In some cases, authoritative sources are mentioned in the request itself.
+    3. Please list any facts that may need to be derived (e.g., via logical deduction, simulation, or computation)
+    4. Please list any facts that are recalled from memory, hunches, well-reasoned guesses, etc.
 
+When answering this survey, keep in mind that "facts" will typically be specific names, dates, statistics, etc.
+Your answer should use headings:
 
+    1. GIVEN OR VERIFIED FACTS
+    2. FACTS TO LOOK UP
+    3. FACTS TO DERIVE
+    4. EDUCATED GUESSES
 
-
-
+DO NOT include any other headings or sections in your response. DO NOT list next steps or plans until asked to do so.
+""";
 
     /// <summary>The default template for updating the fact sheet on a replan. Placeholders: <c>{task}</c>, <c>{old_facts}</c>.</summary>
     public static readonly string TaskLedgerFactsUpdatePrompt = """
@@ -33,24 +56,25 @@ As a reminder, we are working to solve the following task:
 It is clear we are not making as much progress as we would like, but we may have learned something new.
 Please rewrite the following fact sheet, updating it to include anything new we have learned that may be helpful.
 
+Example edits can include (but are not limited to) adding new guesses, moving educated guesses to verified facts
+if appropriate, etc. Updates may be made to any section of the fact sheet, and more than one section of the fact
+sheet can be edited. This is an especially good time to update educated guesses, so please at least add or update
+one educated guess or hunch, and explain your reasoning.
+
 Here is the old fact sheet:
 
 {old_facts}
 """;
 
-
-
     /// <summary>The default template for creating the initial plan. Placeholders: <c>{team}</c>.</summary>
     public static readonly string TaskLedgerPlanPrompt = """
-        
 Fantastic. To address this request we have assembled the following team:
-                                                         
+
 {team}
-                
-Each member is equipped with the same tools and can be used in parallel on complicated tasks.
-Please devise a short bullet-point plan for gathering evidence for the
-original request.
-        
+
+Based on the team composition, and known and unknown facts, please devise a short bullet-point plan for addressing the
+original request. Remember, there is no requirement to involve all team members. A team member's particular expertise
+may not be needed for this task.
 """;
 
     /// <summary>The default template for updating the plan on a replan. Placeholders: <c>{team}</c>.</summary>
@@ -58,7 +82,7 @@ original request.
 Please briefly explain what went wrong on this last run
 (the root cause of the failure), and then come up with a new plan that takes steps and includes hints to overcome prior
 challenges and especially avoids repeating the same mistakes. As before, the new plan should be concise, expressed in
-bullet-point form. List any problems you encountered using tools or accessing information.
+bullet-point form, and consider the following team composition:
 
 {team}
 """;
@@ -68,7 +92,7 @@ bullet-point form. List any problems you encountered using tools or accessing in
     /// Placeholders: <c>{task}</c>, <c>{team}</c>, <c>{facts}</c>, <c>{plan}</c>.
     /// </summary>
     public static readonly string TaskLedgerFullPrompt = """
-We are working to gather evidence to find root cause for the following signal:
+We are working to address the following user request:
 
 {task}
 
@@ -121,8 +145,7 @@ We have completed the task.
 
 The above messages contain the conversation that took place to complete the task.
 
-Present the evidence in table format with the following columns: "Subsystem - where", "Task - property or setting", "Evidence - value", and "Notes".
-The evidence should be presented in a concise and clear manner, with each row representing a specific piece of evidence gathered during the investigation and easily ingested by AI systems. 
-The "Notes" column should provide any additional context or information that may be relevant to understanding the evidence.
+Based on the information gathered, provide the final answer to the original request.
+The answer should be phrased as if you were speaking to the user. 
 """;
 }

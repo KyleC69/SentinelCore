@@ -241,6 +241,11 @@ public sealed record AgentPresetDefinition
             DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
     }
+
+    internal static AgentPresetDefinition FromName(string presetName)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 
