@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -123,10 +123,21 @@ public static class SentinelCoreServiceExtensions
         services.AddTransient<IChatClientFactory, SentinelChatClientFactory>();
         services.AddTransient<CustomGroupWorkflow>();
         services.AddSingleton<ISentinelCoreEvents, SentinelCoreEvents>();
-        services.AddSingleton<IAgentProfileBuilder, AgentProfileBuilder>();
+        // Register the model resolver used by AgentProfileBuilder
+        services.AddSingleton<IModelResolver, ModelResolver>();
+        // AgentProfileBuilder is obsolete – no longer registered.
         services.AddSingleton<ISystemReporter, SystemReporter>();
         services.AddSingleton<TheCoreWorkflow>();
-        services.AddSingleton<ISentinelAgentFactory, SentinelAgentFactory>();
+        // Register factory with model resolver dependency
+        services.AddSingleton<ISentinelAgentFactory>(sp =>
+        {
+            IChatClientFactory chatFactory = sp.GetRequiredService<IChatClientFactory>();
+            IModelResolver modelResolver = sp.GetRequiredService<IModelResolver>();
+            IPatternMatcher patternMatcher = sp.GetRequiredService<IPatternMatcher>();
+            ILoggerFactory loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+            IMcpServerRegistry registry = sp.GetRequiredService<IMcpServerRegistry>();
+            return new SentinelAgentFactory(chatFactory, modelResolver, patternMatcher, loggerFactory, registry);
+        });
 
         // -- Agent construction contributors (pipeline) --
         // Each contributor owns exactly one concern. Adding a new middleware type
@@ -147,7 +158,6 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<IMcpServerRegistryStore>(sp => new JsonFileMcpServerRegistryStore(registryPath, sp.GetRequiredService<ILogger<JsonFileMcpServerRegistryStore>>()));
         services.AddSingleton<ITokenCache>(_ => new DpapiTokenCache(tokenCachePath));
         services.AddSingleton<IMcpConnectionFactory, McpConnectionFactory>();
-        services.AddSingleton<ISentinelAgentCatalog, SentinelAgentCatalog>();
         services.AddHostedService<McpServerRegistryInitializer>();
 
 

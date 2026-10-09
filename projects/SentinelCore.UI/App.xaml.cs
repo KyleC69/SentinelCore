@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -18,14 +18,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 using SentinelCore.Abstractions;
 using SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection;
 using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Contracts.Mcp;
-using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 using SentinelCore.RemoteKB.Persistence;
 using SentinelCore.UI.Models;
@@ -122,8 +119,6 @@ public partial class App
         // UI layer — services, ViewModels, Views, and navigation
         services.AddSentinelCoreUi();
 
-        // Model configuration gate — evaluates catalog agents against the live settings.
-        services.AddSingleton<IModelConfigGate>(sp => new ModelConfigGate(sp.GetRequiredService<ISentinelAgentCatalog>(), sp.GetRequiredService<IAgentProfileBuilder>(), sp.GetRequiredService<IOptions<SentinelCoreSettings>>().Value));
 
         // Application shutdown token — injected into ViewModels so in-flight work
         // can be cancelled cooperatively when the app exits. CancellationToken is a
@@ -456,7 +451,9 @@ public partial class App
         }
 
         // Show the main window after the host is running
-        Current!.Dispatcher.Invoke(() =>
+        if (Current is null) return;
+
+        Current.Dispatcher.Invoke(() =>
         {
             MainWindow = new MainWindow(_host.Services.GetRequiredService<INavigationService>());
             MainWindow.Show();

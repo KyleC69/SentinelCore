@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ISentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  100815
+// Build Num:  100908
 
 
 
@@ -11,7 +11,7 @@ using SentinelCore.Orchestrations.Agents.AgentPresets;
 
 
 
-namespace SentinelCore.Orchestrations.Agents;
+namespace SentinelCore.Orchestrations.Abstractions;
 
 
 
@@ -22,24 +22,6 @@ namespace SentinelCore.Orchestrations.Agents;
 /// </summary>
 public interface ISentinelAgentFactory
 {
-
-    /// <summary>
-    ///     Builds an <see cref="AIAgent" /> instance from the specified profile.
-    ///     <para>
-    ///         This method is for callers that need to construct an agent from a pre-built
-    ///         Prefer <see /> for preset-based construction.
-    ///     </para>
-    /// </summary>
-    /// <param name="preset"></param>
-    /// <param name="profile">The agent profile containing configuration details.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A fully configured <see cref="AIAgent" /> instance.</returns>
-    Task<AIAgent> BuildFromProfileAsync(AgentPresetDefinition preset, AgentProfile profile, CancellationToken cancellationToken = default);
-
-
-
-
-
 
 
 
@@ -62,7 +44,7 @@ public interface ISentinelAgentFactory
     /// <exception cref="ArgumentException">
     ///     Thrown if the specified <paramref name="presetName" /> does not correspond to any registered preset.
     /// </exception>
-    Task<AIAgent> CreateAgentAsync(string presetName, CancellationToken cancellationToken = default);
+    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, CancellationToken cancellationToken = default);
 
 
 
@@ -71,5 +53,9 @@ public interface ISentinelAgentFactory
 
 
 
-    Task<AIAgent> CreateAgentAsync(string presetName, string classifierInstruction, ChatResponseFormatJson forJsonSchema, CancellationToken none);
+    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string taskInstructions, CancellationToken cancellationToken = default);
+
+
+
+    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string taskInstructions, ChatResponseFormatJson forJsonSchema, CancellationToken none);
 }

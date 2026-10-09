@@ -2,14 +2,13 @@
 // Project:   SentinelCore.UI
 // File:         IModelConfigGate.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
 using System.Net.Sockets;
 
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Agents;
 
 
@@ -64,16 +63,16 @@ public interface IModelConfigGate
 
 
 /// <summary>
-///     Default <see cref="IModelConfigGate" /> that evaluates the catalog agents
+///     Default <see cref="IModelConfigGate" /> that evaluates the agent presets
 ///     against <see cref="SentinelCoreSettings.AgentModels" /> and the role tiers
-///     via <see cref="IAgentProfileBuilder.TryGetModel" />.
+///  
 /// </summary>
 public sealed class ModelConfigGate : IModelConfigGate
 {
 
-    private readonly ISentinelAgentCatalog _agentCatalog;
+    private readonly IModelResolver _modelResolver;
 
-    private readonly SentinelCoreSettings _settings;
+    // Removed unused settings field as it was never referenced.
 
 
 
@@ -86,14 +85,24 @@ public sealed class ModelConfigGate : IModelConfigGate
     ///     Creates a gate over the catalog agents and the current settings.
     /// </summary>
     /// <param name="agentCatalog">The catalog of logical agent names.</param>
-    /// <param name="profileBuilder">The profile builder used to resolve each agent's model.</param>
+    /// <param name="modelResolver">Resolver used to determine model configuration for each agent.</param>
     /// <param name="settings">The live SentinelCore settings.</param>
-    public ModelConfigGate(ISentinelAgentCatalog agentCatalog, IAgentProfileBuilder profileBuilder, SentinelCoreSettings settings)
+    public ModelConfigGate(IModelResolver modelResolver)
     {
-        ArgumentNullException.ThrowIfNull(profileBuilder);
-        _agentCatalog = agentCatalog ?? throw new ArgumentNullException(nameof(agentCatalog));
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _modelResolver = modelResolver ?? throw new ArgumentNullException(nameof(modelResolver));
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the names of the catalog agents that have no model configuration.
+    /// </summary>
+    public IReadOnlyList<string> UnconfiguredAgents { get; }
 
 
 
@@ -137,8 +146,8 @@ public sealed class ModelConfigGate : IModelConfigGate
         {
             try
             {
-                string OllamaHost = Environment.GetEnvironmentVariable("OLLAMA_HOST", EnvironmentVariableTarget.User) ?? "http://127.0.0.1:11434";
-                Uri ollamaUri = new(OllamaHost);
+                string ollamaHost = Environment.GetEnvironmentVariable("OLLAMA_HOST", EnvironmentVariableTarget.User) ?? "http://127.0.0.1:11434";
+                Uri ollamaUri = new(ollamaHost);
                 using TcpClient client = new();
                 IAsyncResult result = client.BeginConnect(ollamaUri.Host, ollamaUri.Port, null, null);
                 bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2));
@@ -151,20 +160,4 @@ public sealed class ModelConfigGate : IModelConfigGate
         }
     }
 
-
-    public IReadOnlyList<string> UnconfiguredAgents
-    {
-        get
-        {
-            List<string> missing = [];
-
-            foreach (string agentName in _agentCatalog.GetAgentNamesAsync().GetAwaiter().GetResult())
-                if (!_settings.AgentModels.ContainsKey(agentName))
-                {
-                    missing.Add(agentName);
-                }
-
-            return missing;
-        }
-    }
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MoreInformationExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -133,7 +133,7 @@ public sealed partial class MoreInformationExecutor : Executor
     /// <summary>
     ///     Core processing logic: advances the case to AwaitingInput and yields a request for more information.
     /// </summary>
-    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage? message, IWorkflowContext context, CancellationToken cancellationToken)
+    private async ValueTask<ChatMessage?> ProcessMessageAsync(ChatMessage? message, IWorkflowContext context, CancellationToken cancellationToken)
     {
         _reporter.ReportInfo("More information required — advancing case to AwaitingInput where applicable.");
 

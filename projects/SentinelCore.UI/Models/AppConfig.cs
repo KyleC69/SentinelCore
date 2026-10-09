@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         AppConfig.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 

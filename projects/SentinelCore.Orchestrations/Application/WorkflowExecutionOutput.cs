@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowExecutionOutput.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -31,7 +31,10 @@ public sealed class WorkflowExecutionOutput
     internal WorkflowExecutionOutput(ChatMessage outputMessage, WorkflowEvent? sourcEvent)
     {
         OutputMessage = outputMessage;
-        EventLog.Add(sourcEvent);
+        if (sourcEvent is not null)
+        {
+            EventLog.Add(sourcEvent);
+        }
     }
 
 

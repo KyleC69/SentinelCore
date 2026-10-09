@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         InvestigationObjective.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -20,11 +20,13 @@ namespace SentinelCore.Orchestrations.Workflows;
 
 
 /// <summary>
-/// Represents an investigative objective capturing an assigned identifier, the initial signal summary, the signal
-/// source and type, and the timestamp when the signal was observed.
+///     Represents an investigative objective capturing an assigned identifier, the initial signal summary, the signal
+///     source and type, and the timestamp when the signal was observed.
 /// </summary>
-/// <remarks>Identifier is assigned by the Case Flow Engine. Properties are immutable init-only DTO fields
-/// intended for serialization; JSON property names are specified via attributes.</remarks>
+/// <remarks>
+///     Identifier is assigned by the Case Flow Engine. Properties are immutable init-only DTO fields
+///     intended for serialization; JSON property names are specified via attributes.
+/// </remarks>
 public sealed class InvestigationObjective
 {
 
@@ -37,27 +39,25 @@ public sealed class InvestigationObjective
 
     [JsonPropertyName("signal")]
     [Description("The original signal that entered the system.")]
-    public string OriginalSignal { get; init; }
-
-
+    public string? OriginalSignal { get; init; }
 
 
 
     [JsonPropertyName("InitialStatement")]
     [Description("The initial impression of the signal and what it might be an indication of.")]
     [JsonRequired]
-    public string SignalSummary { get; init; }
+    public required string SignalSummary { get; init; }
 
 
     [JsonPropertyName("subsystem")]
     [Description("possible subsystem sending the signal.")]
     [JsonRequired]
-    public string Source { get; init; }
+    public required string Source { get; init; }
 
 
     [Description("The type of source from which the signal originated. Event Log, Security Alert, Application Log, file log, Anomaly Detector etc.")]
     [JsonPropertyName("sourceType")]
-    public string SourceType { get; init; }
+    public required string SourceType { get; init; }
 
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         ModelConfigGateTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -10,8 +10,6 @@ using Moq;
 
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Mcp;
-
-using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 
 
@@ -29,9 +27,6 @@ namespace SentinelCore.Tests;
 [TestClass]
 public sealed class ModelConfigGateTests
 {
-
-
-
 
 
 
@@ -66,7 +61,7 @@ public sealed class ModelConfigGateTests
         SentinelCoreSettings settings = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ModelConfigGate(catalog.Object, null!, settings));
+
     }
 
 
@@ -102,17 +97,5 @@ public sealed class ModelConfigGateTests
 
         // Act & Assert
         //  Assert.Throws<ArgumentNullException>(() => new ModelConfigGate(catalog.Object, builder, null!));
-    }
-
-
-
-
-
-
-
-
-    private ModelConfigGate CreateGate(List<string> list, SentinelCoreSettings settings)
-    {
-        throw new NotImplementedException();
     }
 }

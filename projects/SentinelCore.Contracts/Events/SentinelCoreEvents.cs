@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SentinelCoreEvents.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -25,18 +25,6 @@ public sealed class SentinelCoreEvents : ISentinelCoreEvents
     ///     Raised when an orchestration lifecycle event occurs.
     /// </summary>
     public event Action<OrchestrationActivityArgs>? OrchestrationEvent;
-
-    public event Action<WorkflowOutputEventArgs>? WorkflowOutputEvent;
-
-
-
-
-    public void RaiseWorkflowOutputEvent(WorkflowOutputEventArgs payload)
-    {
-        ArgumentNullException.ThrowIfNull(payload);
-        WorkflowOutputEvent?.Invoke(payload);
-    }
-
 
 
 
@@ -90,9 +78,24 @@ public sealed class SentinelCoreEvents : ISentinelCoreEvents
 
 
 
+    public void RaiseWorkflowOutputEvent(WorkflowOutputEventArgs payload)
+    {
+        ArgumentNullException.ThrowIfNull(payload);
+        WorkflowOutputEvent?.Invoke(payload);
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Can be raised at any time to relay information from the core library to the host UI or other subscribers.
     ///     This event is not tied to any specific orchestration or agent, and is intended for general output messages.
     /// </summary>
     public event Action<SentinelOutputEventArgs>? SentinelOutputEvent;
+
+    public event Action<WorkflowOutputEventArgs>? WorkflowOutputEvent;
 }

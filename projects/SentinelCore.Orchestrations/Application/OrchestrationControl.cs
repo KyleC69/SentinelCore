@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         OrchestrationControl.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -76,6 +76,11 @@ public sealed class OrchestrationControl : IOrchestrationControl
     /// </remarks>
     public async Task<IAsyncEnumerable<WorkflowEvent>> ExecuteStreamingAsync(ChatMessage input, CancellationToken linkedCtsToken)
     {
+        if (_orchestration is null)
+        {
+            throw new InvalidOperationException("No orchestration instance is available.");
+        }
+
         return await _orchestration.ExecuteStreamingAsync(input, linkedCtsToken);
     }
 

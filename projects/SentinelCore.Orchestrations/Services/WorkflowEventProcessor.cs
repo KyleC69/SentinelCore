@@ -2,11 +2,10 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowEventProcessor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
-using System.Linq;
 using System.Text;
 
 using Microsoft.Agents.AI.Workflows.Specialized.Magentic;
@@ -166,6 +165,27 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
 
 
     /// <summary>
+    ///     Builds a stable stream key for buffering updates from the same executor response.
+    /// </summary>
+    /// <param name="executorId">The executor that emitted the update.</param>
+    /// <param name="responseId">Optional provider response identifier.</param>
+    /// <param name="messageId">Optional provider message identifier.</param>
+    /// <returns>A composite key used by the response accumulator.</returns>
+    private static string BuildAccumulatorKey(string executorId, string? responseId, string? messageId)
+    {
+        string streamId = !string.IsNullOrWhiteSpace(responseId) ? responseId : !string.IsNullOrWhiteSpace(messageId) ? messageId : executorId;
+
+        return $"{executorId}:{streamId}";
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Flushes all buffered chunks associated with the specified executor.
     /// </summary>
     /// <param name="executorId">The executor identifier whose buffered chunks should be flushed.</param>
@@ -175,9 +195,7 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
         List<string> keysToFlush;
         lock (_lock)
         {
-            keysToFlush = _responseAccumulators.Keys
-                .Where(key => key.StartsWith(executorId + ":", StringComparison.Ordinal))
-                .ToList();
+            keysToFlush = _responseAccumulators.Keys.Where(key => key.StartsWith(executorId + ":", StringComparison.Ordinal)).ToList();
         }
 
         if (keysToFlush.Count == 0)
@@ -269,31 +287,6 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
         {
             ReturnStringBuilder(combined);
         }
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Builds a stable stream key for buffering updates from the same executor response.
-    /// </summary>
-    /// <param name="executorId">The executor that emitted the update.</param>
-    /// <param name="responseId">Optional provider response identifier.</param>
-    /// <param name="messageId">Optional provider message identifier.</param>
-    /// <returns>A composite key used by the response accumulator.</returns>
-    private static string BuildAccumulatorKey(string executorId, string? responseId, string? messageId)
-    {
-        string streamId = !string.IsNullOrWhiteSpace(responseId)
-            ? responseId
-            : !string.IsNullOrWhiteSpace(messageId)
-                ? messageId
-                : executorId;
-
-        return $"{executorId}:{streamId}";
     }
 
 
@@ -559,10 +552,14 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
 
     private string FormatSuperStepCompletedEvent(SuperStepCompletedEvent evt)
     {
+        if (evt.CompletionInfo is null)
+        {
+            return "SuperStep completed: No completion info available.";
+        }
+
         _reporter.ReportDebug($"SuperStep completed: [{evt.StepNumber}] CompletionInfo:  {evt.CompletionInfo}");
         _reporter.ReportDebug($"Activated: {evt.CompletionInfo.ActivatedExecutors} Instatiated: {evt.CompletionInfo.InstantiatedExecutors} HasPending-Msgs {evt.CompletionInfo.HasPendingMessages} requests {evt.CompletionInfo.HasPendingRequests} State Updated {evt.CompletionInfo.StateUpdated} ");
         return $"Activated: {evt.CompletionInfo.ActivatedExecutors} Instatiated: {evt.CompletionInfo.InstantiatedExecutors} HasPending-Msgs {evt.CompletionInfo.HasPendingMessages} requests {evt.CompletionInfo.HasPendingRequests} State Updated {evt.CompletionInfo.StateUpdated} ";
-        return $"Superstep completed: {evt.CompletionInfo}, data: {evt.Data}";
     }
 
 
@@ -694,28 +691,28 @@ public class WorkflowEventProcessor : IWorkflowEventProcessor
     {
         return evt switch
         {
-            WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
-            AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
-            AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
-            SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
-            SubworkflowWarningEvent subworkflowWarningEvent => throw new NotImplementedException(),
+                WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
+                AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
+                AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
+                SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
+                SubworkflowWarningEvent subworkflowWarningEvent => throw new NotImplementedException(),
 
-            ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
-            WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
-            WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
-            ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
-            WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
-            ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
-            SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
-            SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
-            RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
-            MagenticPlanCreatedEvent magenticPlanCreatedEvent => FormatMagenticPlanCreatedEvent(magenticPlanCreatedEvent),
-            SuperStepEvent superStepEvent => FormatSuperStepEvent(superStepEvent),
-            ExecutorEvent executorEvent => FormatExecutorEvent(executorEvent),
-            MagenticProgressLedgerUpdatedEvent magenticProgressLedgerUpdatedEvent => FormatProgressLedger(magenticProgressLedgerUpdatedEvent),
-            MagenticReplannedEvent magenticReplannedEvent => FormatReplannedEvent(magenticReplannedEvent),
-            MagenticOrchestratorEvent magenticOrchestratorEvent => FormatOrchestratorEvent(magenticOrchestratorEvent),
-            _ => $"Unknown event type: {evt.GetType().Name}"
+                ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
+                WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
+                WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
+                ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
+                WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
+                ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
+                SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
+                SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
+                RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
+                MagenticPlanCreatedEvent magenticPlanCreatedEvent => FormatMagenticPlanCreatedEvent(magenticPlanCreatedEvent),
+                SuperStepEvent superStepEvent => FormatSuperStepEvent(superStepEvent),
+                ExecutorEvent executorEvent => FormatExecutorEvent(executorEvent),
+                MagenticProgressLedgerUpdatedEvent magenticProgressLedgerUpdatedEvent => FormatProgressLedger(magenticProgressLedgerUpdatedEvent),
+                MagenticReplannedEvent magenticReplannedEvent => FormatReplannedEvent(magenticReplannedEvent),
+                MagenticOrchestratorEvent magenticOrchestratorEvent => FormatOrchestratorEvent(magenticOrchestratorEvent),
+                _ => $"Unknown event type: {evt.GetType().Name}"
         };
     }
 

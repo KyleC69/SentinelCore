@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CustomGroup.cs
 // Author: Kyle L. Crowder
-// Build Num:  100812
+// Build Num:  100908
 
 
 
@@ -12,9 +12,8 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Agents.AI.Workflows.Specialized.Magentic;
 
 using SentinelCore.Contracts.Abstractions;
-using SentinelCore.Contracts.Events;
 using SentinelCore.Orchestrations.Abstractions;
-using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Services;
 
 
@@ -33,12 +32,10 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
     private bool _agentInitialized;
     private AIAgent _aggregator;
     private AIAgent _classifier;
-    private readonly ISentinelCoreEvents _coreEvents;
 
     private AIAgent _mgr;
 
     // Session used for running the core agent. Initialized lazily.
-    private AgentSession _session;
     private AIAgent _worker1;
     private AIAgent _worker2;
     private AIAgent _worker3;
@@ -50,10 +47,17 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-    public CustomGroupWorkflow(ISystemReporter systemReporter, ISentinelCoreEvents coreEvents, ISentinelAgentFactory agentFactory, IWorkflowEventProcessor processor) : base(systemReporter, processor)
+    public CustomGroupWorkflow(ISystemReporter systemReporter, ISentinelAgentFactory agentFactory, IWorkflowEventProcessor processor) : base(systemReporter, processor)
     {
         _agentFactory = agentFactory;
-        _coreEvents = coreEvents;
+
+        _agentInitialized = false;
+        _aggregator = null!;
+        _classifier = null!;
+        _mgr = null!;
+        _worker1 = null!;
+        _worker2 = null!;
+        _worker3 = null!;
     }
 
 
@@ -99,15 +103,12 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
         //   var wf = workflow.AsAIAgent(id: "evidence", name: "Evidence Agent", description: "Handles evidence-related tasks. testing mag group as agent", includeExceptionDetails: true, executionEnvironment: InProcessExecution.Lockstep);
 
         string sessionid = Guid.NewGuid().ToString();
-
-
-        StreamingRun run = await InProcessExecution.RunStreamingAsync(workflow, inputMessage, sessionid, token);
-
-        await run.TrySendMessageAsync(new TurnToken(true));
-
         string? lastResponseId = null;
         WorkflowOutputEvent? finalOutput = null;
 
+
+        StreamingRun run = await InProcessExecution.RunStreamingAsync(workflow, inputMessage, sessionid, token);
+        await run.TrySendMessageAsync(new TurnToken(true));
         await foreach (WorkflowEvent workflowEvent in run.WatchStreamAsync(token))
             switch (workflowEvent)
             {
@@ -214,7 +215,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
             return;
         }
 
-        await EnsureAgentInitializedAsync();
+        await EnsureAgentInitializedAsync(cancellationToken);
 
 
 
@@ -249,7 +250,7 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
         Workflow workflow = new MagenticWorkflowBuilder(_mgr).AddParticipants(_worker1, _worker2, _worker3, _aggregator).WithName("Magentic Orchestration Workflow").WithDescription("Coordinates a researcher and coder to solve a complex analytical task.").WithOutputFrom(_aggregator).RequirePlanSignoff(false).WithPromptOverrides(over).WithMaxRounds(10).WithMaxStalls().WithMaxResets(2).Build();
 
-        var classflow = AgentWorkflowBuilder.BuildSequential(_classifier, workflow.AsAIAgent("Investigation-Group", "Investigators", "The magentic investigation group"));
+        Workflow classflow = AgentWorkflowBuilder.BuildSequential(_classifier, workflow.AsAIAgent("Investigation-Group", "Investigators", "The magentic investigation group"));
 
         return classflow;
     }
@@ -274,18 +275,19 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
         try
         {
-            _mgr = await _agentFactory.CreateAgentAsync("MagGroupManager");
+            var test = _agentFactory.CreateAgentAsync(AgentPreset.CoreAgent, token);
+            _mgr = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, token);
 
-
-            _worker1 = await _agentFactory.CreateAgentAsync("WindowsOSWorker1");
-            _worker2 = await _agentFactory.CreateAgentAsync("WindowsOSWorker2");
-            _worker3 = await _agentFactory.CreateAgentAsync("WindowsOSWorker3");
-            _aggregator = await _agentFactory.CreateAgentAsync("GroupChatAggregator");
-            _classifier = await _agentFactory.CreateAgentAsync("Classifier", ClassifierInstruction,ChatResponseFormatJson.ForJsonSchema<InvestigationObjective>(), CancellationToken.None).ConfigureAwait(false);
-            // Create a utility agent for additional support within the workflow.
-            var util = await _agentFactory.CreateAgentAsync("UtilityAgent",ClassifierInstruction,null,token);
+            _worker1 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, token);
+            _worker2 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, token);
+            _worker3 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, token);
+            _aggregator = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, token);
+            // Classifier agent now uses the preset‑only overload; any custom instructions are supplied via the preset definition.
+            _classifier = await _agentFactory.CreateAgentAsync(AgentPreset.ClassifierAgent, token).ConfigureAwait(false);
+            // Utility agent for additional support.
+            AIAgent util = await _agentFactory.CreateAgentAsync(AgentPreset.UtilityAgent, token);
             //Workflow in-memory session for the manager agent to coordinate the workflow.
-            _session = await _mgr.CreateSessionAsync().ConfigureAwait(false);
+            await _mgr.CreateSessionAsync().ConfigureAwait(false);
 
 
             _agentInitialized = true;
@@ -297,19 +299,16 @@ public class CustomGroupWorkflow : WorkflowBase, IOrchestration
     }
 
 
-    private const string ClassifierInstruction = """
-                                                 You are a classifier agent that is responsible for determining what a signal is about and providing the investigation team
-                                                 with the Investigation Objective object. A signal in the Sentinel Core Forensic Investigation Platform (this application) can be an Event log entry, an alert from windows,
-                                                 a text file log entry, or other automated input device. Generally a signal is an indicator from any subsystem in a Windows Operating System
-                                                 that there may be a problem, or something happend. It is your task is to determine what subsystem the signal is from, and what the signal is trying to tell us.
 
-                                                 You will respond with the following information in a JSON object with the following fields:
 
-                                                 Source: The subsystem or component that generated the signal (e.g., "Windows Event Log", "Security Alert", "Application Log").
-                                                 Severity: The severity level of the signal (e.g., "Critical", "Warning", "Information").
-                                                 Timestamp: The date and time when the signal was generated (in ISO 8601 format). If Known, otherwise leave blank.
-                                                 Summary: A brief summary of the signal, describing what it may be indicating.
-                                                 """;
+
+
+
+
+    // The classifier preset now contains any required instructions; this constant is no longer used.
+
+
+
 
 
 

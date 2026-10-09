@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -36,7 +36,7 @@ internal sealed partial class TheCoreExec : Executor
 
 
     private string taskinstruct = """
-                                  For this task you are to analyze the signal and provide a clear and concise hypothesis about what the signal is trying to indicate. 
+                                  For this task you are to analyze the signal and provide a clear and concise hypothesis about what the signal is trying to indicate.
                                   The signal may also be presented to you in natural language and describe a symptom or observed behavior. for example: "file history is not backing up files"
                                   or "the system boots slow and hangs at startup". You must form a hypothesis as to what might be causing the observed behavior. Your response should be structured and in the shape of
                                   the schema you are provided. You should also provide a confidence score between 0 and 1 indicating how confident you are in your hypothesis.
@@ -114,9 +114,14 @@ internal sealed partial class TheCoreExec : Executor
     ///     Core processing logic: invokes the Core agent with the signal and TheCore generates the hypothesis and returns the
     ///     structured response.
     /// </summary>
-    private async ValueTask<InvestigationObjective> GenerateDecisionAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
+    private async ValueTask<InvestigationObjective> GenerateDecisionAsync(ChatMessage? message, IWorkflowContext context, CancellationToken cancellationToken)
     {
-        // This will be the original message received, which is a InvestigationObjective. We need to convert it to an InvestigationObjective for the agent. 
+        if (message is null)
+        {
+            throw new ArgumentNullException(nameof(message));
+        }
+
+        // This will be the original message received, which is a InvestigationObjective. We need to convert it to an InvestigationObjective for the agent.
         //Phasing out the signal hypo object in favor of new shape
         // Log the received message
         _reporter.ReportInfo($"Handling InvestigationObjective: {message}");
@@ -174,7 +179,7 @@ internal sealed partial class TheCoreExec : Executor
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The agent's response as a <see cref="InvestigationObjective" />.</returns>
     [MessageHandler]
-    public async ValueTask<InvestigationObjective> HandleInvestigationObjectiveAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask<InvestigationObjective> HandleInvestigationObjectiveAsync(ChatMessage? message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // --- Status: Executor start ---
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(InvestigationObjective)}");
@@ -185,6 +190,7 @@ internal sealed partial class TheCoreExec : Executor
         {
             _reporter.ReportError($"[{Name}] Input message was null. Gracefully falling back to {nameof(InvestigationObjective)}.");
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(InvestigationObjective)}."), cancellationToken).ConfigureAwait(false);
+            return new InvestigationObjective { Id = Guid.NewGuid().ToString(), Source = "Fallback", SourceType = "Fallback", SignalSummary = "Fallback" };
         }
 
         try
@@ -218,7 +224,7 @@ internal sealed partial class TheCoreExec : Executor
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
 
             _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(InvestigationObjective)} due to error.");
-            return new InvestigationObjective();
+            return new InvestigationObjective { Id = Guid.NewGuid().ToString(), Source = "Fallback", SourceType = "Fallback", SignalSummary = "Fallback" };
         }
     }
 }

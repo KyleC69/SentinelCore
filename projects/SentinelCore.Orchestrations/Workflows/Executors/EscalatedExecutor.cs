@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         EscalatedExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -155,7 +155,7 @@ internal sealed partial class EscalatedExecutor : Executor
         }
 
         string prompt = string.IsNullOrWhiteSpace(message?.Text) ? "the signal" : $"\"{message.Text}\"";
-        await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"👤 {prompt} has been escalated for human review. {message.Text ?? string.Empty}"), cancellationToken).ConfigureAwait(false);
+        await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"👤 {prompt} has been escalated for human review. {message?.Text ?? string.Empty}"), cancellationToken).ConfigureAwait(false);
 
         return message;
     }

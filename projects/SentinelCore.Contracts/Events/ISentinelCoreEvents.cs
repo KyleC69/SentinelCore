@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         ISentinelCoreEvents.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -29,7 +29,7 @@ public interface ISentinelCoreEvents
 
 
 
-    event Action<WorkflowOutputEventArgs>? WorkflowOutputEvent;
+
 
 
 
@@ -75,15 +75,25 @@ public interface ISentinelCoreEvents
 
 
     /// <summary>
+    ///     Raises a workflow output event.
+    /// </summary>
+    /// <param name="payload">The workflow output event payload.</param>
+    void RaiseWorkflowOutputEvent(WorkflowOutputEventArgs payload);
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Raised during any normal non-agent/tool operation.
     ///     This is the single event channel for UI consumption of agent output.
     /// </summary>
     event Action<SentinelOutputEventArgs>? SentinelOutputEvent;
 
 
-    /// <summary>
-    ///     Raises a workflow output event.
-    /// </summary>
-    /// <param name="payload">The workflow output event payload.</param>
-    void RaiseWorkflowOutputEvent(WorkflowOutputEventArgs payload);
+
+    event Action<WorkflowOutputEventArgs>? WorkflowOutputEvent;
 }

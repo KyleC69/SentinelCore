@@ -2,11 +2,12 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AdvancedInMemoryChatHistoryProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 
 using SentinelCore.Orchestrations.Agents.Models;
 
@@ -19,25 +20,15 @@ namespace SentinelCore.Orchestrations.Providers;
 
 
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
-
-
-
-
-
 /// <summary>
-/// An advanced in-memory chat history provider that stores chat messages in memory and maintains state across sessions.
-/// Agent Framework integration for managing chat history in memory.
+///     An advanced in-memory chat history provider that stores chat messages in memory and maintains state across
+///     sessions.
+///     Agent Framework integration for managing chat history in memory.
 /// </summary>
 public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
 {
-    private readonly ProviderSessionState<State> _sessionState;
     private readonly int _maxHistorySize;
+    private readonly ProviderSessionState<State> _sessionState;
 
 
 
@@ -52,7 +43,7 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
 
         // Provide defaults if not specified to avoid ArgumentNullExceptions
         var initializer = stateInitializer ?? (session => new State());
-        var key = stateKey ?? "AdvancedInMemoryChatHistory";
+        string key = stateKey ?? "AdvancedInMemoryChatHistory";
 
         _sessionState = new ProviderSessionState<State>(initializer, key);
     }
@@ -64,7 +55,10 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
 
 
 
-    public string StateKey => _sessionState.StateKey;
+    public string StateKey
+    {
+        get => _sessionState.StateKey;
+    }
 
 
 
@@ -82,23 +76,22 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
             return;
         }
 
-        var filteredRequestMessages = context.RequestMessages.Where(m => m.GetAgentRequestMessageSourceType() != AgentRequestMessageSourceType.ChatHistory);
+        IEnumerable<ChatMessage> filteredRequestMessages = context.RequestMessages.Where(m => m.GetAgentRequestMessageSourceType() != AgentRequestMessageSourceType.ChatHistory);
 
-        var state = _sessionState.GetOrInitializeState(context.Session);
+        State state = _sessionState.GetOrInitializeState(context.Session);
 
         lock (state.SyncRoot)
         {
             // Add both request and response messages to the state.
-            var allNewMessages = filteredRequestMessages.Concat(context.ResponseMessages ?? Enumerable.Empty<ChatMessage>());
+            IEnumerable<ChatMessage> allNewMessages = filteredRequestMessages.Concat(context.ResponseMessages ?? Enumerable.Empty<ChatMessage>());
             state.Messages.AddRange(allNewMessages);
 
             // Implement sliding window to prevent unbounded growth
             while (state.Messages.Count > _maxHistorySize)
-            {
-                // Remove the oldest message (index 0)
-                // Note: ChatMessages needs a RemoveAt method or we must handle it via the underlying list
-                // Since ChatMessages is a custom wrapper, we assume it supports basic list operations or we'll need to update it.
-                // For now, we'll use a safer approach if ChatMessages allows.
+                    // Remove the oldest message (index 0)
+                    // Note: ChatMessages needs a RemoveAt method or we must handle it via the underlying list
+                    // Since ChatMessages is a custom wrapper, we assume it supports basic list operations or we'll need to update it.
+                    // For now, we'll use a safer approach if ChatMessages allows.
                 try
                 {
                     // This is a placeholder for the pruning logic.
@@ -109,7 +102,6 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
                 {
                     break;
                 }
-            }
         }
 
         _sessionState.SaveState(context.Session, state);
@@ -124,7 +116,7 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
 
     protected override async ValueTask<IEnumerable<ChatMessage>> InvokingCoreAsync(InvokingContext context, CancellationToken cancellationToken = default)
     {
-        var state = _sessionState.GetOrInitializeState(context.Session);
+        State state = _sessionState.GetOrInitializeState(context.Session);
 
         List<ChatMessage> historySnapshot;
         lock (state.SyncRoot)
@@ -132,7 +124,7 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
             historySnapshot = state.Messages.ToList();
         }
 
-        var stampedChatHistory = historySnapshot.Select(message => message.WithAgentRequestMessageSource(AgentRequestMessageSourceType.ChatHistory, this.GetType().FullName!));
+        IEnumerable<ChatMessage> stampedChatHistory = historySnapshot.Select(message => message.WithAgentRequestMessageSource(AgentRequestMessageSourceType.ChatHistory, this.GetType().FullName!));
 
         return stampedChatHistory.Concat(context.RequestMessages);
     }
@@ -148,6 +140,6 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
     {
         public readonly object SyncRoot = new();
 
-        [JsonPropertyName("messages")] public ChatMessages Messages { get; set; } = new ChatMessages();
+        [JsonPropertyName("messages")] public ChatMessages Messages { get; set; } = new();
     }
 }

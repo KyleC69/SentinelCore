@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -32,7 +32,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry
     private readonly IMcpConnectionFactory _connectionFactory;
     private readonly ConcurrentDictionary<string, McpServerEntry> _entries = new();
     private readonly IMcpServerRegistryStore _store;
-    private static ILogger<McpServerRegistry> _logger;
+    private static ILogger<McpServerRegistry>? _logger;
 
 
 
@@ -273,13 +273,15 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
 
 
-/// <summary>
-///     Starts the MCP server identified by the specified id. If the server is already running or in an error state, this method will attempt to connect it.
-/// </summary>
-/// <param name="id"></param>
-/// <param name="cancellationToken"></param>
-/// <returns></returns>
-/// <exception cref="InvalidOperationException"></exception>
+
+    /// <summary>
+    ///     Starts the MCP server identified by the specified id. If the server is already running or in an error state, this
+    ///     method will attempt to connect it.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public async Task StartAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);

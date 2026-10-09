@@ -1,3 +1,11 @@
+// Solution: SentinelCore
+// Project:   SentinelCore.Tests
+// File:         WorkflowEventProcessorTests.cs
+// Author: Kyle L. Crowder
+// Build Num:  100908
+
+
+
 using System.Reflection;
 
 using Moq;
@@ -13,6 +21,7 @@ namespace SentinelCore.Tests;
 
 
 
+
 /// <summary>
 ///     Unit tests for <see cref="WorkflowEventProcessor" /> accumulator behavior.
 /// </summary>
@@ -22,43 +31,6 @@ public class WorkflowEventProcessorTests
     private Mock<ISystemReporter> _mockReporter = null!;
     private WorkflowEventProcessor _processor = null!;
 
-
-
-
-
-
-
-    /// <summary>
-    ///     Initializes test dependencies.
-    /// </summary>
-    [TestInitialize]
-    public void Setup()
-    {
-        _mockReporter = new Mock<ISystemReporter>();
-        _processor = new WorkflowEventProcessor(_mockReporter.Object);
-    }
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Ensures response stream keying falls back to message id when response id is blank.
-    /// </summary>
-    [TestMethod]
-    public void BuildAccumulatorKey_ResponseIdWhitespace_FallsBackToMessageId()
-    {
-        // Arrange
-        MethodInfo buildKey = GetRequiredMethod("BuildAccumulatorKey", BindingFlags.NonPublic | BindingFlags.Static);
-
-        // Act
-        string key = (string)buildKey.Invoke(null, ["ClassifierExec", "   ", "message-42"])!;
-
-        // Assert
-        Assert.AreEqual("ClassifierExec:message-42", key);
-    }
 
 
 
@@ -93,6 +65,7 @@ public class WorkflowEventProcessorTests
 
 
 
+
     /// <summary>
     ///     Ensures response stream keying falls back to executor id when response and message ids are blank.
     /// </summary>
@@ -108,6 +81,50 @@ public class WorkflowEventProcessorTests
         // Assert
         Assert.AreEqual("ClassifierExec:ClassifierExec", key);
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Ensures response stream keying falls back to message id when response id is blank.
+    /// </summary>
+    [TestMethod]
+    public void BuildAccumulatorKey_ResponseIdWhitespace_FallsBackToMessageId()
+    {
+        // Arrange
+        MethodInfo buildKey = GetRequiredMethod("BuildAccumulatorKey", BindingFlags.NonPublic | BindingFlags.Static);
+
+        // Act
+        string key = (string)buildKey.Invoke(null, ["ClassifierExec", "   ", "message-42"])!;
+
+        // Assert
+        Assert.AreEqual("ClassifierExec:message-42", key);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Resolves a private method and fails fast when the method contract drifts.
+    /// </summary>
+    /// <param name="name">The method name.</param>
+    /// <param name="flags">The binding flags.</param>
+    /// <returns>The resolved <see cref="MethodInfo" />.</returns>
+    private static MethodInfo GetRequiredMethod(string name, BindingFlags flags)
+    {
+        MethodInfo? method = typeof(WorkflowEventProcessor).GetMethod(name, flags);
+        Assert.IsNotNull(method, $"Expected private method '{name}' to exist.");
+        return method;
+    }
+
 
 
 
@@ -144,16 +161,14 @@ public class WorkflowEventProcessorTests
 
 
 
+
     /// <summary>
-    ///     Resolves a private method and fails fast when the method contract drifts.
+    ///     Initializes test dependencies.
     /// </summary>
-    /// <param name="name">The method name.</param>
-    /// <param name="flags">The binding flags.</param>
-    /// <returns>The resolved <see cref="MethodInfo" />.</returns>
-    private static MethodInfo GetRequiredMethod(string name, BindingFlags flags)
+    [TestInitialize]
+    public void Setup()
     {
-        MethodInfo? method = typeof(WorkflowEventProcessor).GetMethod(name, flags);
-        Assert.IsNotNull(method, $"Expected private method '{name}' to exist.");
-        return method;
+        _mockReporter = new Mock<ISystemReporter>();
+        _processor = new WorkflowEventProcessor(_mockReporter.Object);
     }
 }

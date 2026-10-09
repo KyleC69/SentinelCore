@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         PersistenceRegistrationTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -115,10 +115,6 @@ public sealed class PersistenceRegistrationTests
         StringAssert.Contains(actual.Message, marker.Message);
         factory.Verify(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
-
-
-
-
 
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ISafetyRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 

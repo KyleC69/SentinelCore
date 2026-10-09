@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -11,10 +11,9 @@ using System.Diagnostics.CodeAnalysis;
 using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Abstractions;
-using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Exceptions;
-using SentinelCore.Orchestrations.Orchestrations;
 using SentinelCore.Orchestrations.Services;
 using SentinelCore.Orchestrations.Workflows.Executors;
 using SentinelCore.Orchestrations.Workflows.Helpers;
@@ -59,8 +58,8 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
     // TheCore and sub-workflow agents (initialized once via InitializeAsync)
     private AIAgent? _theCoreAgent;
-    private AgentSession _theCoreSession;
-    private Workflow _theCoreWorkflow;
+    private AgentSession? _theCoreSession;
+    private Workflow? _theCoreWorkflow;
 
     private AIAgent? _windowsWorkerAgent1;
     private AIAgent? _windowsWorkerAgent2;
@@ -197,23 +196,23 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         // ── Build main workflow agents ─────────────────────────────────────────────────────────
 
-        _theCoreAgent = await _agentFactory.CreateAgentAsync("TheCore", cancellationToken);
+        _theCoreAgent = await _agentFactory.CreateAgentAsync(AgentPreset.CoreAgent, cancellationToken);
 
-        _classifierAgent = await _agentFactory.CreateAgentAsync("Classifier", cancellationToken);
+        _classifierAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ClassifierAgent, cancellationToken);
 
-        _safetyAgent = await _agentFactory.CreateAgentAsync("SafetyAgent", cancellationToken);
+        _safetyAgent = await _agentFactory.CreateAgentAsync(AgentPreset.SafetyAgent, cancellationToken);
 
         _theCoreSession = await _theCoreAgent.CreateSessionAsync(cancellationToken);
 
         // ── Build MAG sub-workflow agents ─────────────────────────────────────────────────────
-        _magManagerAgent = await _agentFactory.CreateAgentAsync("Manager", cancellationToken);
+        _magManagerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, cancellationToken);
 
-        _windowsWorkerAgent1 = await _agentFactory.CreateAgentAsync("Worker1", cancellationToken);
+        _windowsWorkerAgent1 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, cancellationToken);
 
-        _windowsWorkerAgent2 = await _agentFactory.CreateAgentAsync("Worker2", cancellationToken);
+        _windowsWorkerAgent2 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, cancellationToken);
 
-        _windowsWorkerAgent3 = await _agentFactory.CreateAgentAsync("Worker3", cancellationToken);
-        _windowsWorkerAgent4 = await _agentFactory.CreateAgentAsync("Worker4", cancellationToken);
+        _windowsWorkerAgent3 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, cancellationToken);
+        _windowsWorkerAgent4 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, cancellationToken);
 
         _reporter.ReportInfo("Agent profiles constructed.");
         _theCoreWorkflow = await BuildWorkflow();
@@ -266,15 +265,15 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     [Experimental("MAAI001")]
     private Workflow BuildEvidenceGatheringSubWorkflow()
     {
-        Microsoft.Agents.AI.Workflows.MagenticPromptOverrides over = new Microsoft.Agents.AI.Workflows.MagenticPromptOverrides()
+        MagenticPromptOverrides over = new MagenticPromptOverrides
         {
-            TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt,
-            TaskLedgerPlanUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanUpdatePrompt,
-            ProgressLedgerPrompt = Orchestrations.MagenticPromptOverrides.ProgressLedgerPrompt,
-            FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt,
-            TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt,
-            TaskLedgerFactsUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsUpdatePrompt,
-            TaskLedgerFullPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFullPrompt
+                TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt,
+                TaskLedgerPlanUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanUpdatePrompt,
+                ProgressLedgerPrompt = Orchestrations.MagenticPromptOverrides.ProgressLedgerPrompt,
+                FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt,
+                TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt,
+                TaskLedgerFactsUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsUpdatePrompt,
+                TaskLedgerFullPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFullPrompt
         };
 
 
@@ -287,18 +286,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         Throw.IfNull(_windowsWorkerAgent3);
         Throw.IfNull(_windowsWorkerAgent4);
 
-        Workflow subWorkflow = new MagenticWorkflowBuilder(_magManagerAgent)
-                .AddParticipants(_windowsWorkerAgent1, _windowsWorkerAgent2, _windowsWorkerAgent3, _windowsWorkerAgent4)
-                .WithMaxResets(3)
-                .WithMaxRounds(5)
-                .WithMaxStalls(2)
-                .RequirePlanSignoff(false)
-                .WithDescription(
-                        "Magentic investigation team - sub-workflow for collecting evidence to support TheCore\'s hypothesis of the signal")
-                .WithName("EvidenceCollection")
-                .WithPromptOverrides()
-
-                .Build();
+        Workflow subWorkflow = new MagenticWorkflowBuilder(_magManagerAgent).AddParticipants(_windowsWorkerAgent1, _windowsWorkerAgent2, _windowsWorkerAgent3, _windowsWorkerAgent4).WithMaxResets(3).WithMaxRounds(5).WithMaxStalls(2).RequirePlanSignoff(false).WithDescription("Magentic investigation team - sub-workflow for collecting evidence to support TheCore\'s hypothesis of the signal").WithName("EvidenceCollection").WithPromptOverrides().Build();
 
         return subWorkflow;
     }

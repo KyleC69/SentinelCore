@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelChatClientFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  100908
 
 
 
@@ -19,6 +19,7 @@ using OpenAI;
 using OpenAI.Chat;
 
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Abstractions;
 
 
 
@@ -71,13 +72,13 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
     {
         IChatClient baseClient = model.Provider switch
         {
-            ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
-            ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
-            ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
-            ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
-            ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
-            ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
-            _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
+                ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
+                ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
+                ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
+                ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
+                ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
+                ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
+                _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
         };
 
         return baseClient;
