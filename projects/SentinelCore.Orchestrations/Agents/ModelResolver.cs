@@ -56,6 +56,14 @@ public sealed class ModelResolver : IModelResolver
 
 
 
+    public IDictionary<ModelTier, ModelProfile> Tiers
+    {
+
+        set => _options.TierModels = value;
+    }
+
+
+
 
 
 
@@ -83,13 +91,14 @@ public sealed class ModelResolver : IModelResolver
     public ModelProfile? ResolveByTier(ModelTier tier)
     {
         // Map tier to the appropriate model configuration from settings.
-        return tier switch
+        if (_options.TierModels.ContainsKey(tier))
         {
-            ModelTier.Core => _options.DefaultModel,
-            ModelTier.Manager => _options.ManagerModel ?? _options.DefaultModel,
-            ModelTier.Utility => _options.DefaultUtilityModel ?? _options.DefaultModel,
-            ModelTier.GroupWorker => _options.DefaultUtilityModel ?? _options.DefaultModel,
-            _ => _options.DefaultModel
-        };
+            return _options.TierModels[tier];
+        }
+        else
+        {
+            // If the tier is not found, return null or throw an exception based on your preference.
+            return null;
+        }
     }
 }

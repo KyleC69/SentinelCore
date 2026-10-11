@@ -89,6 +89,11 @@ public sealed class SystemReporter : ISystemReporter
     /// <param name="ex">The exception that occurred.</param>
     public void ReportError(string? message, Exception? ex = null)
     {
+        if (!_logger.IsEnabled(LogLevel.Error))
+        {
+            return;
+
+        }
         string finalMessage = message ?? ex?.Message ?? "An unspecified error occurred.";
         _logger.LogError(ex, "[ERROR] {Message}", finalMessage);
         _publisher.RaiseError(finalMessage, ex ?? new Exception(finalMessage));
@@ -107,14 +112,14 @@ public sealed class SystemReporter : ISystemReporter
     /// <param name="message">The informational message.</param>
     public void ReportInfo(string message)
     {
-        _logger.LogInformation("[INFO] " + message);
+        if (!_logger.IsEnabled(LogLevel.Information))
+        {
+            return;
+        }
+
+        _logger.LogInformation("[INFO] {Message}", message);
         _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
     }
-
-
-
-
-
 
 
 
@@ -125,6 +130,10 @@ public sealed class SystemReporter : ISystemReporter
     /// <param name="ex">An optional exception associated with the warning.</param>
     public void ReportWarning(string message, Exception? ex = null)
     {
+        if (!_logger.IsEnabled(LogLevel.Warning))
+        {
+            return;
+        }
         _logger.LogWarning(ex, "[WARNING] {Message}", message);
         _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
     }

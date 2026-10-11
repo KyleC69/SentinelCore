@@ -2,6 +2,8 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
 using Microsoft.EntityFrameworkCore;
 
 using SentinelCore.Persistence;
@@ -19,11 +21,10 @@ public partial class SentinelCoreDBContext : DbContext
     {
     }
 
-    public virtual DbSet<InvestigationPlanStepsEntity> InvestigationPlanStepsEntities { get; set; }
 
     public virtual DbSet<PatternMemoryEntity> PatternMemoryEntities { get; set; }
 
-    public virtual DbSet<ResolutionEntity> ResolutionEntities { get; set; }
+    public virtual DbSet<RemediationEntities> RemediationEntities { get; set; }
 
     public virtual DbSet<SignalEntity> SignalEntities { get; set; }
 
@@ -44,18 +45,7 @@ public partial class SentinelCoreDBContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<InvestigationPlanStepsEntity>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_InvestigationPlanSteps");
-
-            entity.Property(e => e.CompletedSuccessfully).HasDefaultValue(false, "DF_InvestigationPlanStepsEntities_CompletedSuccessfully");
-            entity.Property(e => e.IsTargetPropertyMissing)
-                .HasComment("If the target of the task is not found this bit must be flipped")
-                .HasDefaultValue(false, "DF_InvestigationPlanStepsEntities_IsTargetPropertyMissing");
-            entity.Property(e => e.StepId).HasComment("Links this step the plan it was created in");
-            entity.Property(e => e.Surface).HasComment("Domain or Surface that the task applies to");
-            entity.Property(e => e.TaskBlocked).HasDefaultValue(false, "DF_InvestigationPlanStepsEntities_TaskBlocked");
-        });
+     
 
         modelBuilder.Entity<PatternMemoryEntity>(entity =>
         {
@@ -85,4 +75,21 @@ public partial class SentinelCoreDBContext : DbContext
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+}
+
+
+
+
+
+public class RemediationEntities
+{
+    
+    
+    
+    
+    [Key] public int Id { get; set; }
+    public string Summary { get; set; }
+    public string Command { get; set; }
+    public double Confidence { get; set; }
+    public string Notes { get; set; }
 }

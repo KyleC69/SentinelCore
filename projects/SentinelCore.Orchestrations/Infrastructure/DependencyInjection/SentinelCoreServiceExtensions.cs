@@ -19,6 +19,7 @@ using SentinelCore.Contracts.Events;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Mcp;
@@ -75,15 +76,13 @@ public static class SentinelCoreServiceExtensions
 
                     opt.TraceEnabled = options.TraceEnabled;
                     opt.TraceLogLevel = options.TraceLogLevel;
-                    opt.DefaultModel = options.DefaultModel;
-                    opt.ManagerModel = options.ManagerModel;
-                    opt.DefaultUtilityModel = options.DefaultUtilityModel;
+
                     opt.OrchestrationType = options.OrchestrationType;
                     opt.SqlConnectionString = options.SqlConnectionString;
 
-                    foreach (KeyValuePair<string, ModelProfile> entry in options.AgentModels)
+                    foreach (KeyValuePair<ModelTier, ModelProfile> entry in options.TierModels)
                     {
-                        opt.AgentModels[entry.Key] = entry.Value;
+                        opt.TierModels[entry.Key] = entry.Value;
                     }
                 });
 

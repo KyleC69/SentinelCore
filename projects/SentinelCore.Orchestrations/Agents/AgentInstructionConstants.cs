@@ -136,41 +136,25 @@ public static class AgentInstructionConstants
 
 
     public const string SENTINELCORE_OBJECTIVE_GEN = """
-                                                     Your task is to generate an Investigation Objective object based on the signal given in the message that follows. The Investigation Objective should include, an Initial Statement as to what the signal may be an indicator of.
-                                                     Key Entities is list of a few possible things to check. The signal summary is a concise summary of the original signal that triggered the investigation. The suggested evidence domains is a list of possible evidence domains or subsystems to query for validation.
-                                                     This object is for AI consumption and will be used by the investigation team to gather evidence and validate the hypothesis. You must respond with only valid JSON. No commentary, no explanations, no reasoning paragraphs, no narrative, only valid json.
+                                                     Your task is to analyze the signal and fill in the InvestigationObjective object. Be sure to fill in the required fields.
+                                                     You must respond with only valid JSON. No commentary, no explanations, no reasoning paragraphs, no narrative, only valid json. 
+                                                     Do not wrap in fenced code blocks. The JSON object must be a valid InvestigationObjective object as defined below.
 
-                                                     public sealed class InvestigationObjective
-                                                     {
-
-                                                         /// <summary>
-                                                         ///     Creates a new instance of <see cref="InvestigationObjective" /> with all required properties.
-                                                         /// </summary>
-                                                         [JsonConstructor]
-                                                         public InvestigationObjective()
-                                                         {
-                                                          }
-                                                     [JsonPropertyName("id")]
-                                                         [Description("Unique identifier for the investigative objective. Assigned by the Case Flow Engine")]
-                                                         public string Id { get; }
-
-                                                         [JsonPropertyName("InitialStatement")]
-                                                         [Description("The initial impression of the signal and what it might be an indication of.")]
-                                                         public string HypothesisStatement { get; init; }
-
-                                                         [JsonPropertyName("keyEntities")]
-                                                         [Description("possible properties or areas to interrogate the system and what to look for. (files, processes, registry keys) implicated by the hypothesis.")]
-                                                         public IList<string> KeyEntities { get; init; }
-
-
-                                                         [JsonPropertyName("signalSummary")]
-                                                         [Description("Concise summary of the original signal that triggered the investigation.")]
-                                                         public string SignalSummary { get; init; }
-
-                                                         [JsonPropertyName("suggestedEvidenceDomains")]
-                                                         [Description("Suggested evidence domains (e.g., Network, FileSystem) to query for validation.")]
-                                                         public IList<string> SuggestedEvidenceDomains { get; init; }
-                                                     }
+                                                     You **must** fill in the following required fields in the InvestigationObjective object:
+                                                     
+                                                        OriginalSignal: Required: The original signal that triggered the investigation.
+                                                        SignalSummary: Required: A concise summary of the original signal that triggered the investigation.
+                                                        SourceType: Required: The type of signal that was received. This could be an event log, security alert, application log, file log, anomaly detector, user complaint etc.
+                                                        Source: Required: The subsystem or source that generated the signal.
+                                                        Severity: Required: The severity of the signal. This could be low, medium, high, or critical.
+                                                        KnownFacts: Required: A list of known facts about the signal that are relevant to the investigation.
+                                                        
+                                                     Optional but helpful fields that may be filled in if relevant to the investigation:
+                                                        
+                                                        UnknownFacts: A list of unknown facts about the signal that are relevant to the investigation.
+                                                        InvestigationQuestions: A list of questions that need to be answered in order to complete the investigation.
+                                                        RelevantEvidence: A list of evidence that is relevant to the investigation.
+                                                        Timestamp: The timestamp of when the signal was received.
                                                      """;
 
     /// <summary>
@@ -222,13 +206,13 @@ public static class AgentInstructionConstants
 
         return presetName.ToLowerInvariant() switch
         {
-                "classifier" => CLASSIFIER_INSTRUCTIONS,
-                "directanswer" => DIRECT_ANSWER_INSTRUCTIONS,
-                "manager" => MAG_MANAGER_INSTRUCTIONS,
-                "safetyagent" => SAFETY_AGENT_INSTRUCTIONS,
-                "thecore" => SENTINEL_CORE_INSTRUCTIONS,
-                "worker" => WORKER_INSTRUCTIONS,
-                _ => string.Empty
+            "classifier" => CLASSIFIER_INSTRUCTIONS,
+            "directanswer" => DIRECT_ANSWER_INSTRUCTIONS,
+            "manager" => MAG_MANAGER_INSTRUCTIONS,
+            "safetyagent" => SAFETY_AGENT_INSTRUCTIONS,
+            "thecore" => SENTINEL_CORE_INSTRUCTIONS,
+            "worker" => WORKER_INSTRUCTIONS,
+            _ => string.Empty
         };
     }
 }

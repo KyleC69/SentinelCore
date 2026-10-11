@@ -9,6 +9,7 @@
 using System.Text.Json.Serialization;
 
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Agents.AgentPresets;
 
 
 
@@ -18,17 +19,24 @@ namespace SentinelCore.UI.Services;
 
 
 
-
 /// <summary>
-///     The persisted model configuration document: one <see cref="ModelProfile" />
-///     per logical agent name, matching the cards on the Model Configuration page.
-///     Agents with no entry are unconfigured and fail the factory gate.
+/// Represents a configuration document for models, containing mappings
+/// between model tiers and their respective profiles.
 /// </summary>
+/// <remarks>
+/// This class is used to store and manage model configuration data, 
+/// including details about model tiers and their associated profiles.
+/// It is primarily utilized by services that handle model configuration
+/// persistence and retrieval.
+/// </remarks>
 public sealed class ModelConfigDocument
 {
+
     /// <summary>
-    ///     Per-agent model profiles keyed by logical agent name.
+    ///     Model profiles keyed by <see cref="ModelTier" />. This is the single
+    ///     source of truth consulted by <see cref="SentinelCore.Orchestrations.Agents.IModelResolver" />
+    ///     when constructing agents from an <see cref="AgentPresetDefinition" />.
     /// </summary>
-    [JsonPropertyName("agentModels")]
-    public IDictionary<string, ModelProfile> AgentModels { get; set; } = new Dictionary<string, ModelProfile>(StringComparer.OrdinalIgnoreCase);
+    [JsonPropertyName("tierModels")]
+    public IDictionary<ModelTier, ModelProfile> TierModels { get; set; } = new Dictionary<ModelTier, ModelProfile>();
 }

@@ -22,8 +22,12 @@ namespace SentinelCore.Orchestrations.Mcp;
 
 
 /// <summary>
-///     Persists MCP server definitions to a JSON file using System.Text.Json.
+/// Represents a store for MCP server definitions that persists data to a JSON file.
 /// </summary>
+/// <remarks>
+/// This class provides functionality to load and save MCP server definitions using the JSON format.
+/// It ensures proper logging and handles potential exceptions during file operations.
+/// </remarks>
 public sealed class JsonFileMcpServerRegistryStore : IMcpServerRegistryStore
 {
 
@@ -59,7 +63,14 @@ public sealed class JsonFileMcpServerRegistryStore : IMcpServerRegistryStore
 
 
 
-
+    /// <summary>
+    /// Loads and deserializes the persisted MCP registry from disk and returns the server definitions.
+    /// </summary>
+    /// <remarks>Logs an informational message when the registry file is missing and logs errors for JSON or
+    /// I/O exceptions. Uses JsonSerializer with the configured JsonOptions and opens the file for reading.</remarks>
+    /// <param name="cancellationToken">A token to cancel the asynchronous read and deserialization operation.</param>
+    /// <returns>A task that resolves to a read-only list of McpServerDefinition. Returns an empty list if the file is missing or
+    /// if deserialization or I/O fails.</returns>
     public async Task<IReadOnlyList<McpServerDefinition>> LoadAsync(CancellationToken cancellationToken = default)
     {
         if (!File.Exists(_filePath))
@@ -89,6 +100,13 @@ public sealed class JsonFileMcpServerRegistryStore : IMcpServerRegistryStore
 
 
 
+    /// <summary>
+    /// Saves and serializes the MCP server definitions to disk as a JSON file.
+    /// </summary>
+    /// <remarks>Logs an informational message upon successful persistence and handles potential I/O exceptions.</remarks>
+    /// <param name="definitions">The MCP server definitions to persist.</param>
+    /// <param name="cancellationToken">A token to cancel the asynchronous write operation.</param>
+    /// <returns>A task that represents the asynchronous save operation.</returns>
     public async Task SaveAsync(IReadOnlyList<McpServerDefinition> definitions, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definitions);

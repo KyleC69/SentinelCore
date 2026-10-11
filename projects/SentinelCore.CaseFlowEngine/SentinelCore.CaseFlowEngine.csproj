@@ -7,6 +7,10 @@
 	  <RootNamespace>SentinelCore.CaseFlowEngine</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Include="F:\Solutions\SentinelCore\SentinelCore\projects\SentinelCore.Contracts\Contracts\PatternMemoryEntity.cs" Link="PatternMemoryEntity.cs" />
+  </ItemGroup>
+
 
 
   <ItemGroup>

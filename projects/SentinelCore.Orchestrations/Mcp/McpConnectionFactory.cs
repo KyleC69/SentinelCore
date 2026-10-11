@@ -64,12 +64,12 @@ public sealed class McpConnectionFactory : IMcpConnectionFactory
 
         IClientTransport transport = definition.TransportType switch
         {
-                McpServerTransportType.Stdio => CreateStdioTransport(definition),
-                McpServerTransportType.Http => CreateHttpTransport(definition),
-                _ => throw new InvalidOperationException($"Unsupported MCP transport type: {definition.TransportType}.")
+            McpServerTransportType.Stdio => CreateStdioTransport(definition),
+            McpServerTransportType.Http => CreateHttpTransport(definition),
+            _ => throw new InvalidOperationException($"Unsupported MCP transport type: {definition.TransportType}.")
         };
-// TODO: Remove this hardcoded client options once dynamic configuration is implemented.
-        McpClientOptions clientOptions = new() { ClientInfo = new() { Name = "SentinelCore", Version = "1.0.0" } };
+        // TODO: Remove this hardcoded client options once dynamic configuration is implemented.
+        McpClientOptions clientOptions = new() { ClientInfo = new() { Name = "SentinelCore-MCP", Version = "1.0.3" } };
 
         McpClient client = await McpClient.CreateAsync(transport, clientOptions, _loggerFactory, cancellationToken).ConfigureAwait(false);
 
@@ -116,7 +116,18 @@ public sealed class McpConnectionFactory : IMcpConnectionFactory
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        ClientOAuthOptions options = new() { RedirectUri = string.IsNullOrWhiteSpace(settings.CallbackUri) ? new Uri("http://127.0.0.1:0/") : new Uri(settings.CallbackUri), ClientId = settings.ClientId, Scopes = string.IsNullOrWhiteSpace(settings.Scopes) ? null : settings.Scopes.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) };
+        ClientOAuthOptions options = new()
+        {
+            RedirectUri =
+                        string.IsNullOrWhiteSpace(settings.CallbackUri)
+                                ? new Uri("http://127.0.0.1:0/")
+                                : new Uri(settings.CallbackUri),
+            ClientId = settings.ClientId,
+            Scopes = string.IsNullOrWhiteSpace(settings.Scopes)
+                        ? null
+                        : settings.Scopes.Split(' ',
+                                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        };
 
         if (_tokenCache is not null)
         {
@@ -151,11 +162,11 @@ public sealed class McpConnectionFactory : IMcpConnectionFactory
 
         StdioClientTransportOptions options = new()
         {
-                Command = definition.CommandOrEndpoint,
-                Arguments = definition.Arguments?.ToList(),
-                WorkingDirectory = definition.WorkingDirectory,
-                EnvironmentVariables = environment.ToDictionary(static e => e.Key, static e => (string?)e.Value),
-                Name = definition.DisplayName ?? definition.Id
+            Command = definition.CommandOrEndpoint,
+            Arguments = definition.Arguments?.ToList(),
+            WorkingDirectory = definition.WorkingDirectory,
+            EnvironmentVariables = environment.ToDictionary(static e => e.Key, static e => (string?)e.Value),
+            Name = definition.DisplayName ?? definition.Id
         };
 
         return new StdioClientTransport(options, _loggerFactory);

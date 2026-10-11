@@ -172,7 +172,7 @@ public sealed partial class NewCaseExecutor : Executor
 
         if (!ReferenceEquals(prompt?.Text, null))
         {
-            Guid caseId = await _caseEng.CreateCaseAsync(new Signal(prompt!.Text, "UIPrompt"), cancellationToken).ConfigureAwait(false);
+             int caseId = await _caseEng.CreateCaseAsync(new Signal(prompt!.Text, "UIPrompt"), cancellationToken).ConfigureAwait(false);
 
             // Starts new case, saves caseid to context.
             // Log action and publish to UI.

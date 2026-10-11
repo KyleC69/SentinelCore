@@ -14,7 +14,6 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.CaseFlowEngine.Cfe;
-using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
@@ -153,13 +152,8 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
 
         try
         {
-            IReadOnlyList<Case> cases = await _caseFlowEngine.GetCasesByStatusAsync(status.Value);
 
-            DetailCases.Clear();
-            foreach (Case c in cases)
-            {
-                DetailCases.Add(new CaseDetailItem { CaseId = c.CaseId, Status = c.Status, CreatedAt = c.CreatedAt, UpdatedAt = c.UpdatedAt });
-            }
+
 
             IsDrilledDown = true;
             DrillDownHeader = $"Cases in status: {status.Value} ({DetailCases.Count})";

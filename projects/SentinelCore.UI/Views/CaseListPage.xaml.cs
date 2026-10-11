@@ -24,7 +24,7 @@ namespace SentinelCore.UI.Views;
 ///     Responsibilities scoped to this file: ViewModel wiring and
 ///     double-click row handling for the summary and drill-down grids.
 /// </summary>
-public partial class CaseListPage
+public sealed partial class CaseListPage
 {
     private readonly CaseListViewModel _viewModel;
 

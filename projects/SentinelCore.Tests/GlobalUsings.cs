@@ -9,5 +9,6 @@
 global using Microsoft.Agents.AI;
 global using Microsoft.Extensions.AI;
 
+global using SentinelCore.Orchestrations.Agents;
 global using SentinelCore.UI.ViewModels;
 global using SentinelCore.UI.Services;

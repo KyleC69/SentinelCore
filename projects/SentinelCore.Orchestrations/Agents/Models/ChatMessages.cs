@@ -18,7 +18,7 @@ namespace SentinelCore.Orchestrations.Agents.Models;
 
 
 // An IEnumerable of ChatMessage objects that can be used to represent a conversation or a series of messages exchanged between participants. This class can be used to store and manage chat messages in a structured manner, allowing for easy access and manipulation of the messages within the context of an application or system that handles chat interactions.
-public class ChatMessages : IEnumerable<ChatMessage>
+public sealed class ChatMessages : IEnumerable<ChatMessage>
 {
     private readonly List<ChatMessage> _messages = new();
 

@@ -37,7 +37,6 @@ namespace SentinelCore.UI.ViewModels;
 /// </summary>
 public sealed partial class McpServersViewModel : ObservableObject, INavigationAware, IDisposable
 {
-    private readonly ISentinelAgentCatalog _agentCatalog;
 
     /// <summary>
     ///     Guards <see cref="LoadSelectedServerAssignmentsAsync" /> against stale
@@ -57,10 +56,16 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
     private readonly IFolderBrowserService _folderBrowser;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
     private bool _isAddingServer;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddServerCommand))] [NotifyCanExecuteChangedFor(nameof(StartServerCommand))] [NotifyCanExecuteChangedFor(nameof(StopServerCommand))] [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))] [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StopServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
     private bool _isBusy;
 
     private readonly CancellationTokenSource _lifecycleCts = new();
@@ -70,10 +75,12 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
     [ObservableProperty] private string _newServerArgumentsText = string.Empty;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
     private string _newServerCommandOrEndpoint = string.Empty;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
     private string _newServerDisplayName = string.Empty;
 
     [ObservableProperty] private string _newServerEnvironmentText = string.Empty;
@@ -86,7 +93,11 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
     [ObservableProperty] private string _resultMessage = string.Empty;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(StartServerCommand))] [NotifyCanExecuteChangedFor(nameof(StopServerCommand))] [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))] [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StopServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
     private McpServerRow? _selectedServer;
 
     [ObservableProperty] private ObservableCollection<AgentAssignmentRow> _selectedServerAgentAssignments = [];
@@ -106,15 +117,13 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     ///     Creates a new <see cref="McpServersViewModel" /> with required dependencies.
     /// </summary>
     /// <param name="registry">The MCP server registry.</param>
-    /// <param name="agentCatalog">The catalog of logical agent names.</param>
     /// <param name="logger">The logger for this view-model.</param>
     /// <param name="dispatcher">The dispatcher service for thread-affinity marshaling.</param>
     /// <param name="dialogService">The dialog service for destructive-action confirmations.</param>
     /// <param name="folderBrowser">The folder browser service for the working-directory picker.</param>
-    public McpServersViewModel(IMcpServerRegistry registry, ISentinelAgentCatalog agentCatalog, ILogger<McpServersViewModel> logger, IDispatcherService dispatcher, IDialogService dialogService, IFolderBrowserService folderBrowser)
+    public McpServersViewModel(IMcpServerRegistry registry, ILogger<McpServersViewModel> logger, IDispatcherService dispatcher, IDialogService dialogService, IFolderBrowserService folderBrowser)
     {
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
-        _agentCatalog = agentCatalog ?? throw new ArgumentNullException(nameof(agentCatalog));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
@@ -422,7 +431,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         try
         {
             servers = await _registry.ListAsync(token).ConfigureAwait(false);
-            agents = await _agentCatalog.GetAgentNamesAsync(token).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -433,16 +441,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
 
         List<McpServerRow> rows = servers.Select(MapToRow).ToList();
-        List<string> agentNames = agents.ToList();
 
-        if (_dispatcher.CheckAccess())
-        {
-            ApplyLoadedData(rows, agentNames);
-        }
-        else
-        {
-            await _dispatcher.InvokeAsync(() => ApplyLoadedData(rows, agentNames)).ConfigureAwait(false);
-        }
     }
 
 
@@ -476,7 +475,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
                 return;
             }
 
-            IReadOnlyList<string> agents = await _agentCatalog.GetAgentNamesAsync(token).ConfigureAwait(false);
 
             // Discard the result when the selection changed while loading.
             if (version != _assignmentLoadVersion || !ReferenceEquals(SelectedServer, selected))
@@ -484,20 +482,9 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
                 return;
             }
 
-            ObservableCollection<AgentAssignmentRow> rows = [];
-            foreach (string agent in agents)
-            {
-                rows.Add(new AgentAssignmentRow { AgentName = agent, IsAssigned = info.Definition.AssignedAgentNames.Count == 0 || info.Definition.AssignedAgentNames.Contains(agent, StringComparer.OrdinalIgnoreCase) });
-            }
 
-            if (_dispatcher.CheckAccess())
-            {
-                SelectedServerAgentAssignments = rows;
-            }
-            else
-            {
-                await _dispatcher.InvokeAsync(() => SelectedServerAgentAssignments = rows).ConfigureAwait(false);
-            }
+
+
         }
         catch (Exception ex)
         {
@@ -516,14 +503,14 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     {
         return new McpServerRow
         {
-                Id = server.Definition.Id,
-                DisplayName = server.Definition.DisplayName,
-                TransportType = server.Definition.TransportType,
-                CommandOrEndpoint = server.Definition.CommandOrEndpoint,
-                Status = server.Status,
-                ToolNamesText = string.Join(", ", server.ToolNames),
-                AssignedAgentsText = server.Definition.AssignedAgentNames.Count > 0 ? string.Join(", ", server.Definition.AssignedAgentNames) : "All agents",
-                LastError = server.LastError
+            Id = server.Definition.Id,
+            DisplayName = server.Definition.DisplayName,
+            TransportType = server.Definition.TransportType,
+            CommandOrEndpoint = server.Definition.CommandOrEndpoint,
+            Status = server.Status,
+            ToolNamesText = string.Join(", ", server.ToolNames),
+            AssignedAgentsText = server.Definition.AssignedAgentNames.Count > 0 ? string.Join(", ", server.Definition.AssignedAgentNames) : "All agents",
+            LastError = server.LastError
         };
     }
 

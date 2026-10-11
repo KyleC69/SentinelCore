@@ -31,7 +31,7 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
     /// <summary>
     ///     No-op: without persistence there is no case to advance.
     /// </summary>
-    public Task AdvanceCaseAsync(Guid caseId, CaseStatus status, CancellationToken cancellationToken = default)
+    public Task AdvanceCaseAsync(int caseId, CaseStatus status, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }
@@ -44,11 +44,11 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
 
 
     /// <summary>
-    ///     Returns <see cref="Guid.Empty" /> — no case can be created without persistence.
+    ///     Returns 0 — no case can be created without persistence.
     /// </summary>
-    public Guid CreateCase(Signal rawSignal, CancellationToken cancellationToken = default)
+    public int CreateCase(Signal rawSignal, CancellationToken cancellationToken = default)
     {
-        return Guid.Empty;
+        return 0;
     }
 
 
@@ -59,11 +59,11 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
 
 
     /// <summary>
-    ///     Returns <see cref="Guid.Empty" /> — no case can be created without persistence.
+    ///     Returns 0 — no case can be created without persistence.
     /// </summary>
-    public Task<Guid> CreateCaseAsync(Signal signal, CancellationToken cancellationToken = default)
+    public Task<int> CreateCaseAsync(Signal signal, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Guid.Empty);
+        return Task.FromResult(0);
     }
 
 
@@ -78,7 +78,7 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
     /// </summary>
     public IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status)
     {
-        return [];
+        return new List<CaseStatus>();
     }
 
 
@@ -91,7 +91,7 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
     /// <summary>
     ///     Returns <c>null</c> — no case can be found without persistence.
     /// </summary>
-    public Task<Case?> GetCaseByIdAsync(Guid caseId, CancellationToken cancellationToken = default)
+    public Task<Case?> GetCaseByIdAsync(int caseId, CancellationToken cancellationToken = default)
     {
         return Task.FromResult<Case?>(null);
     }
@@ -139,7 +139,7 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
     /// </summary>
     public Task<IReadOnlyList<Case>> GetCasesByStatusAsync(CaseStatus status, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Case> cases = [];
+        IReadOnlyList<Case> cases = new List<Case>();
         return Task.FromResult(cases);
     }
 }
@@ -159,7 +159,7 @@ public sealed class NullEvidenceStore : IEvidenceStore
     /// <summary>
     ///     No-op: evidence cannot be stored without persistence.
     /// </summary>
-    public Task AddAsync(string caseId, Evidence item, CancellationToken cancellationToken = default)
+    public Task AddAsync(int caseId, Evidence item, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }
@@ -174,9 +174,9 @@ public sealed class NullEvidenceStore : IEvidenceStore
     /// <summary>
     ///     Returns an empty list — no evidence exists without persistence.
     /// </summary>
-    public Task<IReadOnlyList<Evidence>> GetByCaseIdAsync(string caseId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<Evidence>> GetByCaseIdAsync(int caseId, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Evidence> evidence = [];
+        IReadOnlyList<Evidence> evidence = new List<Evidence>();
         return Task.FromResult(evidence);
     }
 }
@@ -198,7 +198,7 @@ public sealed class NullPatternMemoryStore : IPatternMemoryStore
     /// </summary>
     public Task<IReadOnlyList<PatternMemoryResult>> GetByCaseIdAsync(string caseId, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<PatternMemoryResult> results = [];
+        IReadOnlyList<PatternMemoryResult> results = new List<PatternMemoryResult>();
         return Task.FromResult(results);
     }
 
@@ -214,7 +214,7 @@ public sealed class NullPatternMemoryStore : IPatternMemoryStore
     /// </summary>
     public Task<IReadOnlyList<PatternMemoryResult>> SearchAsync(float[] embedding, int topK = 10, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<PatternMemoryResult> results = [];
+        IReadOnlyList<PatternMemoryResult> results = new List<PatternMemoryResult>();
         return Task.FromResult(results);
     }
 

@@ -137,8 +137,8 @@ public sealed partial class MoreInformationExecutor : Executor
     {
         _reporter.ReportInfo("More information required — advancing case to AwaitingInput where applicable.");
 
-        Guid? caseId = await context.ReadStateAsync<Guid?>(WorkFlowStateKeys.CASE_ID, "SharedState", cancellationToken).ConfigureAwait(false);
-        if (caseId is { } id && id != Guid.Empty)
+        int? caseId = await context.ReadStateAsync<int?>(WorkFlowStateKeys.CASE_ID, "SharedState", cancellationToken).ConfigureAwait(false);
+        if (caseId is { } id)
         {
             try
             {

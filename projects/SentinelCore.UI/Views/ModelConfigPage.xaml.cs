@@ -26,7 +26,7 @@ namespace SentinelCore.UI.Views;
 ///     Responsibilities scoped to this file: ViewModel wiring and pushing the
 ///     PasswordBox value into the card (PasswordBox.Password is not bindable).
 /// </summary>
-public partial class ModelConfigPage
+public sealed partial class ModelConfigPage
 {
     /// <summary>
     ///     Creates the page and binds the provided view-model.

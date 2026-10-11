@@ -1,0 +1,75 @@
+{
+  "tierModels":
+  {
+    "Core":
+    {
+      "Alias": "Core",
+      "ApiKey": null,
+      "Endpoint": "http://127.0.0.1:11434",
+      "ExecutionProvider": null,
+      "MaxOutputTokens": 25000,
+      "ModelId": "gemma4:31b-cloud",
+      "ModelPath": null,
+      "Provider": 0,
+      "Temperature": 0.5,
+      "TopK": 20,
+      "TopP": 0.85
+    },
+    "Manager":
+    {
+      "Alias": "Manager",
+      "ApiKey": null,
+      "Endpoint": "http://127.0.0.1:11434",
+      "ExecutionProvider": null,
+      "MaxOutputTokens": 25000,
+      "ModelId": "gemma4:31b-cloud",
+      "ModelPath": null,
+      "Provider": 0,
+      "Temperature": 0.3,
+      "TopK": 20,
+      "TopP": 0.65
+    },
+    "Worker":
+    {
+      "Alias": "Worker1",
+      "ApiKey": null,
+      "Endpoint": "http://127.0.0.1:11434",
+      "ExecutionProvider": null,
+      "MaxOutputTokens": 25000,
+      "ModelId": "gemma4:31b-cloud",
+      "ModelPath": null,
+      "Provider": 0,
+      "Temperature": 0.7,
+      "TopK": 10,
+      "TopP": 0.56
+    },
+    "Classifier":
+    {
+      "Alias": "Classifier",
+      "ApiKey": null,
+      "Endpoint": "http://127.0.0.1:11434",
+      "ExecutionProvider": null,
+      "MaxOutputTokens": 25000,
+      "ModelId": "gemma4:31b-cloud",
+      "ModelPath": null,
+      "Provider": 0,
+      "Temperature": 0.2,
+      "TopK": 20,
+      "TopP": 0.55
+    },
+    "Utility":
+    {
+      "Alias": "Safety",
+      "ApiKey": null,
+      "Endpoint": "http://127.0.0.1:11434",
+      "ExecutionProvider": null,
+      "MaxOutputTokens": 25000,
+      "ModelId": "gemma4:31b-cloud",
+      "ModelPath": null,
+      "Provider": 0,
+      "Temperature": 0.7,
+      "TopK": 10,
+      "TopP": 0.56
+    }
+  }
+}

@@ -21,7 +21,7 @@ namespace SentinelCore.UI.Views;
 ///     Code-behind for the MCP Servers management page.
 ///     Responsibilities scoped to this file: ViewModel wiring.
 /// </summary>
-public partial class McpServersPage
+public sealed partial class McpServersPage
 {
     /// <summary>
     ///     Creates the page and binds the provided view-model.

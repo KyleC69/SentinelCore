@@ -14,14 +14,15 @@ namespace SentinelCore.Contracts.CaseFlow;
 
 public sealed class Evidence
 {
-    public Case Case { get; set; } = null!;
+    public int Id { get; set; }
+    public int CaseId { get; set; } = 0;
 
-    public int CaseRecordId { get; set; }
+    public string CaseRecordTranscript { get; set; }
 
     public string ContentJson { get; set; } = null!;
 
     public int EvidenceId { get; set; }
-    public int Id { get; set; }
+
 
     public string Provenance { get; set; } = null!;
 

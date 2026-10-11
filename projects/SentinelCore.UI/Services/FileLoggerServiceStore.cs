@@ -7,6 +7,7 @@
 
 
 using System.IO;
+using System.Text.Json;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -53,9 +54,30 @@ internal sealed class FileLoggerServiceStore : ILogger
 
 
 
+    // Method formats a json string to be more human-readable with indentation and line breaks.
+    //Helper made for formatting json data properties that are attached to parent objects
+    private string PrettyJson(string json)
+    {
+        // If the input is not a JSON string, just return it as-is.
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(json);
+            return JsonSerializer.Serialize(
+                doc.RootElement,
+                new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (JsonException)
+        {
+            // Not valid JSON, return the original string.
+            return json;
+        }
+    }
+
+
 
     private void WriteLog(LogLevel logLevel, string message)
     {
+
         lock (Lock)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath)!);

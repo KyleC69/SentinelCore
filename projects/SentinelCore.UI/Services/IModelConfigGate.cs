@@ -38,10 +38,7 @@ public interface IModelConfigGate
     /// </summary>
     bool IsOllamaAvailable { get; }
 
-    /// <summary>
-    ///     Gets the names of the catalog agents that have no model configuration.
-    /// </summary>
-    IReadOnlyList<string> UnconfiguredAgents { get; }
+
 
 
 
@@ -102,7 +99,7 @@ public sealed class ModelConfigGate : IModelConfigGate
     /// <summary>
     ///     Gets the names of the catalog agents that have no model configuration.
     /// </summary>
-    public IReadOnlyList<string> UnconfiguredAgents { get; }
+    public IReadOnlyList<string>? UnconfiguredAgents { get; }
 
 
 
@@ -118,7 +115,8 @@ public sealed class ModelConfigGate : IModelConfigGate
             return "Ollama service is not available. Please ensure Ollama is running and accessible at the configured endpoint.";
         }
 
-        IReadOnlyList<string> missing = UnconfiguredAgents;
+        IReadOnlyList<string> missing = new List<string>();
+        missing = UnconfiguredAgents ?? new List<string>();
 
         if (missing.Count == 0)
         {
@@ -137,7 +135,7 @@ public sealed class ModelConfigGate : IModelConfigGate
 
     public bool IsConfigurationComplete
     {
-        get => IsOllamaAvailable && UnconfiguredAgents.Count == 0;
+        get => IsOllamaAvailable;
     }
 
     public bool IsOllamaAvailable

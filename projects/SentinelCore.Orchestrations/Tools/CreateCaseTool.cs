@@ -62,11 +62,8 @@ public class CaseTool : AITool
 
         try
         {
-            Guid caseId = _engine.CreateCase(rawSignal);
-            if (caseId == Guid.Empty)
-            {
-                return ToolResult.Fail("Failed to create case. The case ID returned was empty.");
-            }
+            int caseId = _engine.CreateCase(rawSignal);
+
 
             return ToolResult.Ok(caseId.ToString());
         }

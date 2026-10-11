@@ -9,39 +9,50 @@ using JetBrains.Annotations;
 
 using Microsoft.EntityFrameworkCore;
 
+using SentinelCore.Contracts.CaseFlow;
+using SentinelCore.Orchestrations.Agents.Core;
+using SentinelCore.Persistence;
+
+
+
+
 namespace SentinelCore.Cfe.Persistence;
 
 [Table("CaseEntity")]
 [Index("PatternMemoryId", Name = "FK_CaseEntity", IsUnique = true)]
-[Index("InitiatingSignal", Name = "IX_CaseEntity", IsUnique = true)]
-[Index("EvidenceId", Name = "UQ_Evidence", IsUnique = true)]
+[Index("InputSignal", Name = "IX_CaseEntity", IsUnique = true)]
 public partial class CaseEntity
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    public Guid CaseId { get; set; }
+    public int CaseId { get; set; }
+
 
     public int Status { get; set; }
 
-    public int InitiatingSignal { get; set; }
+    public SignalEntity InputSignal { get; set; } = new();
 
     [Precision(2)]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     public DateTime CreatedAt { get; set; }
 
     [Precision(2)]
     public DateTime? UpdatedAt { get; set; }
 
-    public int? PlanId { get; set; }
+    public PatternMemoryEntity PatternMemory { get; set; } = new();
 
-    public int? AdditionalSignals { get; set; }
+    public string CaseTranscript { get; set; } = string.Empty;
 
-    public int? EvidenceId { get; set; }
+    public List<EvidenceEntity> CaseEvidence { get; set; } = new();
 
     
-    public string Remediation { get; set; }
+    public List<string> RemediationSteps { get; set; } = new();
 
-    public int? PatternMemoryId { get; set; }
-    [CanBeNull] public string Notes { get; set; }
+    public InvestigationObjective InvestigationObjective { get; set; } = new();
+
+    public InvestigationOutcome InvestigationOutcome { get; set; } = new();
+    
+    public string Notes { get; set; } = string.Empty;
 }

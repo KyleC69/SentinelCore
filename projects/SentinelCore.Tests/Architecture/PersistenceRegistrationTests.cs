@@ -110,7 +110,7 @@ public sealed class PersistenceRegistrationTests
         EvidenceStore store = new(factory.Object);
 
         // Act & Assert
-        InvalidOperationException actual = await Assert.ThrowsAsync<InvalidOperationException>(() => store.GetByCaseIdAsync(Guid.NewGuid().ToString()));
+        InvalidOperationException actual = await Assert.ThrowsAsync<InvalidOperationException>(() => store.GetByCaseIdAsync(0));
 
         StringAssert.Contains(actual.Message, marker.Message);
         factory.Verify(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.Once);

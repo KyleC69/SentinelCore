@@ -37,5 +37,6 @@ public enum ModelTier
     ///     Utility/worker agent — uses the utility model.
     /// </summary>
     Utility,
-    GroupWorker
+    Worker,
+    Classifier
 }

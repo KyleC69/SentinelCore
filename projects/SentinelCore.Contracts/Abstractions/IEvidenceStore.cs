@@ -29,7 +29,7 @@ public interface IEvidenceStore
     /// <param name="item">The evidence item to store.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task AddAsync(string caseId, Evidence item, CancellationToken cancellationToken = default);
+    Task AddAsync(int caseId, Evidence item, CancellationToken cancellationToken = default);
 
 
 
@@ -44,5 +44,5 @@ public interface IEvidenceStore
     /// <param name="caseId">The case identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The evidence items for the case.</returns>
-    Task<IReadOnlyList<Evidence>> GetByCaseIdAsync(string caseId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Evidence>> GetByCaseIdAsync(int caseId, CancellationToken cancellationToken = default);
 }

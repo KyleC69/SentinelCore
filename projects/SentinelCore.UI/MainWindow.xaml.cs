@@ -23,7 +23,7 @@ namespace SentinelCore.UI;
 ///     Hosts a top navigation bar and a <see cref="System.Windows.Controls.Frame" /> that
 ///     navigates to feature pages through <see cref="INavigationService" />.
 /// </summary>
-public partial class MainWindow
+public sealed partial class MainWindow
 {
 
     /// <summary>

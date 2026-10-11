@@ -8,13 +8,14 @@
 
 using System.Diagnostics.CodeAnalysis;
 
+using Microsoft.Extensions.Logging;
+
 using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Exceptions;
-using SentinelCore.Orchestrations.Services;
 using SentinelCore.Orchestrations.Workflows.Executors;
 using SentinelCore.Orchestrations.Workflows.Helpers;
 
@@ -85,18 +86,18 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// <param name="serviceProvider">
     ///     An instance of <see cref="IServiceProvider" /> used to resolve service dependencies.
     /// </param>
-    /// <param name="eventProcessor">
-    ///     The event processor responsible for formatting and reporting workflow events.
+    /// <param name="loggerFactory">
+    ///     An instance of <see cref="ILoggerFactory" /> used to create logger instances.
     /// </param>
     /// <exception cref="ArgumentNullException">
     ///     Thrown if any of the provided parameters are <c>null</c>.
     /// </exception>
-    public TheCoreWorkflow(ISystemReporter systemReporter, ISentinelAgentFactory agentFactory, IServiceProvider serviceProvider, IWorkflowEventProcessor eventProcessor) : base(systemReporter, eventProcessor)
+    public TheCoreWorkflow(ISystemReporter systemReporter, ISentinelAgentFactory agentFactory, IServiceProvider serviceProvider, ILoggerFactory loggerFactory) : base(systemReporter, loggerFactory)
     {
         Throw.IfNull(systemReporter);
         Throw.IfNull(agentFactory);
         Throw.IfNull(serviceProvider);
-        Throw.IfNull(eventProcessor);
+        Throw.IfNull(loggerFactory);
 
         _agentFactory = agentFactory;
         _executorFactory = new ExecutorFactory(serviceProvider);
@@ -267,13 +268,13 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     {
         MagenticPromptOverrides over = new MagenticPromptOverrides
         {
-                TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt,
-                TaskLedgerPlanUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanUpdatePrompt,
-                ProgressLedgerPrompt = Orchestrations.MagenticPromptOverrides.ProgressLedgerPrompt,
-                FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt,
-                TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt,
-                TaskLedgerFactsUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsUpdatePrompt,
-                TaskLedgerFullPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFullPrompt
+            TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt,
+            TaskLedgerPlanUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanUpdatePrompt,
+            ProgressLedgerPrompt = Orchestrations.MagenticPromptOverrides.ProgressLedgerPrompt,
+            FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt,
+            TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt,
+            TaskLedgerFactsUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsUpdatePrompt,
+            TaskLedgerFullPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFullPrompt
         };
 
 

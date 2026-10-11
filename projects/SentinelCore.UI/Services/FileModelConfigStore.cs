@@ -96,6 +96,7 @@ public sealed class FileModelConfigStore : IModelConfigStore
             string json = File.ReadAllText(_filePath);
             ModelConfigDocument? document = JsonSerializer.Deserialize<ModelConfigDocument>(json, JsonOptions);
 
+            //If document is null need to trigger ModelGate to block send and flag status message
             if (document is null)
             {
                 _logger.LogWarning("Model configuration document at {Path} deserialized to null; using defaults.", _filePath);

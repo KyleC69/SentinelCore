@@ -129,8 +129,8 @@ internal sealed partial class CriticalAlert : Executor
     {
         _reporter.ReportInfo($"RedAlert received — advancing case to Alerted where applicable for message {message}");
 
-        Guid? caseId = await context.ReadStateAsync<Guid?>(WorkFlowStateKeys.CASE_ID, "SharedState", cancellationToken).ConfigureAwait(false);
-        if (caseId is { } id && id != Guid.Empty)
+        int? caseId = await context.ReadStateAsync<int?>(WorkFlowStateKeys.CASE_ID, "SharedState", cancellationToken).ConfigureAwait(false);
+        if (caseId is { } id && id != 0)
         {
             try
             {

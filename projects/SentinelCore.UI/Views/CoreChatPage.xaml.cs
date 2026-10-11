@@ -29,7 +29,7 @@ namespace SentinelCore.UI.Views;
 ///     � Auto-scroll to the latest message as items arrive
 ///     � Enter-to-send keyboard shortcut
 /// </summary>
-public partial class CoreChatPage
+public sealed partial class CoreChatPage
 {
     private readonly CoreChatViewModel _viewModel;
 

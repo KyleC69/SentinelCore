@@ -61,30 +61,6 @@ public sealed class AgentModelCardTests
 
 
 
-    [TestMethod]
-    public void Constructor_WithProfile_PopulatesFields()
-    {
-        // Arrange
-        ModelProfile profile = new("http://localhost:11434", "model-a", 0.2f, 8000, 2, 0.5f);
-
-        // Act
-        AgentModelCard card = new("TheCore", profile);
-
-        // Assert
-        Assert.IsTrue(card.IsConfigured);
-        Assert.IsTrue(card.IsComplete);
-        Assert.AreEqual("http://localhost:11434", card.Endpoint);
-        Assert.AreEqual("model-a", card.ModelId);
-        Assert.AreEqual(0.2f, card.Temperature);
-        Assert.AreEqual(8000, card.MaxOutputTokens);
-        Assert.AreEqual(2, card.TopK);
-        Assert.AreEqual(0.5f, card.TopP);
-    }
-
-
-
-
-
 
 
 
@@ -94,12 +70,12 @@ public sealed class AgentModelCardTests
         // Arrange
         AgentModelCard card = new("TheCore")
         {
-                Endpoint = "http://localhost:11434",
-                ModelId = "model-a",
-                Temperature = 0.3f,
-                MaxOutputTokens = 12000,
-                TopK = 1,
-                TopP = 0.2f
+            Endpoint = "http://localhost:11434",
+            ModelId = "model-a",
+            Temperature = 0.3f,
+            MaxOutputTokens = 12000,
+            TopK = 1,
+            TopP = 0.2f
         };
 
         // Act

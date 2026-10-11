@@ -38,6 +38,37 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
         _options = options ?? new JsonLoggerOptions();
     }
 
+    /// <summary>
+    /// Attempts to detect a JSON string and return a pretty‑printed version.
+    /// If the input is not valid JSON, the original string is returned unchanged.
+    /// This protects the logger from throwing when a message payload contains
+    /// raw JSON that is not already formatted.
+    /// </summary>
+    private static string TryPrettyIfJson(string maybeJson)
+    {
+        if (string.IsNullOrWhiteSpace(maybeJson))
+            return maybeJson;
+
+        string trimmed = maybeJson.Trim();
+        // Quick heuristic: JSON objects start with '{' and arrays with '['.
+        if ((trimmed.StartsWith("{") && trimmed.EndsWith("}")) ||
+            (trimmed.StartsWith("[") && trimmed.EndsWith("]")))
+        {
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(trimmed);
+                return JsonSerializer.Serialize(
+                    doc.RootElement,
+                    new JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (JsonException)
+            {
+                // Not valid JSON – fall back to original.
+            }
+        }
+        return maybeJson;
+    }
+
 
 
 
@@ -130,6 +161,25 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
+        // Method formats a json string to be more human-readable with indentation and line breaks.
+        //Helper made for formatting json data properties that are attached to parent objects
+        private string PrettyJson(string json)
+        {
+            // Directly attempt to parse the JSON envelope. If parsing fails (e.g., due to stray control chars),
+            // fall back to the original string to avoid corrupting already‑valid JSON.
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(json);
+                return JsonSerializer.Serialize(
+                    doc.RootElement,
+                    new JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (JsonException)
+            {
+                return json;
+            }
+        }
+
 
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception, string> formatter)
@@ -144,15 +194,21 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
             List<object> scopes = new();
             scopeProvider?.ForEachScope((scope, list) => { list.Add(scope!); }, scopes);
 
+            // Safely format the message – if it contains a JSON string we pretty‑print it,
+            // otherwise we keep the original text.
+            string rawMessage = formatter(state, exception!);
+            //  string formattedMessage = TryPrettyIfJson(rawMessage);
+
             LogEnvelope envelope = new()
             {
-                    Timestamp = DateTimeOffset.Now,
-                    Level = logLevel.ToString(),
-                    Category = _category,
-                    EventId = eventId.Id,
-                    Message = formatter(state, exception!),
-                    Exception = exception?.ToString(),
-                    Scopes = scopes
+                Timestamp = DateTimeOffset.Now,
+                Level = logLevel.ToString(),
+                Category = _category,
+                State = state,
+                EventId = eventId.Id,
+                Message = rawMessage,
+                Exception = exception?.ToString(),
+                Scopes = scopes
             };
 
             string json = JsonSerializer.Serialize(envelope, new JsonSerializerOptions { WriteIndented = _options.Indented, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
@@ -169,6 +225,7 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
         private void Write(string json)
         {
+
             if (_options.Output == JsonLoggerOutput.Console)
             {
                 lock (Console.Out)
@@ -176,16 +233,24 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
                     Console.WriteLine(json);
                 }
             }
-            else if (_options.Output == JsonLoggerOutput.File && !string.IsNullOrEmpty(_options.FilePath))
+            else if (_options.Output == JsonLoggerOutput.File)
             {
+                // Determine the target file path. If a custom FilePath is supplied, use it; otherwise fall back to the default location.
+                var logFilePath = !string.IsNullOrWhiteSpace(_options.FilePath)
+                    ? _options.FilePath
+                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", $"SentinelCore_{DateTime.Now:yyyyMMdd}.log");
+
                 lock (_options.FileLock)
                 {
-                    string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                    Directory.CreateDirectory(path);
-                    string filePath = Path.Combine(path, $"SentinelCore_{DateTime.Now:yyyyMMdd}.log");
-                    // Ensure directory exists
+                    // Ensure the directory for the log file exists.
+                    var directory = Path.GetDirectoryName(logFilePath);
+                    if (!string.IsNullOrEmpty(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
 
-                    File.AppendAllText(filePath, json + Environment.NewLine, Encoding.UTF8);
+                    // Append the formatted JSON entry.
+                    File.AppendAllText(logFilePath, json + Environment.NewLine, Encoding.UTF8);
                 }
             }
             else if (_options.Output == JsonLoggerOutput.Stream && _options.Stream != null)
@@ -207,12 +272,6 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
     private sealed class NullScope : IDisposable
     {
         public static NullScope Instance { get; } = new();
-
-
-
-
-
-
 
 
         public void Dispose()
@@ -250,12 +309,11 @@ public sealed class JsonLoggerOptions
     public bool Indented { get; set; } = true;
     public LogLevel MinimumLevel { get; set; } = LogLevel.Trace;
 
-    public JsonLoggerOutput Output { get; set; } = JsonLoggerOutput.Console;
+    public JsonLoggerOutput Output { get; set; } = JsonLoggerOutput.File;
 
     // For custom stream output
     public Stream? Stream { get; set; }
 }
-
 
 
 

@@ -134,9 +134,9 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
 
         try
         {
-            if (!Guid.TryParse(CaseIdText, out Guid caseId))
+            if (!int.TryParse(CaseIdText, out int caseId))
             {
-                ResultMessage = "Invalid Case ID format. Please enter a valid GUID.";
+                ResultMessage = "Invalid Case ID format. Please enter a valid id.";
                 ShowResult = true;
                 return;
             }
@@ -204,7 +204,7 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
     [RelayCommand]
     private async Task LookupCaseAsync()
     {
-        if (string.IsNullOrWhiteSpace(CaseIdText) || !Guid.TryParse(CaseIdText, out Guid caseId))
+        if (string.IsNullOrWhiteSpace(CaseIdText) || !int.TryParse(CaseIdText, out int caseId))
         {
             StatusInfo = "Enter a valid Case ID to look up.";
             return;

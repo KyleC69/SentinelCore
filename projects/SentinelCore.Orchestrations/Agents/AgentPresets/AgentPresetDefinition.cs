@@ -35,13 +35,13 @@ public sealed record AgentPresetDefinition
     ///     Gets the unique, stable identifier for the agent. Suitable for lookup
     ///     and event routing. Must be globally unique. Each role preset has these set but can be overridden
     /// </summary>
-    public required string AgentId { get; init; }
+    public required string AgentId { get; set; }
 
     /// <summary>
     ///     Gets the unique agent name identifier. This must match the name used
     ///     in <see cref="SentinelAgentCatalog" /> and workflow executor registrations.
     /// </summary>
-    public required string AgentName { get; init; }
+    public required string AgentName { get; set; }
 
     /// <summary>
     ///     The innermost core system instructions are always applied, these must not be overridden ever.
@@ -319,7 +319,7 @@ public sealed record AgentPresetDefinition
             Description = "Mag Group Participant Worker agent responsible for participating in group tasks and supporting core workflow operations.",
             UseTools = false,
             TaskInstructions = null,
-            Tier = ModelTier.GroupWorker,
+            Tier = ModelTier.Worker,
             ToolSet = null,
             UseLogging = true,
             UsePatternMemory = false,

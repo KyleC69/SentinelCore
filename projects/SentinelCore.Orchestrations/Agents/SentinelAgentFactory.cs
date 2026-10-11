@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  100920
 
 
 
@@ -54,7 +54,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 {
 
 
-
+    private static IList<AITool> _builtToolCache = new List<AITool>();
     private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
     private readonly object _builtAgentsLock = new();
     private readonly IChatClientFactory _chatClientFactory;
@@ -92,6 +92,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _logger = loggerFactory.CreateLogger<SentinelAgentFactory>();
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        _builtToolCache = _registry.GetAllTools(CancellationToken.None);
     }
 
 
@@ -142,6 +143,19 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+    public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, string taskInstructions)
+    {
+        // Resolve the preset definition from the enum
+        AgentPresetDefinition preset = AgentPresetDefinition.FromName(presetName);
+        //edit the preset with the provided name and description
+        preset.AgentName = agentName;
+        preset.Description = agentDescription;
+
+
+        return await CreateAgentCoreAsync(preset, taskInstructions, null, CancellationToken.None);
+    }
+
+
 
 
 
@@ -161,6 +175,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         {
             contextProviders = new List<AIContextProvider>();
         }
+
+
 
         if (preset.UsePatternMemory)
         {
@@ -196,18 +212,26 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     private static ChatClientAgent BuildAgent(AgentPresetDefinition preset, IChatClient chatClient, ChatResponseFormatJson? chatResponseFormat = null, List<AIContextProvider?> contextProviders = null)
     {
 
-        var aitools = _registry.GetAllTools(CancellationToken.None);
+
+        //  IList<AITool> aitools = _registry.GetAllTools(CancellationToken.None);
 
         ChatOptions chatOptions = new()
         {
             ConversationId = Guid.NewGuid().ToString("N"),
-            Instructions = preset.DefaultSystemInstructions + "\n" + preset.TaskInstructions, //Setting instructions at system level adds strength to them making them less likely to be ignored by agent, user level chat messages are suggestions in comparison.
+            Instructions = preset.TaskInstructions, //Setting instructions at system level adds strength to them making them less likely to be ignored by agent, user level chat messages are suggestions in comparison.
             Temperature = preset.ModelProfile?.Temperature,
             MaxOutputTokens = preset.ModelProfile?.MaxOutputTokens ?? 16000,
             TopP = preset.ModelProfile?.TopP,
             TopK = preset.ModelProfile?.TopK,
+            FrequencyPenalty = null,
+            PresencePenalty = null,
+            Seed = null,
+            Reasoning = null,
             ModelId = preset.ModelProfile?.ModelId,
+            StopSequences = null,
             AllowMultipleToolCalls = true,
+            ToolMode = null,
+            Tools = _builtToolCache,
             AllowBackgroundResponses = null,
             ContinuationToken = null,
             RawRepresentationFactory = null,
@@ -222,8 +246,9 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             Name = preset.AgentName,
             Description = preset.Description,
             ChatOptions = chatOptions,
-            AIContextProviders = (contextProviders.Count > 0 ? contextProviders : null)!,
+            AIContextProviders = contextProviders ?? null,
             UseProvidedChatClientAsIs = false,
+            AllowConcurrentInvocation = false,
             ClearOnChatHistoryProviderConflict = false,
             WarnOnChatHistoryProviderConflict = false,
             ThrowOnChatHistoryProviderConflict = true,
@@ -235,16 +260,23 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         });
     }
 
+
+
+
+
+
+
+
     /// <summary>
-    /// Shared implementation for creating an <see cref="AIAgent" /> from a preset definition.
-    /// Handles model resolution, chat client construction with logging, and optional context providers.
+    ///     Shared implementation for creating an <see cref="AIAgent" /> from a preset definition.
+    ///     Handles model resolution, chat client construction with logging, and optional context providers.
     /// </summary>
     private async Task<AIAgent> CreateAgentCoreAsync(AgentPresetDefinition preset, string? taskInstructions, ChatResponseFormatJson? forJsonSchema, CancellationToken token = default)
     {
         // Resolve the appropriate model profile based on the preset's tier
         ModelProfile? model = _modelResolver.ResolveByTier(preset.Tier);
-        Throw.IfNull(model, $"Unable to resolve a model for preset '{preset.Tier}'.");
         preset.ModelProfile = model;
+        Throw.IfNull(model, $"Unable to resolve a model for preset '{preset.Tier}'.");
 
         // Apply task instructions if supplied (preserve existing if null)
         if (taskInstructions != null)
@@ -265,7 +297,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         }
 
         // Build and cast to the public interface type.
-        return (AIAgent)BuildAgent(preset, loggingClient, forJsonSchema, providers);
+        return BuildAgent(preset, loggingClient, forJsonSchema, providers);
     }
 
 
@@ -281,62 +313,25 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="preset">The worker preset whose identity is being registered.</param>
     /// <returns>A copy of the worker preset with a unique agent identifier and name.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="preset" /> is <c>null</c>.</exception>
-    private AgentPresetDefinition RegisterUniqueWorkerAgent(AgentPresetDefinition preset)
+    private (string, string) RegisterUniqueWorkerAgent(string agentId, string agentName)
     {
-        ArgumentNullException.ThrowIfNull(preset);
+        ArgumentNullException.ThrowIfNull(agentId);
+        ArgumentNullException.ThrowIfNull(agentName);
 
         lock (_builtAgentsLock)
         {
             int suffix = 1;
-            string agentId;
-            string agentName;
+
 
             do
             {
-                agentId = $"{preset.AgentId}{suffix}";
-                agentName = $"{preset.AgentName}{suffix}";
+                agentId = $"{agentId}{suffix}";
+                agentName = $"{agentName}{suffix}";
                 suffix++;
-            } while (_builtAgents.ContainsKey(agentName) || _builtAgents.ContainsValue(agentId));
+            } while (_builtAgents.ContainsKey(agentId) || _builtAgents.ContainsValue(agentName));
 
-            _builtAgents.Add(agentName, agentId);
-            return preset with { AgentId = agentId, AgentName = agentName };
+            _builtAgents.Add(agentId, agentName);
+            return (agentId, agentName);
         }
-    }
-}
-
-
-
-
-
-public sealed class SentinelCoreAgentException : Exception
-{
-    public SentinelCoreAgentException(string message, Exception? innerException = null) : base(ValidateMessage(message), innerException)
-    {
-        HResult = GenerateHResult(); // Assign a meaningful HResult for categorization
-    }
-
-
-
-
-
-
-
-
-    private static int GenerateHResult()
-    {
-        // Generate or assign a specific HResult value for this exception type
-        return unchecked((int)0x80131500); // Example: COR_E_APPLICATION
-    }
-
-
-
-
-
-
-
-
-    private static string ValidateMessage(string message)
-    {
-        return string.IsNullOrWhiteSpace(message) ? "A SentinelCore agent error occurred. Please provide additional context for debugging." : message;
     }
 }

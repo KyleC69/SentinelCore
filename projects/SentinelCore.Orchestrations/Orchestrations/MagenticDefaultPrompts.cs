@@ -6,7 +6,7 @@
 
 
 
-namespace Microsoft.Agents.AI.Workflows;
+namespace SentinelCore.Orchestrations.Orchestrations;
 
 
 
@@ -14,13 +14,13 @@ namespace Microsoft.Agents.AI.Workflows;
 
 /// <summary>
 ///     The built-in English prompt templates the Magentic manager uses. These are exposed so callers can read them and
-///     base a <see cref="MagenticPromptOverrides" /> value on the default (for example, translating it or appending a
+///     base a <see cref="Microsoft.Agents.AI.Workflows.MagenticPromptOverrides" /> value on the default (for example, translating it or appending a
 ///     language instruction) instead of writing a prompt from scratch.
 /// </summary>
 /// <remarks>
 ///     Each template uses named single-brace placeholders (e.g. <c>{task}</c>) that the framework substitutes at render
 ///     time; the available placeholders per prompt are documented on the corresponding
-///     <see cref="MagenticPromptOverrides" />
+///     <see cref="Microsoft.Agents.AI.Workflows.MagenticPromptOverrides" />
 ///     property. A progress-ledger override must keep the <c>{schema}</c> placeholder so the JSON schema can be injected.
 /// </remarks>
 public static class MagenticDefaultPrompts

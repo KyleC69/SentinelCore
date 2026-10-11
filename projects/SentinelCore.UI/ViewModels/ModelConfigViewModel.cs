@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Contracts.Mcp;
+using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
 
@@ -37,12 +37,13 @@ namespace SentinelCore.UI.ViewModels;
 /// </summary>
 public sealed partial class ModelConfigViewModel : ObservableObject, INavigationAware
 {
-    private readonly ISentinelAgentCatalog _agentCatalog;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private ObservableCollection<AgentModelCard> _cards = [];
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _isBusy;
 
     private readonly ILogger<ModelConfigViewModel> _logger;
@@ -65,13 +66,11 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
     /// <summary>
     ///     Creates the view-model and loads a card for every catalog agent.
     /// </summary>
-    /// <param name="agentCatalog">The catalog of logical agent names.</param>
     /// <param name="store">The persistence store for the configuration document.</param>
     /// <param name="settingsOptions">The live SentinelCore settings.</param>
     /// <param name="logger">The logger for this view-model.</param>
-    public ModelConfigViewModel(ISentinelAgentCatalog agentCatalog, IModelConfigStore store, IOptions<SentinelCoreSettings> settingsOptions, ILogger<ModelConfigViewModel> logger)
+    public ModelConfigViewModel(IModelConfigStore store, IOptions<SentinelCoreSettings> settingsOptions, ILogger<ModelConfigViewModel> logger)
     {
-        _agentCatalog = agentCatalog ?? throw new ArgumentNullException(nameof(agentCatalog));
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _settings = (settingsOptions ?? throw new ArgumentNullException(nameof(settingsOptions))).Value;
@@ -82,13 +81,6 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 
 
 
-
-
-    /// <summary>
-    ///     Gets the unique agent names from <see cref="ISentinelAgentCatalog" /> that can be selected
-    ///     as an alias for any agent model card.
-    /// </summary>
-    public IReadOnlyList<string> AvailableAliases { get; private set; } = Array.Empty<string>();
 
 
 
@@ -145,14 +137,11 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 
         try
         {
-            IReadOnlyList<string> agents = await _agentCatalog.GetAgentNamesAsync().ConfigureAwait(false);
-            AvailableAliases = agents;
-
-            List<AgentModelCard> cards = [];
-            foreach (string agent in agents)
+            List<AgentModelCard> cards = new();
+            foreach (KeyValuePair<ModelTier, ModelProfile> entry in _settings.TierModels)
             {
-                _settings.AgentModels.TryGetValue(agent, out ModelProfile? profile);
-                cards.Add(new AgentModelCard(agent, profile));
+                _settings.TierModels.TryGetValue(entry.Key, out ModelProfile? profile);
+                cards.Add(new AgentModelCard(entry.Key, profile));
             }
 
             Cards = new ObservableCollection<AgentModelCard>(cards);
@@ -192,7 +181,7 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
         {
             ModelConfigDocument document = new();
 
-            List<string> incomplete = [];
+            List<string> incomplete = new();
             foreach (AgentModelCard card in Cards)
             {
                 ModelProfile? profile = card.ToModelProfile();
@@ -203,17 +192,17 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
                     continue;
                 }
 
-                document.AgentModels[card.AgentName] = profile;
+                document.TierModels[card.Tier] = profile;
             }
 
             _store.Save(document);
 
             // Apply to the live settings — agents are rebuilt per orchestration,
             // so the next run picks these up.
-            _settings.AgentModels.Clear();
-            foreach (KeyValuePair<string, ModelProfile> entry in document.AgentModels)
+            _settings.TierModels.Clear();
+            foreach (KeyValuePair<ModelTier, ModelProfile> entry in document.TierModels)
             {
-                _settings.AgentModels[entry.Key] = entry.Value;
+                _settings.TierModels[entry.Key] = entry.Value;
             }
 
             if (incomplete.Count > 0)
@@ -226,7 +215,7 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
             }
 
             ShowResult = true;
-            _logger.LogInformation("Saved model configuration for {Count} agents ({Incomplete} incomplete).", document.AgentModels.Count, incomplete.Count);
+            _logger.LogInformation("Saved model configuration for {Count} agents ({Incomplete} incomplete).", document.TierModels.Count, incomplete.Count);
         }
         catch (Exception ex)
         {

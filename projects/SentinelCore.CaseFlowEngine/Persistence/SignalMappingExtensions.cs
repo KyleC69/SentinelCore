@@ -42,4 +42,20 @@ public static class SignalMappingExtensions
                 FirstSeen = signal.Timestamp
         };
     }
+
+    /// <summary>
+    ///     Maps a <see cref="SignalEntity" /> persistence object to a <see cref="Signal" /> contract object.
+    /// </summary>
+    /// <param name="signal">The source signal entity to map from.</param>
+    /// <returns>A new <see cref="Signal" /> populated with values from <paramref name="signal" />.</returns>
+    public static Signal ToSignal(this SignalEntity signal)
+    {
+        ArgumentNullException.ThrowIfNull(signal);
+        return new Signal(signal.SignalText, signal.Source)
+        {
+            Id = signal.Id,
+            SignalId = signal.SignalId,
+            Timestamp = signal.FirstSeen
+        };
+    }
 }

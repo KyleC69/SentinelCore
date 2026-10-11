@@ -95,7 +95,7 @@ internal sealed partial class EscalatedExecutor : Executor
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
-            ChatMessage result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
+            ChatMessage result = null; // await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
             if (result is null)
             {
@@ -129,34 +129,4 @@ internal sealed partial class EscalatedExecutor : Executor
 
 
 
-
-
-    /// <summary>
-    ///     Core processing logic: advances the case to Escalated and yields an escalation notice.
-    /// </summary>
-    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage? message, IWorkflowContext context, CancellationToken cancellationToken)
-    {
-        _reporter.ReportInfo("Escalating signal to human operator — advancing case to Escalated where applicable.");
-
-        Guid? caseId = await context.ReadStateAsync<Guid?>(WorkFlowStateKeys.CASE_ID, "SharedState", cancellationToken).ConfigureAwait(false);
-        if (caseId is { } id && id != Guid.Empty)
-        {
-            try
-            {
-                await _caseFlowEngine.AdvanceCaseAsync(id, CaseStatus.Escalated, cancellationToken).ConfigureAwait(false);
-                _reporter.ReportInfo($"Case {id} advanced to Escalated.");
-            }
-            catch (Exception ex)
-            {
-                // The case lifecycle transition failed — report it, but the escalation
-                // notice must still be delivered.
-                _reporter.ReportError($"Failed to advance case {id} to Escalated.", ex);
-            }
-        }
-
-        string prompt = string.IsNullOrWhiteSpace(message?.Text) ? "the signal" : $"\"{message.Text}\"";
-        await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"👤 {prompt} has been escalated for human review. {message?.Text ?? string.Empty}"), cancellationToken).ConfigureAwait(false);
-
-        return message;
-    }
 }

@@ -7,7 +7,6 @@
 
 
 using SentinelCore.Cfe.Persistence;
-using SentinelCore.Contracts.CaseFlow;
 
 
 
@@ -29,7 +28,7 @@ public static class ResolutionMappingExtensions
     /// </summary>
     /// <param name="resolution">The source resolution DTO to map from.</param>
     /// <returns>A new <see cref="ResolutionEntity" /> populated with values from <paramref name="resolution" />.</returns>
-    public static ResolutionEntity ToEntity(this Resolution resolution)
+    public static ResolutionEntity ToEntity(this ResolutionEntity resolution)
     {
         ArgumentNullException.ThrowIfNull(resolution);
 

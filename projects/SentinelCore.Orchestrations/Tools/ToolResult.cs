@@ -18,7 +18,7 @@ namespace SentinelCore.Orchestrations.Tools;
 ///     Every AITool in the Sentinel Core Platform *must* return a ToolResult object to indicate the outcome of its
 ///     operation. This allows for consistent handling of tool results across the system.
 /// </summary>
-public class ToolResult
+public sealed class ToolResult
 {
 
     /// <summary>

@@ -115,7 +115,7 @@ public sealed partial class CreateCaseViewModel : ObservableObject, INavigationA
         {
             Signal signal = new(Description, SignalSource);
 
-            Guid caseId = await _caseFlowEngine.CreateCaseAsync(signal);
+            var caseId = await _caseFlowEngine.CreateCaseAsync(signal);
 
             ResultMessage = $"Case created successfully. Case ID: {caseId}";
             ShowResult = true;

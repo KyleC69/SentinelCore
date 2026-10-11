@@ -58,4 +58,7 @@ public interface ISentinelAgentFactory
 
 
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string taskInstructions, ChatResponseFormatJson forJsonSchema, CancellationToken none);
+
+
+    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, string taskInstructions);
 }

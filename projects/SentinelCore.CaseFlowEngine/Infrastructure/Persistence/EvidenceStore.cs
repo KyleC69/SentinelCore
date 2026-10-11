@@ -12,6 +12,8 @@ using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.CaseFlow;
 
+using EvidenceEntity = SentinelCore.Cfe.Persistence.EvidenceEntity;
+
 
 
 
@@ -56,18 +58,14 @@ public sealed class EvidenceStore : IEvidenceStore
     /// <summary>
     ///     Appends an evidence item for the specified case.
     /// </summary>
-    public async Task AddAsync(string caseId, Evidence item, CancellationToken cancellationToken = default)
+    public async Task AddAsync(int caseId, Evidence item, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(item);
 
-        if (!Guid.TryParse(caseId, out Guid caseIdGuid) || caseIdGuid == Guid.Empty)
-        {
-            throw new ArgumentException("Case identifier must be a non-empty GUID string.", nameof(caseId));
-        }
 
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
-        CaseEntity? caseRecord = await db.CaseEntities!.AsNoTracking().FirstOrDefaultAsync(c => c.CaseId == caseIdGuid, cancellationToken).ConfigureAwait(false);
+        CaseEntity? caseRecord = await db.CaseEntities!.FirstOrDefaultAsync(c => c.CaseId == caseId, cancellationToken);
 
         if (caseRecord is null)
         {
@@ -76,12 +74,12 @@ public sealed class EvidenceStore : IEvidenceStore
 
         EvidenceEntity entity = new()
         {
-                EvidenceId = item.EvidenceId,
-                Type = item.Type,
-                Source = item.Source,
-                ContentJson = item.ContentJson,
-                Provenance = item.Provenance,
-                Timestamp = item.Timestamp
+            EvidenceId = item.EvidenceId,
+            Type = item.Type,
+            Source = item.Source,
+            ContentJson = item.ContentJson,
+            Provenance = item.Provenance,
+            Timestamp = item.Timestamp
         };
 
         db.EvidenceEntities!.Add(entity);
@@ -98,28 +96,14 @@ public sealed class EvidenceStore : IEvidenceStore
     /// <summary>
     ///     Gets all evidence items for the specified case.
     /// </summary>
-    public async Task<IReadOnlyList<Evidence>> GetByCaseIdAsync(string caseId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Evidence>> GetByCaseIdAsync(int caseId, CancellationToken cancellationToken = default)
     {
-        if (!Guid.TryParse(caseId, out Guid caseIdGuid))
-        {
-            return [];
-        }
 
-        await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
-        List<EvidenceEntity> entities = await db.EvidenceEntities!.AsNoTracking().Join(db.CaseEntities!.Where(c => c.CaseId == caseIdGuid), e => e.EvidenceId, c => c.EvidenceId, (e, c) => e).ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        return entities.Select(e => new Evidence
-                {
-                        Id = e.Id,
-                        EvidenceId = e.EvidenceId!,
-                        Type = e.Type!,
-                        Source = e.Source!,
-                        ContentJson = e.ContentJson!,
-                        Provenance = e.Provenance!,
-                        Timestamp = e.Timestamp
-                })
-                .ToList();
+
+
+        return default;
     }
 
 
@@ -132,8 +116,8 @@ public sealed class EvidenceStore : IEvidenceStore
     /// <summary>
     ///     Appends an evidence item for the specified case.
     /// </summary>
-    public Task AddEvidenceAsync(Guid caseId, Evidence item, CancellationToken cancellationToken = default)
+    public Task AddEvidenceAsync(int caseId, Evidence item, CancellationToken cancellationToken = default)
     {
-        return AddAsync(caseId.ToString(), item, cancellationToken);
+        return AddAsync(caseId, item, cancellationToken);
     }
 }

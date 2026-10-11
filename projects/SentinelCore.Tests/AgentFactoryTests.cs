@@ -4,14 +4,6 @@
 // Author: Kyle L. Crowder
 // Build Num:  100908
 
-
-
-using SentinelCore.Contracts.Contracts;
-using SentinelCore.Orchestrations.Agents;
-
-
-
-
 namespace SentinelCore.Tests;
 
 
@@ -62,7 +54,6 @@ public sealed class AgentFactoryTests
     public void SpecBuilder_PerAgentModel_ReturnsCorrectModel()
     {
         // Arrange — a per-agent entry.
-        SentinelCoreSettings settings = new() { DefaultModel = new ModelProfile("http://tier", "tier-model", 0.1f), AgentModels = { ["TheCore"] = new ModelProfile("http://per-agent", "per-agent-model", 0.5f) } };
 
         // AgentProfileBuilder specBuilder = new(Options.Create(settings));
 

@@ -9,6 +9,8 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -23,6 +25,8 @@ using SentinelCore.Abstractions;
 using SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection;
 using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Agents.AgentPresets;
+using SentinelCore.Orchestrations.Infrastructure;
 using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 using SentinelCore.RemoteKB.Persistence;
 using SentinelCore.UI.Models;
@@ -42,7 +46,7 @@ namespace SentinelCore.UI;
 ///     Wires the <see cref="IHost" /> container, registers all services,
 ///     and manages application lifecycle including graceful shutdown.
 /// </summary>
-public partial class App
+public sealed partial class App
 {
     private IHost? _host;
 
@@ -94,16 +98,16 @@ public partial class App
         // without configuration are gated at the factory.
         SentinelCoreSettings sentinelSettings = new() { SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty, TraceEnabled = true, TraceLogLevel = LogLevel.Trace, OrchestrationType = OrchestrationType.CustomGroup };
 
-        // Seed per-agent models from the persisted configuration document so the
+        // Seed Model profile cards from persisted configuration document so the
         // first orchestration after startup uses the user's saved configuration.
         FileModelConfigStore seedStore = new(NullLogger<FileModelConfigStore>.Instance);
         ModelConfigDocument? document = seedStore.Load();
 
         if (document is not null)
         {
-            foreach (KeyValuePair<string, ModelProfile> entry in document.AgentModels)
+            foreach (KeyValuePair<ModelTier, ModelProfile> entry in document.TierModels)
             {
-                sentinelSettings.AgentModels[entry.Key] = entry.Value;
+                sentinelSettings.TierModels[entry.Key] = entry.Value;
             }
         }
 
@@ -351,7 +355,6 @@ public partial class App
 
 
 
-
     /// <summary>
     ///     Initializes the application host and validates required startup configuration.
     /// </summary>
@@ -380,6 +383,12 @@ public partial class App
             throw new InvalidOperationException("Required environment variables are missing. Set SENTINEL_CORE (case flow database connection string) " + "and REMOTEKB (remote knowledge base connection string) before starting SentinelCore.");
         }
 
+
+
+
+
+        string jPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", $"SentinelCore_json{DateTime.Now:yyyyMMdd}.log");
+
         string? appLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 
         _host = Host.CreateDefaultBuilder(e.Args)
@@ -390,13 +399,19 @@ public partial class App
                     logging.ClearProviders();
                     // WinExe has no attached console — Debug output surfaces in the VS Output window.
                     logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
-                    logging.AddFilter("ModelContextProtocol", LogLevel.Warning);
-                    logging.AddFilter("SentinelCore.UI", LogLevel.Warning);
-                    logging.AddFilter("Microsoft.Extensions", LogLevel.Warning);
                     logging.AddFilter("Microsoft.Hosting", LogLevel.Warning);
-                    logging.AddConsole();
-                    logging.AddDebug();
-                    //  logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Indented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }; });
+                    logging.AddFilter("ModelContextProtocol.Client", LogLevel.Warning);
+                    //logging.AddDebug();
+                    logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Encoder = JavaScriptEncoder.Default, Indented = true, SkipValidation = false, NewLine = "\n" }; });
+                    var jOptions = new JsonLoggerOptions
+                    {
+                        FilePath = jPath,
+                        Indented = true,
+                        MinimumLevel = LogLevel.Trace,
+                        Output = JsonLoggerOutput.File,
+                        Stream = null
+                    };
+                    logging.AddProvider(new JsonLoggerProvider(jOptions));
                     logging.AddFileLogger();
                     logging.SetMinimumLevel(LogLevel.Trace);
                 })
@@ -408,6 +423,31 @@ public partial class App
 
 
 
+
+
+
+    // Method formats a json string to be more human-readable with indentation and line breaks.
+    //Helper made for formatting json data properties that are attached to parent objects
+    private string PrettyJson(string json)
+    {
+
+
+        string cleaned = JsonSerializer.Deserialize<string>(json);
+
+        // If the result itself contains JSON:
+        using JsonDocument doc = JsonDocument.Parse(cleaned!);
+
+        string pretty = JsonSerializer.Serialize(
+                doc.RootElement,
+                new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+        return pretty;
+
+
+    }
 
 
 

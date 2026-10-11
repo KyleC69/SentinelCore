@@ -8,6 +8,7 @@
 
 using SentinelCore.Abstractions;
 using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Agents.Models;
 

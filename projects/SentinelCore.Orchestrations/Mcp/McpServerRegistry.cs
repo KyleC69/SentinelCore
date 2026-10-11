@@ -67,6 +67,8 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
     public IList<AITool> GetAllTools(CancellationToken token)
     {
+
+
         List<AITool> tools = new();
 
         foreach (McpServerEntry entry in _entries.Values)
@@ -100,6 +102,10 @@ public sealed class McpServerRegistry : IMcpServerRegistry
 
     public async Task<IReadOnlyList<AITool>> GetAllToolsAsync(CancellationToken token)
     {
+
+
+
+
         List<AITool> tools = [];
 
         foreach (McpServerEntry entry in _entries.Values)

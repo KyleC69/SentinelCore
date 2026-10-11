@@ -9,6 +9,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Agents.AgentPresets;
 
 
 
@@ -26,7 +27,7 @@ namespace SentinelCore.UI.Models;
 public sealed partial class AgentModelCard : ObservableObject
 {
 
-
+    [ObservableProperty] private ModelTier _tier;
     /// <summary>
     ///     Backing field for <see cref="Alias" />.
     /// </summary>
@@ -107,14 +108,14 @@ public sealed partial class AgentModelCard : ObservableObject
     /// </summary>
     /// <param name="agentName">The logical agent name from the catalog.</param>
     /// <param name="profile">The configured model profile, or <c>null</c> for an unconfigured card.</param>
-    public AgentModelCard(string agentName, ModelProfile? profile) : this(agentName)
+    public AgentModelCard(ModelTier tier, ModelProfile? profile)
     {
         if (profile is null)
         {
             return;
         }
 
-        Alias = string.IsNullOrWhiteSpace(profile.Alias) ? agentName : profile.Alias;
+        Alias = tier.ToString();
         Provider = profile.Provider;
         Endpoint = profile.Endpoint ?? string.Empty;
         ModelId = profile.ModelId ?? string.Empty;
@@ -136,7 +137,7 @@ public sealed partial class AgentModelCard : ObservableObject
     /// <summary>
     ///     The logical agent name this card configures.
     /// </summary>
-    public string AgentName { get; }
+    public string? AgentName { get; }
 
     /// <summary>
     ///     Gets a value indicating whether the card has the minimum fields

@@ -39,7 +39,7 @@ public static class MagenticPromptOverrides
 
                                                       For each significant piece of evidence provide:
 
-                                                      Evidence ID:
+                                                      Evidence ID: PENDING
                                                       Source:
                                                       Observation:
                                                       Reliability:
@@ -47,11 +47,11 @@ public static class MagenticPromptOverrides
                                                       - Medium
                                                       - Low
 
-                                                      Classification:
+                                                      Evidence Classification:
                                                       - Direct Evidence
-                                                      -Correlated Evidence
+                                                      - Correlated Evidence
                                                       - Circumstantial Evidence
-                                                      -Contradictory Evidence
+                                                      - Contradictory Evidence
 
                                                       Relevance:
                                                       Explain specifically how this evidence relates to the investigation objective.
@@ -74,7 +74,6 @@ public static class MagenticPromptOverrides
                                                       - Unavailable artifacts
                                                       - Failed tools
                                                       - Incomplete data
-                                                      - Assumptions
 
                                                       # Assessment
 
@@ -82,26 +81,22 @@ public static class MagenticPromptOverrides
                                                       Only include information directly supported by evidence.
 
                                                       Probable Cause:
+                                                      
+                                                      If you can't provide definitive proof to support a theory then try to gather proof or approach it from a different perspective. 
+                                                      If you have supporting evidence, explain the causal relationship and cite the supporting Evidence IDs.
                                                       State the most likely explanation and cite the supporting Evidence IDs.
 
                                                       Alternative Explanations:
                                                       List other plausible explanations and explain why they were not selected.
-
-                                                      Confidence:
-                                                      - High
-                                                      - Moderate
-                                                      - Low
-
-                                                      Explain the reason for the assigned confidence level.
 
                                                       Important Rules:
 
                                                       - Separate observations from conclusions.
                                                       - Do not present assumptions as facts.
                                                       - Every conclusion must be supported by one or more Evidence IDs.
-                                                      - Evidence relevance must be explicitly stated.
+                                                      - Evidence relevance must be explicitly stated and factual.
                                                       - Correlation does not imply causation unless supported by direct evidence.
-                                                      - If evidence is insufficient, state this clearly.
+                                                      - If evidence is insufficient, research other possibilities and gather more evidence, and state this clearly.
                                                       """;
 
     /// <summary>

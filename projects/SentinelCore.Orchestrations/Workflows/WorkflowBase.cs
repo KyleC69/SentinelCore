@@ -6,6 +6,8 @@
 
 
 
+using Microsoft.Extensions.Logging;
+
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Services;
 
@@ -25,6 +27,8 @@ namespace SentinelCore.Orchestrations.Workflows;
 public abstract class WorkflowBase
 {
     protected IWorkflowEventProcessor _eventProcessor;
+    protected ILogger<WorkflowBase> _logger;
+    protected ILoggerFactory _loggerFactory;
     protected ISystemReporter _reporter;
 
 
@@ -34,9 +38,10 @@ public abstract class WorkflowBase
 
 
 
-    protected WorkflowBase(ISystemReporter reporter, IWorkflowEventProcessor eventProcessor)
+    protected WorkflowBase(ISystemReporter reporter, ILoggerFactory logger)
     {
         _reporter = reporter;
-        _eventProcessor = eventProcessor;
+        _loggerFactory = logger;
+        _logger = logger.CreateLogger<WorkflowBase>();
     }
 }

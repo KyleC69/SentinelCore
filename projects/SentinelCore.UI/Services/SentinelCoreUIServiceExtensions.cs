@@ -8,6 +8,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 
+using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Services;
 using SentinelCore.UI.ViewModels;
@@ -42,6 +43,7 @@ public static class SentinelCoreUiServiceExtensions
         services.AddSingleton<IClipboardService, WpfClipboardService>();
         services.AddSingleton<IDialogService, WpfDialogService>();
         services.AddSingleton<IFolderBrowserService, WpfFolderBrowserService>();
+        services.AddSingleton<IModelConfigGate, ModelConfigGate>();
         services.AddSingleton<IModelConfigStore, FileModelConfigStore>();
         services.AddSingleton<IWorkflowEventProcessor, WorkflowEventProcessor>();
         services.AddHostedService<AISystemsInitialization>();
@@ -65,12 +67,12 @@ public static class SentinelCoreUiServiceExtensions
         // Navigation — ViewLocator holds the ViewModel→Page type map
         Dictionary<string, Type> pageTypeMap = new()
         {
-                [typeof(CoreChatViewModel).FullName!] = typeof(CoreChatPage),
-                [typeof(CaseListViewModel).FullName!] = typeof(CaseListPage),
-                [typeof(CaseDetailViewModel).FullName!] = typeof(CaseDetailPage),
-                [typeof(CreateCaseViewModel).FullName!] = typeof(CreateCasePage),
-                [typeof(McpServersViewModel).FullName!] = typeof(McpServersPage),
-                [typeof(ModelConfigViewModel).FullName!] = typeof(ModelConfigPage)
+            [typeof(CoreChatViewModel).FullName!] = typeof(CoreChatPage),
+            [typeof(CaseListViewModel).FullName!] = typeof(CaseListPage),
+            [typeof(CaseDetailViewModel).FullName!] = typeof(CaseDetailPage),
+            [typeof(CreateCaseViewModel).FullName!] = typeof(CreateCasePage),
+            [typeof(McpServersViewModel).FullName!] = typeof(McpServersPage),
+            [typeof(ModelConfigViewModel).FullName!] = typeof(ModelConfigPage)
         };
 
         services.AddSingleton<IViewLocator>(sp => new ViewLocator(sp, pageTypeMap));
