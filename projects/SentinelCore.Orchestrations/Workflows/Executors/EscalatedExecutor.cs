@@ -6,7 +6,8 @@
 
 
 
-using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Cfe;
 
@@ -84,11 +85,8 @@ internal sealed partial class EscalatedExecutor : Executor
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(ChatMessage)}");
 
         // --- Null validation ---
-        if (message is null)
-        {
-            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
-            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
-        }
+        Throw.IfNull(message, nameof(message));
+
 
         try
         {

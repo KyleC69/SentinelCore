@@ -8,7 +8,7 @@
 
 using Microsoft.Agents.AI.Workflows.Specialized.Magentic;
 
-using SentinelCore.Abstractions;
+using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.Abstractions;
 
 

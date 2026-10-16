@@ -9,8 +9,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Data.DBEntities;
 
 
 

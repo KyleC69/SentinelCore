@@ -20,5 +20,6 @@ public class WorkFlowStateKeys
 {
     public const string CASE_ID = "CaseId";
     public const string PROMPT = "Prompt";
-    public const string SIGNAL_HYPOTHESIS = "ChatMessage";
+    public const string SIGNAL_OBJECTIVE = "Objective";
+    public const string CASE_ENTITY = "CaseEntity";
 }

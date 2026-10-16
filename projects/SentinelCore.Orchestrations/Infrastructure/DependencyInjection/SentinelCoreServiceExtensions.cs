@@ -11,15 +11,14 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Authentication;
 
-using SentinelCore.CaseFlowEngine.Cfe;
-using SentinelCore.CaseFlowEngine.Infrastructure.Persistence;
+using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Events;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
-using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Mcp;
@@ -94,7 +93,6 @@ public static class SentinelCoreServiceExtensions
         // real EF Core-backed engine by calling AddCaseFlowEngine() (CaseFlowEngine
         // project), which overrides these defaults via RemoveAll<T>() + Add<T>().
         services.AddSingleton<ICaseFlowEngine, NullCaseFlowEngine>();
-        services.AddSingleton<IEvidenceStore, NullEvidenceStore>();
         services.AddSingleton<IPatternMemoryStore, NullPatternMemoryStore>();
         services.AddTransient<IPatternMatcher, SemanticPatternMatcher>();
 

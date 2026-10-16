@@ -8,6 +8,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 
+using SentinelCore.Orchestrations.Workflows;
 using SentinelCore.Orchestrations.Workflows.Executors;
 
 
@@ -45,7 +46,7 @@ public static class ExecutorRegistrations
         services.AddTransient<DirectAnswerExecutor>();
         services.AddTransient<AggregationExecutor>();
         services.AddTransient<CriticalAlert>();
-        services.AddTransient<GenerateObjectiveExec>();
+        services.AddTransient<SignalClassifierExecutor>();
         return services;
     }
 }

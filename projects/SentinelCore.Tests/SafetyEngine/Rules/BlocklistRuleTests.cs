@@ -12,7 +12,7 @@ using SentinelCore.Orchestrations.SafetyEngine.Rules;
 
 
 
-namespace SentinelCore.Tests;
+namespace SentinelCore.Tests.SafetyEngine.Rules;
 
 
 

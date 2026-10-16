@@ -6,7 +6,8 @@
 
 
 
-using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Cfe;
 
@@ -84,22 +85,22 @@ public sealed partial class MoreInformationExecutor : Executor
     [MessageHandler]
     public async ValueTask HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
+        Throw.IfNull(message, nameof(message));
         // --- Status: Executor start ---
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(ChatMessage)}");
 
         // --- Null validation ---
-        if (message is null)
-        {
-            _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
-            await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
-        }
+
+        _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
+        await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
+
 
         try
         {
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
-            ChatMessage result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
+            ChatMessage? result = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
             // --- Status: Final output ---
             _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(ChatMessage)}");

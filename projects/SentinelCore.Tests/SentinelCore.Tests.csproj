@@ -28,10 +28,6 @@
 
 	</ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="CaseFlow\" />
-	</ItemGroup>
-
 	<!-- Embed the source-tree location at build time so architecture tests can
 		 locate solution source even though output is redirected via ArtifactsPath. -->
 	<ItemGroup>

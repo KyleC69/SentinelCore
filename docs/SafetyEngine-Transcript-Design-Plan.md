@@ -1,4 +1,4 @@
-# Safety Engine Transcript Rebuild: Correct Architecture and Design Plan
+ Safety Engine Transcript Rebuild: Correct Architecture and Design Plan
 
 ## Source of truth
 

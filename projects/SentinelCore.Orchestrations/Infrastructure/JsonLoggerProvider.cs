@@ -2,15 +2,16 @@
 // Project:   SentinelCore.Orchestrations
 // File:         JsonLoggerProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  100416
 
 
 
+using System.Net;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 
 
 
@@ -36,37 +37,6 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
     public JsonLoggerProvider(JsonLoggerOptions options = null!)
     {
         _options = options ?? new JsonLoggerOptions();
-    }
-
-    /// <summary>
-    /// Attempts to detect a JSON string and return a pretty‑printed version.
-    /// If the input is not valid JSON, the original string is returned unchanged.
-    /// This protects the logger from throwing when a message payload contains
-    /// raw JSON that is not already formatted.
-    /// </summary>
-    private static string TryPrettyIfJson(string maybeJson)
-    {
-        if (string.IsNullOrWhiteSpace(maybeJson))
-            return maybeJson;
-
-        string trimmed = maybeJson.Trim();
-        // Quick heuristic: JSON objects start with '{' and arrays with '['.
-        if ((trimmed.StartsWith("{") && trimmed.EndsWith("}")) ||
-            (trimmed.StartsWith("[") && trimmed.EndsWith("]")))
-        {
-            try
-            {
-                using JsonDocument doc = JsonDocument.Parse(trimmed);
-                return JsonSerializer.Serialize(
-                    doc.RootElement,
-                    new JsonSerializerOptions { WriteIndented = true });
-            }
-            catch (JsonException)
-            {
-                // Not valid JSON – fall back to original.
-            }
-        }
-        return maybeJson;
     }
 
 
@@ -161,25 +131,6 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
-        // Method formats a json string to be more human-readable with indentation and line breaks.
-        //Helper made for formatting json data properties that are attached to parent objects
-        private string PrettyJson(string json)
-        {
-            // Directly attempt to parse the JSON envelope. If parsing fails (e.g., due to stray control chars),
-            // fall back to the original string to avoid corrupting already‑valid JSON.
-            try
-            {
-                using JsonDocument doc = JsonDocument.Parse(json);
-                return JsonSerializer.Serialize(
-                    doc.RootElement,
-                    new JsonSerializerOptions { WriteIndented = true });
-            }
-            catch (JsonException)
-            {
-                return json;
-            }
-        }
-
 
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception, string> formatter)
@@ -194,26 +145,91 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
             List<object> scopes = new();
             scopeProvider?.ForEachScope((scope, list) => { list.Add(scope!); }, scopes);
 
-            // Safely format the message – if it contains a JSON string we pretty‑print it,
-            // otherwise we keep the original text.
-            string rawMessage = formatter(state, exception!);
-            //  string formattedMessage = TryPrettyIfJson(rawMessage);
+            string level = ConvertLevel(logLevel);
+            string renderedMessage = formatter(state, exception!);
+
+            string normalized = WebUtility.HtmlDecode(renderedMessage);
+
+            // Debugger.Break();
+
+
+
+
+
+
+            if (_category.Contains("AI", StringComparison.OrdinalIgnoreCase))
+            {
+
+                if (state is IReadOnlyList<KeyValuePair<string, object>> kvps)
+                {
+                    foreach (var kvp in kvps)
+                    {
+                        if (kvp.Key.Contains("ChatResponse",StringComparison.OrdinalIgnoreCase))
+                        {
+
+
+                            var chatResponseJson = kvp.Value as string;
+                            var prettyJson = CleanResponsePayload(chatResponseJson!);
+                            Write(prettyJson);
+                        }
+                        else if (kvp.Key.Contains("Messages",StringComparison.OrdinalIgnoreCase))
+                        {
+                            var chatResponseJson = kvp.Value as string;
+                            var prettyJson = CleanResponsePayload(chatResponseJson!);
+                            Write(prettyJson);
+                        }
+                        else if(kvp.Key.Contains("ChatOptions",StringComparison.OrdinalIgnoreCase) || kvp.Key.Contains("ChatClientMetadata",StringComparison.OrdinalIgnoreCase))
+                        {
+                            Write($"{kvp.Value.ToString()!}{Environment.NewLine}");
+                        }
+                        else
+                        {
+                            Write($"Unhandled Key is {kvp.Key}{Environment.NewLine}");
+                        }
+
+                    }
+                }
+            }
+
+            else if (!_category.Contains("AI", StringComparison.OrdinalIgnoreCase))
+            {
+                var normal = $"{level} : {DateTime.Now} : {_category} : [{eventId.Id}] : {renderedMessage}{Environment.NewLine}";
+                Write(normal);
+            }
 
             LogEnvelope envelope = new()
             {
                 Timestamp = DateTimeOffset.Now,
-                Level = logLevel.ToString(),
+                Level = level,
                 Category = _category,
-                State = state,
                 EventId = eventId.Id,
-                Message = rawMessage,
+                Message = formatter(state, exception!),
                 Exception = exception?.ToString(),
                 Scopes = scopes
             };
 
-            string json = JsonSerializer.Serialize(envelope, new JsonSerializerOptions { WriteIndented = _options.Indented, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
 
-            Write(json);
+            string json = JsonSerializer.Serialize(envelope, new JsonSerializerOptions { WriteIndented = _options.Indented, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+
+            //   Write(json);
+        }
+
+
+
+
+        private string ConvertLevel(LogLevel level)
+        {
+            return level switch
+            {
+                LogLevel.Trace => "TRC ",
+                LogLevel.Debug => "DBUG",
+                LogLevel.Information => "INFO",
+                LogLevel.Warning => "WARN",
+                LogLevel.Error => "ERR ",
+                LogLevel.Critical => "CRIT",
+                LogLevel.None => "NONE",
+                _ => "UNKN"
+            };
         }
 
 
@@ -223,34 +239,85 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
-        private void Write(string json)
+        private string CleanResponsePayload(string payload)
         {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("==================== Starting of ChatResponse ============================");
+            using JsonDocument doc = JsonDocument.Parse(payload!);
 
-            if (_options.Output == JsonLoggerOutput.Console)
+            JsonElement messages;
+            if (doc.RootElement.ValueKind == JsonValueKind.Array)
             {
-                lock (Console.Out)
+                messages = doc.RootElement;
+            }
+            else if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("messages", out JsonElement msgElement))
+            {
+                messages = msgElement;
+            }
+            else
+            {
+                return sb.AppendLine("Payload is not in a recognized ChatResponse format.").ToString();
+            }
+
+            if (messages.ValueKind != JsonValueKind.Array)
+            {
+                return sb.AppendLine("Messages element is not an array.").ToString();
+            }
+
+            foreach (JsonElement message in messages.EnumerateArray())
+            {
+                if (message.ValueKind == JsonValueKind.Object && message.TryGetProperty("contents", out JsonElement contents) && contents.ValueKind == JsonValueKind.Array)
                 {
-                    Console.WriteLine(json);
+                    foreach (JsonElement content in contents.EnumerateArray())
+                    {
+                        if (content.ValueKind == JsonValueKind.Object)
+                        {
+                            string? jtext = content.TryGetProperty("text", out JsonElement textElement) ? textElement.GetString() : null;
+                            if (!string.IsNullOrEmpty(jtext))
+                            {
+                                sb.AppendLine(jtext);
+                            }
+                        }
+                    }
                 }
             }
-            else if (_options.Output == JsonLoggerOutput.File)
-            {
-                // Determine the target file path. If a custom FilePath is supplied, use it; otherwise fall back to the default location.
-                var logFilePath = !string.IsNullOrWhiteSpace(_options.FilePath)
-                    ? _options.FilePath
-                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", $"SentinelCore_{DateTime.Now:yyyyMMdd}.log");
 
+            sb.AppendLine();
+            sb.AppendLine("==================== Ending of ChatResponse ============================");
+            return sb.ToString();
+        }
+
+
+
+        private void Write(string json)
+        {
+            if (_options.Output == JsonLoggerOutput.Console)
+            {
+                //      var obj = JObject.Parse(json);
+                //     var text = obj["text"]?.Value<string>();
+
+                lock (Console.Out)
+                {
+
+
+                    Console.Write(json); // Validate JSON
+
+
+
+                }
+
+
+            }
+            else if (_options.Output == JsonLoggerOutput.File && !string.IsNullOrEmpty(_options.FilePath))
+            {
                 lock (_options.FileLock)
                 {
-                    // Ensure the directory for the log file exists.
-                    var directory = Path.GetDirectoryName(logFilePath);
-                    if (!string.IsNullOrEmpty(directory))
-                    {
-                        Directory.CreateDirectory(directory);
-                    }
+                    string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                    Directory.CreateDirectory(path);
+                    string filePath = Path.Combine(path, $"SentinelCore_{DateTime.Now:yyyyMMdd}.log");
+                    // Ensure directory exists
 
-                    // Append the formatted JSON entry.
-                    File.AppendAllText(logFilePath, json + Environment.NewLine, Encoding.UTF8);
+                    File.AppendAllText(filePath, json + Environment.NewLine, Encoding.UTF8);
                 }
             }
             else if (_options.Output == JsonLoggerOutput.Stream && _options.Stream != null)
@@ -267,11 +334,46 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
+    /// <summary>
+    /// Attempts to detect a JSON string and return a pretty‑printed version.
+    /// If the input is not valid JSON, the original string is returned unchanged.
+    /// This protects the logger from throwing when a message payload contains
+    /// raw JSON that is not already formatted.
+    /// </summary>
+    private static string TryPrettyIfJson(string maybeJson)
+    {
+        if (string.IsNullOrWhiteSpace(maybeJson))
+            return maybeJson;
 
+        string trimmed = maybeJson.Trim();
+        // Quick heuristic: JSON objects start with '{' and arrays with '['.
+        if ((trimmed.StartsWith("{") && trimmed.EndsWith("}")) ||
+            (trimmed.StartsWith("[") && trimmed.EndsWith("]")))
+        {
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(trimmed);
+                return JsonSerializer.Serialize(
+                        doc.RootElement,
+                        new JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (JsonException)
+            {
+                // Not valid JSON – fall back to original.
+            }
+        }
+        return maybeJson;
+    }
 
     private sealed class NullScope : IDisposable
     {
         public static NullScope Instance { get; } = new();
+
+
+
+
+
+
 
 
         public void Dispose()
@@ -309,11 +411,12 @@ public sealed class JsonLoggerOptions
     public bool Indented { get; set; } = true;
     public LogLevel MinimumLevel { get; set; } = LogLevel.Trace;
 
-    public JsonLoggerOutput Output { get; set; } = JsonLoggerOutput.File;
+    public JsonLoggerOutput Output { get; set; } = JsonLoggerOutput.Console;
 
     // For custom stream output
     public Stream? Stream { get; set; }
 }
+
 
 
 

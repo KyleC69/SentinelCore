@@ -4,55 +4,77 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
-using JetBrains.Annotations;
-
 using Microsoft.EntityFrameworkCore;
 
-using SentinelCore.Contracts.CaseFlow;
-using SentinelCore.Orchestrations.Agents.Core;
-using SentinelCore.Persistence;
+using SentinelCore.CaseFlowEngine;
+using SentinelCore.Contracts.Cfe;
+using SentinelCore.Data.DBEntities;
 
 
 
 
-namespace SentinelCore.Cfe.Persistence;
+namespace SentinelCore.Data.DBEntities;
 
 [Table("CaseEntity")]
-[Index("PatternMemoryId", Name = "FK_CaseEntity", IsUnique = true)]
-[Index("InputSignal", Name = "IX_CaseEntity", IsUnique = true)]
+[Index("SignalEntityId", Name = "IX_CaseEntity", IsUnique = true)]
+[Index("InvestigationObjectiveId", Name = "IX_CaseEntity_InvestigationObjectiveId")]
+[Index("InvestigationOutcomeId", Name = "IX_CaseEntity_InvestigationOutcomeId")]
 public partial class CaseEntity
 {
-    [Key]
+
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [Key]
     public int Id { get; set; }
 
-    public int CaseId { get; set; }
 
-
-    public int Status { get; set; }
-
-    public SignalEntity InputSignal { get; set; } = new();
+    public CaseStatus CaseStatus { get; set; }
+    
+    
+    
+    
+    [ForeignKey("SignalEntityId")]
+    public SignalEntity SignalEntity { get; set; }
 
     [Precision(2)]
-    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     public DateTime CreatedAt { get; set; }
 
     [Precision(2)]
     public DateTime? UpdatedAt { get; set; }
 
-    public PatternMemoryEntity PatternMemory { get; set; } = new();
 
+    
     public string CaseTranscript { get; set; } = string.Empty;
+    public int SignalEntityId { get; set; }
+    public int? InvestigationObjectiveId { get; set; }
 
-    public List<EvidenceEntity> CaseEvidence { get; set; } = new();
+    public int? InvestigationOutcomeId { get; set; }
+    public int PatternMemoryEntityId { get; set; }
 
-    
-    public List<string> RemediationSteps { get; set; } = new();
-
-    public InvestigationObjective InvestigationObjective { get; set; } = new();
-
-    public InvestigationOutcome InvestigationOutcome { get; set; } = new();
-    
     public string Notes { get; set; } = string.Empty;
+
+    [ForeignKey("InvestigationObjectiveId")]
+    [InverseProperty("CaseEntity")]
+    public virtual InvestigationObjective InvestigationObjective { get; set; } = new InvestigationObjective();
+
+    [ForeignKey("InvestigationOutcomeId")]
+    [InverseProperty("CaseEntity")]
+    public virtual InvestigationOutcome InvestigationOutcome { get; set; } = new InvestigationOutcome();
+
+    [ForeignKey("PatternMemoryEntityId")]
+    [InverseProperty("CaseEntity")]
+    public virtual PatternMemoryEntity PatternMemory { get; set; } = new PatternMemoryEntity();
+
+    
+    
+    
+    
+    
+  
+    public virtual ICollection<RemediationEntity> RemediationEntities { get; set; } = new List<RemediationEntity>();
+    
+    public virtual ICollection<EvidenceEntity> EvidenceEntities { get; set; } = new List<EvidenceEntity>();
+    
+    
+    
+    
 }

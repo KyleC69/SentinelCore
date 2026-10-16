@@ -9,8 +9,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using SentinelCore.CaseFlowEngine.Cfe;
-using SentinelCore.CaseFlowEngine.Infrastructure.Persistence;
+using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
 
 
@@ -57,7 +57,7 @@ public static class CaseFlowEngineBuilderExtensions
         // dependencies and can be resolved safely from any scope. The DbContext
         // factory they inject is a singleton (PL-7), making this lifetime safe.
         services.RemoveAll<ICaseFlowEngine>();
-        services.AddTransient<ICaseFlowEngine, Cfe.CaseFlowEngine>();
+        services.AddTransient<ICaseFlowEngine, CaseFlow.CaseFlowEngine>();
 
         services.RemoveAll<IEvidenceStore>();
         services.AddTransient<IEvidenceStore, EvidenceStore>();

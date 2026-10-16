@@ -11,13 +11,13 @@
 using Microsoft.Agents.AI.Compaction;
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Abstractions;
+using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Agents.Models;
-using SentinelCore.Orchestrations.Mcp;
 using SentinelCore.Orchestrations.Providers;
 
 
@@ -54,9 +54,9 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 {
 
 
-    private static IList<AITool> _builtToolCache = new List<AITool>();
+    private readonly IList<AITool> _builtToolCache;
     private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
-    private readonly object _builtAgentsLock = new();
+    private readonly Lock _builtAgentsLock = new();
     private readonly IChatClientFactory _chatClientFactory;
     private readonly ILogger<SentinelAgentFactory> _logger;
     private readonly ILoggerFactory _loggerFactory;
@@ -79,6 +79,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     ///     Initializes a new instance of the <see cref="SentinelAgentFactory" /> class.
     /// </summary>
     /// <param name="chatClientFactory">Factory for creating chat clients from model profiles.</param>
+    /// <param name="modelResolver"></param>
     /// <param name="patternMatcher">The pattern matcher used by the Core agent's pattern-memory context provider.</param>
     /// <param name="loggerFactory">The logger factory used by client-level and pattern-memory logging.</param>
     /// <param name="registry">The MCP server registry for managing MCP server instances.</param>
@@ -162,6 +163,29 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+    public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription)
+    {
+        _logger.LogInformation("Creating agent with preset: {PresetName}, name: {AgentName}, description: {AgentDescription}", presetName, agentName, agentDescription);
+
+        var presetDefinition = AgentPresetDefinition.FromName(presetName);
+        if (presetDefinition == null)
+        {
+            throw new InvalidOperationException($"Preset definition for {presetName} could not be resolved.");
+        }
+
+        var agent = await CreateAgentCoreAsync(presetDefinition, null, null, CancellationToken.None);
+        _logger.LogInformation("Agent created successfully: {AgentName}", agentName);
+
+        return agent;
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Adds context providers specified by the agent preset.
     /// </summary>
@@ -209,7 +233,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="chatResponseFormat"></param>
     /// <param name="contextProviders">The context providers that enrich agent invocations.</param>
     /// <returns>A fully configured <see cref="ChatClientAgent" />.</returns>
-    private static ChatClientAgent BuildAgent(AgentPresetDefinition preset, IChatClient chatClient, ChatResponseFormatJson? chatResponseFormat = null, List<AIContextProvider?> contextProviders = null)
+    private static ChatClientAgent BuildAgent(AgentPresetDefinition preset, IChatClient chatClient, IList<AITool> toolCache, ChatResponseFormatJson? chatResponseFormat = null, List<AIContextProvider?>? contextProviders = null)
     {
 
 
@@ -231,7 +255,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             StopSequences = null,
             AllowMultipleToolCalls = true,
             ToolMode = null,
-            Tools = _builtToolCache,
+            Tools = preset.UseTools ? toolCache : new List<AITool>(),
             AllowBackgroundResponses = null,
             ContinuationToken = null,
             RawRepresentationFactory = null,
@@ -246,7 +270,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             Name = preset.AgentName,
             Description = preset.Description,
             ChatOptions = chatOptions,
-            AIContextProviders = contextProviders ?? null,
+            AIContextProviders = preset.UseContextEnrichers ? contextProviders : null,
             UseProvidedChatClientAsIs = false,
             AllowConcurrentInvocation = false,
             ClearOnChatHistoryProviderConflict = false,
@@ -256,7 +280,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             EnableMessageInjection = false,
             DisableApprovalNotRequiredFunctionBypassing = false,
             DisableApprovalResponseBinding = false,
-            ChatHistoryProvider = new AdvancedInMemoryChatHistoryProvider()
+            ChatHistoryProvider = preset.AgentName.Contains("core", StringComparison.OrdinalIgnoreCase) ? new AdvancedInMemoryChatHistoryProvider() : null
         });
     }
 
@@ -297,7 +321,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         }
 
         // Build and cast to the public interface type.
-        return BuildAgent(preset, loggingClient, forJsonSchema, providers);
+        return BuildAgent(preset, loggingClient, _builtToolCache, forJsonSchema, providers);
     }
 
 

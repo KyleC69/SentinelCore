@@ -16,7 +16,6 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.Contracts.Mcp;
-using SentinelCore.Orchestrations.Mcp;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
 
@@ -61,7 +60,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     private bool _isAddingServer;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(AddServerCommand))]
     [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
     [NotifyCanExecuteChangedFor(nameof(StopServerCommand))]
     [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))]
@@ -426,7 +424,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     private async Task LoadAsync(CancellationToken token)
     {
         IReadOnlyList<McpServerInfo> servers;
-        IReadOnlyList<string> agents;
 
         try
         {

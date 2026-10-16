@@ -182,15 +182,19 @@ public static class MagenticPromptOverrides
 
 
     /// <summary>The default template for creating the initial plan. Placeholders: <c>{team}</c>.</summary>
+
+    /// <summary>The default template for creating the initial plan. Placeholders: <c>{team}</c>.</summary>
     public static readonly string TaskLedgerPlanPrompt = """
                                                                  
-                                                         Fantastic. To address this request we have assembled the following team:
+                                                         We have been requested to find the root cause of the reported condition or system event or perform an investigation based on the users request.
+                                                         We have the following team members to perform this investigation:
                                                                                                                   
                                                          {team}
                                                                          
-                                                         Each member is equipped with the same tools and can be used in parallel on complicated tasks.
-                                                         Please devise a short bullet-point plan for gathering evidence for the
-                                                         original request.
+                                                         Each member has their own unique role to perform in this investigation.
+                                                         Please devise a plan of the evidence needed to collect from the system to find the cause or reason for the observed behavior or event described in the
+                                                         original request in field 'OriginalSignal'. There is a generated 'SignalSummary' that may help you understand the signal better.
+                                                         The chief goal is to diagnose the signal cause and if possible list remediation steps.
                                                                  
                                                          """;
 

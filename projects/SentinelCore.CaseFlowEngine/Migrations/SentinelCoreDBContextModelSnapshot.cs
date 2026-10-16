@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using SentinelCore.Cfe.Persistence;
+using SentinelCore.Data.DBEntities;
 
 #nullable disable
 
-namespace SentinelCore.Migrations
+namespace SentinelCore.CaseFlowEngine.Migrations
 {
     [DbContext(typeof(SentinelCoreDBContext))]
     partial class SentinelCoreDBContextModelSnapshot : ModelSnapshot
@@ -23,7 +23,10 @@ namespace SentinelCore.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("SentinelCore.Cfe.Persistence.CaseEntity", b =>
+            modelBuilder.HasSequence<int>("Signal_ID_seq")
+                .HasMin(1L);
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.CaseEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -31,34 +34,31 @@ namespace SentinelCore.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AdditionalSignals")
+                    b.Property<int>("CaseStatus")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("CaseId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("CaseTranscript")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(2)
                         .HasColumnType("datetime2(2)")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasDefaultValueSql("(getdate())");
 
-                    b.Property<int?>("EvidenceId")
+                    b.Property<int?>("InvestigationObjectiveId")
                         .HasColumnType("int");
 
-                    b.Property<int>("InitiatingSignal")
+                    b.Property<int?>("InvestigationOutcomeId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PatternMemoryId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PlanId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Remediation")
+                    b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Status")
+                    b.Property<int>("PatternMemoryEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SignalEntityId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -67,21 +67,82 @@ namespace SentinelCore.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex(new[] { "PatternMemoryId" }, "FK_CaseEntity")
+                    b.HasIndex("InvestigationObjectiveId")
                         .IsUnique()
-                        .HasFilter("[PatternMemoryId] IS NOT NULL");
+                        .HasFilter("[InvestigationObjectiveId] IS NOT NULL");
 
-                    b.HasIndex(new[] { "InitiatingSignal" }, "IX_CaseEntity")
+                    b.HasIndex("InvestigationOutcomeId")
+                        .IsUnique()
+                        .HasFilter("[InvestigationOutcomeId] IS NOT NULL");
+
+                    b.HasIndex(new[] { "PatternMemoryEntityId" }, "FK_CaseEntity")
+                        .IsUnique()
+                        .HasFilter("([PatternMemoryId] IS NOT NULL)");
+
+                    b.HasIndex(new[] { "SignalEntityId" }, "IX_CaseEntity")
                         .IsUnique();
 
-                    b.HasIndex(new[] { "EvidenceId" }, "UQ_Evidence")
-                        .IsUnique()
-                        .HasFilter("[EvidenceId] IS NOT NULL");
+                    b.HasIndex(new[] { "InvestigationObjectiveId" }, "IX_CaseEntity_InvestigationObjectiveId")
+                        .HasDatabaseName("IX_CaseEntity_InvestigationObjectiveId1");
+
+                    b.HasIndex(new[] { "InvestigationOutcomeId" }, "IX_CaseEntity_InvestigationOutcomeId")
+                        .HasDatabaseName("IX_CaseEntity_InvestigationOutcomeId1");
 
                     b.ToTable("CaseEntity");
                 });
 
-            modelBuilder.Entity("SentinelCore.Cfe.Persistence.EvidenceEntity", b =>
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.EvidenceEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CaseEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CollectorAgent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Confidence")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EvidenceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EvidenceId"));
+
+                    b.Property<string>("Observation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ObservedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SourcePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseEntityId");
+
+                    b.HasIndex(new[] { "CaseId" }, "IX_EvidenceEntities_CaseId");
+
+                    b.ToTable("EvidenceEntities");
+                });
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.InvestigationObjective", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -89,31 +150,42 @@ namespace SentinelCore.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ContentJson")
+                    b.Property<string>("InvestigationQuestions")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("EvidenceId")
-                        .HasColumnType("int");
+                    b.Property<string>("KnownFacts")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Provenance")
+                    b.Property<string>("OriginalSignal")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RelevantEvidenceSources")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Severity")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SignalSummary")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Source")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Timestamp")
+                    b.Property<string>("SourceType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("TimeStamp")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
+                    b.Property<string>("UnknownFacts")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("EvidenceEntity");
+                    b.ToTable("InvestigationObjective");
                 });
 
-            modelBuilder.Entity("SentinelCore.Cfe.Persistence.PatternMemoryEntity", b =>
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.InvestigationOutcome", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -124,8 +196,47 @@ namespace SentinelCore.Migrations
                     b.Property<int>("CaseId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PatternId")
+                    b.Property<double>("Confidence")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Impact")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Remediation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RootCause")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SignalId")
                         .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "SignalId" }, "IX_InvestigationOutcome_SignalId");
+
+                    b.ToTable("InvestigationOutcome");
+                });
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.PatternMemoryEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PatternMemoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Signal")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<SqlVector<float>?>("SignalEmbedding")
                         .HasMaxLength(1024)
@@ -146,7 +257,7 @@ namespace SentinelCore.Migrations
                     b.HasKey("Id")
                         .HasName("PK_PatternMemory");
 
-                    b.HasIndex(new[] { "PatternId" }, "AK_PatternMemory_PatternMemoryId")
+                    b.HasIndex(new[] { "PatternMemoryId" }, "AK_PatternMemory_PatternMemoryId")
                         .IsUnique();
 
                     b.HasIndex(new[] { "CaseId" }, "IX_PatternMemory_CaseRecordId");
@@ -154,7 +265,7 @@ namespace SentinelCore.Migrations
                     b.ToTable("PatternMemoryEntity");
                 });
 
-            modelBuilder.Entity("SentinelCore.Cfe.Persistence.ResolutionEntity", b =>
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.RemediationEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -162,32 +273,41 @@ namespace SentinelCore.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CaseRecordId")
-                        .HasColumnType("int");
+                    b.Property<bool>("AgentVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasPrecision(2)
-                        .HasColumnType("datetime2(2)");
+                    b.Property<int?>("CaseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0)
+                        .HasColumnName("CaseID");
+
+                    b.Property<string>("Command")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("Confidence")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Impact")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("RawJsonContent")
-                        .IsRequired()
+                    b.Property<string>("Summary")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("Verified")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false, "DF_ResolutionSteps_Verified");
-
                     b.HasKey("Id")
-                        .HasName("PK_ResolutionSteps");
+                        .HasName("PK_RemediationEntities");
 
-                    b.ToTable("ResolutionEntity");
+                    b.HasIndex(new[] { "CaseId" }, "IX_RemediationEntities_CaseID");
+
+                    b.ToTable("RemediationEntity");
                 });
 
-            modelBuilder.Entity("SentinelCore.Persistence.InvestigationPlanStepsEntity", b =>
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.SignalEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -195,66 +315,17 @@ namespace SentinelCore.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("CompletedSuccessfully")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false, "DF_InvestigationPlanStepsEntities_CompletedSuccessfully");
-
-                    b.Property<string>("Instruction")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsTargetPropertyMissing")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasComment("If the target of the task is not found this bit must be flipped")
-                        .HasDefaultValue(false, "DF_InvestigationPlanStepsEntities_IsTargetPropertyMissing");
-
-                    b.Property<int>("PlanId")
+                    b.Property<int>("CaseId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Result")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StepId")
-                        .HasColumnType("int")
-                        .HasComment("Links this step the plan it was created in");
-
-                    b.Property<string>("Surface")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasComment("Domain or Surface that the task applies to");
-
-                    b.Property<bool>("TaskBlocked")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false, "DF_InvestigationPlanStepsEntities_TaskBlocked");
-
-                    b.HasKey("Id")
-                        .HasName("PK_InvestigationPlanSteps");
-
-                    b.HasIndex(new[] { "StepId" }, "AK_InvestigationPlanSteps_InvestigationPlanStepId")
-                        .IsUnique();
-
-                    b.ToTable("InvestigationPlanStepsEntity");
-                });
-
-            modelBuilder.Entity("SentinelCore.Persistence.SignalEntity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<DateTime>("FirstSeen")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("SignalId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValueSql("NEXT VALUE FOR [dbo].[Signal_ID_seq]");
+                        .HasColumnType("int");
 
                     b.Property<string>("SignalText")
                         .IsRequired()
@@ -264,9 +335,6 @@ namespace SentinelCore.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("datetimeoffset");
-
                     b.HasKey("Id")
                         .HasName("PK_Signals");
 
@@ -274,6 +342,79 @@ namespace SentinelCore.Migrations
                         .IsUnique();
 
                     b.ToTable("SignalEntity");
+                });
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.CaseEntity", b =>
+                {
+                    b.HasOne("SentinelCore.Data.DBEntities.InvestigationObjective", "InvestigationObjective")
+                        .WithOne("CaseEntity")
+                        .HasForeignKey("SentinelCore.Data.DBEntities.CaseEntity", "InvestigationObjectiveId");
+
+                    b.HasOne("SentinelCore.Data.DBEntities.InvestigationOutcome", "InvestigationOutcome")
+                        .WithOne("CaseEntity")
+                        .HasForeignKey("SentinelCore.Data.DBEntities.CaseEntity", "InvestigationOutcomeId");
+
+                    b.HasOne("SentinelCore.Data.DBEntities.PatternMemoryEntity", "PatternMemory")
+                        .WithOne("CaseEntity")
+                        .HasForeignKey("SentinelCore.Data.DBEntities.CaseEntity", "PatternMemoryEntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SentinelCore.Data.DBEntities.SignalEntity", "SignalEntity")
+                        .WithMany()
+                        .HasForeignKey("SignalEntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InvestigationObjective");
+
+                    b.Navigation("InvestigationOutcome");
+
+                    b.Navigation("PatternMemory");
+
+                    b.Navigation("SignalEntity");
+                });
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.EvidenceEntity", b =>
+                {
+                    b.HasOne("SentinelCore.Data.DBEntities.CaseEntity", "CaseEntity")
+                        .WithMany("EvidenceEntities")
+                        .HasForeignKey("CaseEntityId");
+
+                    b.Navigation("CaseEntity");
+                });
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.RemediationEntity", b =>
+                {
+                    b.HasOne("SentinelCore.Data.DBEntities.CaseEntity", "Case")
+                        .WithMany("RemediationEntities")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("FK_RemediationEntities_CaseEntity_CaseID");
+
+                    b.Navigation("Case");
+                });
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.CaseEntity", b =>
+                {
+                    b.Navigation("EvidenceEntities");
+
+                    b.Navigation("RemediationEntities");
+                });
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.InvestigationObjective", b =>
+                {
+                    b.Navigation("CaseEntity");
+                });
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.InvestigationOutcome", b =>
+                {
+                    b.Navigation("CaseEntity");
+                });
+
+            modelBuilder.Entity("SentinelCore.Data.DBEntities.PatternMemoryEntity", b =>
+                {
+                    b.Navigation("CaseEntity");
                 });
 #pragma warning restore 612, 618
         }

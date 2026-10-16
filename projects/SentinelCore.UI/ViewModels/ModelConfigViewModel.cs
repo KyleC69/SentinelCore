@@ -15,7 +15,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
 
@@ -188,7 +187,11 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
 
                 if (profile is null)
                 {
-                    incomplete.Add(card.AgentName);
+                    if (!ReferenceEquals(card.AgentName, null))
+                    {
+                        incomplete.Add(card.AgentName);
+                    }
+
                     continue;
                 }
 

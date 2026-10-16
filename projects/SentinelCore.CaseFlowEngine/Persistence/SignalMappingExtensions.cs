@@ -7,7 +7,7 @@
 
 
 using SentinelCore.Contracts.CaseFlow;
-using SentinelCore.Persistence;
+using SentinelCore.Data.DBEntities;
 
 
 
@@ -35,27 +35,12 @@ public static class SignalMappingExtensions
 
         return new SignalEntity
         {
-                Id = signal.Id,
-                SignalId = signal.SignalId,
-                SignalText = signal.SignalText,
-                Source = signal.Source,
-                FirstSeen = signal.Timestamp
-        };
-    }
-
-    /// <summary>
-    ///     Maps a <see cref="SignalEntity" /> persistence object to a <see cref="Signal" /> contract object.
-    /// </summary>
-    /// <param name="signal">The source signal entity to map from.</param>
-    /// <returns>A new <see cref="Signal" /> populated with values from <paramref name="signal" />.</returns>
-    public static Signal ToSignal(this SignalEntity signal)
-    {
-        ArgumentNullException.ThrowIfNull(signal);
-        return new Signal(signal.SignalText, signal.Source)
-        {
             Id = signal.Id,
-            SignalId = signal.SignalId,
-            Timestamp = signal.FirstSeen
+            CaseId = 0, // or map if the contract exposes CaseId
+            SignalText = signal.SignalText,
+            Source = signal.Source,
+            FirstSeen = signal.Timestamp,
+            Notes = signal.Notes
         };
     }
 }

@@ -8,7 +8,8 @@
 
 using System.ComponentModel;
 
-using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.CaseFlow;
 
 
@@ -62,7 +63,7 @@ public class CaseTool : AITool
 
         try
         {
-            int caseId = _engine.CreateCase(rawSignal);
+            int caseId = _engine.CreateCase(rawSignal.ToEntity());
 
 
             return ToolResult.Ok(caseId.ToString());

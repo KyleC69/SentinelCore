@@ -9,8 +9,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -20,15 +18,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Console;
 
-using SentinelCore.Abstractions;
+using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection;
-using SentinelCore.Cfe.Persistence;
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Orchestrations.Agents.AgentPresets;
+using SentinelCore.Data.DBEntities;
 using SentinelCore.Orchestrations.Infrastructure;
 using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
-using SentinelCore.RemoteKB.Persistence;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
 
@@ -137,7 +134,7 @@ public sealed partial class App
         // EvidenceStore/PatternMemoryStore/SignalRepository). AddDbContext alone would leave the
         // factory unresolvable.
         services.AddDbContextFactory<SentinelCoreDBContext>(options => { options.UseSqlServer(Environment.GetEnvironmentVariable("SENTINEL_CORE")); });
-        services.AddDbContextFactory<SentinelRAGDBContext>(options => { options.UseSqlServer(Environment.GetEnvironmentVariable("REMOTEKB")); });
+        //   services.AddDbContextFactory<SentinelRAGDBContext>(options => { options.UseSqlServer(Environment.GetEnvironmentVariable("REMOTEKB")); });
 
 
 
@@ -402,17 +399,21 @@ public sealed partial class App
                     logging.AddFilter("Microsoft.Hosting", LogLevel.Warning);
                     logging.AddFilter("ModelContextProtocol.Client", LogLevel.Warning);
                     //logging.AddDebug();
-                    logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Encoder = JavaScriptEncoder.Default, Indented = true, SkipValidation = false, NewLine = "\n" }; });
+                    //      logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Encoder = JavaScriptEncoder.Default, Indented = true, SkipValidation = false, NewLine = "\n" }; });
                     var jOptions = new JsonLoggerOptions
                     {
                         FilePath = jPath,
                         Indented = true,
                         MinimumLevel = LogLevel.Trace,
-                        Output = JsonLoggerOutput.File,
+                        Output = JsonLoggerOutput.Console,
                         Stream = null
+
                     };
-                    logging.AddProvider(new JsonLoggerProvider(jOptions));
+                    // Custom JSON logger provider for structured logging to file and console.
+                    // I am having to format output differently by source.
+                    //logging.AddProvider(new JsonLoggerProvider(jOptions));
                     logging.AddFileLogger();
+                    logging.AddConsole();
                     logging.SetMinimumLevel(LogLevel.Trace);
                 })
                 .Build();
@@ -425,29 +426,6 @@ public sealed partial class App
 
 
 
-
-    // Method formats a json string to be more human-readable with indentation and line breaks.
-    //Helper made for formatting json data properties that are attached to parent objects
-    private string PrettyJson(string json)
-    {
-
-
-        string cleaned = JsonSerializer.Deserialize<string>(json);
-
-        // If the result itself contains JSON:
-        using JsonDocument doc = JsonDocument.Parse(cleaned!);
-
-        string pretty = JsonSerializer.Serialize(
-                doc.RootElement,
-                new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-
-        return pretty;
-
-
-    }
 
 
 

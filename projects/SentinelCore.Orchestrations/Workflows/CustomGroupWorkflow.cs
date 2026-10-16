@@ -1,8 +1,8 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
-// File:         CustomGroup.cs
+// File:         CustomGroupWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  101007
+// Build Num:  101601
 
 
 
@@ -12,6 +12,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Agents.AI.Workflows.Specialized.Magentic;
 using Microsoft.Extensions.Logging;
 
+using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
@@ -30,26 +31,23 @@ namespace SentinelCore.Orchestrations.Workflows;
 //AGENTS IGNORE THIS FILE FOR QUICK TESTING OF WORKFLOWS AND AGENTS. THIS IS NOT A REAL ORCHESTRATION, JUST A HARNESS FOR TESTING.
 public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 {
+    private AIAgent _adversarialAnalystAgent;
     private readonly ISentinelAgentFactory _agentFactory;
     private bool _agentInitialized;
-    private AIAgent _aggregator;
-    private AIAgent _classifier;
 
-    private AIAgent _manager;
+    // --------------  Executors  -------------------
 
-    // Session used for running the core agent. Initialized lazily.
-    private AIAgent _evidenceCollector;
-    private AIAgent _researcher;
-    private EvaluationExec _evalExec;
+
+
+    // --------------  Agents  -------------------
+    private AIAgent _classifierAgent;
+    private AIAgent _evidenceCollectorAgent;
+    private AIAgent _evidenceValidationAgent;
     private readonly ExecutorFactory _executorFactory;
-    private AIAgent _adversarialAnalyst;
-    private AIAgent? _finalReporter;
-
-
-
-    // The classifier agent now uses the preset‑only overload; any custom instructions are supplied via the preset definition.
-    // Re-initialize the classifier agent to use the new preset‑only overload.
-    // Removed the constant string `SENTINELCORE_OBJECTIVE_GEN` and replaced it with `AgentPreset.UtilityAgent` and `AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN`
+    private AIAgent _finalReportWriterAgent;
+    private AIAgent _managerAgent;
+    private AIAgent _researcherAgent;
+    private ExecutorBinding _validatorBinding;
 
 
 
@@ -62,18 +60,22 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     {
         _executorFactory = new ExecutorFactory(serviceProvider);
         _agentFactory = agentFactory;
-
         _agentInitialized = false;
-        _aggregator = null!;
-        _finalReporter = null!;
 
-        _classifier = null!;
-        _manager = null!;
-        _evidenceCollector = null!;
-        _adversarialAnalyst = null!;
-        _researcher = null!;
 
-        _evalExec = new EvaluationExec("EvaluationExec");
+        _managerAgent = null!;
+        _evidenceCollectorAgent = null!;
+        _adversarialAnalystAgent = null!;
+        _researcherAgent = null!;
+
+        _classifierAgent = null!;
+        _finalReportWriterAgent = null!;
+
+
+
+
+
+
     }
 
 
@@ -112,10 +114,8 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     public async Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage inputMessage, CancellationToken token)
     {
 
-        AgentSession session = await _classifier.CreateSessionAsync();
-
+        AgentSession session = await _classifierAgent.CreateSessionAsync(token);
         AgentRunOptions options = new() { ResponseFormat = ChatResponseFormat.Json };
-
         //  AgentResponse<InvestigationObjective> response = await _classifier.RunAsync<InvestigationObjective>(inputMessage, session, null, options);
 
 
@@ -242,7 +242,7 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
         await EnsureAgentInitializedAsync(cancellationToken);
 
-        // ── Construct NON-Agent executors ────────────────────────────────────────────────────
+
 
 
 
@@ -267,15 +267,28 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
+    /// <summary>
+    ///     Magentic subworkflow investigation team
+    /// </summary>
+    /// <returns></returns>
     [Experimental("MAAI001")]
     private ExecutorBinding BuildSubWorkflow()
     {
-        MagenticPromptOverrides over = new() { FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt };
+        MagenticPromptOverrides over = new() { FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt, TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt };
         //-------------------  Magentic Group workflow  -------------------
-        Workflow workflow = new MagenticWorkflowBuilder(_manager).AddParticipants(_evidenceCollector, _adversarialAnalyst, _researcher).WithName("ForensicsInvestigationTeamWorkflow").WithDescription("A powerful manager coordinates the investigation team and monitors the activities and progress of the evidence collector, adversarial analyst, and researcher.").RequirePlanSignoff(false).WithPromptOverrides(over).WithMaxRounds(10).WithMaxResets(2).Build();
+        Workflow workflow = new MagenticWorkflowBuilder(_managerAgent).AddParticipants(_evidenceCollectorAgent, _adversarialAnalystAgent, _researcherAgent, _finalReportWriterAgent) //Test run with adversarial agent to challenge assumptions and keep other honest.
+                .WithName("ForensicsInvestigationTeamWorkflow")
+                .WithDescription("A powerful manager coordinates the investigation team and monitors the activities and progress of the evidence collector, adversarial analyst, and researcher.")
+                .RequirePlanSignoff(false)
+                .WithPromptOverrides(over)
+                .WithOutputFrom(_finalReportWriterAgent)
+                .WithMaxRounds(10)
+                .WithMaxResets(2)
+                .Build();
 
 
-        return workflow.BindAsExecutor("Investigation-Group");
+
+        return workflow.BindAsExecutor("ForensicsInvestigationTeamWorkflow");
     }
 
 
@@ -288,22 +301,20 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     [Experimental("MAAI001")]
     private Workflow BuildWorkflow()
     {
-
-        ExecutorBinding magSubworkflow = BuildSubWorkflow();
         ExecutorCollection executors = _executorFactory.CreateAllExecutors();
-        ClassifierAgentExec classifierExec = new(_classifier, reporter: _reporter);
-        ExecutorBinding finalReporterExec = _aggregator.BindAsExecutor(true);
-
+        ExecutorBinding magSubworkflow = BuildSubWorkflow();
+        ExecutorBinding finalReporterExec = _finalReportWriterAgent.BindAsExecutor();
+        ClassifierAgentExec classifierExec = new(_classifierAgent, _reporter);
 
 
 
         //------------------- PARENT workflow  -------------------a
         Workflow classflow = new WorkflowBuilder(executors.NewCaseExecutor) //Create New case
-                .AddEdge(executors.NewCaseExecutor, classifierExec) // Build objective and send to Mag group
-                .AddEdge(classifierExec, magSubworkflow) // Mag group executes and hands to final reporter
+                .AddEdge(executors.NewCaseExecutor, executors.SignalClassifierExecutor) // Build objective and send to Mag group
+                .AddEdge(executors.SignalClassifierExecutor, magSubworkflow) // Mag group executes and hands to final reporter
                 .AddEdge(magSubworkflow, finalReporterExec) // Consolodates and creates final report and sends to evaluation executor
-                .AddEdge(finalReporterExec, _evalExec) // All evidence is validate and evaluated and a final report is generated
-                .AddEdge(_evalExec, executors.TerminateWorkflow) // All data is persisted for audit trail status is set!
+                .AddEdge(finalReporterExec, _validatorBinding) // All evidence is validate and evaluated and a final report is generated
+                .AddEdge(_validatorBinding, new TerminateWorkflow(_reporter)) // .AddEdge(_evalExec, executors.TerminateWorkflow) // All data is persisted for audit trail status is set!
                 .WithName("InvestigationWorkflow") //Final report is sent to the manager for review and approval
                 .WithDescription("Coordinates the investigation workflow by connecting the classifier, investigation group, and evaluation executor.")
                 .Build();
@@ -331,22 +342,36 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
         try
         {
-            _manager = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, "LeadInvestigator", "Coordinates the investigation team and monitors progress", AgentInstructionConstants.MAG_MANAGER_INSTRUCTIONS);
+            _managerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, "ManagerCoordinator", "Coordinates the investigation team and monitors progress", AgentInstructionConstants.MAG_MANAGER_INSTRUCTIONS);
+            _evidenceCollectorAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", "You are a forensic grade digital evidence collector, you collect and document each piece of evidence meticulously.");
+            _adversarialAnalystAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "AdversarialAnalyst", "The challenger of the collected evidence", "You are a forensic grade digital evidence debunker, it is your job to challenge the findings of your teammates and validate each piece of evidence. if you can't validate it, it is not definitive.");
+            _researcherAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", "You are a research assistant, you conduct thorough research to support the investigation.");
 
 
-            _evidenceCollector = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", "");
-            _adversarialAnalyst = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceValidator", "The formal Investigation Auditor will challenge the collected evidence", "You are a forensic grade digital evidence validator, you challenge the findings and validate each piece of evidence. if you can't validate it, it is not definitive.");
-            _researcher = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", "You are a research assistant, you conduct thorough research to support the investigation.");
-            _aggregator = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", "You are a case report author, you aggregate the results from all workers and generate the final case report.");
+            _finalReportWriterAgent = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", "You are a case report author, you aggregate the results from all workers and generate the final case report.");
 
-            // Classifier agent now uses the preset‑only overload; any custom instructions are supplied via the preset definition.
+            // evidence validator is a skeptical adversarial analyst. Magentic groups may or may not select this type of worker, this will have to be tested in the future. For now it's a separate step/executor
+            _evidenceValidationAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceValidator", "The formal Investigation Auditor will challenge the collected evidence", "You are a forensic grade digital evidence validator, you challenge the findings and validate each piece of evidence. if you can't validate it, it is not definitive.");
+            _validatorBinding = _evidenceValidationAgent.BindAsExecutor();
 
-            _classifier = await _agentFactory.CreateAgentAsync(AgentPreset.UtilityAgent, AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN, token).ConfigureAwait(false);
 
-            //
+            // Classifier agent creates a structured objective with as much as can be inferred from the initial input signal. The preset has domain basics here we supply with task specific instructions. 
+            // We will be reusing agent, can we?
+            _classifierAgent = await _agentFactory.CreateAgentAsync(AgentPreset.UtilityAgent, AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN, token).ConfigureAwait(false);
+
+            //  -----------------── Construct NON-Agent executors ────────────────────────────────────────────────────
             //
             EvaluationExec evalExec = new("EvaluationExec");
 
+            ExecutorBinding finalWriter = _finalReportWriterAgent.BindAsExecutor();
+
+
+            Throw.IfNull(_managerAgent);
+            Throw.IfNull(_evidenceCollectorAgent);
+            Throw.IfNull(_adversarialAnalystAgent);
+            Throw.IfNull(_researcherAgent);
+            Throw.IfNull(_evidenceValidationAgent);
+            Throw.IfNull(_finalReportWriterAgent);
 
             _agentInitialized = true;
         }
@@ -355,15 +380,6 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
             Debug.WriteLine(e.Message);
         }
     }
-
-
-
-
-
-
-
-
-    // The classifier preset now contains any required instructions; this constant is no longer used.
 
 
 
@@ -447,4 +463,8 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
             throw;
         }
     }
+
+
+
+
 }

@@ -8,12 +8,10 @@
 
 using Microsoft.Extensions.AI;
 
-using SentinelCore.Contracts.Mcp;
 
 
 
-
-namespace SentinelCore.Orchestrations.Mcp;
+namespace SentinelCore.Contracts.Mcp;
 
 
 

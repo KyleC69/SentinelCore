@@ -4,13 +4,15 @@
   </PropertyGroup>
   <!-- Microsoft.Agents packages -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Agents.AI" Version="1.24.0" />
-    <PackageVersion Include="Microsoft.Agents.AI.Abstractions" Version="1.24.0" />
+    <PackageVersion Include="ErikEJ.EntityFrameworkCore.DgmlBuilder" Version="6.0.0" />
+    <PackageVersion Include="Json.Net" Version="1.0.33" />
+    <PackageVersion Include="Microsoft.Agents.AI" Version="1.25.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Abstractions" Version="1.25.0" />
     <PackageVersion Include="Microsoft.Agents.AI.Harness" Version="1.24.0" />
     <PackageVersion Include="Microsoft.Agents.AI.Mcp" Version="1.24.0" />
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.24.0" />
-    <PackageVersion Include="Microsoft.Agents.AI.Workflows.Generators" Version="1.24.0" />
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.0-preview2.26190.5" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.25.0" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows.Generators" Version="1.25.0" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
@@ -22,7 +24,7 @@
     <PackageVersion Include="Microsoft.Windows.Compatibility" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22621.3233" />
     <PackageVersion Include="Microsoft.Windows.SDK.Ref" Version="10.0.22621.3233" />
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="Newtonsoft.Json" Version="14.0.1-beta2" />
     <PackageVersion Include="System.DirectoryServices.AccountManagement" Version="10.0.0" />
     <PackageVersion Include="System.Management.Automation" Version="7.6.4" />
     <PackageVersion Include="TaskScheduler" Version="2.11.0" />
@@ -70,7 +72,7 @@
     <PackageVersion Include="OpenAI" Version="2.12.0" />
     <PackageVersion Include="System.Management" Version="10.0.5" />
     <PackageVersion Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.10" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.13" />
     <PackageVersion Include="ColorJsonProvider" Version="1.0.0" />
   </ItemGroup>
 </Project>

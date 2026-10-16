@@ -71,18 +71,19 @@ internal sealed class ExecutorFactory
     {
         return new ExecutorCollection
         {
-                SafetyExecutor = Create<SafetyExecutor>(),
-                EscalatedExecutor = Create<EscalatedExecutor>(),
-                PatternCheckExecutor = Create<PatternCheckExecutor>(),
-                HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
-                PersistEvidenceExecutor = Create<PersistEvidence>(),
-                NewCaseExecutor = Create<NewCaseExecutor>(),
-                AggregationExecutor = Create<AggregationExecutor>(),
-                MoreInformationExecutor = Create<MoreInformationExecutor>(),
-                CriticalAlert = Create<CriticalAlert>(),
-                TerminateWorkflow = Create<TerminateWorkflow>(),
-                SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
-                WhiteListExecutor = Create<WhiteListExecutor>()
+            SafetyExecutor = Create<SafetyExecutor>(),
+            EscalatedExecutor = Create<EscalatedExecutor>(),
+            PatternCheckExecutor = Create<PatternCheckExecutor>(),
+            HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
+            PersistEvidenceExecutor = Create<PersistEvidence>(),
+            NewCaseExecutor = Create<NewCaseExecutor>(),
+            AggregationExecutor = Create<AggregationExecutor>(),
+            MoreInformationExecutor = Create<MoreInformationExecutor>(),
+            CriticalAlert = Create<CriticalAlert>(),
+            TerminateWorkflow = Create<TerminateWorkflow>(),
+            SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
+            WhiteListExecutor = Create<WhiteListExecutor>(),
+            SignalClassifierExecutor = Create<SignalClassifierExecutor>(),
         };
     }
 }
@@ -109,4 +110,5 @@ internal sealed class ExecutorCollection
     public required SafetyReviewExecutor SafetyReviewExecutor { get; init; }
     public required TerminateWorkflow TerminateWorkflow { get; init; }
     public required WhiteListExecutor WhiteListExecutor { get; init; }
+    public required SignalClassifierExecutor SignalClassifierExecutor { get; init; }
 }

@@ -17,10 +17,15 @@ namespace SentinelCore.Orchestrations.Agents.Models;
 
 
 
-// An IEnumerable of ChatMessage objects that can be used to represent a conversation or a series of messages exchanged between participants. This class can be used to store and manage chat messages in a structured manner, allowing for easy access and manipulation of the messages within the context of an application or system that handles chat interactions.
-public sealed class ChatMessages : IEnumerable<ChatMessage>
+/// <summary>
+/// A super convenient object that can be easily passed around the framework as a universal sharable
+/// also encapsulates helper methods for easily adding chat messages.
+/// By using this object it simplifies workflow/executor definitions and prevents type mismatch errors.
+/// can also be passed in as input.
+/// </summary>
+public class ChatMessages : IEnumerable<ChatMessage>
 {
-    private readonly List<ChatMessage> _messages = new();
+    private static readonly List<ChatMessage> _messages = new();
 
 
 
@@ -49,6 +54,16 @@ public sealed class ChatMessages : IEnumerable<ChatMessage>
 
 
 
+
+
+
+    public string Text
+    {
+        get
+        {
+            return string.Join("\n", _messages.Select(m => m.Text));
+        }
+    }
 
 
 
@@ -110,9 +125,10 @@ public sealed class ChatMessages : IEnumerable<ChatMessage>
 
 
 
-    public void AddAssistantMessage(string content)
+    public ChatMessages AddAssistantMessage(string content)
     {
         _messages.Add(new ChatMessage(ChatRole.Assistant, content));
+        return new ChatMessages(_messages);
     }
 
 
@@ -134,9 +150,10 @@ public sealed class ChatMessages : IEnumerable<ChatMessage>
 
 
 
-    public void AddSystemMessage(string content)
+    public ChatMessages AddSystemMessage(string content)
     {
         _messages.Add(new ChatMessage(ChatRole.System, content));
+        return new ChatMessages(_messages);
     }
 
 
@@ -146,9 +163,10 @@ public sealed class ChatMessages : IEnumerable<ChatMessage>
 
 
 
-    public void AddUserMessage(string content)
+    public ChatMessages AddUserMessage(string content)
     {
         _messages.Add(new ChatMessage(ChatRole.User, content));
+        return new ChatMessages(_messages);
     }
 
 
@@ -172,6 +190,7 @@ public sealed class ChatMessages : IEnumerable<ChatMessage>
 
     public bool Remove(ChatMessage message)
     {
+        // Is there a comparer needed here?
         return _messages.Remove(message);
     }
 

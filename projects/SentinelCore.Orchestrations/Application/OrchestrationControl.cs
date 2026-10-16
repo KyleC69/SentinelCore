@@ -8,7 +8,7 @@
 
 using Microsoft.Extensions.Options;
 
-using SentinelCore.Abstractions;
+using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Orchestrations.Abstractions;

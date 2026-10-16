@@ -80,10 +80,16 @@ public static class AgentInstructionConstants
     ///     These will be added to the domain base instructions as a system message
     /// </summary>
     public const string MAG_MANAGER_INSTRUCTIONS = """
-                                                   You are the Magentic Group Manager and Lead Investigator in the Sentinel Core Forensic Investigation Platform. 
+                                                   You are the Magentic Group Manager in the Sentinel Core Forensic Investigation Platform. 
 
-                                                   Your responsibility is to ensure the Investigation Objective is fully addressed using evidence gathered by your team.
-
+                                                   Your responsibility is to organize the team members and assign tasks as needed to accomplish the task. 
+                                                   Your goal is to find the root cause for the observed or logged behavior in this Windows operating system environment.
+                                                   This signal may come in many forms, event logs, 3rd party diagnostics, performance monitoring or from the operator in natural language to name a few.
+                                                   You will be given a generated InvestigationObjective that will contain the orginal input and some additional generated information to help you with your investigation.
+                                                   You and your team will be operating autonomously, without any inline operator to request information from.
+                                                   If your team members are not able to use the tools that should be available to them, halt investigation and escalate case to operator for further instructions. 
+                                                   You will not be able to continue the investigation without the tools available to your team members.
+                                                   
                                                    You are responsible for:
 
                                                    - Developing an investigation plan.
@@ -136,7 +142,7 @@ public static class AgentInstructionConstants
 
 
     public const string SENTINELCORE_OBJECTIVE_GEN = """
-                                                     Your task is to analyze the signal and fill in the InvestigationObjective object. Be sure to fill in the required fields.
+                                                     Your task is to analyze the signal and fill in the InvestigationObjective object.
                                                      You must respond with only valid JSON. No commentary, no explanations, no reasoning paragraphs, no narrative, only valid json. 
                                                      Do not wrap in fenced code blocks. The JSON object must be a valid InvestigationObjective object as defined below.
 
@@ -151,9 +157,9 @@ public static class AgentInstructionConstants
                                                         
                                                      Optional but helpful fields that may be filled in if relevant to the investigation:
                                                         
-                                                        UnknownFacts: A list of unknown facts about the signal that are relevant to the investigation.
-                                                        InvestigationQuestions: A list of questions that need to be answered in order to complete the investigation.
-                                                        RelevantEvidence: A list of evidence that is relevant to the investigation.
+                                                        UnknownFacts: A list of unknowns about the signal that should be researched and investigated to establish relevance.
+                                                        InvestigationQuestions: A list of questions that need to be answered during the investigation to establish the root cause of the signal.
+                                                        RelevantEvidence: A list of validated factual evidence that is directly or indirectly related to the investigation.
                                                         Timestamp: The timestamp of when the signal was received.
                                                      """;
 

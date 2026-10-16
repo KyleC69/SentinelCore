@@ -7,6 +7,7 @@
 
 
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Orchestrations.Agents.Models;
 
 
 
@@ -39,7 +40,7 @@ public sealed record AgentPresetDefinition
 
     /// <summary>
     ///     Gets the unique agent name identifier. This must match the name used
-    ///     in <see cref="SentinelAgentCatalog" /> and workflow executor registrations.
+    ///   
     /// </summary>
     public required string AgentName { get; set; }
 
@@ -183,7 +184,7 @@ public sealed record AgentPresetDefinition
             UseLogging = true,
             UseRagSearch = true,
             UseContextEnrichers = true,
-            UseTools = false,
+            UseTools = true,
             TaskInstructions = null,
             DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S + "\n" + AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS
         };
@@ -309,14 +310,15 @@ public sealed record AgentPresetDefinition
 
 
 
-    private static AgentPresetDefinition WorkerRole()
+    private static AgentPresetDefinition WorkerRole(string? name = null, string? id = null)
     {
         return new AgentPresetDefinition
         {
-            AgentId = "GroupParticipantAgent",
-            AgentName = "GroupParticipantAgent",
+            AgentId = id ?? "GenericWorkerAgent",
+            AgentName = name ?? "GenericWorkerAgent",
             ModelProfile = null,
-            Description = "Mag Group Participant Worker agent responsible for participating in group tasks and supporting core workflow operations.",
+            Description = "All purpose expert Windows Forensic Investigator. " +
+                          "This agent is responsible for performing investigative tasks and supporting core workflow operations.",
             UseTools = false,
             TaskInstructions = null,
             Tier = ModelTier.Worker,

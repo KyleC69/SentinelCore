@@ -17,7 +17,7 @@ using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.CaseFlowEngine.CaseFlow;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.Contracts.Events;
@@ -44,7 +44,7 @@ namespace SentinelCore.UI.ViewModels;
 /// </summary>
 public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, INavigationAware
 {
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private int _alertedCount;
 
     /// <summary>
@@ -53,7 +53,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// </summary>
     private readonly CancellationToken _appShutdownToken;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private int _blockedCount;
 
     private readonly ICaseFlowEngine _caseFlowEngine;
@@ -64,17 +64,17 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private bool _disposed;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private int _escalatedCount;
 
     private ISentinelCoreEvents _events;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private string _inputText = string.Empty;
 
     [ObservableProperty] private int _investigationCount;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SendCommand))] [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private bool _isBusy;
 
     /// <summary>

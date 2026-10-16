@@ -61,4 +61,7 @@ public interface ISentinelAgentFactory
 
 
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, string taskInstructions);
+
+
+    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription);
 }

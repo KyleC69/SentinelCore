@@ -6,6 +6,6 @@
 
 
 
-global using Microsoft.Extensions.AI;
 global using Microsoft.Agents.AI;
 global using Microsoft.Agents.AI.Workflows;
+global using Microsoft.Extensions.AI;

@@ -10,7 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.Abstractions;
+using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
@@ -50,7 +50,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
     private AIAgent? _magManagerAgent;
-    private AIAgent? _objectGenExec;
 
     // Pre-created sub-workflow agents (initialized once via InitializeAsync)
     private AIAgent? _safetyAgent;
@@ -342,7 +341,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // TheCore agent with session
         TheCoreExec theCoreExec = new(_theCoreAgent, _theCoreSession, _reporter);
         DirectAnswerExecutor directAnswerAgentExec = new(_theCoreAgent, _theCoreSession, _reporter);
-        GenerateObjectiveExec generateObjectiveExec = new(_theCoreAgent, _theCoreSession, _reporter);
 
         // ── Compose the switch-based routing graph ─────────────────────────────────────────
         // First stop Safety gate
@@ -355,7 +353,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         builder.AddEdge(executors.WhiteListExecutor, classifierExec);
 
 
-        builder.AddSwitch(classifierExec, switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), generateObjectiveExec).AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec).AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert).AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor).AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.HumanOperatorExecutor));
+        builder.AddSwitch(classifierExec, switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), executors.SignalClassifierExecutor).AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec).AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert).AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor).AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.HumanOperatorExecutor));
 
         builder.AddEdge(executors.MoreInformationExecutor, executors.TerminateWorkflow);
 
@@ -372,7 +370,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         // -- ------- Investigate Branch -------------------------
         //Open case send to TheCore
-        builder.AddEdge(generateObjectiveExec, executors.NewCaseExecutor) // TheCore generate the initial hypothesis objective
+        builder.AddEdge(executors.SignalClassifierExecutor, executors.NewCaseExecutor) // TheCore generate the initial hypothesis objective
                 .AddEdge(executors.NewCaseExecutor, subWorkflowExecutor) // NewCase creates a new case and sends objective to the sub-workflow for evidence gathering
                 .AddEdge(subWorkflowExecutor, executors.TerminateWorkflow); // Sub-workflow evidence gathering Magnetic orchestration
 

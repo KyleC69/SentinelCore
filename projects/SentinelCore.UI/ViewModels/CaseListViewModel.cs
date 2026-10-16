@@ -13,7 +13,7 @@ using CommunityToolkit.Mvvm.Input;
 
 using Microsoft.Extensions.Logging;
 
-using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.CaseFlowEngine.CaseFlow;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;

@@ -25,6 +25,9 @@ public class ApprovalBasedManager : RoundRobinGroupChatManager
 
     public ApprovalBasedManager(IReadOnlyList<AIAgent> agents, string approverName) : base(agents)
     {
+        if (agents == null) throw new ArgumentNullException(nameof(agents));
+        if (string.IsNullOrWhiteSpace(approverName)) throw new ArgumentException("Approver name cannot be null or empty.", nameof(approverName));
+
         _approverName = approverName;
     }
 
@@ -38,9 +41,22 @@ public class ApprovalBasedManager : RoundRobinGroupChatManager
     // Override to add custom termination logic
     protected override ValueTask<bool> ShouldTerminateAsync(IReadOnlyList<ChatMessage> history, CancellationToken cancellationToken = default)
     {
-        ChatMessage? last = history.LastOrDefault();
-        bool shouldTerminate = last?.AuthorName == _approverName && last.Text.Contains("approve", StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            if (history == null || history.Count == 0) return ValueTask.FromResult(false);
 
-        return ValueTask.FromResult(shouldTerminate);
+            ChatMessage? last = history[^1];
+            if (last == null) return ValueTask.FromResult(false);
+
+            bool isApprover = string.Equals(last.AuthorName, _approverName, StringComparison.OrdinalIgnoreCase);
+            bool hasApproved = last.Text?.Contains("approve", StringComparison.OrdinalIgnoreCase) ?? false;
+
+            return ValueTask.FromResult(isApprover && hasApproved);
+        }
+        catch (Exception)
+        {
+            // In orchestration, we prefer continuing the conversation over crashing the workflow on a termination check failure.
+            return ValueTask.FromResult(false);
+        }
     }
 }

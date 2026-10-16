@@ -4,18 +4,10 @@
 // Author: Kyle L. Crowder
 // Build Num:  100908
 
-
-
-using SentinelCore.CaseFlowEngine.Cfe;
-using SentinelCore.Cfe.Persistence;
-
-
-
-
 namespace SentinelCore.CaseFlowEngine.Persistence;
 
 
-
+/*
 
 
 /// <summary>
@@ -35,12 +27,12 @@ public static class PatternMemoryMappingExtensions
 
         return new PatternMemoryEntity
         {
-                Id = patternMemory.Id,
-                PatternId = patternMemory.PatternId,
-                SignalEmbedding = patternMemory.SignalEmbedding,
-                SummaryEmbedding = patternMemory.SummaryEmbedding,
-                Summary = patternMemory.Summary,
-                Timestamp = patternMemory.Timestamp
+            Id = patternMemory.Id,
+            PatternMemoryId = patternMemory.PatternMemoryId,
+            SignalEmbedding = patternMemory.SignalEmbedding,
+            SummaryEmbedding = patternMemory.SummaryEmbedding,
+            Summary = patternMemory.Summary,
+            Timestamp = patternMemory.Timestamp
         };
     }
-}
+}*/

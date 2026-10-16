@@ -6,7 +6,7 @@
 
 
 
-using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.CaseFlowEngine.CaseFlow;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Cfe;
 

@@ -6,10 +6,13 @@
 
 
 
-using SentinelCore.CaseFlowEngine.Cfe;
+using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.Infrastructure;
+using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.CaseFlow;
-using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Data.DBEntities;
+using SentinelCore.Orchestrations.Agents.Models;
 
 
 
@@ -26,13 +29,13 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     non-agent executors build onto the case currently being investigated.
 ///     Each step is focused, clean, and deliberate — clear separation enforced.
 /// </summary>
-[YieldsOutput(typeof(ChatMessage))]
+[YieldsOutput(typeof(ExecutorEnvelope))]
 public sealed partial class NewCaseExecutor : Executor
 {
     private readonly ICaseFlowEngine _caseEng;
     private readonly ISystemReporter _reporter;
 
-
+    private ChatMessages _chatMessages = new ChatMessages();
 
 
 
@@ -80,56 +83,31 @@ public sealed partial class NewCaseExecutor : Executor
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The original hypothesis, passed through after case creation.</returns>
     [MessageHandler]
-    public async ValueTask<ChatMessage> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask<ExecutorEnvelope> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        // --- Status: Executor start ---
-        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(NextStep)}");
-
-        // --- Null validation ---
-        ChatMessage prompt = await context.ReadStateAsync<ChatMessage>(WorkFlowStateKeys.PROMPT, "SharedState", cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException();
-
-        _reporter.ReportDebug($"[{Name}] Loaded prompt from state: {prompt.Text}");
-
-
-        if (string.IsNullOrEmpty(prompt.Text))
+        var envelope = new ExecutorEnvelope
         {
-            _reporter.ReportWarning($"[{Name}] Prompt is null or empty. Cannot create a new case without a prompt.");
-            ChatMessage fallback = new(ChatRole.Assistant, "⚠️ Cannot create a new case as the prompt is missing. Please provide a prompt.");
-            await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
-            return message;
-        }
+            SignalText = message.Text
+        };
 
+        Throw.IfNull(message);
 
+        // --- Status: Executor start ---
+        _reporter.ReportInfo($"[{Name}] Starting execution.");
 
+        // --- Save Envelope to state ---
+        await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, envelope, "SharedState", cancellationToken).ConfigureAwait(false);
+        _reporter.ReportDebug($"[{Name}] Saved envelope to state: {envelope}");
 
-
-        // --- Action: Create New Case ---
-        // This executor's primary responsibility is to create a new case.
-        // The prompt is used as the initial signal for the case.
         try
         {
-            // --- Status: Begin processing ---
-            _reporter.ReportInfo($"[{Name}] Processing message...");
-
-            string? result = await ProcessMessageAsync(prompt, context, cancellationToken).ConfigureAwait(false);
-            await context.QueueStateUpdateAsync(WorkFlowStateKeys.CASE_ID, result, "SharedState", cancellationToken);
-
-            if (result is null)
+            CaseEntity? result = await ProcessCaseAsync(message, context, cancellationToken).ConfigureAwait(false);
+            if (!ReferenceEquals(result, null))
             {
-                /*  _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(ChatMessage)}.");
-                  result = new ChatMessage(ChatRole.Assistant, $"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(ChatMessage)}.");
-                  // Optionally yield here if you want immediate UI publish:
-                  await context.YieldOutputAsync(result, cancellationToken).ConfigureAwait(false);
-                */
+                envelope.Case = result;
             }
 
-
-
-            // --- Status: Final output ---
-            _reporter.ReportInfo($"[{Name}] Completed successfully. Output Case Id: {result}");
-            ChatMessage msgs = new ChatMessage().AddUserMessage(message.Text);
-
-            return msgs;
+            await context.YieldOutputAsync(envelope, cancellationToken);
 
         }
         catch (OperationCanceledException)
@@ -140,16 +118,14 @@ public sealed partial class NewCaseExecutor : Executor
         }
         catch (Exception ex)
         {
-            // --- Robust error handling ---
-            _reporter.ReportError($"[{Name}] Exception: {ex.Message}", ex);
 
-            ChatMessage fallback = new(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}");
+            var fallback = $"⚠️ An internal error occurred in {Name}: {ex.Message}";
             await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
-
-            _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
-
-            return fallback;
+            _reporter.ReportInfo($"[{Name}] {fallback} due to error.");
+            _chatMessages.AddAssistantMessage(fallback);
         }
+
+        return envelope;
     }
 
 
@@ -162,31 +138,40 @@ public sealed partial class NewCaseExecutor : Executor
     /// <summary>
     ///     Core processing logic: creates a new case and publishes the CaseId to context.
     /// </summary>
-    private async ValueTask<string> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
+    private async ValueTask<CaseEntity?> ProcessCaseAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
     {
-        _reporter.ReportDebug("New case starting now.");
-
-
-
-        ChatMessage? prompt = await context.ReadStateAsync<ChatMessage>(WorkFlowStateKeys.PROMPT, "SharedState", cancellationToken).ConfigureAwait(false);
-
-        if (!ReferenceEquals(prompt?.Text, null))
+        try
         {
-             int caseId = await _caseEng.CreateCaseAsync(new Signal(prompt!.Text, "UIPrompt"), cancellationToken).ConfigureAwait(false);
+            _reporter.ReportDebug("New case starting now.");
 
-            // Starts new case, saves caseid to context.
-            // Log action and publish to UI.
-            _reporter.ReportInfo($"New case created with ID: {caseId}.");
+            if (!ReferenceEquals(message?.Text, null))
+            {
+                var sig = new Signal(message.Text, "UIPrompt");
 
-            // Set caseid so it can be picked up by future steps.
-            await context.QueueStateUpdateAsync(WorkFlowStateKeys.CASE_ID, caseId, "SharedState", cancellationToken).ConfigureAwait(false);
 
-            // The returned hypothesis is auto-yielded as workflow output (non-void
-            // handler return + WithOutputFrom registration); an explicit yield here
-            // would duplicate it.
-            return caseId.ToString();
+                // Create a new case using the prompt text as the initial signal. Set the source to "UIPrompt" to indicate it originated from the user interface instead of an automated system
+                int caseId = await _caseEng.CreateCaseAsync(sig.ToEntity(), cancellationToken).ConfigureAwait(false);
+
+                // Starts new case, saves caseid to context.
+                // Log action and publish to UI.
+                _reporter.ReportInfo($"Case created with ID: {caseId}.");
+                CaseEntity? caseFile = await _caseEng.GetCaseByIdAsync(caseId, cancellationToken).ConfigureAwait(false);
+
+
+
+                // Set caseid so it can be picked up by future steps.
+                await context.QueueStateUpdateAsync(WorkFlowStateKeys.CASE_ID, caseFile?.Id, "SharedState", cancellationToken).ConfigureAwait(false);
+
+                return caseFile;
+
+            }
+        }
+        catch (Exception e)
+        {
+
+            _reporter.ReportError(e.Message, e);
         }
 
-        return "No reponse from case engine. Case not created.";
+        return null!;
     }
 }

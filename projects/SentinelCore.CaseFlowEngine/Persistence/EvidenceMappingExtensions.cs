@@ -7,8 +7,7 @@
 
 
 using SentinelCore.Contracts.CaseFlow;
-
-using EvidenceEntity = SentinelCore.Cfe.Persistence.EvidenceEntity;
+using SentinelCore.Data.DBEntities;
 
 
 
@@ -21,28 +20,37 @@ namespace SentinelCore.CaseFlowEngine.Persistence;
 
 /// <summary>
 ///     Provides extension methods that map between <see cref="Evidence" /> contract
-///     objects and <see cref="SentinelCore.Cfe.Persistence.EvidenceEntity" /> persistence objects.
+///     objects and <see cref="EvidenceEntity" /> persistence objects.
 /// </summary>
 public static class EvidenceMappingExtensions
 {
+
+
+
     /// <summary>
-    ///     Maps an <see cref="Evidence" /> DTO to a new <see cref="SentinelCore.Cfe.Persistence.EvidenceEntity" />.
+    /// Maps the DTO instance to the corresponding EF Entity.
     /// </summary>
-    /// <param name="evidence">The source evidence DTO to map from.</param>
-    /// <returns>A new <see cref="SentinelCore.Cfe.Persistence.EvidenceEntity" /> populated with values from <paramref name="evidence" />.</returns>
+    /// <returns>The mapped EF Entity.</returns>
     public static EvidenceEntity ToEntity(this Evidence evidence)
     {
-        ArgumentNullException.ThrowIfNull(evidence);
-
+        // Implementation logic will go here, mapping all public properties
+        // to the fields of the EvidenceToEntity structure.
         return new EvidenceEntity
         {
+
+            // Example mapping:
             Id = evidence.Id,
-            EvidenceId = evidence.EvidenceId,
-            ContentJson = evidence.ContentJson,
-            Provenance = evidence.Provenance,
-            Source = evidence.Source,
-            Timestamp = evidence.Timestamp,
-            Type = evidence.Type
+            CollectorAgent = evidence.CollectorAgent,
+            SourcePath = evidence.SourcePath,
+            SourceType = evidence.SourceType,
+            Observation = evidence.Observation,
+            ObservedAt = evidence.ObservedAt,
+            CreatedAt = evidence.CreatedAt,
+            Confidence = evidence.Confidence,
+            CaseId = evidence.CaseId,
+            CaseEntity = evidence.Case.ToEntity(),
+            // Other properties...
         };
     }
+
 }

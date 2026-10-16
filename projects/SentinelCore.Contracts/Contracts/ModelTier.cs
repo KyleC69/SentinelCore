@@ -6,12 +6,7 @@
 
 
 
-using SentinelCore.Contracts.Contracts;
-
-
-
-
-namespace SentinelCore.Orchestrations.Agents.AgentPresets;
+namespace SentinelCore.Contracts.Contracts;
 
 
 

@@ -14,9 +14,21 @@ namespace SentinelCore.Contracts.CaseFlow;
 
 public sealed class Signal
 {
-    public Signal(string text, string source)
+
+    public Signal()
     {
-        SignalText = text;
+    }
+
+
+
+
+
+
+
+
+    public Signal(string signalText, string source)
+    {
+        SignalText = signalText;
         Source = source;
         Timestamp = DateTime.UtcNow;
         // Initialize non-nullable Notes to an empty string to satisfy CS8618.
