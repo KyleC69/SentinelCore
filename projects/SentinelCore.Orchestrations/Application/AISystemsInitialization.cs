@@ -6,12 +6,9 @@
 
 
 
-using Microsoft.Extensions.Hosting;
-
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
-using SentinelCore.Orchestrations.Mcp;
 
 
 
@@ -22,7 +19,7 @@ namespace SentinelCore.Orchestrations.Application;
 
 
 
-public sealed class AISystemsInitialization : BackgroundService
+public sealed class AISystemsInitialization
 {
     private readonly IMcpServerRegistry _mcpRegistry;
     private readonly IOrchestrationControl _orchestrationControl;
@@ -71,7 +68,7 @@ public sealed class AISystemsInitialization : BackgroundService
     ///     See <see href="https://learn.microsoft.com/dotnet/core/extensions/workers">Worker Services in .NET</see> for
     ///     implementation guidelines.
     /// </remarks>
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await EnsureMcpServersStartedAsync(stoppingToken);
         await _orchestrationControl.InitializeOrchestrationAsync(stoppingToken);
@@ -98,6 +95,7 @@ public sealed class AISystemsInitialization : BackgroundService
             try
             {
                 await _mcpRegistry.StartAsync(server.Definition.Id, cancellationToken).ConfigureAwait(false);
+                _reporter.ReportInfo("MCP Registry have been started.");
             }
             catch (Exception ex)
             {

@@ -116,6 +116,8 @@ public static class SentinelCoreServiceExtensions
         });
         services.AddSingleton<IRagSearchService, RagSearchService>();
 
+
+
         services.AddSingleton<IOrchestrationControl, OrchestrationControl>();
         services.AddTransient<IChatClientFactory, SentinelChatClientFactory>();
         services.AddTransient<CustomGroupWorkflow>();
@@ -155,7 +157,7 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<IMcpServerRegistryStore>(sp => new JsonFileMcpServerRegistryStore(registryPath, sp.GetRequiredService<ILogger<JsonFileMcpServerRegistryStore>>()));
         services.AddSingleton<ITokenCache>(_ => new DpapiTokenCache(tokenCachePath));
         services.AddSingleton<IMcpConnectionFactory, McpConnectionFactory>();
-        services.AddHostedService<McpServerRegistryInitializer>();
+        // McpServerRegistryInitializer moved to App.xaml.cs OnStartup for explicit control
 
 
         return services;

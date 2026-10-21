@@ -8,7 +8,6 @@
 
 #pragma warning disable MAAI001
 
-using Microsoft.Agents.AI.Compaction;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.CaseFlowEngine.Infrastructure;
@@ -18,7 +17,6 @@ using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Agents.Models;
-using SentinelCore.Orchestrations.Providers;
 
 
 
@@ -54,7 +52,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 {
 
 
-    private readonly IList<AITool> _builtToolCache;
+    private IReadOnlyList<AITool> _builtToolCache;
     private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
     private readonly Lock _builtAgentsLock = new();
     private readonly IChatClientFactory _chatClientFactory;
@@ -66,7 +64,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     private readonly IModelResolver _modelResolver;
 
     private readonly IPatternMatcher _patternMatcher;
-    private static IMcpServerRegistry _registry;
+    private IMcpServerRegistry _registry;
 
 
 
@@ -87,13 +85,26 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     public SentinelAgentFactory(IChatClientFactory chatClientFactory, IModelResolver modelResolver, IPatternMatcher patternMatcher, ILoggerFactory loggerFactory, IMcpServerRegistry registry)
     {
         _chatClientFactory = chatClientFactory ?? throw new ArgumentNullException(nameof(chatClientFactory));
-        // _profileBuilder is obsolete – not injected.
         _modelResolver = modelResolver ?? throw new ArgumentNullException(nameof(modelResolver));
         _patternMatcher = patternMatcher ?? throw new ArgumentNullException(nameof(patternMatcher));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _logger = loggerFactory.CreateLogger<SentinelAgentFactory>();
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
-        _builtToolCache = _registry.GetAllTools(CancellationToken.None);
+        _builtToolCache = _registry.GetToolsFromCache();
+        _registry.ToolCacheChanged += OnToolCacheChanged;
+
+    }
+
+
+
+
+
+
+
+
+    private void OnToolCacheChanged()
+    {
+        RefreshToolCache();
     }
 
 
@@ -200,17 +211,18 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             contextProviders = new List<AIContextProvider>();
         }
 
+        /*
+         TEMPORARILY DISABLED UNTIL PATTERN MEMORY IS STABLE
 
+                if (preset.UsePatternMemory)
+                {
+                    contextProviders.Add(new PatternMemoryInjector(_patternMatcher, _loggerFactory.CreateLogger<PatternMemoryInjector>()));
+                }
 
-        if (preset.UsePatternMemory)
-        {
-            contextProviders.Add(new PatternMemoryInjector(_patternMatcher, _loggerFactory.CreateLogger<PatternMemoryInjector>()));
-        }
+             //   PipelineCompactionStrategy pipeline = new(new ToolResultCompactionStrategy(CompactionTriggers.TokensExceed(0x200)), new SlidingWindowCompactionStrategy(CompactionTriggers.TurnsExceed(25)), new TruncationCompactionStrategy(CompactionTriggers.TokensExceed(0x128000)));
 
-        PipelineCompactionStrategy pipeline = new(new ToolResultCompactionStrategy(CompactionTriggers.TokensExceed(0x200)), new SlidingWindowCompactionStrategy(CompactionTriggers.TurnsExceed(25)), new TruncationCompactionStrategy(CompactionTriggers.TokensExceed(0x128000)));
-
-        contextProviders.Add(new CompactionProvider(pipeline));
-
+             //   contextProviders.Add(new CompactionProvider(pipeline));
+        */
         if (preset.UseContextEnrichers)
         {
             // Add context enrichers here
@@ -233,34 +245,26 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="chatResponseFormat"></param>
     /// <param name="contextProviders">The context providers that enrich agent invocations.</param>
     /// <returns>A fully configured <see cref="ChatClientAgent" />.</returns>
-    private static ChatClientAgent BuildAgent(AgentPresetDefinition preset, IChatClient chatClient, IList<AITool> toolCache, ChatResponseFormatJson? chatResponseFormat = null, List<AIContextProvider?>? contextProviders = null)
+    private ChatClientAgent BuildAgent(AgentPresetDefinition preset, IChatClient chatClient, ChatResponseFormat? chatResponseFormat = null, List<AIContextProvider?>? contextProviders = null)
     {
 
 
-        //  IList<AITool> aitools = _registry.GetAllTools(CancellationToken.None);
 
         ChatOptions chatOptions = new()
         {
             ConversationId = Guid.NewGuid().ToString("N"),
-            Instructions = preset.TaskInstructions, //Setting instructions at system level adds strength to them making them less likely to be ignored by agent, user level chat messages are suggestions in comparison.
+            Instructions = string.Concat(preset.DefaultSystemInstructions, preset.RoleInstructions), //Setting instructions at system level adds strength to them making them less likely to be ignored by agent, user level chat messages are suggestions in comparison.
             Temperature = preset.ModelProfile?.Temperature,
-            MaxOutputTokens = preset.ModelProfile?.MaxOutputTokens ?? 16000,
-            TopP = preset.ModelProfile?.TopP,
-            TopK = preset.ModelProfile?.TopK,
-            FrequencyPenalty = null,
-            PresencePenalty = null,
-            Seed = null,
-            Reasoning = null,
+            MaxOutputTokens = preset.ModelProfile?.MaxOutputTokens ?? 25000,
+
+            TopP = preset.ModelProfile?.TopP ?? .10f,
+            TopK = preset.ModelProfile?.TopK ?? 30,
+            Seed = 69,
             ModelId = preset.ModelProfile?.ModelId,
-            StopSequences = null,
             AllowMultipleToolCalls = true,
-            ToolMode = null,
-            Tools = preset.UseTools ? toolCache : new List<AITool>(),
-            AllowBackgroundResponses = null,
-            ContinuationToken = null,
-            RawRepresentationFactory = null,
-            AdditionalProperties = null,
-            ResponseFormat = chatResponseFormat
+            ToolMode = ChatToolMode.Auto,
+            Tools = preset.UseTools ? _builtToolCache.ToList() : new List<AITool>(),
+            ResponseFormat = chatResponseFormat ?? ChatResponseFormat.Json
         };
 
 
@@ -273,14 +277,14 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             AIContextProviders = preset.UseContextEnrichers ? contextProviders : null,
             UseProvidedChatClientAsIs = false,
             AllowConcurrentInvocation = false,
-            ClearOnChatHistoryProviderConflict = false,
+            ClearOnChatHistoryProviderConflict = true,
             WarnOnChatHistoryProviderConflict = false,
             ThrowOnChatHistoryProviderConflict = true,
             RequirePerServiceCallChatHistoryPersistence = false,
             EnableMessageInjection = false,
             DisableApprovalNotRequiredFunctionBypassing = false,
             DisableApprovalResponseBinding = false,
-            ChatHistoryProvider = preset.AgentName.Contains("core", StringComparison.OrdinalIgnoreCase) ? new AdvancedInMemoryChatHistoryProvider() : null
+            ChatHistoryProvider = null
         });
     }
 
@@ -305,7 +309,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         // Apply task instructions if supplied (preserve existing if null)
         if (taskInstructions != null)
         {
-            preset.TaskInstructions = taskInstructions;
+            preset.RoleInstructions += taskInstructions;
         }
 
         // Build the base chat client and wrap with logging middleware
@@ -321,7 +325,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         }
 
         // Build and cast to the public interface type.
-        return BuildAgent(preset, loggingClient, _builtToolCache, forJsonSchema, providers);
+        return BuildAgent(preset, loggingClient, forJsonSchema, providers);
     }
 
 
@@ -337,6 +341,22 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="preset">The worker preset whose identity is being registered.</param>
     /// <returns>A copy of the worker preset with a unique agent identifier and name.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="preset" /> is <c>null</c>.</exception>
+    /// <summary>
+    ///     Refreshes the tool cache by querying the MCP server registry for the latest tools.
+    ///     This should be called when the MCP server registry changes (e.g., after servers are started).
+    /// </summary>
+    public void RefreshToolCache()
+    {
+        _builtToolCache = _registry.GetToolsFromCache();
+    }
+
+
+
+
+
+
+
+
     private (string, string) RegisterUniqueWorkerAgent(string agentId, string agentName)
     {
         ArgumentNullException.ThrowIfNull(agentId);

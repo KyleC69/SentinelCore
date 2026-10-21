@@ -18,14 +18,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging.Console;
 
 using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection;
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Contracts.Mcp;
 using SentinelCore.Data.DBEntities;
+using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Infrastructure;
 using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
+using SentinelCore.Orchestrations.Mcp;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
 
@@ -352,6 +354,7 @@ public sealed partial class App
 
 
 
+
     /// <summary>
     ///     Initializes the application host and validates required startup configuration.
     /// </summary>
@@ -398,30 +401,35 @@ public sealed partial class App
                     logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
                     logging.AddFilter("Microsoft.Hosting", LogLevel.Warning);
                     logging.AddFilter("ModelContextProtocol.Client", LogLevel.Warning);
-                    //logging.AddDebug();
-                    //      logging.AddJsonConsole(options => { options.JsonWriterOptions = new JsonWriterOptions { Encoder = JavaScriptEncoder.Default, Indented = true, SkipValidation = false, NewLine = "\n" }; });
-                    var jOptions = new JsonLoggerOptions
-                    {
-                        FilePath = jPath,
-                        Indented = true,
-                        MinimumLevel = LogLevel.Trace,
-                        Output = JsonLoggerOutput.Console,
-                        Stream = null
-
-                    };
-                    // Custom JSON logger provider for structured logging to file and console.
-                    // I am having to format output differently by source.
-                    //logging.AddProvider(new JsonLoggerProvider(jOptions));
+                    // Custom JSON logger provider is registered via DI in AddSentinelCore()
+                    // and will be automatically resolved by the logging infrastructure.
+                    // -- Custom Logging --
+                    // Register CustomMAFFormatter and JsonLoggerProvider for structured logging
                     logging.AddFileLogger();
-                    logging.AddConsole();
+
+
+
+                    // Add the JsonLoggerProvider here explicitly
+                    var formatter = new CustomMAFFormatter();
+                    var loggerOptions = new JsonLoggerOptions
+                    {
+                        MinimumLevel = LogLevel.Trace,
+                        Indented = true,
+                        Output = JsonLoggerOutput.Console
+                    };
+                    logging.AddProvider(new JsonLoggerProvider(loggerOptions, formatter));
+
+
                     logging.SetMinimumLevel(LogLevel.Trace);
                 })
                 .Build();
 
         await StartHostOnceAsync(ShutdownToken);
+
+
+        var aiStartlup = Services.GetRequiredService<AISystemsInitialization>();
+        await aiStartlup.ExecuteAsync(ShutdownToken);
     }
-
-
 
 
 
@@ -468,6 +476,9 @@ public sealed partial class App
             throw;
         }
 
+        // Initialize MCP servers after host is started
+        await InitializeMcpServersAsync(cancellationToken).ConfigureAwait(false);
+
         // Show the main window after the host is running
         if (Current is null) return;
 
@@ -476,5 +487,56 @@ public sealed partial class App
             MainWindow = new MainWindow(_host.Services.GetRequiredService<INavigationService>());
             MainWindow.Show();
         });
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Loads persisted MCP server definitions and starts each server connection.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task InitializeMcpServersAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var registry = _host!.Services.GetRequiredService<IMcpServerRegistry>();
+            var logger = _host.Services.GetRequiredService<ILogger<App>>();
+
+            if (registry is McpServerRegistry serverRegistry)
+            {
+                logger.LogInformation("Loading persisted MCP server definitions.");
+                await serverRegistry.LoadPersistedAsync(cancellationToken).ConfigureAwait(false);
+
+                // Start all loaded MCP servers.
+                var serverInfos = await serverRegistry.ListAsync(cancellationToken);
+                foreach (var info in serverInfos)
+                {
+                    try
+                    {
+                        logger.LogInformation("Starting MCP server {ServerId}.", info.Definition.Id);
+                        await serverRegistry.StartAsync(info.Definition.Id, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to start MCP server {ServerId}.", info.Definition.Id);
+                    }
+                }
+            }
+            else
+            {
+                logger.LogWarning("MCP registry initializer expected {ExpectedType} but received {ActualType}.", typeof(McpServerRegistry).Name, registry.GetType().Name);
+            }
+        }
+        catch (Exception ex)
+        {
+            var logger = _host!.Services.GetRequiredService<ILogger<App>>();
+            logger.LogError(ex, "Failed to initialize MCP servers.");
+        }
     }
 }

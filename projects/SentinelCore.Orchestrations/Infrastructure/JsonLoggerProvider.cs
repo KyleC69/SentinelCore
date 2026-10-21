@@ -6,12 +6,14 @@
 
 
 
-using System.Net;
 using System.Text;
 using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging.Console;
+
+using JsonException = System.Text.Json.JsonException;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 
 
@@ -26,6 +28,7 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
     private readonly JsonLoggerOptions _options;
     private IExternalScopeProvider? _scopeProvider;
+    private readonly CustomMAFFormatter _formatter;
 
 
 
@@ -34,9 +37,11 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
-    public JsonLoggerProvider(JsonLoggerOptions options = null!)
+    public JsonLoggerProvider(JsonLoggerOptions options = null!, CustomMAFFormatter formatter = null!)
     {
         _options = options ?? new JsonLoggerOptions();
+        _formatter = formatter ?? new CustomMAFFormatter();
+
     }
 
 
@@ -48,7 +53,7 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
     public ILogger CreateLogger(string categoryName)
     {
-        return new JsonLogger(categoryName, _options, () => _scopeProvider ?? new LoggerExternalScopeProvider());
+        return new JsonLogger(categoryName, _options, () => _scopeProvider ?? new LoggerExternalScopeProvider(), _formatter);
     }
 
 
@@ -87,6 +92,7 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
         private readonly string _category;
         private readonly JsonLoggerOptions _options;
         private readonly Func<IExternalScopeProvider> _scopeProviderAccessor;
+        private readonly CustomMAFFormatter _formatter;
 
 
 
@@ -95,11 +101,12 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
-        public JsonLogger(string category, JsonLoggerOptions options, Func<IExternalScopeProvider> scopeProviderAccessor)
+        public JsonLogger(string category, JsonLoggerOptions options, Func<IExternalScopeProvider> scopeProviderAccessor, CustomMAFFormatter formatter)
         {
             _category = category;
             _options = options;
             _scopeProviderAccessor = scopeProviderAccessor;
+            _formatter = formatter;
         }
 
 
@@ -133,7 +140,14 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception, string> formatter)
+        /// <summary>Writes a log entry.</summary>
+        /// <param name="logLevel">Entry will be written on this level.</param>
+        /// <param name="eventId">Id of the event.</param>
+        /// <param name="state">The entry to be written. Can be also an object.</param>
+        /// <param name="exception">The exception related to this entry.</param>
+        /// <param name="formatter">Function to create a <see cref="T:System.String" /> message of the <paramref name="state" /> and <paramref name="exception" />.</param>
+        /// <typeparam name="TState">The type of the object to be written.</typeparam>
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             if (!IsEnabled(logLevel))
             {
@@ -145,147 +159,30 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
             List<object> scopes = new();
             scopeProvider?.ForEachScope((scope, list) => { list.Add(scope!); }, scopes);
 
-            string level = ConvertLevel(logLevel);
-            string renderedMessage = formatter(state, exception!);
-
-            string normalized = WebUtility.HtmlDecode(renderedMessage);
-
-            // Debugger.Break();
-
-
-
-
-
-
-            if (_category.Contains("AI", StringComparison.OrdinalIgnoreCase))
-            {
-
-                if (state is IReadOnlyList<KeyValuePair<string, object>> kvps)
-                {
-                    foreach (var kvp in kvps)
-                    {
-                        if (kvp.Key.Contains("ChatResponse",StringComparison.OrdinalIgnoreCase))
-                        {
-
-
-                            var chatResponseJson = kvp.Value as string;
-                            var prettyJson = CleanResponsePayload(chatResponseJson!);
-                            Write(prettyJson);
-                        }
-                        else if (kvp.Key.Contains("Messages",StringComparison.OrdinalIgnoreCase))
-                        {
-                            var chatResponseJson = kvp.Value as string;
-                            var prettyJson = CleanResponsePayload(chatResponseJson!);
-                            Write(prettyJson);
-                        }
-                        else if(kvp.Key.Contains("ChatOptions",StringComparison.OrdinalIgnoreCase) || kvp.Key.Contains("ChatClientMetadata",StringComparison.OrdinalIgnoreCase))
-                        {
-                            Write($"{kvp.Value.ToString()!}{Environment.NewLine}");
-                        }
-                        else
-                        {
-                            Write($"Unhandled Key is {kvp.Key}{Environment.NewLine}");
-                        }
-
-                    }
-                }
-            }
-
-            else if (!_category.Contains("AI", StringComparison.OrdinalIgnoreCase))
-            {
-                var normal = $"{level} : {DateTime.Now} : {_category} : [{eventId.Id}] : {renderedMessage}{Environment.NewLine}";
-                Write(normal);
-            }
+            // Use CustomMAFFormatter for special AI formatting
+            string formattedMessage = _formatter.Format(logLevel, _category, eventId, state, exception, formatter);
 
             LogEnvelope envelope = new()
             {
                 Timestamp = DateTimeOffset.Now,
-                Level = level,
+                Level = logLevel.ToString(),
                 Category = _category,
                 EventId = eventId.Id,
-                Message = formatter(state, exception!),
+                Message = formattedMessage,
                 Exception = exception?.ToString(),
                 Scopes = scopes
             };
 
 
-            string json = JsonSerializer.Serialize(envelope, new JsonSerializerOptions { WriteIndented = _options.Indented, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+            //  string json = JsonConvert.SerializeObject(envelope, new JsonSerializerSettings { Formatting = _options.Indented ? Formatting.Indented : Formatting.None });
 
-            //   Write(json);
-        }
-
-
-
-
-        private string ConvertLevel(LogLevel level)
-        {
-            return level switch
-            {
-                LogLevel.Trace => "TRC ",
-                LogLevel.Debug => "DBUG",
-                LogLevel.Information => "INFO",
-                LogLevel.Warning => "WARN",
-                LogLevel.Error => "ERR ",
-                LogLevel.Critical => "CRIT",
-                LogLevel.None => "NONE",
-                _ => "UNKN"
-            };
+            Write(formattedMessage);
         }
 
 
 
 
 
-
-
-
-        private string CleanResponsePayload(string payload)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("==================== Starting of ChatResponse ============================");
-            using JsonDocument doc = JsonDocument.Parse(payload!);
-
-            JsonElement messages;
-            if (doc.RootElement.ValueKind == JsonValueKind.Array)
-            {
-                messages = doc.RootElement;
-            }
-            else if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("messages", out JsonElement msgElement))
-            {
-                messages = msgElement;
-            }
-            else
-            {
-                return sb.AppendLine("Payload is not in a recognized ChatResponse format.").ToString();
-            }
-
-            if (messages.ValueKind != JsonValueKind.Array)
-            {
-                return sb.AppendLine("Messages element is not an array.").ToString();
-            }
-
-            foreach (JsonElement message in messages.EnumerateArray())
-            {
-                if (message.ValueKind == JsonValueKind.Object && message.TryGetProperty("contents", out JsonElement contents) && contents.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (JsonElement content in contents.EnumerateArray())
-                    {
-                        if (content.ValueKind == JsonValueKind.Object)
-                        {
-                            string? jtext = content.TryGetProperty("text", out JsonElement textElement) ? textElement.GetString() : null;
-                            if (!string.IsNullOrEmpty(jtext))
-                            {
-                                sb.AppendLine(jtext);
-                            }
-                        }
-                    }
-                }
-            }
-
-            sb.AppendLine();
-            sb.AppendLine("==================== Ending of ChatResponse ============================");
-            return sb.ToString();
-        }
 
 
 
@@ -293,20 +190,10 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
         {
             if (_options.Output == JsonLoggerOutput.Console)
             {
-                //      var obj = JObject.Parse(json);
-                //     var text = obj["text"]?.Value<string>();
-
                 lock (Console.Out)
                 {
-
-
-                    Console.Write(json); // Validate JSON
-
-
-
+                    Console.Write(json);
                 }
-
-
             }
             else if (_options.Output == JsonLoggerOutput.File && !string.IsNullOrEmpty(_options.FilePath))
             {
@@ -315,8 +202,6 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
                     string path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
                     Directory.CreateDirectory(path);
                     string filePath = Path.Combine(path, $"SentinelCore_{DateTime.Now:yyyyMMdd}.log");
-                    // Ensure directory exists
-
                     File.AppendAllText(filePath, json + Environment.NewLine, Encoding.UTF8);
                 }
             }
@@ -334,6 +219,11 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
+
+
+
+
+
     /// <summary>
     /// Attempts to detect a JSON string and return a pretty‑printed version.
     /// If the input is not valid JSON, the original string is returned unchanged.
@@ -347,23 +237,28 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
         string trimmed = maybeJson.Trim();
         // Quick heuristic: JSON objects start with '{' and arrays with '['.
-        if ((trimmed.StartsWith("{") && trimmed.EndsWith("}")) ||
-            (trimmed.StartsWith("[") && trimmed.EndsWith("]")))
+        if ((trimmed.StartsWith("{") && trimmed.EndsWith("}")) || (trimmed.StartsWith("[") && trimmed.EndsWith("]")))
         {
             try
             {
                 using JsonDocument doc = JsonDocument.Parse(trimmed);
-                return JsonSerializer.Serialize(
-                        doc.RootElement,
-                        new JsonSerializerOptions { WriteIndented = true });
+                return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
             }
             catch (JsonException)
             {
                 // Not valid JSON – fall back to original.
             }
         }
+
         return maybeJson;
     }
+
+
+
+
+
+
+
 
     private sealed class NullScope : IDisposable
     {
@@ -402,7 +297,7 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
-public sealed class JsonLoggerOptions
+public sealed class JsonLoggerOptions : ConsoleFormatterOptions
 {
     internal object FileLock { get; } = new();
 

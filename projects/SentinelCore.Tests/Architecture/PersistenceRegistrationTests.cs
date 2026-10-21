@@ -1,4 +1,4 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.Tests
 // File:         PersistenceRegistrationTests.cs
 // Author: Kyle L. Crowder
@@ -13,13 +13,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Moq;
 
-using SentinelCore.CaseFlowEngine.Cfe;
-using SentinelCore.CaseFlowEngine.Infrastructure.Persistence;
-using SentinelCore.Cfe.Persistence;
+using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.Contracts.Contracts;
+using SentinelCore.Data.DBEntities;
 using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
@@ -62,7 +62,7 @@ public sealed class PersistenceRegistrationTests
     {
         // Arrange — a strict factory mock that marks any context creation.
         Mock<IDbContextFactory<SentinelCoreDBContext>> factory = CreateMarkerFactory(out InvalidOperationException marker);
-        CaseFlowEngine.Cfe.CaseFlowEngine engine = new(factory.Object);
+        CaseFlowEngine.CaseFlow.CaseFlowEngine engine = new(factory.Object);
 
         // Act & Assert — the engine must reach the context through the factory.
         InvalidOperationException actual = await Assert.ThrowsAsync<InvalidOperationException>(() => engine.GetCaseCountByStatusAsync(CaseStatus.Open));
@@ -130,7 +130,7 @@ public sealed class PersistenceRegistrationTests
         Type factoryType = typeof(IDbContextFactory<SentinelCoreDBContext>);
         Type[] lockedConsumers =
         [
-                typeof(CaseFlowEngine.Cfe.CaseFlowEngine),
+                typeof(CaseFlowEngine.CaseFlow.CaseFlowEngine),
                 typeof(EvidenceStore),
                 typeof(PatternMemoryStore),
                 typeof(SignalRepository)
@@ -227,3 +227,5 @@ public sealed class PersistenceRegistrationTests
         factory.Verify(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }
+
+

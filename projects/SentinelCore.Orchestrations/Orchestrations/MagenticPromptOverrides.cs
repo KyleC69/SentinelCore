@@ -125,17 +125,39 @@ public static class MagenticPromptOverrides
 
     /// <summary>The default template for gathering the initial fact sheet. Placeholders: <c>{task}</c>.</summary>
     public static readonly string TaskLedgerFactsPrompt = """
-                                                          You will be presented with an Investigation Objective object that contains a hypothesis or an educated guess as to what the root cause of a problem or event may be. 
-                                                          The object will also contain a Signal Summary field that contains an observed problem or event log entry or other automated input device. 
-                                                          Your task is to devise a plan to gather evidence from the system to prove or refute TheCore's hypothesis.
-
-                                                              Here is the signal object:
-
+                                                          Below I will present a signal that you will be investigating. A signal is some condition or event that has been observed 
+                                                          and needs to be investigated to determine the root cause. The signal may be a system event, a user request, telemetry, 
+                                                          or any other type of observation that requires further analysis.
+                                                          
+                                                          Before we begin addressing the request, please answer the following pre-survey to the best of your ability.
+                                                                  Keep in mind that a fact is a specific piece of information that is backed by irefutable evidence. 
+                                                                  A fact is not an assumption, a guess, or a hunch. A fact is something that can be verified and supported by evidence. 
+                                                                  When you are unsure about a fact, it is better to leave it out than to include it without verification.
+                                                          
+                                                                  Here is the InvestigationObjective object containing the original request and a summary of the signal to be investigated:
+                                                          
                                                           {task}
-
-
-
-                                                          DO NOT fabricate any facts. You must be able to show the evidence for any fact you present.
+                                                          
+                                                              Here is the pre-survey:
+                                                          
+                                                              1. Please list any specific facts or figures that are GIVEN in the request itself. It is possible that
+                                                                 there are none.
+                                                              2. Please list any facts that may need to be looked up, and WHERE SPECIFICALLY they might be found.
+                                                                 In some cases, authoritative sources are mentioned in the request itself.
+                                                              3. Please list any potential causes or explanations for the observed behavior or event. These may be based on prior experience, domain knowledge, or other sources of information that 
+                                                                 may be relevant to the investigation. These are not facts, but rather hypotheses that will need to be tested and verified.
+                                                              4. Please list any facts that are recalled from memory, hunches, well-reasoned guesses, etc. that all need to be researched and proven. 
+                                                              These are not facts, but rather educated guesses that may be useful in guiding the investigation.
+                                                          
+                                                          When answering this survey, keep in mind that "facts" will typically be specific names, dates, statistics, etc.
+                                                          Your answer should use headings:
+                                                          
+                                                              1. GIVEN OR VERIFIED FACTS
+                                                              2. FACTS TO LOOK UP
+                                                              3. POTENTIAL CAUSES
+                                                              4. EDUCATED GUESSES
+                                                          
+                                                          DO NOT include any other headings or sections in your response. DO NOT list next steps or plans until asked to do so.
                                                           """;
 
 
@@ -186,7 +208,7 @@ public static class MagenticPromptOverrides
     /// <summary>The default template for creating the initial plan. Placeholders: <c>{team}</c>.</summary>
     public static readonly string TaskLedgerPlanPrompt = """
                                                                  
-                                                         We have been requested to find the root cause of the reported condition or system event or perform an investigation based on the users request.
+                                                         We have been requested to find the root cause and source of the signal, a reported condition or system event or perform an investigation based on the users request.
                                                          We have the following team members to perform this investigation:
                                                                                                                   
                                                          {team}
@@ -194,7 +216,7 @@ public static class MagenticPromptOverrides
                                                          Each member has their own unique role to perform in this investigation.
                                                          Please devise a plan of the evidence needed to collect from the system to find the cause or reason for the observed behavior or event described in the
                                                          original request in field 'OriginalSignal'. There is a generated 'SignalSummary' that may help you understand the signal better.
-                                                         The chief goal is to diagnose the signal cause and if possible list remediation steps.
+                                                         The primary goal of the investigation is to diagnose the root cause of the signal or condition and if possible list remediation steps.
                                                                  
                                                          """;
 

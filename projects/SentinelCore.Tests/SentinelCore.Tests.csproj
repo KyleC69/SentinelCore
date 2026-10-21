@@ -10,14 +10,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="JetBrains.Annotations" />
-		<PackageReference Include="Microsoft.Agents.AI.Abstractions" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
-		<PackageReference Include="ModelContextProtocol" />
-		<PackageReference Include="MSTest.TestAdapter" />
-		<PackageReference Include="MSTest.TestFramework" />
-		<PackageReference Include="Moq" />
-		<PackageReference Include="coverlet.collector" />
+	  <PackageReference Include="JetBrains.Annotations" />
+	  <PackageReference Include="Microsoft.Agents.AI" />
+	  <PackageReference Include="Microsoft.Agents.AI.Abstractions" />
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" />
+	  <PackageReference Include="ModelContextProtocol" />
+	  <PackageReference Include="MSTest.TestAdapter" />
+	  <PackageReference Include="MSTest.TestFramework" />
+	  <PackageReference Include="Moq" />
+	  <PackageReference Include="coverlet.collector" />
+	  <PackageReference Include="xunit" />
 	</ItemGroup>
 
 	<ItemGroup>

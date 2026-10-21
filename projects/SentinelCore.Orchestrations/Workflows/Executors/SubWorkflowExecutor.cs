@@ -57,13 +57,13 @@ public sealed partial class SubWorkflowExecutor : Executor
 
 
     [MessageHandler]
-    public async ValueTask<ChatMessage> HandleMessage(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
+    public async ValueTask<ExecutorEnvelope> HandleMessage(ExecutorEnvelope envelope, IWorkflowContext context, CancellationToken cancellationToken)
     {
         // Implement the logic for handling the ChatMessage here
         // For example, you can log the message or perform some processing
 
 
-        await using StreamingRun run = await InProcessExecution.RunStreamingAsync(_evidence, message, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await using StreamingRun run = await InProcessExecution.RunStreamingAsync(_evidence, envelope, cancellationToken: cancellationToken).ConfigureAwait(false);
         await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
         string? lastResponseId = null;
         WorkflowOutputEvent? finalOutput = null;
@@ -118,6 +118,6 @@ public sealed partial class SubWorkflowExecutor : Executor
         }
 
         RunStatus status = await run.GetStatusAsync().ConfigureAwait(false);
-        return message;
+        return envelope;
     }
 }

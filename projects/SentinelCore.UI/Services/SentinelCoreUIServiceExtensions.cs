@@ -8,7 +8,6 @@
 
 using Microsoft.Extensions.DependencyInjection;
 
-using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Services;
 using SentinelCore.UI.ViewModels;
@@ -46,7 +45,7 @@ public static class SentinelCoreUiServiceExtensions
         services.AddSingleton<IModelConfigGate, ModelConfigGate>();
         services.AddSingleton<IModelConfigStore, FileModelConfigStore>();
         services.AddSingleton<IWorkflowEventProcessor, WorkflowEventProcessor>();
-        services.AddHostedService<AISystemsInitialization>();
+        services.AddSingleton<AISystemsInitialization>();
 
         // ViewModels
         services.AddTransient<CoreChatViewModel>();

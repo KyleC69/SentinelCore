@@ -62,23 +62,11 @@ public sealed class InvestigationObjective
 
     [JsonPropertyName("severity")]
     [Description("The severity of the signal. This could be low, medium, high, or critical.")]
-    public string Severity { get; set; }
-
-    [JsonPropertyName("knownFacts")]
-    [Description("A list of known facts about the signal that are relevant to the investigation.")]
-    public List<string> KnownFacts { get; set; } = [];
-
-    [JsonPropertyName("unknownFacts")]
-    [Description("A list of unknown facts about the signal that may be relevant to the investigation.")]
-    public List<string> UnknownFacts { get; set; } = [];
+    public string Severity { get; set; } = string.Empty;
 
     [JsonPropertyName("investigationQuestions")]
-    [Description("A list of questions.")]
-    public List<string> InvestigationQuestions { get; set; } = [];
-
-    [JsonPropertyName("relevantEvidenceSources")]
-    [Description("A list of evidence sources that may be relevant to the investigation.")]
-    public List<string> RelevantEvidenceSources { get; set; } = [];
+    [Description("Questions that should be answered during the investigation.")]
+    public List<string> InvestigationQuestions { get; set; } = new List<string>();
 
 
     [JsonPropertyName("timestamp")]

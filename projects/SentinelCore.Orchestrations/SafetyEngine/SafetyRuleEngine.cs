@@ -109,7 +109,13 @@ public sealed class SafetyRuleEngine
         {
             try
             {
-                SafetyRuleResult result = rule.EvaluateAsync(context).GetAwaiter().GetResult();
+                var toolsTask = rule.EvaluateAsync(context);
+                if (!toolsTask.Wait(TimeSpan.FromSeconds(30)))
+                {
+                    throw new TimeoutException("Timeout while evaluating safety rule " + rule.Name);
+                }
+                SafetyRuleResult result = toolsTask.Result;
+
                 results.Add(result);
 
                 if (result.Action == SafetyAction.Block && _options.StopOnFirstBlock)

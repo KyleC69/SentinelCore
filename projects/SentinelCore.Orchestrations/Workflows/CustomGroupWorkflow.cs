@@ -48,6 +48,7 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     private AIAgent _managerAgent;
     private AIAgent _researcherAgent;
     private ExecutorBinding _validatorBinding;
+    private AIAgent _magSubworkflow;
 
 
 
@@ -115,13 +116,14 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     {
 
         AgentSession session = await _classifierAgent.CreateSessionAsync(token);
+
         AgentRunOptions options = new() { ResponseFormat = ChatResponseFormat.Json };
         //  AgentResponse<InvestigationObjective> response = await _classifier.RunAsync<InvestigationObjective>(inputMessage, session, null, options);
 
 
         //================================== Magnetic Group workflow  =========================
 
-        Workflow workflow = BuildWorkflow();
+        Workflow workflow = await BuildWorkflow(token);
 
         string sessionid = Guid.NewGuid().ToString();
         string? lastResponseId = null;
@@ -129,92 +131,17 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
-        await using (StreamingRun run = await InProcessExecution.RunStreamingAsync(workflow, inputMessage, sessionid, token))
+        await using (StreamingRun run = await InProcessExecution.Lockstep.RunStreamingAsync(workflow, inputMessage, sessionid, token))
         {
             await run.TrySendMessageAsync(new TurnToken(true));
             await foreach (WorkflowEvent workflowEvent in run.WatchStreamAsync(token))
-                switch (workflowEvent)
-                {
-                    case AgentResponseUpdateEvent updateEvent:
-
-
-                        // Log Tool content if present. This is useful for debugging tool calls and results.
-                        if (updateEvent.Update.Contents.Count > 0)
-                        {
-                            LogToolContent(updateEvent.ExecutorId, updateEvent.Update.Contents);
-
-                        }
-
-                        // Stream per-participant deltas. Group by ResponseId / MessageId / ExecutorId so
-                        // each new contiguous response prints its executor header once.
-                        string responseId = updateEvent.Update.ResponseId ?? updateEvent.Update.MessageId ?? updateEvent.ExecutorId;
-                        if (!string.Equals(responseId, lastResponseId, StringComparison.Ordinal))
-                        {
-                            if (lastResponseId is not null)
-                            {
-                                Debug.WriteLine(Environment.NewLine);
-                            }
-
-                            Debug.Write($"- {updateEvent.ExecutorId}: ");
-                            lastResponseId = responseId;
-                        }
-
-                        Debug.Write(updateEvent.Update.Text);
-                        // LogToolContent(updateEvent.ExecutorId, updateEvent.Update.Contents);
-                        break;
-                    case ExecutorCompletedEvent executorCompletedEvent:
-                        //    Debug.WriteLine($"Executor '{executorCompletedEvent.ExecutorId}' completed.");
-                        //  PrintLogSpace();
-                        break;
-
-                    case MagenticPlanCreatedEvent planCreated:
-                        Debug.WriteLine($"\n[Magentic Initial Plan]\n{planCreated.FullTaskLedger.Text}");
-                        PrintLogSpace();
-                        break;
-
-                    case MagenticReplannedEvent replanned:
-                        Debug.WriteLine($"\n[Magentic Replanned]\n{replanned.FullTaskLedger.Text}");
-                        PrintLogSpace();
-                        break;
-
-                    case MagenticProgressLedgerUpdatedEvent progressUpdated:
-                        MagenticProgressLedger ledger = progressUpdated.ProgressLedger;
-                        Debug.WriteLine($"\n[Magentic Progress Ledger] satisfied={ledger.IsRequestSatisfied}, " + $"inLoop={ledger.IsInLoop}, progressing={ledger.IsProgressBeingMade}, " + $"nextSpeaker={ledger.NextSpeaker}, instruction={ledger.InstructionOrQuestion}");
-                        PrintLogSpace();
-                        break;
-
-                    case WorkflowOutputEvent outputEvent when outputEvent.Is<List<ChatMessage>>():
-                        finalOutput = outputEvent;
-                        PrintLogSpace();
-                        break;
-
-                    case WorkflowErrorEvent workflowError:
-                        Debug.WriteLine(workflowError.Exception?.ToString() ?? "Unknown workflow error.");
-                        break;
-
-                    case ExecutorFailedEvent executorFailed:
-                        Debug.WriteLine($"Executor '{executorFailed.ExecutorId}' failed: " + (executorFailed.Data?.ToString() ?? "unknown error"));
-                        break;
-                    case ExecutorInvokedEvent executorInvokedEvent:
-                        // Debug.WriteLine($"Executor '{executorInvokedEvent.ExecutorId}' invoked.");
-                        // PrintLogSpace();
-                        break;
-                }
-
-            if (finalOutput?.As<List<ChatMessage>>() is { } transcript)
             {
-                Debug.WriteLine("\n\n=== Final Conversation Transcript ===\n");
-                foreach (ChatMessage message in transcript) Debug.WriteLine($"{message.AuthorName ?? message.Role.ToString()}: {message.Text}");
+                await LogWorkflowEventToFileAsync(workflowEvent, token);
+
             }
 
-
-            return null;
-
-
-
-
         }
-
+        return null;
     }
 
 
@@ -233,6 +160,7 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     ///     performing work.
     /// </param>
     /// <returns>A Task that completes when initialization finishes or returns early if cancellation is observed.</returns>
+    [Experimental("MAAI001")]
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -272,23 +200,28 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     /// </summary>
     /// <returns></returns>
     [Experimental("MAAI001")]
-    private ExecutorBinding BuildSubWorkflow()
+    private Workflow BuildSubWorkflow()
     {
-        MagenticPromptOverrides over = new() { FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt, TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt };
+        MagenticPromptOverrides over = new()
+        {
+            FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt,
+            TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt,
+            TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt,
+        };
         //-------------------  Magentic Group workflow  -------------------
-        Workflow workflow = new MagenticWorkflowBuilder(_managerAgent).AddParticipants(_evidenceCollectorAgent, _adversarialAnalystAgent, _researcherAgent, _finalReportWriterAgent) //Test run with adversarial agent to challenge assumptions and keep other honest.
+        Workflow workflow = new MagenticWorkflowBuilder(_managerAgent).AddParticipants(_evidenceCollectorAgent, _adversarialAnalystAgent, _researcherAgent) //Test run with adversarial agent to challenge assumptions and keep other honest.
                 .WithName("ForensicsInvestigationTeamWorkflow")
                 .WithDescription("A powerful manager coordinates the investigation team and monitors the activities and progress of the evidence collector, adversarial analyst, and researcher.")
                 .RequirePlanSignoff(false)
                 .WithPromptOverrides(over)
-                .WithOutputFrom(_finalReportWriterAgent)
+                //    .WithOutputFrom(_finalReportWriterAgent)
                 .WithMaxRounds(10)
                 .WithMaxResets(2)
                 .Build();
 
 
 
-        return workflow.BindAsExecutor("ForensicsInvestigationTeamWorkflow");
+        return workflow;
     }
 
 
@@ -299,32 +232,41 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
     [Experimental("MAAI001")]
-    private Workflow BuildWorkflow()
+    private async Task<Workflow> BuildWorkflow(CancellationToken token)
     {
+        //========================  Agents and Executors  =========================
         ExecutorCollection executors = _executorFactory.CreateAllExecutors();
-        ExecutorBinding magSubworkflow = BuildSubWorkflow();
-        ExecutorBinding finalReporterExec = _finalReportWriterAgent.BindAsExecutor();
-        ClassifierAgentExec classifierExec = new(_classifierAgent, _reporter);
 
 
 
-        //------------------- PARENT workflow  -------------------a
-        Workflow classflow = new WorkflowBuilder(executors.NewCaseExecutor) //Create New case
-                .AddEdge(executors.NewCaseExecutor, executors.SignalClassifierExecutor) // Build objective and send to Mag group
-                .AddEdge(executors.SignalClassifierExecutor, magSubworkflow) // Mag group executes and hands to final reporter
-                .AddEdge(magSubworkflow, finalReporterExec) // Consolodates and creates final report and sends to evaluation executor
-                .AddEdge(finalReporterExec, _validatorBinding) // All evidence is validate and evaluated and a final report is generated
-                .AddEdge(_validatorBinding, new TerminateWorkflow(_reporter)) // .AddEdge(_evalExec, executors.TerminateWorkflow) // All data is persisted for audit trail status is set!
+        //  SubWorkflowExecutor sub = new SubWorkflowExecutor(magSubworkflow, _reporter);
+
+
+        //------------------- PARENT Mixed workflow  -------------------
+        Workflow classflow = new WorkflowBuilder(_classifierAgent) //Create New case
+                .AddEdge(_classifierAgent, _magSubworkflow) // Mag group executes and hands to final reporter
+                .AddEdge(_magSubworkflow, _finalReportWriterAgent) // Consolodates and creates final report and sends to evaluation executor
                 .WithName("InvestigationWorkflow") //Final report is sent to the manager for review and approval
                 .WithDescription("Coordinates the investigation workflow by connecting the classifier, investigation group, and evaluation executor.")
                 .Build();
 
         return classflow;
+
+
     }
 
 
 
-
+    private const string TEAM_MEMBER_INSTRUCTIONS = """
+        
+                                                    You are a member of a forensic investigation team. Your role is to collaborate with other team members to collect, analyze, and validate evidence related to the investigation. 
+                                                    You must follow the instructions provided by the manager and contribute your expertise to ensure the accuracy and integrity of the investigation process.
+                                                    Never fabricate or simulate evidence. Your goal is to provide accurate and reliable information to support the investigation and help the team reach a well-informed conclusion.
+                                                    If you encounter any challenges or uncertainties, communicate with the manager to seek guidance and clarification. Your commitment to thoroughness, 
+                                                    attention to detail, and adherence to ethical standards is essential for the success of the investigation. If you are unable to validate a piece of evidence, you must report it 
+                                                    as inconclusive and provide any relevant context or reasoning for your assessment. Never simulate or fabricate evidence, as this could compromise the integrity of the investigation 
+                                                    and lead to incorrect conclusions. 
+                                                    """;
 
 
 
@@ -333,6 +275,7 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     ///     Lazily initializes the agent on first use, avoiding sync-over-async
     ///     deadlocks that occur when building the agent in the constructor.
     /// </summary>
+    [Experimental("MAAI001")]
     private async Task EnsureAgentInitializedAsync(CancellationToken token)
     {
         if (_agentInitialized)
@@ -342,17 +285,21 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
         try
         {
-            _managerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, "ManagerCoordinator", "Coordinates the investigation team and monitors progress", AgentInstructionConstants.MAG_MANAGER_INSTRUCTIONS);
-            _evidenceCollectorAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", "You are a forensic grade digital evidence collector, you collect and document each piece of evidence meticulously.");
-            _adversarialAnalystAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "AdversarialAnalyst", "The challenger of the collected evidence", "You are a forensic grade digital evidence debunker, it is your job to challenge the findings of your teammates and validate each piece of evidence. if you can't validate it, it is not definitive.");
-            _researcherAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", "You are a research assistant, you conduct thorough research to support the investigation.");
+            _managerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, "ManagerCoordinator", "Coordinates the investigation team and monitors progress");
+            _evidenceCollectorAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", TEAM_MEMBER_INSTRUCTIONS + " You are a forensic grade digital evidence collector, you collect and document each piece of evidence meticulously.");
+            _adversarialAnalystAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "AdversarialAnalyst", "The challenger of the collected evidence", TEAM_MEMBER_INSTRUCTIONS + "  You are a forensic grade digital evidence debunker, it is your job to challenge the findings of your teammates and validate each piece of evidence. if you can't validate it, it is not definitive.");
+            _researcherAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", TEAM_MEMBER_INSTRUCTIONS + "  You are a research assistant, you conduct thorough research to support the investigation.");
+
+            _magSubworkflow = BuildSubWorkflow().AsAIAgent("InvestigationTeam", "ForensicInvestigationTeam", "Subworkflow forming Magentic Group Investigation Team");
 
 
-            _finalReportWriterAgent = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", "You are a case report author, you aggregate the results from all workers and generate the final case report.");
+            AIAgent classifyingAIAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ClassifierAgent, AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN, ChatResponseFormat.Json, token);
+
+            _finalReportWriterAgent = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", TEAM_MEMBER_INSTRUCTIONS + "  You are a case report author, you aggregate the results from all workers and generate the final case report.");
 
             // evidence validator is a skeptical adversarial analyst. Magentic groups may or may not select this type of worker, this will have to be tested in the future. For now it's a separate step/executor
-            _evidenceValidationAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceValidator", "The formal Investigation Auditor will challenge the collected evidence", "You are a forensic grade digital evidence validator, you challenge the findings and validate each piece of evidence. if you can't validate it, it is not definitive.");
-            _validatorBinding = _evidenceValidationAgent.BindAsExecutor();
+            //   _evidenceValidationAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceValidator", "The formal Investigation Auditor will challenge the collected evidence", "You are a forensic grade digital evidence validator, you challenge the findings and validate each piece of evidence. if you can't validate it, it is not definitive.");
+            //   _validatorBinding = _evidenceValidationAgent.BindAsExecutor();
 
 
             // Classifier agent creates a structured objective with as much as can be inferred from the initial input signal. The preset has domain basics here we supply with task specific instructions. 
@@ -363,14 +310,14 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
             //
             EvaluationExec evalExec = new("EvaluationExec");
 
-            ExecutorBinding finalWriter = _finalReportWriterAgent.BindAsExecutor();
+
 
 
             Throw.IfNull(_managerAgent);
             Throw.IfNull(_evidenceCollectorAgent);
             Throw.IfNull(_adversarialAnalystAgent);
             Throw.IfNull(_researcherAgent);
-            Throw.IfNull(_evidenceValidationAgent);
+            //        Throw.IfNull(_evidenceValidationAgent);
             Throw.IfNull(_finalReportWriterAgent);
 
             _agentInitialized = true;
@@ -413,7 +360,6 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     {
         Debug.WriteLine(Environment.NewLine);
         Debug.WriteLine(new string('-', 60));
-        Debug.WriteLine(Environment.NewLine);
     }
 
 
@@ -461,6 +407,116 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
         {
             Debug.WriteLine($"Failed to save lines to file {filePath}: {e.Message}");
             throw;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the file path for workflow event logging in the LocalApplicationData\SentinelCore folder.
+    /// </summary>
+    /// <returns>The full path to the workflow event log file.</returns>
+    private string GetWorkflowEventLogFilePath()
+    {
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string logFileName = $"WorkflowEvents_{timestamp}.log";
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string sentinelCoreFolder = Path.Combine(localAppData, "SentinelCore");
+
+        // Ensure the directory exists
+        Directory.CreateDirectory(sentinelCoreFolder);
+
+        return Path.Combine(sentinelCoreFolder, logFileName);
+    }
+
+    /// <summary>
+    ///     Logs a workflow event to the isolated workflow event log file.
+    /// </summary>
+    /// <param name="workflowEvent">The workflow event to log.</param>
+    /// <param name="token">A <see cref="CancellationToken" /> to observe while waiting for the task to complete.</param>
+    /// <returns>A <see cref="Task" /> representing the asynchronous operation.</returns>
+    private async Task LogWorkflowEventToFileAsync(WorkflowEvent workflowEvent, CancellationToken token)
+    {
+        try
+        {
+            string logFilePath = GetWorkflowEventLogFilePath();
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            string eventType = workflowEvent.GetType().Name;
+
+            string logEntry = $"[{timestamp}] {eventType}";
+
+            // Add event-specific details to the log entry
+            switch (workflowEvent)
+            {
+                case AgentResponseUpdateEvent updateEvent:
+                    logEntry += $" - Executor: {updateEvent.ExecutorId}, ResponseId: {updateEvent.Update.ResponseId ?? "null"}, MessageId: {updateEvent.Update.MessageId ?? "null"}";
+                    if (updateEvent.Update.Contents.Count > 0)
+                    {
+                        logEntry += $", Contents Count: {updateEvent.Update.Contents.Count}";
+                        logEntry += $", Text: \"{updateEvent.Update.Text}\"";
+                    }
+                    break;
+
+                case ExecutorCompletedEvent completedEvent:
+                    logEntry += $" - Executor: {completedEvent.ExecutorId}";
+                    break;
+
+                case MagenticPlanCreatedEvent planCreated:
+                    logEntry += $" - Plan Length: {planCreated.FullTaskLedger.Text?.Length ?? 0} chars";
+                    break;
+
+                case MagenticReplannedEvent replanned:
+                    logEntry += $" - Replan Length: {replanned.FullTaskLedger.Text?.Length ?? 0} chars";
+                    break;
+
+                case MagenticProgressLedgerUpdatedEvent progressUpdated:
+                    var ledger = progressUpdated.ProgressLedger;
+                    logEntry += $" - Satisfied: {ledger.IsRequestSatisfied}, InLoop: {ledger.IsInLoop}, Progressing: {ledger.IsProgressBeingMade}";
+                    logEntry += $", NextSpeaker: {ledger.NextSpeaker ?? "null"}";
+                    break;
+
+                case WorkflowOutputEvent outputEvent:
+                    logEntry += $" - Data Type: {outputEvent.Data?.GetType().FullName ?? "null"}";
+                    if (outputEvent.Data != null)
+                    {
+                        string dataStr = outputEvent.Data.ToString();
+                        // Truncate very long data to prevent excessively large log entries
+                        if (dataStr.Length > 1000)
+                        {
+                            dataStr = dataStr.Substring(0, 1000) + "... [truncated]";
+                        }
+                        logEntry += $", Data: {dataStr}";
+                    }
+                    break;
+
+                case WorkflowErrorEvent workflowError:
+                    logEntry += $" - Exception: {workflowError.Exception?.Message ?? "Unknown error"}";
+                    if (workflowError.Exception != null)
+                    {
+                        logEntry += $" - Type: {workflowError.Exception.GetType().FullName}";
+                    }
+                    break;
+
+                case ExecutorFailedEvent executorFailed:
+                    logEntry += $" - Executor: {executorFailed.ExecutorId}";
+                    logEntry += $" - Error: {executorFailed.Data?.ToString() ?? "unknown error"}";
+                    break;
+
+                case ExecutorInvokedEvent executorInvokedEvent:
+                    logEntry += $" - Executor: {executorInvokedEvent.ExecutorId}";
+                    break;
+
+                default:
+                    logEntry += " - No additional details";
+                    break;
+            }
+
+            logEntry += Environment.NewLine;
+
+            await SaveLinesToFileAsync(logFilePath, logEntry, token);
+        }
+        catch (Exception ex)
+        {
+            // Don't let logging failures break the workflow
+            Debug.WriteLine($"Failed to log workflow event to file: {ex.Message}");
         }
     }
 

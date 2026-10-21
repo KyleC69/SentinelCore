@@ -29,7 +29,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     non-agent executors build onto the case currently being investigated.
 ///     Each step is focused, clean, and deliberate — clear separation enforced.
 /// </summary>
-[YieldsOutput(typeof(ExecutorEnvelope))]
+[YieldsOutput(typeof(ChatMessage))]
 public sealed partial class NewCaseExecutor : Executor
 {
     private readonly ICaseFlowEngine _caseEng;
@@ -83,7 +83,7 @@ public sealed partial class NewCaseExecutor : Executor
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>The original hypothesis, passed through after case creation.</returns>
     [MessageHandler]
-    public async ValueTask<ExecutorEnvelope> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async ValueTask<ChatMessage> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         var envelope = new ExecutorEnvelope
         {
@@ -107,7 +107,7 @@ public sealed partial class NewCaseExecutor : Executor
                 envelope.Case = result;
             }
 
-            await context.YieldOutputAsync(envelope, cancellationToken);
+            //   await context.SendMessageAsync(message, cancellationToken);
 
         }
         catch (OperationCanceledException)
@@ -125,7 +125,7 @@ public sealed partial class NewCaseExecutor : Executor
             _chatMessages.AddAssistantMessage(fallback);
         }
 
-        return envelope;
+        return message;
     }
 
 

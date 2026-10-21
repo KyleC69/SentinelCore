@@ -32,7 +32,8 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     Attributed with YieldsOutput and intended for use by the agent pipeline to produce a structured
 ///     InvestigationObjective for downstream processing.
 /// </remarks>
-[YieldsOutput(typeof(ExecutorEnvelope))]
+[YieldsOutput(typeof(ChatMessage))]
+[SendsMessage(typeof(ChatMessage))]
 [SendsMessage(typeof(TurnToken))]
 public sealed partial class SignalClassifierExecutor : Executor
 {
@@ -74,7 +75,7 @@ public sealed partial class SignalClassifierExecutor : Executor
 
 
     [MessageHandler]
-    public async ValueTask<ExecutorEnvelope> GenerateInvestigationObjectiveAsync(ExecutorEnvelope envelope, IWorkflowContext context, CancellationToken token)
+    public async ValueTask<ChatMessage> GenerateInvestigationObjectiveAsync(ExecutorEnvelope envelope, IWorkflowContext context, CancellationToken token)
     {
         if (envelope == null || string.IsNullOrEmpty(envelope.SignalText))
         {
@@ -84,7 +85,7 @@ public sealed partial class SignalClassifierExecutor : Executor
 
 
 
-        _agent = await _agentfactory.CreateAgentAsync(AgentPreset.UtilityAgent, AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN, ChatResponseFormat.Json, token);
+        _agent = await _agentfactory.CreateAgentAsync(AgentPreset.ClassifierAgent, AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN, ChatResponseFormat.Json, token);
         Throw.IfNull(_agent);
         var session = await _agent.CreateSessionAsync(token);
         string classify = "The following signal should be classified and an InvestigationObjective should be generated based on its content. Provide as much information as you can on the signal, and be sure to respond with a Json object, no wrapping or additional commentary allowed." + "\r\n\r\n" + envelope.SignalText;
@@ -99,7 +100,7 @@ public sealed partial class SignalClassifierExecutor : Executor
             // For now, let's assume a failure means we can't proceed.
             throw new SentinelCoreWorkflowException("Failed to generate InvestigationObjective.");
         }
-        if (string.IsNullOrEmpty(response.Text))
+        else if (string.IsNullOrEmpty(response.Text))
         {
             _reporter.ReportError($"Generated InvestigationObjective is empty for message: {envelope.SignalText}");
             throw new SentinelCoreWorkflowException("Generated InvestigationObjective is empty.");
@@ -110,26 +111,21 @@ public sealed partial class SignalClassifierExecutor : Executor
         await context.QueueStateUpdateAsync(WorkFlowStateKeys.SIGNAL_OBJECTIVE, response.Text, "SharedState", token);
 
 
-        await context.YieldOutputAsync(envelope, token);
+        var msg = new ChatMessage(ChatRole.User, response.Text);
+
+
+        // await context.YieldOutputAsync(msg, token);
+        await context.SendMessageAsync(msg, token);
         await context.SendMessageAsync(new TurnToken(true), cancellationToken: token);
-
         Debug.WriteLine($"Generated InvestigationObjective: {JsonConvert.SerializeObject(envelope.Objective)}");
-        return envelope;
+        Debug.WriteLine("");
+        Debug.WriteLine("");
+        Debug.WriteLine(msg.Text);
+        Debug.WriteLine("");
+        Debug.WriteLine("");
+        Debug.WriteLine("End of Signal Classifier.");
+
+        return null;
     }
 
-}
-
-
-
-
-
-
-
-
-public class SentinelCoreWorkflowException : Exception
-{
-    public SentinelCoreWorkflowException(string failedToGenerateInvestigationobjective)
-    {
-        throw new NotImplementedException();
-    }
 }

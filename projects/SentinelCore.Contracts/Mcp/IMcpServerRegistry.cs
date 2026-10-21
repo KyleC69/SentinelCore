@@ -22,15 +22,17 @@ public interface IMcpServerRegistry
 
 
 
+    int ToolCount { get; }
+
     /// <summary>
-    ///     Asynchronously retrieves all registered AITool instances.
+    ///     Occurs when the tool cache has been updated.
     /// </summary>
-    /// <param name="token">Cancellation token to cancel the operation.</param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result contains a read-only list of available AITool
-    ///     instances.
-    /// </returns>
-    IList<AITool> GetAllTools(CancellationToken token);
+    event Action? ToolCacheChanged;
+
+    /// <summary>
+    ///     Occurs when the list of registered servers has changed (servers loaded, added, or removed).
+    /// </summary>
+    event Action? ServersChanged;
 
 
 
@@ -40,7 +42,20 @@ public interface IMcpServerRegistry
 
 
     /// <summary>
-    ///     Asynchronously retrieves all registered AITool instances.
+    ///     Gets a read-only snapshot of the current tool cache.
+    /// </summary>
+    /// <returns>A read-only list of available AITool instances from the cache.</returns>
+    IReadOnlyList<AITool> GetToolsFromCache();
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Asynchronously retrieves all registered AITool instances from connected servers.
     /// </summary>
     /// <param name="token">Cancellation token to cancel the operation.</param>
     /// <returns>
@@ -57,20 +72,6 @@ public interface IMcpServerRegistry
 
 
     Task<McpServerInfo?> GetAsync(string id, CancellationToken cancellationToken = default);
-
-
-
-
-
-
-
-
-    /// <summary>
-    /// </summary>
-    /// <param name="agentName"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task<IReadOnlyList<AITool>> GetToolsForAgentAsync(string agentName, string agentId, CancellationToken cancellationToken = default);
 
 
 

@@ -53,7 +53,7 @@ public static class ChatMessageExtensions
     public static ChatMessage AddUserMessage(this ChatMessage message, string content)
     {
         Throw.IfNullOrEmpty(content);
-        return new ChatMessage(ChatRole.User, content).WithAgentRequestMessageSource(new AgentRequestMessageSourceType("Origin"), "SystemGenerated");
+        return new ChatMessage(ChatRole.User, content);
     }
 
 

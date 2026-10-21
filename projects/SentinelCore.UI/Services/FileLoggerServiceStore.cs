@@ -23,9 +23,55 @@ namespace SentinelCore.UI.Services;
 
 internal sealed class FileLoggerServiceStore : ILogger
 {
+    private readonly string _category;
+
+
+
+
+
+
+
+
+    public FileLoggerServiceStore(string categoryName)
+    {
+        _category = categoryName;
+    }
+
+
+
+
+
+
+
+
     private static readonly object Lock = new();
 
-    private static readonly string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", "SentinelCore.log");
+    private static readonly string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", $"SentinelCore_{DateTime.Now:yyyyMMdd_HHmmss}.log");
+
+    private static readonly Lazy<StreamWriter> _logWriter = new Lazy<StreamWriter>(InitializeLogWriter);
+
+
+
+
+
+
+
+
+    private static StreamWriter InitializeLogWriter()
+    {
+
+        string directory = Path.GetDirectoryName(LogFilePath)!;
+        Directory.CreateDirectory(directory);
+        StreamWriter writer = new StreamWriter(LogFilePath, append: true);
+        writer.AutoFlush = true;
+        return writer;
+    }
+
+
+
+
+
+
 
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
@@ -44,9 +90,57 @@ internal sealed class FileLoggerServiceStore : ILogger
     {
         if (!IsEnabled(logLevel))
             return;
-        string message = formatter(state, exception);
-        WriteLog(logLevel, message);
+
+        bool isAI = _category.Contains("AI", StringComparison.OrdinalIgnoreCase);
+        string text;
+
+        if (isAI && state is System.Collections.Generic.IDictionary<string, object> dict)
+        {
+            // Check for GetStreamingResponseAsync update using KVPs in the state
+            if (dict.TryGetValue("Method", out object methodObj) && methodObj is string method && method.Equals("GetStreamingResponseAsync", StringComparison.OrdinalIgnoreCase) && dict.TryGetValue("IsUpdate", out object isUpdateObj) && isUpdateObj is bool isUpdate && isUpdate)
+            {
+                return; // Skip logging this update
+            }
+
+            // Serialize the dictionary to JSON
+            try
+            {
+                string json = JsonSerializer.Serialize(dict);
+                try
+                {
+                    // Try to parse as JSON and re-serialize with indentation
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    text = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
+                }
+                catch (JsonException)
+                {
+                    // If not valid JSON, use the serialized string
+                    text = json;
+                }
+            }
+            catch (Exception)
+            {
+                // Fall back to formatter if serialization fails
+                text = formatter(state, exception);
+            }
+        }
+        else
+        {
+            // For non-AI logs or when state is not a dictionary, use the formatter
+            text = formatter(state, exception);
+        }
+
+        // Apply common formatting for AI logs (replace escape sequences)
+        if (isAI)
+        {
+            text = text.Replace("\\r\\n", Environment.NewLine);
+            text = text.Replace("\\n", Environment.NewLine);
+            text = text.Replace("\\r", Environment.NewLine);
+        }
+
+        WriteLog(logLevel, text);
     }
+
 
 
 
@@ -62,9 +156,7 @@ internal sealed class FileLoggerServiceStore : ILogger
         try
         {
             using JsonDocument doc = JsonDocument.Parse(json);
-            return JsonSerializer.Serialize(
-                doc.RootElement,
-                new JsonSerializerOptions { WriteIndented = true });
+            return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
         }
         catch (JsonException)
         {
@@ -75,14 +167,32 @@ internal sealed class FileLoggerServiceStore : ILogger
 
 
 
+
+
+
+
+
     private void WriteLog(LogLevel logLevel, string message)
     {
-
         lock (Lock)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath)!);
-            using StreamWriter streamWriter = new(LogFilePath, true);
-            streamWriter.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{logLevel}] {message}");
+            StreamWriter writer = _logWriter.Value;
+            writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{logLevel}] {message}");
+        }
+    }
+
+
+
+
+
+
+
+
+    public static void Dispose()
+    {
+        if (_logWriter.IsValueCreated)
+        {
+            _logWriter.Value.Dispose();
         }
     }
 }
@@ -93,7 +203,19 @@ internal sealed class FileLoggerServiceStore : ILogger
 
 internal sealed class FileLoggerProvider : ILoggerProvider
 {
-    public ILogger CreateLogger(string categoryName) => new FileLoggerServiceStore();
+    private string _category;
+
+
+
+
+
+
+
+
+    public ILogger CreateLogger(string categoryName)
+    {
+        return new FileLoggerServiceStore(categoryName);
+    }
 
 
 
@@ -104,8 +226,7 @@ internal sealed class FileLoggerProvider : ILoggerProvider
 
     public void Dispose()
     {
-        // No resources to dispose in the current implementation.
-        // This method is provided for future extensibility.
+        FileLoggerServiceStore.Dispose();
     }
 }
 
