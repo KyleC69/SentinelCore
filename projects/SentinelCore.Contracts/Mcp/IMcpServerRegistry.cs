@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         IMcpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -23,29 +23,6 @@ public interface IMcpServerRegistry
 
 
     int ToolCount { get; }
-
-    /// <summary>
-    ///     Occurs when the tool cache has been updated.
-    /// </summary>
-    event Action? ToolCacheChanged;
-
-    /// <summary>
-    ///     Occurs when the list of registered servers has changed (servers loaded, added, or removed).
-    /// </summary>
-    event Action? ServersChanged;
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Gets a read-only snapshot of the current tool cache.
-    /// </summary>
-    /// <returns>A read-only list of available AITool instances from the cache.</returns>
-    IReadOnlyList<AITool> GetToolsFromCache();
 
 
 
@@ -72,6 +49,19 @@ public interface IMcpServerRegistry
 
 
     Task<McpServerInfo?> GetAsync(string id, CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets a read-only snapshot of the current tool cache.
+    /// </summary>
+    /// <returns>A read-only list of available AITool instances from the cache.</returns>
+    IReadOnlyList<AITool> GetToolsFromCache();
 
 
 
@@ -118,6 +108,12 @@ public interface IMcpServerRegistry
     Task RemoveAsync(string id, CancellationToken cancellationToken = default);
 
 
+    /// <summary>
+    ///     Occurs when the list of registered servers has changed (servers loaded, added, or removed).
+    /// </summary>
+    event Action? ServersChanged;
+
+
     Task StartAsync(string id, CancellationToken cancellationToken = default);
 
 
@@ -138,6 +134,18 @@ public interface IMcpServerRegistry
     /// <param name="cancellationToken">Cancellation token to observe while stopping the server.</param>
     /// <returns>A task that represents the asynchronous stop operation.</returns>
     Task StopAsync(string id, CancellationToken cancellationToken = default);
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Occurs when the tool cache has been updated.
+    /// </summary>
+    event Action? ToolCacheChanged;
 
 
 

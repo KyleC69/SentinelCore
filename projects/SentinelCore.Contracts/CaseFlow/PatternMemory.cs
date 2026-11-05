@@ -1,8 +1,8 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.CaseFlowEngine
+// Project:   SentinelCore.Contracts
 // File:         PatternMemory.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 

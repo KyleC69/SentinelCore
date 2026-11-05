@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowEventProcessor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -691,28 +691,28 @@ public sealed class WorkflowEventProcessor : IWorkflowEventProcessor
     {
         return evt switch
         {
-            WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
-            AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
-            AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
-            SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
-            SubworkflowWarningEvent subworkflowWarningEvent => throw new NotImplementedException(),
+                WorkflowStartedEvent startedEvent => FormatWorkflowStartedEvent(startedEvent),
+                AgentResponseEvent responseEvent => FormatAgentResponseEvent(responseEvent),
+                AgentResponseUpdateEvent => null, // buffered; flushed on AgentResponseEvent or ExecutorCompletedEvent
+                SubworkflowErrorEvent subworkflowError => FormatSubWorkflowErrorEvent(subworkflowError),
+                SubworkflowWarningEvent subworkflowWarningEvent => throw new NotImplementedException(),
 
-            ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
-            WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
-            WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
-            ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
-            WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
-            ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
-            SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
-            SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
-            RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
-            MagenticPlanCreatedEvent magenticPlanCreatedEvent => FormatMagenticPlanCreatedEvent(magenticPlanCreatedEvent),
-            SuperStepEvent superStepEvent => FormatSuperStepEvent(superStepEvent),
-            ExecutorEvent executorEvent => FormatExecutorEvent(executorEvent),
-            MagenticProgressLedgerUpdatedEvent magenticProgressLedgerUpdatedEvent => FormatProgressLedger(magenticProgressLedgerUpdatedEvent),
-            MagenticReplannedEvent magenticReplannedEvent => FormatReplannedEvent(magenticReplannedEvent),
-            MagenticOrchestratorEvent magenticOrchestratorEvent => FormatOrchestratorEvent(magenticOrchestratorEvent),
-            _ => $"Unknown event type: {evt.GetType().Name}"
+                ExecutorCompletedEvent completedEvent => FormatExecutorCompletedEvent(completedEvent),
+                WorkflowOutputEvent outputEvent => FormatWorkflowOutputEvent(outputEvent),
+                WorkflowErrorEvent errorEvent => FormatWorkflowErrorEvent(errorEvent),
+                ExecutorFailedEvent failedEvent => FormatExecutorFailedEvent(failedEvent),
+                WorkflowWarningEvent warningEvent => FormatWorkflowWarningEvent(warningEvent),
+                ExecutorInvokedEvent invokedEvent => FormatExecutorInvokedEvent(invokedEvent),
+                SuperStepCompletedEvent superStepCompletedEvent => FormatSuperStepCompletedEvent(superStepCompletedEvent),
+                SuperStepStartedEvent superStepStartedEvent => FormatSuperStepStartedEvent(superStepStartedEvent),
+                RequestInfoEvent requestInfoEvent => FormatRequestInfoEvent(requestInfoEvent),
+                MagenticPlanCreatedEvent magenticPlanCreatedEvent => FormatMagenticPlanCreatedEvent(magenticPlanCreatedEvent),
+                SuperStepEvent superStepEvent => FormatSuperStepEvent(superStepEvent),
+                ExecutorEvent executorEvent => FormatExecutorEvent(executorEvent),
+                MagenticProgressLedgerUpdatedEvent magenticProgressLedgerUpdatedEvent => FormatProgressLedger(magenticProgressLedgerUpdatedEvent),
+                MagenticReplannedEvent magenticReplannedEvent => FormatReplannedEvent(magenticReplannedEvent),
+                MagenticOrchestratorEvent magenticOrchestratorEvent => FormatOrchestratorEvent(magenticOrchestratorEvent),
+                _ => $"Unknown event type: {evt.GetType().Name}"
         };
     }
 

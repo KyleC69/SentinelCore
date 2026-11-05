@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MagenticPromptOverrides.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -81,7 +81,7 @@ public static class MagenticPromptOverrides
                                                       Only include information directly supported by evidence.
 
                                                       Probable Cause:
-                                                      
+
                                                       If you can't provide definitive proof to support a theory then try to gather proof or approach it from a different perspective. 
                                                       If you have supporting evidence, explain the causal relationship and cite the supporting Evidence IDs.
                                                       State the most likely explanation and cite the supporting Evidence IDs.
@@ -128,18 +128,18 @@ public static class MagenticPromptOverrides
                                                           Below I will present a signal that you will be investigating. A signal is some condition or event that has been observed 
                                                           and needs to be investigated to determine the root cause. The signal may be a system event, a user request, telemetry, 
                                                           or any other type of observation that requires further analysis.
-                                                          
+
                                                           Before we begin addressing the request, please answer the following pre-survey to the best of your ability.
                                                                   Keep in mind that a fact is a specific piece of information that is backed by irefutable evidence. 
                                                                   A fact is not an assumption, a guess, or a hunch. A fact is something that can be verified and supported by evidence. 
                                                                   When you are unsure about a fact, it is better to leave it out than to include it without verification.
-                                                          
+
                                                                   Here is the InvestigationObjective object containing the original request and a summary of the signal to be investigated:
-                                                          
+
                                                           {task}
-                                                          
+
                                                               Here is the pre-survey:
-                                                          
+
                                                               1. Please list any specific facts or figures that are GIVEN in the request itself. It is possible that
                                                                  there are none.
                                                               2. Please list any facts that may need to be looked up, and WHERE SPECIFICALLY they might be found.
@@ -148,15 +148,15 @@ public static class MagenticPromptOverrides
                                                                  may be relevant to the investigation. These are not facts, but rather hypotheses that will need to be tested and verified.
                                                               4. Please list any facts that are recalled from memory, hunches, well-reasoned guesses, etc. that all need to be researched and proven. 
                                                               These are not facts, but rather educated guesses that may be useful in guiding the investigation.
-                                                          
+
                                                           When answering this survey, keep in mind that "facts" will typically be specific names, dates, statistics, etc.
                                                           Your answer should use headings:
-                                                          
+
                                                               1. GIVEN OR VERIFIED FACTS
                                                               2. FACTS TO LOOK UP
                                                               3. POTENTIAL CAUSES
                                                               4. EDUCATED GUESSES
-                                                          
+
                                                           DO NOT include any other headings or sections in your response. DO NOT list next steps or plans until asked to do so.
                                                           """;
 
@@ -204,7 +204,6 @@ public static class MagenticPromptOverrides
 
 
     /// <summary>The default template for creating the initial plan. Placeholders: <c>{team}</c>.</summary>
-
     /// <summary>The default template for creating the initial plan. Placeholders: <c>{team}</c>.</summary>
     public static readonly string TaskLedgerPlanPrompt = """
                                                                  

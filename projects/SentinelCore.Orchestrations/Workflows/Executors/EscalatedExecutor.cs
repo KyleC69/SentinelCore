@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         EscalatedExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -85,7 +85,7 @@ internal sealed partial class EscalatedExecutor : Executor
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(ChatMessage)}");
 
         // --- Null validation ---
-        Throw.IfNull(message, nameof(message));
+        Throw.IfNull(message);
 
 
         try
@@ -121,10 +121,4 @@ internal sealed partial class EscalatedExecutor : Executor
 
         }
     }
-
-
-
-
-
-
 }

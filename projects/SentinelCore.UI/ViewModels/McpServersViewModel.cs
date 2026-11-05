@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         McpServersViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -155,21 +155,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     ///     Gets the supported transport types for the add-server combo box.
     /// </summary>
     public IReadOnlyList<McpServerTransportType> TransportTypes { get; } = Enum.GetValues<McpServerTransportType>().ToList();
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Handles the ServersChanged event by refreshing the server list on the UI thread.
-    /// </summary>
-    private void OnServersChanged()
-    {
-        _dispatcher.InvokeAsync(() => _ = LoadAsync(_lifecycleCts.Token));
-    }
 
 
 
@@ -501,7 +486,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             // Discard the result when the selection changed while loading.
             if (version != _assignmentLoadVersion || !ReferenceEquals(SelectedServer, selected))
             {
-                return;
             }
 
 
@@ -589,6 +573,21 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
 
         _ = LoadSelectedServerAssignmentsAsync(_lifecycleCts.Token);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Handles the ServersChanged event by refreshing the server list on the UI thread.
+    /// </summary>
+    private void OnServersChanged()
+    {
+        _dispatcher.InvokeAsync(() => _ = LoadAsync(_lifecycleCts.Token));
     }
 
 
@@ -763,10 +762,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         NewServerWorkingDirectory = string.Empty;
         NewServerEnvironmentText = string.Empty;
 
-        foreach (AgentAssignmentRow row in NewServerAgentAssignments)
-        {
-            row.IsAssigned = false;
-        }
+        foreach (AgentAssignmentRow row in NewServerAgentAssignments) row.IsAssigned = false;
     }
 
 

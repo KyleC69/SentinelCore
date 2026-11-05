@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         JsonLoggerProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  100416
+// Build Num:  110415
 
 
 
@@ -26,9 +26,9 @@ namespace SentinelCore.Orchestrations.Infrastructure;
 
 public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
+    private readonly CustomMAFFormatter _formatter;
     private readonly JsonLoggerOptions _options;
     private IExternalScopeProvider? _scopeProvider;
-    private readonly CustomMAFFormatter _formatter;
 
 
 
@@ -87,12 +87,48 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
 
 
+    /// <summary>
+    ///     Attempts to detect a JSON string and return a pretty‑printed version.
+    ///     If the input is not valid JSON, the original string is returned unchanged.
+    ///     This protects the logger from throwing when a message payload contains
+    ///     raw JSON that is not already formatted.
+    /// </summary>
+    private static string TryPrettyIfJson(string maybeJson)
+    {
+        if (string.IsNullOrWhiteSpace(maybeJson))
+            return maybeJson;
+
+        string trimmed = maybeJson.Trim();
+        // Quick heuristic: JSON objects start with '{' and arrays with '['.
+        if ((trimmed.StartsWith("{") && trimmed.EndsWith("}")) || (trimmed.StartsWith("[") && trimmed.EndsWith("]")))
+        {
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(trimmed);
+                return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (JsonException)
+            {
+                // Not valid JSON – fall back to original.
+            }
+        }
+
+        return maybeJson;
+    }
+
+
+
+
+
+
+
+
     private sealed class JsonLogger : ILogger
     {
         private readonly string _category;
+        private readonly CustomMAFFormatter _formatter;
         private readonly JsonLoggerOptions _options;
         private readonly Func<IExternalScopeProvider> _scopeProviderAccessor;
-        private readonly CustomMAFFormatter _formatter;
 
 
 
@@ -145,7 +181,10 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
         /// <param name="eventId">Id of the event.</param>
         /// <param name="state">The entry to be written. Can be also an object.</param>
         /// <param name="exception">The exception related to this entry.</param>
-        /// <param name="formatter">Function to create a <see cref="T:System.String" /> message of the <paramref name="state" /> and <paramref name="exception" />.</param>
+        /// <param name="formatter">
+        ///     Function to create a <see cref="T:System.String" /> message of the <paramref name="state" />
+        ///     and <paramref name="exception" />.
+        /// </param>
         /// <typeparam name="TState">The type of the object to be written.</typeparam>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
@@ -164,13 +203,13 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
 
             LogEnvelope envelope = new()
             {
-                Timestamp = DateTimeOffset.Now,
-                Level = logLevel.ToString(),
-                Category = _category,
-                EventId = eventId.Id,
-                Message = formattedMessage,
-                Exception = exception?.ToString(),
-                Scopes = scopes
+                    Timestamp = DateTimeOffset.Now,
+                    Level = logLevel.ToString(),
+                    Category = _category,
+                    EventId = eventId.Id,
+                    Message = formattedMessage,
+                    Exception = exception?.ToString(),
+                    Scopes = scopes
             };
 
 
@@ -216,45 +255,6 @@ public sealed class JsonLoggerProvider : ILoggerProvider, ISupportExternalScope
             }
         }
     }
-
-
-
-
-
-
-
-
-    /// <summary>
-    /// Attempts to detect a JSON string and return a pretty‑printed version.
-    /// If the input is not valid JSON, the original string is returned unchanged.
-    /// This protects the logger from throwing when a message payload contains
-    /// raw JSON that is not already formatted.
-    /// </summary>
-    private static string TryPrettyIfJson(string maybeJson)
-    {
-        if (string.IsNullOrWhiteSpace(maybeJson))
-            return maybeJson;
-
-        string trimmed = maybeJson.Trim();
-        // Quick heuristic: JSON objects start with '{' and arrays with '['.
-        if ((trimmed.StartsWith("{") && trimmed.EndsWith("}")) || (trimmed.StartsWith("[") && trimmed.EndsWith("]")))
-        {
-            try
-            {
-                using JsonDocument doc = JsonDocument.Parse(trimmed);
-                return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
-            }
-            catch (JsonException)
-            {
-                // Not valid JSON – fall back to original.
-            }
-        }
-
-        return maybeJson;
-    }
-
-
-
 
 
 

@@ -2,21 +2,13 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelChatClientFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
-
-using System.ClientModel;
-
-using Azure;
-using Azure.AI.OpenAI;
 
 using Microsoft.Extensions.Logging;
 
 using OllamaSharp;
-
-using OpenAI;
-using OpenAI.Chat;
 
 using SentinelCore.Contracts.Contracts;
 using SentinelCore.Orchestrations.Abstractions;
@@ -37,7 +29,8 @@ namespace SentinelCore.Orchestrations.Agents;
 /// </summary>
 public sealed class SentinelChatClientFactory : IChatClientFactory
 {
-    // JsonSerializerOptions kept for potential future use when logging is needed
+    private readonly HttpClient _httpClient;
+    private readonly ILoggerFactory _loggerFactory;
 
 
 
@@ -49,17 +42,10 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
     public SentinelChatClientFactory(ILoggerFactory loggerFactory)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
-        LoggerFactory = loggerFactory;
+
+        _loggerFactory = loggerFactory;
+        _httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
     }
-
-
-
-
-
-
-
-
-    private static ILoggerFactory? LoggerFactory { get; set; }
 
 
 
@@ -73,10 +59,10 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
         IChatClient baseClient = model.Provider switch
         {
                 ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
-                ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
-                ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
-                ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
-                ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
+                //ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
+                //ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
+                // ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
+                //  ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
                 ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
                 _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
         };
@@ -103,11 +89,14 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
 
 
 
+    /*
+
+
     private static IChatClient CreateAzureOpenAIClient(ModelProfile model)
     {
         AzureOpenAIClient azureClient = new(new Uri(model.Endpoint ?? throw new ArgumentException("Azure OpenAI endpoint required")), new AzureKeyCredential(model.ApiKey ?? throw new ArgumentException("Azure OpenAI API key required")));
         ChatClient? chatClient = azureClient.GetChatClient(model.ModelId ?? throw new ArgumentException("Azure OpenAI model ID required"));
-        return chatClient.AsIChatClient()!;
+        return chatClient.AsIChatClient();
     }
 
 
@@ -124,6 +113,7 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
         return chatClient.AsIChatClient()!;
     }
 
+    */
 
 
 
@@ -131,11 +121,14 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
 
 
 
-    //TODO: Remove Fallback endpoints and model selection from all agent creation points. We cannot make assumptions about network conditions, that may cause other problems for environment and security issues. Force responsibility to the end user and UI.
-    private static OllamaApiClient CreateOllamaClient(ModelProfile model)
+
+    private OllamaApiClient CreateOllamaClient(ModelProfile model)
     {
-        OllamaApiClient client = new OllamaApiClient(new Uri(model.Endpoint ?? "http://127.0.0.1:11434"), model.ModelId ?? "gemma4");
-        client.SelectedModel = model.ModelId ?? "gemma4";
+        string endpoint = model.Endpoint ?? "http://127.0.0.1:11434";
+        string modelId = model.ModelId ?? "gemma4";
+        _httpClient.BaseAddress = new Uri(endpoint);
+        OllamaApiClient client = new(_httpClient, modelId);
+        client.SelectedModel = modelId;
 
         return client;
     }
@@ -159,10 +152,13 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
 
 
 
+    /*
+
     private static IChatClient CreateOpenAIClient(ModelProfile model)
     {
         OpenAIClient client = new(model.ApiKey ?? throw new ArgumentException("OpenAI API key required"));
         ChatClient? chatClient = client.GetChatClient(model.ModelId ?? throw new ArgumentException("OpenAI model ID required"));
         return chatClient.AsIChatClient()!;
     }
+    */
 }

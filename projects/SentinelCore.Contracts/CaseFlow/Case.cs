@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         Case.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -35,12 +35,21 @@ public sealed class Case
 
 
 
+    public string CaseTranscript { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public ICollection<Evidence> EvidenceItems { get; set; } = new List<Evidence>();
+
+
+
     public int Id { get; set; } // DB INTERNAL tracking
 
 
-    public DateTime OpenedAt { get; set; } = DateTime.Now;
+    public InvestigationObjective? InvestigationObjective { get; set; }
+    public InvestigationOutcome? InvestigationOutcome { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+
+    public DateTime OpenedAt { get; set; } = DateTime.Now;
+    public ICollection<Remediation> RemediationItems { get; set; } = new List<Remediation>();
 
 
     /// <summary>
@@ -52,11 +61,5 @@ public sealed class Case
 
     public CaseStatus Status { get; set; }
 
-
-    public InvestigationObjective? InvestigationObjective { get; set; }
-    public InvestigationOutcome? InvestigationOutcome { get; set; }
-    public ICollection<Evidence> EvidenceItems { get; set; } = new List<Evidence>();
-    public ICollection<Remediation> RemediationItems { get; set; } = new List<Remediation>();
-    public string CaseTranscript { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

@@ -1,9 +1,18 @@
-﻿using SentinelCore.Contracts.CaseFlow;
+﻿// Solution: SentinelCore
+// Project:   SentinelCore.Orchestrations
+// File:         EvaluationExec.cs
+// Author: Kyle L. Crowder
+// Build Num:  110415
+
+
+
+using SentinelCore.Contracts.CaseFlow;
 
 
 
 
 namespace SentinelCore.Orchestrations.Workflows.Executors;
+
 
 
 
@@ -38,11 +47,4 @@ public sealed partial class EvaluationExec : Executor
         await context.YieldOutputAsync(caseFile);
         return caseFile;
     }
-
-
-
-
-
-
-
 }

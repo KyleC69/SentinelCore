@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         EvidenceStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -69,16 +69,16 @@ public sealed class EvidenceStore : IEvidenceStore
             throw new InvalidOperationException($"Case '{caseId}' not found.");
         }
 
-        var entity = new EvidenceEntity
+        EvidenceEntity entity = new()
         {
-            CaseId = caseId,
-            CollectorAgent = item.CollectorAgent ?? string.Empty,
-            SourcePath = item.SourcePath ?? string.Empty,
-            SourceType = item.SourceType ?? string.Empty,
-            Observation = item.Observation ?? string.Empty,
-            ObservedAt = item.ObservedAt,
-            CreatedAt = item.CreatedAt,
-            Confidence = item.Confidence
+                CaseId = caseId,
+                CollectorAgent = item.CollectorAgent ?? string.Empty,
+                SourcePath = item.SourcePath ?? string.Empty,
+                SourceType = item.SourceType ?? string.Empty,
+                Observation = item.Observation ?? string.Empty,
+                ObservedAt = item.ObservedAt,
+                CreatedAt = item.CreatedAt,
+                Confidence = item.Confidence
         };
 
         db.EvidenceEntities!.Add(entity);
@@ -99,27 +99,26 @@ public sealed class EvidenceStore : IEvidenceStore
     {
         await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
 
-        var items = await db.EvidenceEntities!
-            .Where(e => e.CaseId == caseId)
-            .Select(e => new Evidence
-            {
-                Id = e.Id,
-                CaseId = e.CaseId,
-                CollectorAgent = e.CollectorAgent ?? string.Empty,
-                SourcePath = e.SourcePath ?? string.Empty,
-                SourceType = e.SourceType ?? string.Empty,
-                Observation = e.Observation ?? string.Empty,
-                ObservedAt = e.ObservedAt,
-                CreatedAt = e.CreatedAt,
-                Confidence = e.Confidence,
-                // DTO-only fields — provide defaults to avoid nulls
-                ContentJson = string.Empty,
-                Timestamp = e.ObservedAt,
-                Type = string.Empty,
-                CaseTranscript = string.Empty
-            })
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
+        List<Evidence> items = await db.EvidenceEntities!.Where(e => e.CaseId == caseId)
+                .Select(e => new Evidence
+                {
+                        Id = e.Id,
+                        CaseId = e.CaseId,
+                        CollectorAgent = e.CollectorAgent ?? string.Empty,
+                        SourcePath = e.SourcePath ?? string.Empty,
+                        SourceType = e.SourceType ?? string.Empty,
+                        Observation = e.Observation ?? string.Empty,
+                        ObservedAt = e.ObservedAt,
+                        CreatedAt = e.CreatedAt,
+                        Confidence = e.Confidence,
+                        // DTO-only fields — provide defaults to avoid nulls
+                        ContentJson = string.Empty,
+                        Timestamp = e.ObservedAt,
+                        Type = string.Empty,
+                        CaseTranscript = string.Empty
+                })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
 
         return items;
     }

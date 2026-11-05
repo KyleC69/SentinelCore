@@ -2,14 +2,13 @@
 // Project:   SentinelCore.UI
 // File:         AgentModelCard.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
 using CommunityToolkit.Mvvm.ComponentModel;
 
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Orchestrations.Agents.AgentPresets;
 
 
 
@@ -26,8 +25,6 @@ namespace SentinelCore.UI.Models;
 /// </summary>
 public sealed partial class AgentModelCard : ObservableObject
 {
-
-    [ObservableProperty] private ModelTier _tier;
     /// <summary>
     ///     Backing field for <see cref="Alias" />.
     /// </summary>
@@ -67,6 +64,8 @@ public sealed partial class AgentModelCard : ObservableObject
     ///     Backing field for <see cref="Temperature" />.
     /// </summary>
     [ObservableProperty] private float _temperature = 0.1f;
+
+    [ObservableProperty] private ModelTier _tier;
 
     /// <summary>
     ///     Backing field for <see cref="TopK" />.

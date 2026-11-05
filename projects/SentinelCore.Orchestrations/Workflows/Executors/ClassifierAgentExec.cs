@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ClassifierAgentExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -51,6 +51,8 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 public sealed partial class ClassifierAgentExec : Executor
 {
     private readonly AIAgent _agent;
+
+    private ChatMessages _chatMessages = new();
     private readonly ISystemReporter _reporter;
 
 
@@ -84,7 +86,8 @@ public sealed partial class ClassifierAgentExec : Executor
     /// </summary>
     public string Name { get; init; }
 
-    private ChatMessages _chatMessages = new();
+
+
 
 
 
@@ -100,7 +103,7 @@ public sealed partial class ClassifierAgentExec : Executor
         // --- Null validation ---
         if (message is null)
         {
-            var msg = $"[{Name}] Input message was null. Returning fallback {nameof(NextStep)}.";
+            string msg = $"[{Name}] Input message was null. Returning fallback {nameof(NextStep)}.";
             _reporter.ReportError(msg);
             await context.YieldOutputAsync(msg, cancellationToken).ConfigureAwait(false);
             message?.AddAssistantMessage(msg);
@@ -115,13 +118,13 @@ public sealed partial class ClassifierAgentExec : Executor
             //TODO: transient error recovery
 
 
-            var resultt = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
+            ChatMessages resultt = await ProcessMessageAsync(message, context, cancellationToken).ConfigureAwait(false);
 
             //Send the prompt to the next step in the flow.
             //   await context.SendMessageAsync(message!, cancellationToken);
 
             // --- Status: Final output ---
-            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(NextStep)}.. Value of {message.ToString()}");
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(NextStep)}.. Value of {message}");
 
             //Yield results to execution runner
             //  await context.YieldOutputAsync(messages, cancellationToken);
@@ -144,7 +147,7 @@ public sealed partial class ClassifierAgentExec : Executor
             // a transient model failure is not a critical security event.
             _reporter.ReportError($"[{Name}] Exception: {ex.Message}", ex);
 
-            var messa = $"⚠️ Signal classification failed: {ex.Message} The signal has been routed for human review.";
+            string messa = $"⚠️ Signal classification failed: {ex.Message} The signal has been routed for human review.";
             _reporter.ReportInfo(messa);
 
             await context.YieldOutputAsync(messa, cancellationToken).ConfigureAwait(false);
@@ -171,7 +174,7 @@ public sealed partial class ClassifierAgentExec : Executor
         _reporter.ReportInfo($"[{Name}] Starting classifier handler");
 
 
-        var prompt = await context.ReadStateAsync<ChatMessage>(WorkFlowStateKeys.PROMPT, "SharedState").ConfigureAwait(false);
+        ChatMessage? prompt = await context.ReadStateAsync<ChatMessage>(WorkFlowStateKeys.PROMPT, "SharedState").ConfigureAwait(false);
 
         try
         {
@@ -193,7 +196,7 @@ public sealed partial class ClassifierAgentExec : Executor
 
 
 
-            var objective = messages.Where(e => e.Contents is InvestigationObjective);
+            IEnumerable<ChatMessage> objective = messages.Where(e => e.Contents is InvestigationObjective);
 
             _reporter.ReportInfo($"[{Name}] ...returning to classifier handler");
 

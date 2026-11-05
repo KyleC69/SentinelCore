@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyRuleEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -114,6 +114,7 @@ public sealed class SafetyRuleEngine
                 {
                     throw new TimeoutException("Timeout while evaluating safety rule " + rule.Name);
                 }
+
                 SafetyRuleResult result = toolsTask.Result;
 
                 results.Add(result);

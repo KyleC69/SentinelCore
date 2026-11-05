@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         TestOptions.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -38,10 +38,4 @@ public static class TestOptions
             "Worker3",
             "CaseGenerator"
     ];
-
-
-
-
-
-
 }

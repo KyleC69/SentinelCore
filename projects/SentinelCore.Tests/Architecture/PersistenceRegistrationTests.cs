@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         PersistenceRegistrationTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -227,5 +227,3 @@ public sealed class PersistenceRegistrationTests
         factory.Verify(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }
-
-

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AISystemsInitialization.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -54,34 +54,6 @@ public sealed class AISystemsInitialization
 
 
     /// <summary>
-    ///     This method is called when the <see cref="T:Microsoft.Extensions.Hosting.IHostedService" /> starts. The
-    ///     implementation should return a task that represents
-    ///     the lifetime of the long running operation(s) being performed.
-    /// </summary>
-    /// <param name="stoppingToken">
-    ///     Triggered when
-    ///     <see cref="M:Microsoft.Extensions.Hosting.IHostedService.StopAsync(System.Threading.CancellationToken)" /> is
-    ///     called.
-    /// </param>
-    /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> that represents the long running operations.</returns>
-    /// <remarks>
-    ///     See <see href="https://learn.microsoft.com/dotnet/core/extensions/workers">Worker Services in .NET</see> for
-    ///     implementation guidelines.
-    /// </remarks>
-    public async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        await EnsureMcpServersStartedAsync(stoppingToken);
-        await _orchestrationControl.InitializeOrchestrationAsync(stoppingToken);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
     ///     Ensures all registered MCP servers are started before the orchestration executes.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -102,5 +74,33 @@ public sealed class AISystemsInitialization
                 _reporter.ReportWarning($"Failed to start MCP server '{server.Definition.Id}': {ex.Message}");
             }
         }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     This method is called when the <see cref="T:Microsoft.Extensions.Hosting.IHostedService" /> starts. The
+    ///     implementation should return a task that represents
+    ///     the lifetime of the long running operation(s) being performed.
+    /// </summary>
+    /// <param name="stoppingToken">
+    ///     Triggered when
+    ///     <see cref="M:Microsoft.Extensions.Hosting.IHostedService.StopAsync(System.Threading.CancellationToken)" /> is
+    ///     called.
+    /// </param>
+    /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> that represents the long running operations.</returns>
+    /// <remarks>
+    ///     See <see href="https://learn.microsoft.com/dotnet/core/extensions/workers">Worker Services in .NET</see> for
+    ///     implementation guidelines.
+    /// </remarks>
+    public async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        await EnsureMcpServersStartedAsync(stoppingToken);
+        await _orchestrationControl.InitializeOrchestrationAsync(stoppingToken);
     }
 }

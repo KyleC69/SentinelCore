@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MoreInformationExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -85,7 +85,7 @@ public sealed partial class MoreInformationExecutor : Executor
     [MessageHandler]
     public async ValueTask HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        Throw.IfNull(message, nameof(message));
+        Throw.IfNull(message);
         // --- Status: Executor start ---
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(ChatMessage)}");
 

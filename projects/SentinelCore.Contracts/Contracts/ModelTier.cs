@@ -1,8 +1,8 @@
 // Solution: SentinelCore
-// Project:   SentinelCore.Orchestrations
+// Project:   SentinelCore.Contracts
 // File:         ModelTier.cs
 // Author: Kyle L. Crowder
-// Build Num:  100909
+// Build Num:  110415
 
 
 

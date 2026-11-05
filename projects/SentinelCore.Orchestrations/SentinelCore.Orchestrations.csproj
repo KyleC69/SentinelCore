@@ -17,7 +17,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="ErikEJ.EntityFrameworkCore.DgmlBuilder" />
-		<PackageReference Include="Json.Net" />
 		<PackageReference Include="Newtonsoft.Json" />
 		<ProjectReference Include="..\SentinelCore.CaseFlowEngine\SentinelCore.CaseFlowEngine.csproj" />
 		<ProjectReference Include="..\SentinelCore.Contracts\SentinelCore.Contracts.csproj" />

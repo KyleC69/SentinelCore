@@ -24,16 +24,12 @@ public partial class InvestigationObjective
 
     public string Severity { get; set; } = string.Empty;
 
-    public string KnownFacts { get; set; } = string.Empty;
-
-
-    public string UnknownFacts { get; set; } = string.Empty;
 
 
     public string InvestigationQuestions { get; set; } = string.Empty;
 
 
-    public string RelevantEvidenceSources { get; set; } = string.Empty;
+   
 
     public DateTime TimeStamp { get; set; }
 

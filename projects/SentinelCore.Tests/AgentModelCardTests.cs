@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         AgentModelCardTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -61,21 +61,18 @@ public sealed class AgentModelCardTests
 
 
 
-
-
-
     [TestMethod]
     public void ToModelProfile_CompleteCard_BuildsProfile()
     {
         // Arrange
         AgentModelCard card = new("TheCore")
         {
-            Endpoint = "http://localhost:11434",
-            ModelId = "model-a",
-            Temperature = 0.3f,
-            MaxOutputTokens = 12000,
-            TopK = 1,
-            TopP = 0.2f
+                Endpoint = "http://localhost:11434",
+                ModelId = "model-a",
+                Temperature = 0.3f,
+                MaxOutputTokens = 12000,
+                TopK = 1,
+                TopP = 0.2f
         };
 
         // Act

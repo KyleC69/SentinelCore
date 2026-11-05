@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         OrchestrationControl.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -80,6 +80,7 @@ public sealed class OrchestrationControl : IOrchestrationControl
         {
             throw new InvalidOperationException("No orchestration instance is available.");
         }
+
 
         return await _orchestration.ExecuteStreamingAsync(input, linkedCtsToken);
     }

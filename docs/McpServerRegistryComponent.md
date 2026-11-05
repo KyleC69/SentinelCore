@@ -94,12 +94,17 @@ The MCP Server Registry lets end users register external **Model Context Protoco
 | `LoopbackOAuthCallbackHandler` | Temporary `HttpListener` on a loopback port + system browser launch for the auth-code + PKCE flow |
 | `DpapiTokenCache` | DPAPI-encrypted access/refresh token cache (`mcp-tokens.bin` next to the registry file) |
 | `JsonFileMcpServerRegistryStore` | JSON persistence at `%APPDATA%\SentinelCore\mcp-servers.json` (override with `SENTINEL_MCP_REGISTRY_PATH`) |
-| `McpServerRegistryInitializer` | `IHostedService` that calls `LoadPersistedAsync` at startup; intentionally does **not** auto-start connections so the UI stays in control |
+cancels a call after 30 s and returns `ToolResult.Fail` (never throws); success returns `ToolResult.Ok` (see ADR-002)
+| `McpServerRegistryInitializer` |
 | `SentinelAgentCatalog` | Static list of logical agent names: `CoreChat`, `Classifier`, `TheCore`, `SafetyAgent`, `Manager`, `Worker1`, `Worker2`, `Worker3` |
 
 ### Tool enumeration
 
-`StartAsync` connects the client and calls `ListToolsAsync` to capture tool names for display. `GetToolsForAgentAsync` re-enumerates live tools for every connected server the agent is assigned to and returns them as `AITool` (each `McpClientTool` is an `AIFunction`). Failures are logged and skipped so one broken server cannot starve an agent of its other tools.
+Failures are logged and skipped so one broken server cannot starve an agent of its other tools.
+
+### Timeouts (ADR-002)
+
+No MCP wait is unbounded: initialize handshake 30 s (`McpClientOptions.InitializationTimeout`), `StartAsync` 60 s (a timeout sets status `Error` and throws `TimeoutException`; a half-opened client is disposed), per-server tool listing 30 s (server skipped), and each tool invocation 30 s via `McpToolTimeoutFunction`. Caller cancellation is never converted into a timeout.
 
 ---
 

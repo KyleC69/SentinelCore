@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkFlowStateKeys.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -18,8 +18,8 @@ namespace SentinelCore.Orchestrations.Workflows;
 /// </summary>
 public class WorkFlowStateKeys
 {
+    public const string CASE_ENTITY = "CaseEntity";
     public const string CASE_ID = "CaseId";
     public const string PROMPT = "Prompt";
     public const string SIGNAL_OBJECTIVE = "Objective";
-    public const string CASE_ENTITY = "CaseEntity";
 }

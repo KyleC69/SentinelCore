@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SystemReporter.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -94,6 +94,7 @@ public sealed class SystemReporter : ISystemReporter
             return;
 
         }
+
         string finalMessage = message ?? ex?.Message ?? "An unspecified error occurred.";
         _logger.LogError(ex, "[ERROR] {Message}", finalMessage);
         _publisher.RaiseError(finalMessage, ex ?? new Exception(finalMessage));
@@ -123,6 +124,11 @@ public sealed class SystemReporter : ISystemReporter
 
 
 
+
+
+
+
+
     /// <summary>
     ///     Reports a warning to the logging pipeline and the host UI event stream.
     /// </summary>
@@ -134,6 +140,7 @@ public sealed class SystemReporter : ISystemReporter
         {
             return;
         }
+
         _logger.LogWarning(ex, "[WARNING] {Message}", message);
         _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
     }

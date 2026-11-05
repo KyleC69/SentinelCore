@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "SentinelCore.UI": {
+      "commandName": "Project",
+      "hotReloadEnabled": false,
+      "debugEngines": "managed,native"
+    }
+  }
+}

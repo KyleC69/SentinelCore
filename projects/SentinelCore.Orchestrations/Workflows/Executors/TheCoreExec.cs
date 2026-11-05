@@ -2,9 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
+
+using System.Diagnostics.CodeAnalysis;
 
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Agents;
@@ -28,6 +30,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     TODO: research alternative persistence strategies and checkpointing
 /// </summary>
 [YieldsOutput(typeof(InvestigationObjective))]
+[Experimental("SCWF001")]
 internal sealed partial class TheCoreExec : Executor
 {
     private readonly AIAgent _agent;

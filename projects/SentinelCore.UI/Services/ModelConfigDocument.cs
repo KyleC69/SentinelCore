@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         ModelConfigDocument.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -19,15 +19,16 @@ namespace SentinelCore.UI.Services;
 
 
 
+
 /// <summary>
-/// Represents a configuration document for models, containing mappings
-/// between model tiers and their respective profiles.
+///     Represents a configuration document for models, containing mappings
+///     between model tiers and their respective profiles.
 /// </summary>
 /// <remarks>
-/// This class is used to store and manage model configuration data, 
-/// including details about model tiers and their associated profiles.
-/// It is primarily utilized by services that handle model configuration
-/// persistence and retrieval.
+///     This class is used to store and manage model configuration data,
+///     including details about model tiers and their associated profiles.
+///     It is primarily utilized by services that handle model configuration
+///     persistence and retrieval.
 /// </remarks>
 public sealed class ModelConfigDocument
 {

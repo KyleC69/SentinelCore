@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         SignalMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -35,12 +35,12 @@ public static class SignalMappingExtensions
 
         return new SignalEntity
         {
-            Id = signal.Id,
-            CaseId = 0, // or map if the contract exposes CaseId
-            SignalText = signal.SignalText,
-            Source = signal.Source,
-            FirstSeen = signal.Timestamp,
-            Notes = signal.Notes
+                Id = signal.Id,
+                CaseId = 0, // or map if the contract exposes CaseId
+                SignalText = signal.SignalText,
+                Source = signal.Source,
+                FirstSeen = signal.Timestamp,
+                Notes = signal.Notes
         };
     }
 }

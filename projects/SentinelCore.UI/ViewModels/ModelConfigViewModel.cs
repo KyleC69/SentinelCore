@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         ModelConfigViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -37,12 +37,10 @@ namespace SentinelCore.UI.ViewModels;
 public sealed partial class ModelConfigViewModel : ObservableObject, INavigationAware
 {
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private ObservableCollection<AgentModelCard> _cards = [];
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _isBusy;
 
     private readonly ILogger<ModelConfigViewModel> _logger;
@@ -74,7 +72,6 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _settings = (settingsOptions ?? throw new ArgumentNullException(nameof(settingsOptions))).Value;
     }
-
 
 
 

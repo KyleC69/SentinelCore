@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         NewCaseExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -33,9 +33,11 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 public sealed partial class NewCaseExecutor : Executor
 {
     private readonly ICaseFlowEngine _caseEng;
-    private readonly ISystemReporter _reporter;
 
     private ChatMessages _chatMessages = new ChatMessages();
+    private readonly ISystemReporter _reporter;
+
+
 
 
 
@@ -85,10 +87,7 @@ public sealed partial class NewCaseExecutor : Executor
     [MessageHandler]
     public async ValueTask<ChatMessage> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        var envelope = new ExecutorEnvelope
-        {
-            SignalText = message.Text
-        };
+        ExecutorEnvelope envelope = new() { SignalText = message.Text };
 
         Throw.IfNull(message);
 
@@ -119,7 +118,7 @@ public sealed partial class NewCaseExecutor : Executor
         catch (Exception ex)
         {
 
-            var fallback = $"⚠️ An internal error occurred in {Name}: {ex.Message}";
+            string fallback = $"⚠️ An internal error occurred in {Name}: {ex.Message}";
             await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
             _reporter.ReportInfo($"[{Name}] {fallback} due to error.");
             _chatMessages.AddAssistantMessage(fallback);
@@ -146,7 +145,7 @@ public sealed partial class NewCaseExecutor : Executor
 
             if (!ReferenceEquals(message?.Text, null))
             {
-                var sig = new Signal(message.Text, "UIPrompt");
+                Signal sig = new(message.Text, "UIPrompt");
 
 
                 // Create a new case using the prompt text as the initial signal. Set the source to "UIPrompt" to indicate it originated from the user interface instead of an automated system

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         PatternMemoryStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -163,6 +163,8 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
 
 
 
+
+
     /// <summary>
     ///     Computes the cosine similarity between two embedding vectors.
     /// </summary>
@@ -206,12 +208,12 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
     {
         return new PatternMemoryResult
         {
-            CaseId = e.CaseId,
-            PatternId = e.PatternMemoryId,
-            Summary = e.Summary!,
-            SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
-            SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
-            Timestamp = e.Timestamp
+                CaseId = e.CaseId,
+                PatternId = e.PatternMemoryId,
+                Summary = e.Summary!,
+                SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
+                SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
+                Timestamp = e.Timestamp
         };
     }
 }

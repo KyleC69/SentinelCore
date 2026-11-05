@@ -8,12 +8,14 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>SentinelCore.UI</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+   
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="MarkdownViewer.Wpf" />
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Jetbrains.Annotations" />
   </ItemGroup>

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SentinelCoreSettings.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -23,9 +23,6 @@ namespace SentinelCore.Contracts.Contracts;
 /// </summary>
 public sealed class SentinelCoreSettings
 {
-
-
-
 
 
 
@@ -56,6 +53,8 @@ public sealed class SentinelCoreSettings
     /// </summary>
     public string? SqlConnectionString { get; set; }
 
+    public IDictionary<ModelTier, ModelProfile> TierModels { get; set; } = new Dictionary<ModelTier, ModelProfile>();
+
     /// <summary>
     ///     Enables agent trace logging.
     /// </summary>
@@ -65,8 +64,6 @@ public sealed class SentinelCoreSettings
     ///     Minimum log level emitted when agent tracing is enabled.
     /// </summary>
     public LogLevel TraceLogLevel { get; set; } = LogLevel.Trace;
-
-    public IDictionary<ModelTier, ModelProfile> TierModels { get; set; } = new Dictionary<ModelTier, ModelProfile>();
 }
 
 

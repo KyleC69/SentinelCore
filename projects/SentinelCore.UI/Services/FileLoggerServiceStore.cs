@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         FileLoggerServiceStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -27,23 +27,6 @@ internal sealed class FileLoggerServiceStore : ILogger
 
 
 
-
-
-
-
-
-    public FileLoggerServiceStore(string categoryName)
-    {
-        _category = categoryName;
-    }
-
-
-
-
-
-
-
-
     private static readonly object Lock = new();
 
     private static readonly string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", $"SentinelCore_{DateTime.Now:yyyyMMdd_HHmmss}.log");
@@ -57,14 +40,9 @@ internal sealed class FileLoggerServiceStore : ILogger
 
 
 
-    private static StreamWriter InitializeLogWriter()
+    public FileLoggerServiceStore(string categoryName)
     {
-
-        string directory = Path.GetDirectoryName(LogFilePath)!;
-        Directory.CreateDirectory(directory);
-        StreamWriter writer = new StreamWriter(LogFilePath, append: true);
-        writer.AutoFlush = true;
-        return writer;
+        _category = categoryName;
     }
 
 
@@ -94,7 +72,7 @@ internal sealed class FileLoggerServiceStore : ILogger
         bool isAI = _category.Contains("AI", StringComparison.OrdinalIgnoreCase);
         string text;
 
-        if (isAI && state is System.Collections.Generic.IDictionary<string, object> dict)
+        if (isAI && state is IDictionary<string, object> dict)
         {
             // Check for GetStreamingResponseAsync update using KVPs in the state
             if (dict.TryGetValue("Method", out object methodObj) && methodObj is string method && method.Equals("GetStreamingResponseAsync", StringComparison.OrdinalIgnoreCase) && dict.TryGetValue("IsUpdate", out object isUpdateObj) && isUpdateObj is bool isUpdate && isUpdate)
@@ -148,6 +126,38 @@ internal sealed class FileLoggerServiceStore : ILogger
 
 
 
+    public static void Dispose()
+    {
+        if (_logWriter.IsValueCreated)
+        {
+            _logWriter.Value.Dispose();
+        }
+    }
+
+
+
+
+
+
+
+
+    private static StreamWriter InitializeLogWriter()
+    {
+
+        string directory = Path.GetDirectoryName(LogFilePath)!;
+        Directory.CreateDirectory(directory);
+        StreamWriter writer = new StreamWriter(LogFilePath, append: true);
+        writer.AutoFlush = true;
+        return writer;
+    }
+
+
+
+
+
+
+
+
     // Method formats a json string to be more human-readable with indentation and line breaks.
     //Helper made for formatting json data properties that are attached to parent objects
     private string PrettyJson(string json)
@@ -178,21 +188,6 @@ internal sealed class FileLoggerServiceStore : ILogger
         {
             StreamWriter writer = _logWriter.Value;
             writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{logLevel}] {message}");
-        }
-    }
-
-
-
-
-
-
-
-
-    public static void Dispose()
-    {
-        if (_logWriter.IsValueCreated)
-        {
-            _logWriter.Value.Dispose();
         }
     }
 }

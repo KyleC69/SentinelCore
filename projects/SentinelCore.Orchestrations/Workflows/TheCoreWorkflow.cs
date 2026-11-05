@@ -2,10 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.Logging;
@@ -267,13 +268,13 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     {
         MagenticPromptOverrides over = new MagenticPromptOverrides
         {
-            TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt,
-            TaskLedgerPlanUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanUpdatePrompt,
-            ProgressLedgerPrompt = Orchestrations.MagenticPromptOverrides.ProgressLedgerPrompt,
-            FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt,
-            TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt,
-            TaskLedgerFactsUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsUpdatePrompt,
-            TaskLedgerFullPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFullPrompt
+                TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt,
+                TaskLedgerPlanUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanUpdatePrompt,
+                ProgressLedgerPrompt = Orchestrations.MagenticPromptOverrides.ProgressLedgerPrompt,
+                FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt,
+                TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt,
+                TaskLedgerFactsUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsUpdatePrompt,
+                TaskLedgerFullPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFullPrompt
         };
 
 
@@ -313,7 +314,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     Thrown when the workflow cannot be built because agents have not been initialized.
     /// </exception>
     [Experimental("MAAI001")]
-    private Task<Workflow> BuildWorkflow()
+    private async Task<Workflow> BuildWorkflow()
     {
         Throw.IfNull(_theCoreAgent);
         Throw.IfNull(_classifierAgent);
@@ -391,9 +392,9 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         Workflow flow = builder.Build();
 
         // For debug purposes
-        VisualizeWorkflowAsync(flow, CancellationToken.None).Wait();
+        await VisualizeWorkflowAsync(flow, CancellationToken.None).ConfigureAwait(false);
 
-        return Task.FromResult(flow);
+        return flow;
 
     }
 
@@ -486,6 +487,13 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     private async Task VisualizeWorkflowAsync(Workflow workflow, CancellationToken cancellationToken)
     {
         string flow = workflow.ToDotString();
-        await File.WriteAllTextAsync("workflow.dot", flow, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await File.WriteAllTextAsync("workflow.dot", flow, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Debug.WriteLine($"Failed to write workflow.dot: {ex.Message}");
+        }
     }
 }

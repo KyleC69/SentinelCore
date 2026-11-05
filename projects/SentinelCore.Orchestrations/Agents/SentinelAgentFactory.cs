@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  100920
+// Build Num:  110415
 
 
 
@@ -50,11 +50,11 @@ namespace SentinelCore.Orchestrations.Agents;
 /// </summary>
 public sealed class SentinelAgentFactory : ISentinelAgentFactory
 {
+    private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
+    private readonly Lock _builtAgentsLock = new();
 
 
     private IReadOnlyList<AITool> _builtToolCache;
-    private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
-    private readonly Lock _builtAgentsLock = new();
     private readonly IChatClientFactory _chatClientFactory;
     private readonly ILogger<SentinelAgentFactory> _logger;
     private readonly ILoggerFactory _loggerFactory;
@@ -102,18 +102,6 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
-    private void OnToolCacheChanged()
-    {
-        RefreshToolCache();
-    }
-
-
-
-
-
-
-
-
     public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, CancellationToken cancellationToken = default)
     {
         // 2‑parameter overload forwards to the 3‑parameter overload with no task instructions.
@@ -127,10 +115,10 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
-    public Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string? taskInstructions, CancellationToken cancellationToken = default)
+    public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string? taskInstructions, CancellationToken cancellationToken = default)
     {
         // 3‑parameter overload forwards to the 4‑parameter overload with no JSON schema.
-        return CreateAgentAsync(presetName, taskInstructions, null, cancellationToken);
+        return await CreateAgentAsync(presetName, taskInstructions, null, cancellationToken);
     }
 
 
@@ -178,16 +166,15 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     {
         _logger.LogInformation("Creating agent with preset: {PresetName}, name: {AgentName}, description: {AgentDescription}", presetName, agentName, agentDescription);
 
-        var presetDefinition = AgentPresetDefinition.FromName(presetName);
+        AgentPresetDefinition? presetDefinition = AgentPresetDefinition.FromName(presetName);
         if (presetDefinition == null)
         {
             throw new InvalidOperationException($"Preset definition for {presetName} could not be resolved.");
         }
 
-        var agent = await CreateAgentCoreAsync(presetDefinition, null, null, CancellationToken.None);
         _logger.LogInformation("Agent created successfully: {AgentName}", agentName);
+        return await CreateAgentCoreAsync(presetDefinition, null, null, CancellationToken.None);
 
-        return agent;
     }
 
 
@@ -248,43 +235,42 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     private ChatClientAgent BuildAgent(AgentPresetDefinition preset, IChatClient chatClient, ChatResponseFormat? chatResponseFormat = null, List<AIContextProvider?>? contextProviders = null)
     {
 
-
+        Throw.IfNullOrEmpty(_builtToolCache.ToList());
 
         ChatOptions chatOptions = new()
         {
-            ConversationId = Guid.NewGuid().ToString("N"),
-            Instructions = string.Concat(preset.DefaultSystemInstructions, preset.RoleInstructions), //Setting instructions at system level adds strength to them making them less likely to be ignored by agent, user level chat messages are suggestions in comparison.
-            Temperature = preset.ModelProfile?.Temperature,
-            MaxOutputTokens = preset.ModelProfile?.MaxOutputTokens ?? 25000,
-
-            TopP = preset.ModelProfile?.TopP ?? .10f,
-            TopK = preset.ModelProfile?.TopK ?? 30,
-            Seed = 69,
-            ModelId = preset.ModelProfile?.ModelId,
-            AllowMultipleToolCalls = true,
-            ToolMode = ChatToolMode.Auto,
-            Tools = preset.UseTools ? _builtToolCache.ToList() : new List<AITool>(),
-            ResponseFormat = chatResponseFormat ?? ChatResponseFormat.Json
+                ConversationId = Guid.NewGuid().ToString("N"),
+                Instructions = string.Concat(preset.DefaultSystemInstructions, preset.RoleInstructions), //Setting instructions at system level adds strength to them making them less likely to be ignored by agent, user level chat messages are suggestions in comparison.
+                Temperature = preset.ModelProfile?.Temperature,
+                MaxOutputTokens = preset.ModelProfile?.MaxOutputTokens ?? 25000,
+                TopP = preset.ModelProfile?.TopP ?? .10f,
+                TopK = preset.ModelProfile?.TopK ?? 30,
+                Seed = 69,
+                ModelId = preset.ModelProfile?.ModelId,
+                AllowMultipleToolCalls = true,
+                ToolMode = ChatToolMode.Auto,
+                Tools = preset.UseTools ? _builtToolCache.ToList() : new List<AITool>(),
+                ResponseFormat = chatResponseFormat ?? ChatResponseFormat.Json
         };
 
 
         return new ChatClientAgent(chatClient, new ChatClientAgentOptions
         {
-            Id = preset.AgentId,
-            Name = preset.AgentName,
-            Description = preset.Description,
-            ChatOptions = chatOptions,
-            AIContextProviders = preset.UseContextEnrichers ? contextProviders : null,
-            UseProvidedChatClientAsIs = false,
-            AllowConcurrentInvocation = false,
-            ClearOnChatHistoryProviderConflict = true,
-            WarnOnChatHistoryProviderConflict = false,
-            ThrowOnChatHistoryProviderConflict = true,
-            RequirePerServiceCallChatHistoryPersistence = false,
-            EnableMessageInjection = false,
-            DisableApprovalNotRequiredFunctionBypassing = false,
-            DisableApprovalResponseBinding = false,
-            ChatHistoryProvider = null
+                Id = preset.AgentId,
+                Name = preset.AgentName,
+                Description = preset.Description,
+                ChatOptions = chatOptions,
+                AIContextProviders = preset.UseContextEnrichers ? contextProviders : null,
+                UseProvidedChatClientAsIs = false,
+                AllowConcurrentInvocation = false,
+                ClearOnChatHistoryProviderConflict = true,
+                WarnOnChatHistoryProviderConflict = false,
+                ThrowOnChatHistoryProviderConflict = true,
+                RequirePerServiceCallChatHistoryPersistence = false,
+                EnableMessageInjection = false,
+                DisableApprovalNotRequiredFunctionBypassing = false,
+                DisableApprovalResponseBinding = false,
+                ChatHistoryProvider = null
         });
     }
 
@@ -306,11 +292,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         preset.ModelProfile = model;
         Throw.IfNull(model, $"Unable to resolve a model for preset '{preset.Tier}'.");
 
-        // Apply task instructions if supplied (preserve existing if null)
-        if (taskInstructions != null)
-        {
-            preset.RoleInstructions += taskInstructions;
-        }
+
 
         // Build the base chat client and wrap with logging middleware
         IChatClient chatclient = _chatClientFactory.CreateChatClient(model);
@@ -325,7 +307,19 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         }
 
         // Build and cast to the public interface type.
-        return BuildAgent(preset, loggingClient, forJsonSchema, providers);
+        return BuildAgent(preset, chatclient, forJsonSchema, providers);
+    }
+
+
+
+
+
+
+
+
+    private void OnToolCacheChanged()
+    {
+        RefreshToolCache();
     }
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -165,6 +165,55 @@ public sealed partial class App
 
 
     /// <summary>
+    ///     Loads persisted MCP server definitions and starts each server connection.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task InitializeMcpServersAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            IMcpServerRegistry registry = _host!.Services.GetRequiredService<IMcpServerRegistry>();
+            ILogger<App> logger = _host.Services.GetRequiredService<ILogger<App>>();
+
+            if (registry is McpServerRegistry serverRegistry)
+            {
+                logger.LogInformation("Loading persisted MCP server definitions.");
+                await serverRegistry.LoadPersistedAsync(cancellationToken).ConfigureAwait(false);
+
+                // Start all loaded MCP servers.
+                IReadOnlyList<McpServerInfo> serverInfos = await serverRegistry.ListAsync(cancellationToken);
+                foreach (McpServerInfo info in serverInfos)
+                    try
+                    {
+                        logger.LogInformation("Starting MCP server {ServerId}.", info.Definition.Id);
+                        await serverRegistry.StartAsync(info.Definition.Id, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to start MCP server {ServerId}.", info.Definition.Id);
+                    }
+            }
+            else
+            {
+                logger.LogWarning("MCP registry initializer expected {ExpectedType} but received {ActualType}.", typeof(McpServerRegistry).Name, registry.GetType().Name);
+            }
+        }
+        catch (Exception ex)
+        {
+            ILogger<App> logger = _host!.Services.GetRequiredService<ILogger<App>>();
+            logger.LogError(ex, "Failed to initialize MCP servers.");
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Cancels the shared <see cref="ShutdownToken" />, stops the <see cref="IHost" />,
     ///     and disposes resources. Safe to call from any exit path and idempotent.
     /// </summary>
@@ -310,7 +359,6 @@ public sealed partial class App
         {
             await StartApplicationAsync(e);
 
-
             ILogger<App>? logger = Services.GetService<ILogger<App>>();
             logger?.LogInformation("SentinelCore Host application started successfully.");
         }
@@ -324,7 +372,7 @@ public sealed partial class App
                 await _shutdownCts.CancelAsync();
             }
 
-            MessageBox.Show($"A critical error occurred during startup:\n\n{ex.Message}\n\nSee the debug output for details.", "SentinelCore — Fatal Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"A critical error occurred during startup: {ex.Message} See the debug output for details.", "SentinelCore — Fatal Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
             this.Shutdown(1);
         }
@@ -405,29 +453,28 @@ public sealed partial class App
                     // and will be automatically resolved by the logging infrastructure.
                     // -- Custom Logging --
                     // Register CustomMAFFormatter and JsonLoggerProvider for structured logging
-                    logging.AddFileLogger();
+                    // logging.AddFileLogger();
 
 
 
                     // Add the JsonLoggerProvider here explicitly
-                    var formatter = new CustomMAFFormatter();
-                    var loggerOptions = new JsonLoggerOptions
-                    {
-                        MinimumLevel = LogLevel.Trace,
-                        Indented = true,
-                        Output = JsonLoggerOutput.Console
-                    };
-                    logging.AddProvider(new JsonLoggerProvider(loggerOptions, formatter));
+                    CustomMAFFormatter formatter = new();
+                    JsonLoggerOptions loggerOptions = new() { MinimumLevel = LogLevel.Trace, Indented = true, Output = JsonLoggerOutput.Console };
+                    //       logging.AddProvider(new JsonLoggerProvider(loggerOptions, formatter));
+                    logging.AddConsole();
+
+                    // Add the LogViewerLoggerProvider to forward all logs to the LogViewerWindow
 
 
-                    logging.SetMinimumLevel(LogLevel.Trace);
+
+                    logging.SetMinimumLevel(LogLevel.Debug);
                 })
                 .Build();
 
         await StartHostOnceAsync(ShutdownToken);
 
 
-        var aiStartlup = Services.GetRequiredService<AISystemsInitialization>();
+        AISystemsInitialization aiStartlup = Services.GetRequiredService<AISystemsInitialization>();
         await aiStartlup.ExecuteAsync(ShutdownToken);
     }
 
@@ -468,7 +515,7 @@ public sealed partial class App
         _hostStarted = true;
         try
         {
-            await _host.StartAsync(cancellationToken).ConfigureAwait(false);
+            await _host.StartAsync(cancellationToken);
         }
         catch
         {
@@ -477,66 +524,19 @@ public sealed partial class App
         }
 
         // Initialize MCP servers after host is started
-        await InitializeMcpServersAsync(cancellationToken).ConfigureAwait(false);
+        await InitializeMcpServersAsync(cancellationToken);
 
         // Show the main window after the host is running
-        if (Current is null) return;
-
-        Current.Dispatcher.Invoke(() =>
+        if (Current is null)
         {
-            MainWindow = new MainWindow(_host.Services.GetRequiredService<INavigationService>());
-            MainWindow.Show();
-        });
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Loads persisted MCP server definitions and starts each server connection.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task InitializeMcpServersAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            var registry = _host!.Services.GetRequiredService<IMcpServerRegistry>();
-            var logger = _host.Services.GetRequiredService<ILogger<App>>();
-
-            if (registry is McpServerRegistry serverRegistry)
-            {
-                logger.LogInformation("Loading persisted MCP server definitions.");
-                await serverRegistry.LoadPersistedAsync(cancellationToken).ConfigureAwait(false);
-
-                // Start all loaded MCP servers.
-                var serverInfos = await serverRegistry.ListAsync(cancellationToken);
-                foreach (var info in serverInfos)
-                {
-                    try
-                    {
-                        logger.LogInformation("Starting MCP server {ServerId}.", info.Definition.Id);
-                        await serverRegistry.StartAsync(info.Definition.Id, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Failed to start MCP server {ServerId}.", info.Definition.Id);
-                    }
-                }
-            }
-            else
-            {
-                logger.LogWarning("MCP registry initializer expected {ExpectedType} but received {ActualType}.", typeof(McpServerRegistry).Name, registry.GetType().Name);
-            }
+            return;
         }
-        catch (Exception ex)
-        {
-            var logger = _host!.Services.GetRequiredService<ILogger<App>>();
-            logger.LogError(ex, "Failed to initialize MCP servers.");
-        }
+
+        MainWindow = new MainWindow(_host.Services.GetRequiredService<INavigationService>());
+        MainWindow.Show();
+
+        // Show the LogViewerWindow to capture all ILogger output
+        //      LogViewerWindow logViewerWindow = new();
+        //    logViewerWindow.Show();
     }
 }

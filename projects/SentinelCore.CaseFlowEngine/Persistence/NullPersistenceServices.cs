@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         NullPersistenceServices.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -81,36 +81,6 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
 
 
     /// <summary>
-    ///     Returns 0 — no case can be created without persistence.
-    /// </summary>
-    public int CreateCase(Signal rawSignal, CancellationToken cancellationToken = default)
-    {
-        return 0;
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Returns 0 — no case can be created without persistence.
-    /// </summary>
-    public Task<int> CreateCaseAsync(Signal signal, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(0);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
     ///     Returns the statuses a case in the given status may legally transition to.
     /// </summary>
     /// <param name="status">The current status of the case.</param>
@@ -118,21 +88,6 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
     public IReadOnlyList<CaseStatus> GetAllowedTransitions(int status)
     {
         throw new NotImplementedException();
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Returns an empty transition set — no lifecycle is enforced without persistence.
-    /// </summary>
-    public IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status)
-    {
-        return new List<CaseStatus>();
     }
 
 
@@ -179,6 +134,51 @@ public sealed class NullCaseFlowEngine : ICaseFlowEngine
     {
         IReadOnlyDictionary<CaseStatus, int> counts = new Dictionary<CaseStatus, int>();
         return Task.FromResult(counts);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns 0 — no case can be created without persistence.
+    /// </summary>
+    public int CreateCase(Signal rawSignal, CancellationToken cancellationToken = default)
+    {
+        return 0;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns 0 — no case can be created without persistence.
+    /// </summary>
+    public Task<int> CreateCaseAsync(Signal signal, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(0);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns an empty transition set — no lifecycle is enforced without persistence.
+    /// </summary>
+    public IReadOnlyList<CaseStatus> GetAllowedTransitions(CaseStatus status)
+    {
+        return new List<CaseStatus>();
     }
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         Signal.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -17,6 +17,10 @@ public sealed class Signal
 
     public Signal()
     {
+        Notes = string.Empty;
+        OrigPrompt = string.Empty;
+        SignalText = string.Empty;
+        Source = string.Empty;
     }
 
 

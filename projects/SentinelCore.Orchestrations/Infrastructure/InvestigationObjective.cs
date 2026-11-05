@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         InvestigationObjective.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -20,12 +20,15 @@ namespace SentinelCore.Orchestrations.Infrastructure;
 
 
 /// <summary>
-/// Represents an investigative objective for a received signal, capturing the original signal, source and source type,
-/// a concise signal summary, severity, known and unknown facts, investigation questions, relevant evidence sources, and
-/// the timestamp when the signal was received.
+///     Represents an investigative objective for a received signal, capturing the original signal, source and source type,
+///     a concise signal summary, severity, known and unknown facts, investigation questions, relevant evidence sources,
+///     and
+///     the timestamp when the signal was received.
 /// </summary>
-/// <remarks>Used by the Case Flow Engine to record and track investigation context and progress. The Id is
-/// assigned by the Case Flow Engine and properties are init-only to preserve immutability.</remarks>
+/// <remarks>
+///     Used by the Case Flow Engine to record and track investigation context and progress. The Id is
+///     assigned by the Case Flow Engine and properties are init-only to preserve immutability.
+/// </remarks>
 public sealed class InvestigationObjective
 {
 
@@ -35,11 +38,19 @@ public sealed class InvestigationObjective
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; init; }
 
+    [JsonPropertyName("investigationQuestions")]
+    [Description("Questions that should be answered during the investigation.")]
+    public List<string> InvestigationQuestions { get; set; } = new List<string>();
+
 
     [JsonPropertyName("originalSignal")]
     [Description("The original signal that entered the system.")]
     [JsonRequired]
     public string? OriginalSignal { get; set; }
+
+    [JsonPropertyName("severity")]
+    [Description("The severity of the signal. This could be low, medium, high, or critical.")]
+    public string Severity { get; set; } = string.Empty;
 
 
 
@@ -59,14 +70,6 @@ public sealed class InvestigationObjective
     [JsonPropertyName("sourceType")]
     [JsonRequired]
     public string SourceType { get; init; }
-
-    [JsonPropertyName("severity")]
-    [Description("The severity of the signal. This could be low, medium, high, or critical.")]
-    public string Severity { get; set; } = string.Empty;
-
-    [JsonPropertyName("investigationQuestions")]
-    [Description("Questions that should be answered during the investigation.")]
-    public List<string> InvestigationQuestions { get; set; } = new List<string>();
 
 
     [JsonPropertyName("timestamp")]

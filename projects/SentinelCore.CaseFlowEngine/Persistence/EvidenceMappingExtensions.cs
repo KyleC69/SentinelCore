@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         EvidenceMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -28,7 +28,7 @@ public static class EvidenceMappingExtensions
 
 
     /// <summary>
-    /// Maps the DTO instance to the corresponding EF Entity.
+    ///     Maps the DTO instance to the corresponding EF Entity.
     /// </summary>
     /// <returns>The mapped EF Entity.</returns>
     public static EvidenceEntity ToEntity(this Evidence evidence)
@@ -38,19 +38,18 @@ public static class EvidenceMappingExtensions
         return new EvidenceEntity
         {
 
-            // Example mapping:
-            Id = evidence.Id,
-            CollectorAgent = evidence.CollectorAgent,
-            SourcePath = evidence.SourcePath,
-            SourceType = evidence.SourceType,
-            Observation = evidence.Observation,
-            ObservedAt = evidence.ObservedAt,
-            CreatedAt = evidence.CreatedAt,
-            Confidence = evidence.Confidence,
-            CaseId = evidence.CaseId,
-            CaseEntity = evidence.Case.ToEntity(),
-            // Other properties...
+                // Example mapping:
+                Id = evidence.Id,
+                CollectorAgent = evidence.CollectorAgent,
+                SourcePath = evidence.SourcePath,
+                SourceType = evidence.SourceType,
+                Observation = evidence.Observation,
+                ObservedAt = evidence.ObservedAt,
+                CreatedAt = evidence.CreatedAt,
+                Confidence = evidence.Confidence,
+                CaseId = evidence.CaseId,
+                CaseEntity = evidence.Case.ToEntity()
+                // Other properties...
         };
     }
-
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseFlowEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -13,7 +13,6 @@ using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.Data.DBEntities;
-
 
 
 
@@ -36,7 +35,19 @@ public interface ICaseFlowEngine
     Task AdvanceCaseAsync(int caseId, CaseStatus status, CancellationToken cancellationToken = default);
 
 
+
+
+
+
+
+
     int CreateCase(SignalEntity signalEntity, CancellationToken cancellationToken = default);
+
+
+
+
+
+
 
 
     /// <summary>
@@ -46,6 +57,12 @@ public interface ICaseFlowEngine
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created case identifier.</returns>
     Task<int> CreateCaseAsync(SignalEntity signal, CancellationToken cancellationToken = default);
+
+
+
+
+
+
 
 
     /// <summary>
@@ -59,6 +76,10 @@ public interface ICaseFlowEngine
 
 
 
+
+
+
+    Task<CaseEntity?> GetCaseByIdAsync(int caseId, CancellationToken cancellationToken = default);
 
 
 
@@ -89,15 +110,6 @@ public interface ICaseFlowEngine
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A read-only dictionary mapping each case status to its case count.</returns>
     Task<IReadOnlyDictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default);
-
-
-
-
-
-
-
-
-    Task<CaseEntity?> GetCaseByIdAsync(int caseId, CancellationToken cancellationToken = default);
 }
 
 
@@ -123,17 +135,39 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     private static readonly Dictionary<int, HashSet<int>> AllowedTransitions = new()
     {
-        [(int)CaseStatus.Open] = new HashSet<int> { (int)CaseStatus.Analysis, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Analysis] = new HashSet<int> { (int)CaseStatus.Investigation, (int)CaseStatus.AwaitingInput, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Investigation] = new HashSet<int> { (int)CaseStatus.Review, (int)CaseStatus.AwaitingInput, (int)CaseStatus.Blocked, (int)CaseStatus.Escalated, (int)CaseStatus.Alerted, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Review] = new HashSet<int> { (int)CaseStatus.Complete, (int)CaseStatus.Investigation, (int)CaseStatus.AwaitingInput, (int)CaseStatus.Escalated, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.AwaitingInput] = new HashSet<int> { (int)CaseStatus.Investigation, (int)CaseStatus.Escalated, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Escalated] = new HashSet<int> { (int)CaseStatus.Investigation, (int)CaseStatus.AwaitingInput, (int)CaseStatus.Blocked, (int)CaseStatus.Alerted, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Alerted] = new HashSet<int> { (int)CaseStatus.Escalated, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Blocked] = new HashSet<int> { (int)CaseStatus.AwaitingInput, (int)CaseStatus.Escalated, (int)CaseStatus.Alerted, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Complete] = new HashSet<int> { (int)CaseStatus.Closed },
-        [(int)CaseStatus.Cancelled] = new HashSet<int> { (int)CaseStatus.Closed },
-        [(int)CaseStatus.Closed] = new HashSet<int>()
+            [(int)CaseStatus.Open] = new HashSet<int> { (int)CaseStatus.Analysis, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Analysis] = new HashSet<int> { (int)CaseStatus.Investigation, (int)CaseStatus.AwaitingInput, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Investigation] = new HashSet<int>
+            {
+                    (int)CaseStatus.Review,
+                    (int)CaseStatus.AwaitingInput,
+                    (int)CaseStatus.Blocked,
+                    (int)CaseStatus.Escalated,
+                    (int)CaseStatus.Alerted,
+                    (int)CaseStatus.Cancelled
+            },
+            [(int)CaseStatus.Review] = new HashSet<int>
+            {
+                    (int)CaseStatus.Complete,
+                    (int)CaseStatus.Investigation,
+                    (int)CaseStatus.AwaitingInput,
+                    (int)CaseStatus.Escalated,
+                    (int)CaseStatus.Cancelled
+            },
+            [(int)CaseStatus.AwaitingInput] = new HashSet<int> { (int)CaseStatus.Investigation, (int)CaseStatus.Escalated, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Escalated] = new HashSet<int>
+            {
+                    (int)CaseStatus.Investigation,
+                    (int)CaseStatus.AwaitingInput,
+                    (int)CaseStatus.Blocked,
+                    (int)CaseStatus.Alerted,
+                    (int)CaseStatus.Cancelled
+            },
+            [(int)CaseStatus.Alerted] = new HashSet<int> { (int)CaseStatus.Escalated, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Blocked] = new HashSet<int> { (int)CaseStatus.AwaitingInput, (int)CaseStatus.Escalated, (int)CaseStatus.Alerted, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Complete] = new HashSet<int> { (int)CaseStatus.Closed },
+            [(int)CaseStatus.Cancelled] = new HashSet<int> { (int)CaseStatus.Closed },
+            [(int)CaseStatus.Closed] = new HashSet<int>()
     };
 
 
@@ -144,13 +178,13 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CaseFlowEngine"/> class.
+    ///     Initializes a new instance of the <see cref="CaseFlowEngine" /> class.
     /// </summary>
     /// <param name="dbContextFactory">
-    /// A factory for creating instances of <see cref="SentinelCoreDBContext"/> on demand.
+    ///     A factory for creating instances of <see cref="SentinelCoreDBContext" /> on demand.
     /// </param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="dbContextFactory"/> is <c>null</c>.
+    ///     Thrown when <paramref name="dbContextFactory" /> is <c>null</c>.
     /// </exception>
     public CaseFlowEngine(IDbContextFactory<SentinelCoreDBContext> dbContextFactory)
     {
@@ -163,8 +197,9 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
 
+
     /// <summary>
-    /// Advances a case to the specified status.
+    ///     Advances a case to the specified status.
     /// </summary>
     /// <remarks>The transition must be permitted by the case lifecycle.</remarks>
     /// <param name="caseId">The identifier of the case to advance.</param>
@@ -189,13 +224,13 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
                 throw new KeyNotFoundException($"Case with ID '{caseId}' not found.");
             }
 
-            CaseStatus currentStatus = (CaseStatus)entity.CaseStatus;
+            CaseStatus currentStatus = entity.CaseStatus;
 
             // 2. Validate the transition is allowed by the lifecycle
             ValidateTransition((int)currentStatus, (int)status);
 
             // 4. Apply the transition
-            entity.CaseStatus = (CaseStatus)status;
+            entity.CaseStatus = status;
             entity.UpdatedAt = DateTime.Now;
 
             await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -218,8 +253,9 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
 
+
     /// <summary>
-    /// Creates an open case for the specified signal and returns the case identifier.
+    ///     Creates an open case for the specified signal and returns the case identifier.
     /// </summary>
     /// <param name="signalEntity">The signal to associate with the new case.</param>
     /// <param name="cancellationToken">A token intended to cancel the operation; it is not observed.</param>
@@ -319,6 +355,38 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
 
 
+    /// <summary>
+    ///     Retrieves a case by its unique identifier.
+    /// </summary>
+    /// <param name="caseId">The case identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The matching case, or <c>null</c> if not found.</returns>
+    public async Task<CaseEntity?> GetCaseByIdAsync(int caseId, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(caseId);
+
+        try
+        {
+            await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+            CaseEntity? entity = await db.CaseEntities!.FirstOrDefaultAsync(c => c.Id == caseId, cancellationToken).ConfigureAwait(false);
+
+            return entity;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new CaseFlowException($"Failed to retrieve case {caseId} by ID.", ex);
+        }
+    }
+
+
+
+
+
+
 
 
     /// <summary>
@@ -359,16 +427,9 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
             Dictionary<CaseStatus, int> counts = Enum.GetValues<CaseStatus>().ToDictionary(status => status, _ => 0);
 
-            List<StatusCount> grouped = await db.CaseEntities
-                .GroupBy(c => c.CaseStatus)
-                .Select(g => new StatusCount((int)g.Key, g.Count()))
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
+            List<StatusCount> grouped = await db.CaseEntities.GroupBy(c => c.CaseStatus).Select(g => new StatusCount((int)g.Key, g.Count())).ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            foreach (StatusCount group in grouped)
-            {
-                counts[(CaseStatus)group.Status] = group.Count;
-            }
+            foreach (StatusCount group in grouped) counts[(CaseStatus)group.Status] = group.Count;
 
             return counts;
         }
@@ -380,39 +441,6 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
         {
             // Wrap in domain-specific exception for consistency with other methods in this class
             throw new CaseFlowException("Failed to retrieve case status counts.", ex);
-        }
-    }
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Retrieves a case by its unique identifier.
-    /// </summary>
-    /// <param name="caseId">The case identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The matching case, or <c>null</c> if not found.</returns>
-    public async Task<CaseEntity?> GetCaseByIdAsync(int caseId, CancellationToken cancellationToken = default)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(caseId);
-
-        try
-        {
-            await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-            CaseEntity? entity = await db.CaseEntities!.FirstOrDefaultAsync(c => c.Id == caseId, cancellationToken).ConfigureAwait(false);
-
-            return entity;
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            throw new CaseFlowException($"Failed to retrieve case {caseId} by ID.", ex);
         }
     }
 
@@ -459,15 +487,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
             db.Attach(signal);
 
 
-            var parent = new CaseEntity
-            {
-
-                SignalEntity = signal,
-                CaseStatus = CaseStatus.Open,
-                CreatedAt = DateTime.Now,
-
-
-            };
+            CaseEntity parent = new() { SignalEntity = signal, CaseStatus = CaseStatus.Open, CreatedAt = DateTime.Now };
 
             db.Attach(parent);
             //TEST
@@ -489,14 +509,22 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     }
 
 
+
+
+
+
+
+
     /// <summary>
-    /// Retrieves the oldest case from the queue.
+    ///     Retrieves the oldest case from the queue.
     /// </summary>
     /// <param name="cancellationToken">The token to monitor for cancellation.</param>
     /// <returns>The oldest case in the queue.</returns>
     /// <exception cref="KeyNotFoundException"></exception>
-    /// <exception cref="CaseFlowException">The case could not be retrieved. A <see cref="KeyNotFoundException"/> is wrapped as the inner exception when the
-    /// queue contains no cases.</exception>
+    /// <exception cref="CaseFlowException">
+    ///     The case could not be retrieved. A <see cref="KeyNotFoundException" /> is wrapped as the inner exception when the
+    ///     queue contains no cases.
+    /// </exception>
     private async Task<CaseEntity> PullNewCase(CancellationToken cancellationToken = default)
     {
         try
@@ -508,6 +536,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
             {
                 throw new KeyNotFoundException("No cases available to pull from the queue.");
             }
+
             return entity;
         }
         catch (OperationCanceledException)
@@ -519,6 +548,10 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
             throw new CaseFlowException("Failed to pull a new case from the queue.", ex);
         }
     }
+
+
+
+
 
 
 

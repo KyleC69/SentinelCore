@@ -1,8 +1,8 @@
 ﻿// Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
-// File:         GenerateObjectiveExec.cs
+// File:         SignalClassifierExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -15,6 +15,8 @@ using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
+using SentinelCore.Orchestrations.Exceptions;
+using SentinelCore.Orchestrations.Infrastructure;
 
 
 
@@ -38,9 +40,9 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 public sealed partial class SignalClassifierExecutor : Executor
 {
     private AIAgent? _agent;
+    private readonly ISentinelAgentFactory _agentfactory;
 
     private readonly ISystemReporter _reporter;
-    private readonly ISentinelAgentFactory _agentfactory;
 
 
 
@@ -74,6 +76,7 @@ public sealed partial class SignalClassifierExecutor : Executor
 
 
 
+
     [MessageHandler]
     public async ValueTask<ChatMessage> GenerateInvestigationObjectiveAsync(ExecutorEnvelope envelope, IWorkflowContext context, CancellationToken token)
     {
@@ -87,20 +90,21 @@ public sealed partial class SignalClassifierExecutor : Executor
 
         _agent = await _agentfactory.CreateAgentAsync(AgentPreset.ClassifierAgent, AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN, ChatResponseFormat.Json, token);
         Throw.IfNull(_agent);
-        var session = await _agent.CreateSessionAsync(token);
+        AgentSession session = await _agent.CreateSessionAsync(token);
         string classify = "The following signal should be classified and an InvestigationObjective should be generated based on its content. Provide as much information as you can on the signal, and be sure to respond with a Json object, no wrapping or additional commentary allowed." + "\r\n\r\n" + envelope.SignalText;
 
         // Use the AI agent to generate an initial InvestigationObjective from the message
         // Classifier will extrapolate the signal and generate an objective based on the message content.
-        AgentResponse<Infrastructure.InvestigationObjective> response = await _agent.RunAsync<Infrastructure.InvestigationObjective>(classify, session, null, null, token);
+        AgentResponse<InvestigationObjective> response = await _agent.RunAsync<InvestigationObjective>(classify, session, null, null, token);
 
-        if (response.Result is not Infrastructure.InvestigationObjective)
+        if (response.Result is not InvestigationObjective)
         {
             _reporter.ReportError($"Failed to generate InvestigationObjective from message: {envelope.SignalText}");
             // For now, let's assume a failure means we can't proceed.
             throw new SentinelCoreWorkflowException("Failed to generate InvestigationObjective.");
         }
-        else if (string.IsNullOrEmpty(response.Text))
+
+        if (string.IsNullOrEmpty(response.Text))
         {
             _reporter.ReportError($"Generated InvestigationObjective is empty for message: {envelope.SignalText}");
             throw new SentinelCoreWorkflowException("Generated InvestigationObjective is empty.");
@@ -111,7 +115,7 @@ public sealed partial class SignalClassifierExecutor : Executor
         await context.QueueStateUpdateAsync(WorkFlowStateKeys.SIGNAL_OBJECTIVE, response.Text, "SharedState", token);
 
 
-        var msg = new ChatMessage(ChatRole.User, response.Text);
+        ChatMessage msg = new(ChatRole.User, response.Text);
 
 
         // await context.YieldOutputAsync(msg, token);
@@ -127,5 +131,4 @@ public sealed partial class SignalClassifierExecutor : Executor
 
         return null;
     }
-
 }

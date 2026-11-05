@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ChatMessages.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -18,10 +18,10 @@ namespace SentinelCore.Orchestrations.Agents.Models;
 
 
 /// <summary>
-/// A super convenient object that can be easily passed around the framework as a universal sharable
-/// also encapsulates helper methods for easily adding chat messages.
-/// By using this object it simplifies workflow/executor definitions and prevents type mismatch errors.
-/// can also be passed in as input.
+///     A super convenient object that can be easily passed around the framework as a universal sharable
+///     also encapsulates helper methods for easily adding chat messages.
+///     By using this object it simplifies workflow/executor definitions and prevents type mismatch errors.
+///     can also be passed in as input.
 /// </summary>
 public class ChatMessages : IEnumerable<ChatMessage>
 {
@@ -57,16 +57,6 @@ public class ChatMessages : IEnumerable<ChatMessage>
 
 
 
-    public string Text
-    {
-        get
-        {
-            return string.Join("\n", _messages.Select(m => m.Text));
-        }
-    }
-
-
-
     public ChatMessage this[int index]
     {
         get => _messages[index];
@@ -77,6 +67,13 @@ public class ChatMessages : IEnumerable<ChatMessage>
     public int Count
     {
         get => _messages.Count;
+    }
+
+
+
+    public string Text
+    {
+        get { return string.Join("\n", _messages.Select(m => m.Text)); }
     }
 
 

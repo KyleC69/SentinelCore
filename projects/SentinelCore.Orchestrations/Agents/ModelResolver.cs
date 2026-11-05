@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ModelResolver.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -31,10 +31,6 @@ public interface IModelResolver
 
 
 
-
-
-
-
     /// <summary>
     ///     Resolves a model based on the <see cref="ModelTier" /> defined in an <see cref="AgentPresetDefinition" />.
     ///     This is the preferred path for new code – it selects the appropriate model from
@@ -56,14 +52,6 @@ public sealed class ModelResolver : IModelResolver
 
 
 
-    public IDictionary<ModelTier, ModelProfile> Tiers
-    {
-
-        set => _options.TierModels = value;
-    }
-
-
-
 
 
 
@@ -82,6 +70,13 @@ public sealed class ModelResolver : IModelResolver
 
 
 
+    public IDictionary<ModelTier, ModelProfile> Tiers
+    {
+
+        set => _options.TierModels = value;
+    }
+
+
 
 
 
@@ -95,10 +90,8 @@ public sealed class ModelResolver : IModelResolver
         {
             return _options.TierModels[tier];
         }
-        else
-        {
-            // If the tier is not found, return null or throw an exception based on your preference.
-            return null;
-        }
+
+        // If the tier is not found, return null or throw an exception based on your preference.
+        return null;
     }
 }

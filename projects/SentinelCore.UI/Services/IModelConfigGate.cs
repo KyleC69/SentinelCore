@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         IModelConfigGate.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
@@ -45,8 +45,6 @@ public interface IModelConfigGate
 
 
 
-
-
     /// <summary>
     ///     Builds a user-facing message describing the missing configuration,
     ///     or an empty string when configuration is complete.
@@ -62,7 +60,6 @@ public interface IModelConfigGate
 /// <summary>
 ///     Default <see cref="IModelConfigGate" /> that evaluates the agent presets
 ///     against <see cref="SentinelCoreSettings.AgentModels" /> and the role tiers
-///  
 /// </summary>
 public sealed class ModelConfigGate : IModelConfigGate
 {
@@ -157,5 +154,4 @@ public sealed class ModelConfigGate : IModelConfigGate
             }
         }
     }
-
 }

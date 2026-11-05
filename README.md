@@ -2,16 +2,25 @@
 
 **Advanced AI Assisted Forensic Investigation Platform for Windows**
 
+### **STATUS UPDATE 11/5** I have almost worked out the inconsistancies in the final reporting of the Magentic orchestration group. This orchestration is very complex and the nature of forensics demands a very high level of accuracy and precision. There is a delecate balance between the layered instruction sets, the built-in templates used in the orchestrations and the models hallucinations. The system is now producing consistent and accurate reports with fact verification and cross referencing of the evidence collected. The system is now able to produce a report that is very close to what a human investigator would produce. The aggregator/report writer is currently being fined tuned to ensure that the final report is as accurate and complete as possible. A snippet of a report is shown below.
 
-
-Sentinel Core is a multi-agent AI investigation platform that learns from every case and interaction to accelerate future resolutions. It takes a signal — a prompt, an event log error, an anomaly alert — and orchestrates a team of AI agents to investigate, gather evidence, and deliver a diagnosis with remediation steps.
-
-Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combines deterministic case lifecycle management, a rule-based safety engine, pattern memory, and 33 registered agent personas to deliver accurate, auditable investigations on Windows systems. Explore the power of MAF and versatility with this application using multi-agents, RAG, context enriching, workflows, executors, multi-provider flexibility. NOTE: MAF is still under development.
-
-### **UPDATED RELEASE DATE:** I am running into into a few snags and the first release is going to be a little later in the month. Also due to recently discovered exploits I am adding a security module that assures that any input has the correct signature and source provenance. Because this system can accept input from multiple external sources it is important to validate the source of the input. This will be a new feature that wasn't expected in the original design.
 
 ---
-![SignalFound](assets/signalfound.png)
+![SignalFound](assets/ReportSnippet.png)
+
+
+Sentinel Core utilizes the power of AI as a forensic level investigation platform. It takes input(signal) from almost any telemetry source or human operator and starts an investigation into the factors that produced the signal. This system is not locked to any one domain or implementation, the agents have a layered instruction set that starts broad and becomes targeted depending on the agents role and current task. It is these instruction sets that determine the domain it currently operates in or targets in the investigation, making it an extremely versatile application.
+
+The tools available to the agents are packaged as an MCP server and can be changed to coincide with the current implementation(domain). The system also allows addition of 3rd party MCP servers which are valuable for adding specific domain knowledge to the research agents. This system is highly adaptive to it's host environment and makes no assumptions to it's operating environment, tool capabilty or capacities.
+
+At the heart of the system is the Magentic Orchestration Group from Microsoft., which serves as the investigation team tasked with researching the signal, collecting supporting evidence, an adversarial agent for validation and conflict resolution and finally a report writer for a comprehensive analysis and conclusions. If possible remediation steps will be supplied or next steps to further examine the target.
+
+The investigation is designed to flow with available evidence and not be biased by goals or influenced by false evidence. The final report is designed to be used by the operator or IT manager as a guide in deciding how to proceed or if further action is required. This system performs zero destructive operations to the environment. 
+
+Each investigation produces detailed evidenciary artifacts and findings which are recorded and make up the pattern memory component simplifying future investigations. The operator can also select signals to ignore or deescalate as being benign and not needing investigating.
+
+Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combines deterministic case lifecycle management, a rule-based safety engine, pattern memory, Explore the power of MAF and versatility with this application using multi-agents, RAG, context enriching, workflows, executors, multi-provider flexibility. NOTE: MAF is still under development and experiemental expect changes.
+
 
 
 ## New Features

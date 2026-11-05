@@ -2,16 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
-
-#nullable enable
 
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Threading;
 
 using Microsoft.Extensions.Logging;
 
@@ -34,23 +29,24 @@ namespace SentinelCore.Orchestrations.Mcp;
 /// </summary>
 public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncDisposable
 {
-    private readonly IMcpConnectionFactory _connectionFactory;
-    private readonly ConcurrentDictionary<string, McpServerEntry> _entries = new();
-    private readonly IMcpServerRegistryStore _store;
-    private readonly ILogger<McpServerRegistry> _logger;
-    private readonly SemaphoreSlim _toolCacheLock = new(1, 1);
     private readonly List<AITool> _aiToolCache = new();
+
+    private readonly IMcpConnectionFactory _connectionFactory;
     private bool _disposed;
+    private readonly ConcurrentDictionary<string, McpServerEntry> _entries = new();
+    private readonly ILogger<McpServerRegistry> _logger;
+    private readonly IMcpServerRegistryStore _store;
+    private readonly SemaphoreSlim _toolCacheLock = new(1, 1);
 
     /// <summary>
-    ///     Occurs when the tool cache has been updated.
+    ///     Maximum time allowed for listing tools on a single connected server.
     /// </summary>
-    public event Action? ToolCacheChanged;
+    private static readonly TimeSpan ListToolsTimeout = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    ///     Occurs when the list of registered servers has changed (servers loaded, added, or removed).
+    ///     Maximum time allowed for starting a server and listing its tools.
     /// </summary>
-    public event Action? ServersChanged;
+    private static readonly TimeSpan StartTimeout = TimeSpan.FromSeconds(60);
 
 
 
@@ -81,12 +77,25 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
     /// <inheritdoc />
-    public IReadOnlyList<AITool> GetToolsFromCache()
+    public void Dispose()
     {
-        lock (_aiToolCache)
-        {
-            return _aiToolCache.AsReadOnly();
-        }
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+
+
+
+
+
+
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsyncCore().ConfigureAwait(false);
+        Dispose(disposing: false);
+        GC.SuppressFinalize(this);
     }
 
 
@@ -101,7 +110,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
     {
         var tools = new List<AITool>();
 
-        foreach (var entry in _entries.Values)
+        foreach (McpServerEntry entry in _entries.Values)
         {
             if (entry.Status != McpServerStatus.Connected || entry.Client is null)
             {
@@ -110,8 +119,14 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
             try
             {
-                var serverTools = await entry.Client.ListToolsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-                tools.AddRange(serverTools);
+                using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeoutCts.CancelAfter(ListToolsTimeout);
+                IList<McpClientTool> serverTools = await entry.Client.ListToolsAsync(cancellationToken: timeoutCts.Token).ConfigureAwait(false);
+                tools.AddRange(serverTools.Select(static t => new McpToolTimeoutFunction(t)));
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogError("Timed out after {Timeout} listing tools from MCP server {ServerId}.", ListToolsTimeout, entry.Definition.Id);
             }
             catch (OperationCanceledException)
             {
@@ -138,7 +153,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
-        if (_entries.TryGetValue(id, out var entry))
+        if (_entries.TryGetValue(id, out McpServerEntry? entry))
         {
             return Task.FromResult<McpServerInfo?>(entry.ToInfo());
         }
@@ -154,10 +169,12 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default)
+    public IReadOnlyList<AITool> GetToolsFromCache()
     {
-        var infos = _entries.Values.Select(e => e.ToInfo()).ToList();
-        return Task.FromResult<IReadOnlyList<McpServerInfo>>(infos);
+        lock (_aiToolCache)
+        {
+            return _aiToolCache.AsReadOnly();
+        }
     }
 
 
@@ -168,15 +185,10 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
     /// <inheritdoc />
-    public int ToolCount
+    public Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default)
     {
-        get
-        {
-            lock (_aiToolCache)
-            {
-                return _aiToolCache.Count;
-            }
-        }
+        List<McpServerInfo> infos = _entries.Values.Select(e => e.ToInfo()).ToList();
+        return Task.FromResult<IReadOnlyList<McpServerInfo>>(infos);
     }
 
 
@@ -193,9 +205,9 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
         try
         {
-            var definitions = await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<McpServerDefinition> definitions = await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
 
-            foreach (var definition in definitions)
+            foreach (McpServerDefinition definition in definitions)
             {
                 ValidateDefinition(definition);
                 _entries[definition.Id] = new McpServerEntry(definition);
@@ -271,7 +283,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
         ThrowIfDisposed();
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
-        if (_entries.TryRemove(id, out var entry))
+        if (_entries.TryRemove(id, out McpServerEntry? entry))
         {
             try
             {
@@ -299,13 +311,25 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
 
+    /// <summary>
+    ///     Occurs when the list of registered servers has changed (servers loaded, added, or removed).
+    /// </summary>
+    public event Action? ServersChanged;
+
+
+
+
+
+
+
+
     /// <inheritdoc />
     public async Task StartAsync(string id, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
-        if (!_entries.TryGetValue(id, out var entry))
+        if (!_entries.TryGetValue(id, out McpServerEntry? entry))
         {
             throw new InvalidOperationException($"MCP server '{id}' is not registered.");
         }
@@ -321,9 +345,21 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
         try
         {
-            var client = await _connectionFactory.ConnectAsync(entry.Definition, cancellationToken).ConfigureAwait(false);
+            using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(StartTimeout);
 
-            var tools = await client.ListToolsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            McpClient client = await _connectionFactory.ConnectAsync(entry.Definition, timeoutCts.Token).ConfigureAwait(false);
+
+            IList<McpClientTool> tools;
+            try
+            {
+                tools = await client.ListToolsAsync(cancellationToken: timeoutCts.Token).ConfigureAwait(false);
+            }
+            catch
+            {
+                await client.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
 
             entry.Client = client;
             entry.ToolNames = tools.Select(t => t.Name).ToList().AsReadOnly();
@@ -332,6 +368,13 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
             await RefreshToolCacheAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation("MCP server {ServerId} connected with {ToolCount} tool(s).", id, entry.ToolNames.Count);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            entry.Status = McpServerStatus.Error;
+            entry.LastError = $"Timed out after {StartTimeout}.";
+            _logger.LogError("MCP server {ServerId} timed out during start after {Timeout}.", id, StartTimeout);
+            throw new TimeoutException($"MCP server '{id}' did not start within {StartTimeout}.");
         }
         catch (OperationCanceledException)
         {
@@ -361,13 +404,13 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
         ThrowIfDisposed();
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
-        if (!_entries.TryGetValue(id, out var entry))
+        if (!_entries.TryGetValue(id, out McpServerEntry? entry))
         {
             _logger.LogDebug("MCP server {ServerId} not found for stop operation.", id);
             return;
         }
 
-        var client = entry.Client;
+        McpClient? client = entry.Client;
         entry.Client = null;
 
         if (client is not null)
@@ -403,6 +446,32 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
 
+    /// <summary>
+    ///     Occurs when the tool cache has been updated.
+    /// </summary>
+    public event Action? ToolCacheChanged;
+
+
+
+    /// <inheritdoc />
+    public int ToolCount
+    {
+        get
+        {
+            lock (_aiToolCache)
+            {
+                return _aiToolCache.Count;
+            }
+        }
+    }
+
+
+
+
+
+
+
+
     /// <inheritdoc />
     public async Task UpdateAssignmentsAsync(string id, IReadOnlyList<string> assignedAgentNames, CancellationToken cancellationToken = default)
     {
@@ -410,13 +479,13 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentNullException.ThrowIfNull(assignedAgentNames);
 
-        if (!_entries.TryGetValue(id, out var entry))
+        if (!_entries.TryGetValue(id, out McpServerEntry? entry))
         {
             throw new InvalidOperationException($"MCP server '{id}' is not registered.");
         }
 
-        var current = entry.Definition;
-        var updated = new McpServerDefinition(current.Id, current.DisplayName, current.TransportType, current.CommandOrEndpoint, current.Arguments, current.WorkingDirectory, current.EnvironmentVariables, current.OAuthSettings, assignedAgentNames);
+        McpServerDefinition current = entry.Definition;
+        McpServerDefinition updated = new(current.Id, current.DisplayName, current.TransportType, current.CommandOrEndpoint, current.Arguments, current.WorkingDirectory, current.EnvironmentVariables, current.OAuthSettings, assignedAgentNames);
 
         _entries[id] = new McpServerEntry(updated) { Status = entry.Status, ToolNames = entry.ToolNames, LastError = entry.LastError, Client = entry.Client };
 
@@ -443,6 +512,96 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
 
+    private void Dispose(bool disposing)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            _toolCacheLock.Dispose();
+        }
+
+        _disposed = true;
+    }
+
+
+
+
+
+
+
+
+    private async ValueTask DisposeAsyncCore()
+    {
+        CancellationToken cancellationToken = CancellationToken.None;
+
+        foreach (McpServerEntry entry in _entries.Values)
+            if (entry.Client is not null)
+            {
+                try
+                {
+                    await entry.Client.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error disposing MCP client for server {ServerId} during registry disposal.", entry.Definition.Id);
+                }
+            }
+
+        _entries.Clear();
+        _aiToolCache.Clear();
+    }
+
+
+
+
+
+
+
+
+    private void OnServersChanged()
+    {
+        ServersChanged?.Invoke();
+    }
+
+
+
+
+
+
+
+
+    private void OnToolCacheChanged()
+    {
+        ToolCacheChanged?.Invoke();
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Persists the registered MCP server definitions.
+    /// </summary>
+    private async Task PersistAsync(CancellationToken cancellationToken)
+    {
+        List<McpServerDefinition> definitions = _entries.Values.Select(e => e.Definition).ToList();
+        await _store.SaveAsync(definitions, cancellationToken).ConfigureAwait(false);
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Refreshes the tool cache from all connected servers.
     /// </summary>
@@ -452,7 +611,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
         try
         {
             _aiToolCache.Clear();
-            var tools = await GetAllToolsAsync(cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<AITool> tools = await GetAllToolsAsync(cancellationToken).ConfigureAwait(false);
             _aiToolCache.AddRange(tools);
             OnToolCacheChanged();
         }
@@ -469,13 +628,12 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
 
-    /// <summary>
-    ///     Persists the registered MCP server definitions.
-    /// </summary>
-    private async Task PersistAsync(CancellationToken cancellationToken)
+    private void ThrowIfDisposed()
     {
-        var definitions = _entries.Values.Select(e => e.Definition).ToList();
-        await _store.SaveAsync(definitions, cancellationToken).ConfigureAwait(false);
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(McpServerRegistry));
+        }
     }
 
 
@@ -510,129 +668,9 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
 
-    private void OnToolCacheChanged()
-    {
-        ToolCacheChanged?.Invoke();
-    }
-
-
-
-
-
-
-
-
-    private void OnServersChanged()
-    {
-        ServersChanged?.Invoke();
-    }
-
-
-
-
-
-
-
-
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(McpServerRegistry));
-        }
-    }
-
-
-
-
-
-
-
-
-    /// <inheritdoc />
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-
-
-
-
-
-
-
-    /// <inheritdoc />
-    public async ValueTask DisposeAsync()
-    {
-        await DisposeAsyncCore().ConfigureAwait(false);
-        Dispose(disposing: false);
-        GC.SuppressFinalize(this);
-    }
-
-
-
-
-
-
-
-
-    private void Dispose(bool disposing)
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        if (disposing)
-        {
-            _toolCacheLock.Dispose();
-        }
-
-        _disposed = true;
-    }
-
-
-
-
-
-
-
-
-    private async ValueTask DisposeAsyncCore()
-    {
-        var cancellationToken = CancellationToken.None;
-
-        foreach (var entry in _entries.Values)
-        {
-            if (entry.Client is not null)
-            {
-                try
-                {
-                    await entry.Client.DisposeAsync().ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error disposing MCP client for server {ServerId} during registry disposal.", entry.Definition.Id);
-                }
-            }
-        }
-
-        _entries.Clear();
-        _aiToolCache.Clear();
-    }
-
-
-
-
-
-
-
-
     /// <summary>
-    /// Tracks the definition and runtime state of an MCP server, including its client, status, available tools, and
-    /// most recent error.
+    ///     Tracks the definition and runtime state of an MCP server, including its client, status, available tools, and
+    ///     most recent error.
     /// </summary>
     private sealed class McpServerEntry
     {

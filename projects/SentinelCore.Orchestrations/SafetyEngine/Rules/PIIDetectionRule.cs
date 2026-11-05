@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PIIDetectionRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  100908
+// Build Num:  110415
 
 
 
