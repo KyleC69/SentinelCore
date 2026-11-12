@@ -53,8 +53,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 {
     private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
     private readonly Lock _builtAgentsLock = new();
-
-
+    private bool _enableTrace = true;
+    private bool _enableTelemetry = true;
     private IReadOnlyList<AITool> _builtToolCache;
     private readonly IChatClientFactory _chatClientFactory;
     private readonly ILogger<SentinelAgentFactory> _logger;
@@ -298,8 +298,6 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         // Build the base chat client and wrap with logging middleware
         IChatClient chatclient = _chatClientFactory.CreateChatClient(model);
 
-        // =====  USE ONLY FOR TESTING AGENT BEHAVIOR, NOT FOR PRODUCTION LOGGING =====
-        // IChatClient loggingClient = chatclient.AsBuilder()            .UseLogging(_loggerFactory)            .Build();
 
         // Prepare context providers when the preset requests any enrichers.
         List<AIContextProvider?> providers = null!;
@@ -308,18 +306,37 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             providers = new();
             AddPresetContextProviders(preset, providers);
         }
+        AIAgent builtAgent;
+        if (_enableTrace)
+        {
+            // =====  USE ONLY FOR TESTING AGENT BEHAVIOR, NOT FOR PRODUCTION LOGGING =====
+            IChatClient loggingClient = chatclient.AsBuilder().UseLogging(_loggerFactory).Build();
+            // Build and cast to the public interface type.
+            builtAgent = BuildAgent(preset, loggingClient, forJsonSchema, providers);
+        }
+        else
+        {
+            // Build and cast to the public interface type.
+            builtAgent = BuildAgent(preset, chatclient, forJsonSchema, providers);
+        }
 
-        // Build and cast to the public interface type.
-        AIAgent builtAgent = BuildAgent(preset, chatclient, forJsonSchema, providers);
 
         // Spans are emitted under SentinelCoreDiagnostics.ActivitySourceName. The host must
         // subscribe to that name on its tracer provider, otherwise nothing is exported.
         // Payload capture is gated: raw prompts, responses, and tool results are only recorded
         // when SENTINEL_TELEMETRY_SENSITIVE_DATA is set to true.
-        return builtAgent.AsBuilder()
-                         .UseOpenTelemetry(SentinelCoreDiagnostics.ActivitySourceName, cfg => cfg.EnableSensitiveData = SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled)
-                         .Build();
+        //   return builtAgent.AsBuilder()
+        //                    .UseOpenTelemetry(SentinelCoreDiagnostics.ActivitySourceName, cfg => cfg.EnableSensitiveData = SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled)
+        //                    .Build();
+        if (_enableTelemetry)
+        {
+            builtAgent = builtAgent.AsBuilder()
+                                   .UseOpenTelemetry(SentinelCoreDiagnostics.ActivitySourceName, cfg => cfg.EnableSensitiveData = SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled)
+                                   .Build();
+        }
 
+
+        return builtAgent;
     }
 
 

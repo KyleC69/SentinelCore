@@ -493,7 +493,7 @@ public sealed partial class App
         string? appLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 
         // Spans emitted by the agent pipeline flow through this provider to the console.
-        _tracerProvider = CreateTracerProvider();
+        //    _tracerProvider = CreateTracerProvider();
 
         _host = Host.CreateDefaultBuilder(e.Args)
                 .ConfigureAppConfiguration(c => { c.SetBasePath(appLocation ?? string.Empty); })
