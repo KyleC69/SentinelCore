@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CaseListViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
+using SentinelCore.CaseFlowEngine.DBEntities;
 
 
 
@@ -23,13 +24,14 @@ public partial class SentinelCoreDBContext : DbContext
         
     }
 
+    public virtual DbSet<ArtifactEntity> ArtifactEntities { get; set; }
+
     public virtual DbSet<CaseEntity> CaseEntities { get; set; }
 
     public virtual DbSet<EvidenceEntity> EvidenceEntities { get; set; }
 
     public virtual DbSet<InvestigationObjective> InvestigationObjectives { get; set; }
 
-    public virtual DbSet<InvestigationOutcome> InvestigationOutcomes { get; set; }
 
     public virtual DbSet<PatternMemoryEntity> PatternMemoryEntities { get; set; }
 
@@ -46,23 +48,13 @@ public partial class SentinelCoreDBContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        //TODO: DEBUG MONITORING
-        optionsBuilder.EnableDetailedErrors();
-        optionsBuilder.EnableSensitiveDataLogging();
-        // In DbContext configuration
-        optionsBuilder.EnableSensitiveDataLogging()
-                .ConfigureWarnings(w => w.Log((RelationalEventId.CommandExecuting, LogLevel.Information)));
-        optionsBuilder.UseSqlServer("Data Source=desktop-NC01091;Initial Catalog=SentinelCore;Integrated Security=True;Encrypt=False;Trust Server Certificate=True");
+
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CaseEntity>(entity =>
         {
-            entity.HasIndex(e => e.PatternMemoryEntityId, "FK_CaseEntity")
-                .IsUnique()
-                .HasFilter("([PatternMemoryId] IS NOT NULL)");
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             
         });
@@ -76,7 +68,7 @@ public partial class SentinelCoreDBContext : DbContext
         modelBuilder.Entity<PatternMemoryEntity>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_PatternMemory");
-            entity.Property(e => e.PatternMemoryId).HasDefaultValueSql("NEXT VALUE FOR PatternMemor_seq").ValueGeneratedOnAdd();
+            entity.Property(e => e.PatternMemoryId).HasDefaultValueSql("NEXT VALUE FOR PatternMem_seq").ValueGeneratedOnAdd();
         });
 
         modelBuilder.Entity<RemediationEntity>(entity =>
@@ -99,6 +91,15 @@ public partial class SentinelCoreDBContext : DbContext
                 .HasDefaultValueSql("NEXT VALUE FOR Signal_ID_seq")
                 .ValueGeneratedOnAdd();
         });
+
+        modelBuilder.Entity<ArtifactEntity>(entity =>
+        {
+            entity.HasOne(d => d.CaseEntity).WithMany(p => p.ArtifactEntities)
+                .HasForeignKey(d => d.CaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.HasSequence<int>("PatternMem_seq").HasMin(1L);
         modelBuilder.HasSequence<int>("Signal_ID_seq").HasMin(1L);
 
         OnModelCreatingGeneratedFunctions(modelBuilder);

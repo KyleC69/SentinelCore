@@ -29,7 +29,7 @@ public partial class InvestigationObjective
     public string InvestigationQuestions { get; set; } = string.Empty;
 
 
-   
+
 
     public DateTime TimeStamp { get; set; }
 

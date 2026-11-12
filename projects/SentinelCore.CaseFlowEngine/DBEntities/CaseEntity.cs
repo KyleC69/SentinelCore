@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 using SentinelCore.CaseFlowEngine;
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.Data.DBEntities;
 
@@ -56,9 +57,6 @@ public partial class CaseEntity
     [InverseProperty("CaseEntity")]
     public virtual InvestigationObjective InvestigationObjective { get; set; } = new InvestigationObjective();
 
-    [ForeignKey("InvestigationOutcomeId")]
-    [InverseProperty("CaseEntity")]
-    public virtual InvestigationOutcome InvestigationOutcome { get; set; } = new InvestigationOutcome();
 
     [ForeignKey("PatternMemoryEntityId")]
     [InverseProperty("CaseEntity")]
@@ -73,8 +71,9 @@ public partial class CaseEntity
     public virtual ICollection<RemediationEntity> RemediationEntities { get; set; } = new List<RemediationEntity>();
     
     public virtual ICollection<EvidenceEntity> EvidenceEntities { get; set; } = new List<EvidenceEntity>();
-    
-    
-    
-    
+    public virtual ICollection<ArtifactEntity> ArtifactEntities { get; set; } = new List<ArtifactEntity>();
+
+    public string Findings { get; set; } = string.Empty;
+
+
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseEntityExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 
@@ -39,7 +39,6 @@ public static class CaseEntityExtensions
                     EvidenceEntities = null,
                     RemediationEntities = null,
                     InvestigationObjective = null,
-                    InvestigationOutcome = null,
                     Notes = null
                     // ... other properties ...
             };

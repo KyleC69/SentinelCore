@@ -2,11 +2,9 @@
 // Project:   SentinelCore.Tests
 // File:         AgentFactoryToolTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
-
-using System.Reflection;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -18,6 +16,7 @@ using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
+using SentinelCore.Tests.TestInfrastructure;
 
 
 
@@ -34,6 +33,10 @@ namespace SentinelCore.Tests;
 [TestClass]
 public sealed class AgentFactoryToolTests
 {
+    private const string PromptText = "ping";
+    private const string RegistryToolName = "registry_noop";
+
+    private FakeChatClient _chatClient = null!;
     private Mock<IChatClientFactory> _chatClientFactoryMock = null!;
     private SentinelAgentFactory _factory = null!;
     private Mock<ILoggerFactory> _loggerFactoryMock = null!;
@@ -48,42 +51,25 @@ public sealed class AgentFactoryToolTests
 
 
 
+    /// <summary>
+    ///     Verifies that the tools discovered by the MCP registry reach the model call issued by a Core
+    ///     agent instead of being dropped while the agent is built.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
     [TestMethod]
-    public void CreateCoreAgent_IncludesLocalTools()
+    public async Task CreateCoreAgent_AttachesRegistryToolsToModelCallAsync()
     {
+        // Arrange
+        AIAgent agent = await _factory.CreateAgentAsync(AgentPreset.CoreAgent);
+
         // Act
-        AIAgent agent = _factory.CreateAgentAsync(AgentPreset.CoreAgent).GetAwaiter().GetResult();
+        await agent.RunAsync(PromptText);
 
         // Assert
-        Assert.IsNotNull(agent, "Agent should not be null");
-
-        // Check that the agent has tools
-        // We access the agent's tools via the ChatOptions property (which is internal, so we use reflection)
-        // Alternatively, we can check the agent's tool invocations? But we don't have a public way.
-        // Since the agent is a ChatClientAgent, we can try to access its ChatOptions.
-        // However, ChatOptions is not public. We'll use reflection for the test.
-
-        Type chatClientAgentType = agent.GetType();
-        PropertyInfo? chatOptionsProperty = chatClientAgentType.GetProperty("ChatOptions", BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.IsNotNull(chatOptionsProperty, "ChatOptions property should exist");
-
-        object? chatOptions = chatOptionsProperty.GetValue(agent);
-        Assert.IsNotNull(chatOptions, "ChatOptions should not be null");
-
-        // The ChatOptions type is Microsoft.Agents.AI.Chat.ChatOptions
-        PropertyInfo? toolsProperty = chatOptions.GetType().GetProperty("Tools", BindingFlags.Public | BindingFlags.Instance);
-        Assert.IsNotNull(toolsProperty, "Tools property should exist in ChatOptions");
-
-        IList<AITool>? tools = (IList<AITool>)toolsProperty.GetValue(chatOptions);
-        Assert.IsNotNull(tools, "Tools list should not be null");
-
-        // We expect at least one tool from the local tools (MSDocsMcpServerTool)
-        // We can check by type or by name.
-        // Since we don't want to depend on the exact implementation, we just check that there is at least one tool.
-        // However, note that the MCP server registry was mocked to return empty, so any tools must be local.
-        Assert.IsTrue(tools.Count > 0, "Agent should have at least one tool");
-
-        // Optionally, we can check for the specific tool we know about.
+        ChatOptions? options = _chatClient.LastOptions;
+        Assert.IsNotNull(options, "Running the agent must issue a chat request to the model provider.");
+        Assert.IsNotNull(options.Tools, "The chat request must carry the agent's tool definitions.");
+        Assert.IsTrue(options.Tools.Any(tool => tool.Name == RegistryToolName), $"The registry tool '{RegistryToolName}' never reached the model call, so the agent could not invoke it.");
     }
 
 
@@ -93,25 +79,29 @@ public sealed class AgentFactoryToolTests
 
 
 
+    /// <summary>
+    ///     Configures a factory whose external collaborators are deterministic test doubles: a chat client
+    ///     that records what it was asked to send, and a registry that exposes exactly one tool.
+    /// </summary>
     [TestInitialize]
     public void TestInitialize()
     {
-        _chatClientFactoryMock = new Mock<IChatClientFactory>();
-        _modelResolverMock = new Mock<IModelResolver>();
-        _patternMatcherMock = new Mock<IPatternMatcher>();
-        _loggerFactoryMock = new Mock<ILoggerFactory>();
-        _mcpServerRegistryMock = new Mock<IMcpServerRegistry>();
+        _chatClient = new FakeChatClient(new ChatResponse(new ChatMessage(ChatRole.Assistant, "pong")));
 
-        // Setup the logger factory to return a null logger
+        _chatClientFactoryMock = new Mock<IChatClientFactory>();
+        _chatClientFactoryMock.Setup(factory => factory.CreateChatClient(It.IsAny<ModelProfile>())).Returns(_chatClient);
+
+        _modelResolverMock = new Mock<IModelResolver>();
+        _modelResolverMock.Setup(resolver => resolver.ResolveByTier(It.IsAny<ModelTier>())).Returns(new ModelProfile("test-model", "http://test.endpoint", 0.7f));
+
+        _patternMatcherMock = new Mock<IPatternMatcher>();
+
+        _loggerFactoryMock = new Mock<ILoggerFactory>();
         _loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(NullLogger.Instance);
 
-        // Setup the model resolver to return a valid model profile for the Core tier
-        ModelProfile modelProfile = new("test-model", "http://test.endpoint", 0.7f);
-        _modelResolverMock.Setup(x => x.ResolveByTier(ModelTier.Core)).Returns(modelProfile);
-
-        // Setup the MCP server registry to return no tools (so we can test local tools)
-        _mcpServerRegistryMock.Setup(x => x.GetToolsFromCache()).Returns(new List<AITool>().AsReadOnly());
-        _mcpServerRegistryMock.Setup(x => x.ToolCount).Returns(0);
+        _mcpServerRegistryMock = new Mock<IMcpServerRegistry>();
+        _mcpServerRegistryMock.Setup(x => x.GetToolsFromCache()).Returns(new List<AITool> { AIFunctionFactory.Create(() => "ok", RegistryToolName) }.AsReadOnly());
+        _mcpServerRegistryMock.Setup(x => x.ToolCount).Returns(1);
 
         _factory = new SentinelAgentFactory(_chatClientFactoryMock.Object, _modelResolverMock.Object, _patternMatcherMock.Object, _loggerFactoryMock.Object, _mcpServerRegistryMock.Object);
     }

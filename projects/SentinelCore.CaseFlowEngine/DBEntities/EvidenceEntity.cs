@@ -8,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SentinelCore.Data.DBEntities;
 
-[Index("CaseId", Name = "IX_EvidenceEntities_CaseId")]
+[Table("EvidenceEntity")]
+[Index("CaseId", Name = "IX_EvidenceEntity_CaseId")]
 public partial class EvidenceEntity
 {
     [Key]
@@ -35,5 +36,8 @@ public partial class EvidenceEntity
     public DateTime CreatedAt { get; set; }
 
     public double Confidence { get; set; }
-    public CaseEntity CaseEntity { get; set; }
+
+    [ForeignKey(nameof(CaseId))]
+    [InverseProperty("EvidenceEntities")]
+    public virtual CaseEntity CaseEntity { get; set; } = null!;
 }

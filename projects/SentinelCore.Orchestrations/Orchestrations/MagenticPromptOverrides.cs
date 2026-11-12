@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MagenticPromptOverrides.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 
@@ -18,85 +18,276 @@ public static class MagenticPromptOverrides
     /// <summary>The default template for synthesizing the final answer. Placeholders: <c>{task}</c>.</summary>
     public static readonly string FinalAnswerPrompt = """
                                                       We are working on the following task:
-
+                                                      
                                                       {task}
-
-                                                      We have completed the task.
-
-                                                      The above messages contain the conversation that took place to complete the task.
-
-                                                      Based on the information gathered, provide the final answer to the original request.
-
-                                                      The answer should be phrased as if you were speaking directly to the user.
-
-                                                      Use the following structure exactly:
-
+                                                      
+                                                      The investigation is complete.
+                                                      
+                                                      The conversation above contains all evidence, observations, findings, hypotheses, and analysis generated during the investigation.
+                                                      
+                                                      Create a final forensic investigation report using the structure below.
+                                                      
+                                                      The report must be deterministic, evidence-driven, and suitable for machine parsing and repeatable ingestion.
+                                                      
+                                                      ------------------------------------------------------------
+                                                      REPORT REQUIREMENTS
+                                                      ------------------------------------------------------------
+                                                      
+                                                      - Follow the section order exactly.
+                                                      - Do not omit sections.
+                                                      - Do not create additional top-level sections.
+                                                      - Use identifiers consistently.
+                                                      - All findings must reference Evidence IDs.
+                                                      - All hypotheses must reference Evidence IDs.
+                                                      - Every conclusion must cite supporting Evidence IDs.
+                                                      - Never present assumptions as facts.
+                                                      - Separate observations from conclusions.
+                                                      - If evidence is unavailable, state that explicitly.
+                                                      - If evidence is insufficient, classify accordingly.
+                                                      - Correlation alone is not causation.
+                                                      
+                                                      Identifier Rules:
+                                                      
+                                                      Evidence IDs:
+                                                      E-001
+                                                      E-002
+                                                      E-003
+                                                      
+                                                      Findings:
+                                                      F-001
+                                                      F-002
+                                                      F-003
+                                                      
+                                                      Hypotheses:
+                                                      H-001
+                                                      H-002
+                                                      H-003
+                                                      
+                                                      Artifacts:
+                                                      A-001
+                                                      A-002
+                                                      A-003
+                                                      
+                                                      ------------------------------------------------------------
                                                       # Investigation Summary
-
-                                                      Provide a concise summary of the findings.
-
-                                                      # Evidence
-
-                                                      For each significant piece of evidence provide:
-
-                                                      Evidence ID: PENDING
+                                                      ------------------------------------------------------------
+                                                      
+                                                      Provide a concise executive summary.
+                                                      
+                                                      Include:
+                                                      
+                                                      - Investigation Objective
+                                                      - Primary Findings
+                                                      - Overall Assessment
+                                                      - Final Classification
+                                                      
+                                                      ------------------------------------------------------------
+                                                      # Artifacts
+                                                      ------------------------------------------------------------
+                                                      
+                                                      For each significant artifact:
+                                                      
+                                                      Artifact ID:
+                                                      Type:
                                                       Source:
+                                                      Description:
+                                                      
+                                                      Associated Evidence IDs:
+                                                      Associated Finding IDs:
+                                                      
+                                                      ------------------------------------------------------------
+                                                      # Evidence Inventory
+                                                      ------------------------------------------------------------
+                                                      
+                                                      Summarize evidence collection.
+                                                      
+                                                      Total Artifacts:
+                                                      Total Evidence Items:
+                                                      Evidence Successfully Reviewed:
+                                                      Evidence Unavailable:
+                                                      Evidence Gaps:
+                                                      
+                                                      ------------------------------------------------------------
+                                                      # Evidence Details
+                                                      ------------------------------------------------------------
+                                                      
+                                                      For each significant evidence item:
+                                                      
+                                                      Evidence ID:
+                                                      
+                                                      Source:
+                                                      
                                                       Observation:
+                                                      
                                                       Reliability:
                                                       - High
                                                       - Medium
                                                       - Low
-
-                                                      Evidence Classification:
+                                                      
+                                                      Classification:
                                                       - Direct Evidence
                                                       - Correlated Evidence
                                                       - Circumstantial Evidence
                                                       - Contradictory Evidence
-
+                                                      
+                                                      Associated Artifact IDs:
+                                                      
                                                       Relevance:
-                                                      Explain specifically how this evidence relates to the investigation objective.
-
+                                                      Explain how the evidence relates to the investigation objective.
+                                                      
                                                       Impact:
-                                                      Explain how strongly this evidence influences the assessment.
-
-                                                      # Supporting Correlations
-
-                                                      List related observations that strengthen the findings and reference the associated Evidence IDs.
-
-                                                      # Contradictions and Alternate Explanations
-
-                                                      List evidence that weakens, contradicts, or fails to support the primary conclusion.
-
+                                                      Describe how strongly the evidence affects the assessment.
+                                                      
+                                                      ------------------------------------------------------------
+                                                      # Findings
+                                                      ------------------------------------------------------------
+                                                      
+                                                      For each finding:
+                                                      
+                                                      Finding ID:
+                                                      
+                                                      Finding:
+                                                      
+                                                      Supporting Evidence IDs:
+                                                      
+                                                      Confidence:
+                                                      - High
+                                                      - Medium
+                                                      - Low
+                                                      
+                                                      Rationale:
+                                                      
+                                                      ------------------------------------------------------------
+                                                      # Hypothesis Evaluation
+                                                      ------------------------------------------------------------
+                                                      
+                                                      For each hypothesis:
+                                                      
+                                                      Hypothesis ID:
+                                                      
+                                                      Hypothesis:
+                                                      
+                                                      Status:
+                                                      - Supported
+                                                      - Rejected
+                                                      - Unresolved
+                                                      
+                                                      Supporting Evidence IDs:
+                                                      
+                                                      Contradicting Evidence IDs:
+                                                      
+                                                      Assessment:
+                                                      
+                                                      ------------------------------------------------------------
+                                                      # Correlations
+                                                      ------------------------------------------------------------
+                                                      
+                                                      List evidence relationships.
+                                                      
+                                                      Correlation:
+                                                      
+                                                      Related Evidence IDs:
+                                                      
+                                                      Strength:
+                                                      - Strong
+                                                      - Moderate
+                                                      - Weak
+                                                      
+                                                      ------------------------------------------------------------
+                                                      # Contradictions
+                                                      ------------------------------------------------------------
+                                                      
+                                                      Document evidence that weakens, contradicts, or fails to support findings.
+                                                      
+                                                      Contradiction:
+                                                      
+                                                      Evidence IDs:
+                                                      
+                                                      Impact on Assessment:
+                                                      
+                                                      ------------------------------------------------------------
                                                       # Investigation Limitations
-
+                                                      ------------------------------------------------------------
+                                                      
                                                       Document:
-                                                      - Missing evidence
-                                                      - Unavailable artifacts
-                                                      - Failed tools
-                                                      - Incomplete data
-
+                                                      
+                                                      - Missing Evidence
+                                                      - Failed Collection Attempts
+                                                      - Unavailable Artifacts
+                                                      - Failed Tools
+                                                      - Incomplete Data
+                                                      - Access Restrictions
+                                                      
+                                                      ------------------------------------------------------------
                                                       # Assessment
-
+                                                      ------------------------------------------------------------
+                                                      
                                                       Known Facts:
-                                                      Only include information directly supported by evidence.
-
+                                                      
+                                                      List only facts directly supported by evidence.
+                                                      
                                                       Probable Cause:
-
-                                                      If you can't provide definitive proof to support a theory then try to gather proof or approach it from a different perspective. 
-                                                      If you have supporting evidence, explain the causal relationship and cite the supporting Evidence IDs.
-                                                      State the most likely explanation and cite the supporting Evidence IDs.
-
+                                                      
+                                                      If a probable cause can be determined:
+                                                      
+                                                      - State it clearly.
+                                                      - Cite supporting Evidence IDs.
+                                                      - Explain the causal relationship.
+                                                      
+                                                      If a probable cause cannot be supported by evidence:
+                                                      
+                                                      State:
+                                                      
+                                                      "Probable cause could not be determined from available evidence."
+                                                      
                                                       Alternative Explanations:
-                                                      List other plausible explanations and explain why they were not selected.
-
-                                                      Important Rules:
-
-                                                      - Separate observations from conclusions.
-                                                      - Do not present assumptions as facts.
-                                                      - Every conclusion must be supported by one or more Evidence IDs.
-                                                      - Evidence relevance must be explicitly stated and factual.
-                                                      - Correlation does not imply causation unless supported by direct evidence.
-                                                      - If evidence is insufficient, research other possibilities and gather more evidence, and state this clearly.
+                                                      
+                                                      For each alternative explanation:
+                                                      
+                                                      Explanation:
+                                                      
+                                                      Supporting Evidence IDs:
+                                                      
+                                                      Reason Not Selected:
+                                                      
+                                                      ------------------------------------------------------------
+                                                      # Investigation Outcome
+                                                      ------------------------------------------------------------
+                                                      
+                                                      Classification:
+                                                      
+                                                      - Root Cause Identified
+                                                      - Probable Cause Identified
+                                                      - Inconclusive
+                                                      - Insufficient Evidence
+                                                      - Investigation Blocked
+                                                      - Additional Collection Required
+                                                      
+                                                      Confidence:
+                                                      - High
+                                                      - Medium
+                                                      - Low
+                                                      
+                                                      Investigation Status:
+                                                      - Complete
+                                                      - Pending Additional Collection
+                                                      - Blocked
+                                                      
+                                                      ------------------------------------------------------------
+                                                      # Recommendations
+                                                      ------------------------------------------------------------
+                                                      
+                                                      List recommended investigative or remediation actions.
+                                                      
+                                                      Each recommendation must include:
+                                                      
+                                                      Recommendation:
+                                                      Reason:
+                                                      Associated Evidence IDs:
+                                                      Priority:
+                                                      - High
+                                                      - Medium
+                                                      - Low
                                                       """;
 
     /// <summary>

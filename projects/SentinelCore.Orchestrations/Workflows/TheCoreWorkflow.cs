@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 
@@ -17,6 +17,7 @@ using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Exceptions;
+using SentinelCore.Orchestrations.Infrastructure.Diagnostics;
 using SentinelCore.Orchestrations.Workflows.Executors;
 using SentinelCore.Orchestrations.Workflows.Helpers;
 
@@ -383,6 +384,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         builder.AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
 
         builder.WithName("TheCoreWorkflow").WithDescription("The main investigation and case management workflow");
+
+        // Workflow spans (build, session, run, executor, edge group, message) are off by default in the
+        // workflow framework. Point them at the SentinelCore source so the host's tracer provider
+        // exports them alongside the agent spans emitted by SentinelAgentFactory.
+        builder.WithOpenTelemetry(activitySource: SentinelCoreDiagnostics.SharedActivitySource);
 
         // ── Register output sources ─────────────────────────────────────────────────────────
         // MAF only surfaces yielded values from executors registered via WithOutputFrom;

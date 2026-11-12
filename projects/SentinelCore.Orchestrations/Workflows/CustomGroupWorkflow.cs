@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CustomGroupWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 
@@ -19,6 +19,7 @@ using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
+using SentinelCore.Orchestrations.Infrastructure.Diagnostics;
 
 
 
@@ -29,7 +30,9 @@ namespace SentinelCore.Orchestrations.Workflows;
 
 
 
-//AGENTS IGNORE THIS FILE FOR QUICK TESTING OF WORKFLOWS AND AGENTS. THIS IS NOT A REAL ORCHESTRATION, JUST A HARNESS FOR TESTING.
+//AGENTS THIS FILE FOR QUICK TESTING OF WORKFLOWS AND AGENTS. THIS IS NOT A REAL ORCHESTRATION, JUST A HARNESS FOR TESTING.
+// UNLESS FILE IS SPECIFICALLY INCLUDED IN A TASK, DO NOT EDIT IT OR EXPECT IT TO BE USED IN PRODUCTION. IT IS A HARNESS FOR TESTING AND DEBUGGING AGENT BEHAVIOR AND WORKFLOW EXECUTION.
+// THIS FILE SHOULD BE INSTRUMENTED AND INCLUDED IN TELEMETRY - NOT INCLUDED IN ANY UNIT TESTING
 public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 {
     private AIAgent _adversarialAnalystAgent;
@@ -52,6 +55,7 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     private AIAgent _managerAgent;
     private AIAgent _researcherAgent;
     private ExecutorBinding _validatorBinding;
+    private AIAgent _evidenceCollectorAgent2;
 
     private const string AGGREGATOR = """
                                       You are the final report author for a forensic investigation team. Your role is to aggregate the findings and conclusions from the investigation team members, ensuring that the final report accurately reflects the evidence collected, analyzed, and validated during the investigation process.
@@ -136,7 +140,7 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
     [Experimental("MAAI001")]
     public async Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage inputMessage, CancellationToken token)
     {
-
+        //======================= Signal Classification =========================
 
         AgentRunOptions options = new() { AllowBackgroundResponses = null, AdditionalProperties = null, ResponseFormat = ChatResponseFormat.ForJsonSchema(typeof(InvestigationObjective)) };
         AgentSession session = await _classifierAgent.CreateSessionAsync(token);
@@ -145,11 +149,8 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
         //================================== Magnetic Group workflow  =========================
         Workflow subWorkflow = BuildSubWorkflow();
-        //   Workflow workflow = await BuildWorkflow(token);
-        // CheckpointManager checkpointManager = CheckpointManager.CreateInMemory();
 
-
-        await using StreamingRun run = await InProcessExecution.RunStreamingAsync(subWorkflow, new List<ChatMessage> { response.Messages.First() }, cancellationToken: token);
+        await using StreamingRun run = await InProcessExecution.RunStreamingAsync(subWorkflow, input: response.Text, cancellationToken: token);
 
         await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
 
@@ -179,9 +180,7 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
                     finalOutput = outputEvent;
                     break;
 
-                case WorkflowOutputEvent regoutputEvent when !regoutputEvent.Is<List<ChatMessage>>():
-                    _events.Add(regoutputEvent);
-                    break;
+
 
 
                 case WorkflowErrorEvent workflowError:
@@ -259,6 +258,7 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
 
 
 
+
     public string Name
     {
         get => "Custom Group Workflow";
@@ -286,9 +286,10 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
                 .RequirePlanSignoff(false)
                 .WithPromptOverrides(over)
                 .WithOutputFrom(_finalReportWriterAgent)
-                .WithMaxRounds(5)
-                .WithMaxResets(2)
-                .WithMaxStalls(2)
+                .WithMaxRounds(15)
+                .WithMaxResets(3)
+                .WithMaxStalls(3)
+
                 .Build();
 
 
@@ -315,9 +316,10 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
         //------------------- PARENT Mixed workflow  -------------------
         Workflow classflow = new WorkflowBuilder(_classifierAgent) //Create New case
                 .AddEdge(_classifierAgent, _magSubworkflow) // Mag group executes and hands to final reporter
-                //   .AddEdge(_magSubworkflow, _finalReportWriterAgent) // Consolodates and creates final report and sends to evaluation executor
+                                                            //   .AddEdge(_magSubworkflow, _finalReportWriterAgent) // Consolodates and creates final report and sends to evaluation executor
                 .WithName("InvestigationWorkflow") //Final report is sent to the manager for review and approval
                 .WithDescription("Coordinates the investigation workflow by connecting the classifier, investigation group, and evaluation executor.")
+                .WithOpenTelemetry(activitySource: SentinelCoreDiagnostics.SharedActivitySource)
                 .Build();
 
         return classflow;
@@ -344,10 +346,16 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
             return;
         }
 
+
+
+
+
+
         try
         {
             _managerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, "ManagerCoordinator", "Coordinates the investigation team and monitors progress");
             _evidenceCollectorAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", TEAM_MEMBER_INSTRUCTIONS);
+            _evidenceCollectorAgent2 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector2", "Collects evidence for the investigation", TEAM_MEMBER_INSTRUCTIONS);
             _adversarialAnalystAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "AdversarialAnalyst", "The challenger of the collected evidence", TEAM_MEMBER_INSTRUCTIONS);
             _researcherAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", TEAM_MEMBER_INSTRUCTIONS);
             _finalReportWriterAgent = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", AGGREGATOR);
@@ -433,62 +441,62 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
             switch (content)
             {
                 case TextContent text:
-                {
-                    if (!string.IsNullOrWhiteSpace(text.Text))
                     {
-                        Debug.WriteLine($"[{agent}]");
-                        Debug.WriteLine(text.Text);
-                        Debug.WriteLine("");
+                        if (!string.IsNullOrWhiteSpace(text.Text))
+                        {
+                            Debug.WriteLine($"[{agent}]");
+                            Debug.WriteLine(text.Text);
+                            Debug.WriteLine("");
+                        }
+
+                        break;
                     }
 
-                    break;
-                }
-
                 case FunctionCallContent functionCall:
-                {
-                    Debug.WriteLine($"[{agent}] [tool-call] " + $"{functionCall.Name}({functionCall.Arguments})");
+                    {
+                        Debug.WriteLine($"[{agent}] [tool-call] " + $"{functionCall.Name}({functionCall.Arguments})");
 
-                    Debug.WriteLine("");
-                    break;
-                }
+                        Debug.WriteLine("");
+                        break;
+                    }
 
                 case FunctionResultContent functionResult:
-                {
-                    Debug.WriteLine($"[{agent}] [tool-result] " + $"{functionResult.CallId} -> {functionResult.Result}");
+                    {
+                        Debug.WriteLine($"[{agent}] [tool-result] " + $"{functionResult.CallId} -> {functionResult.Result}");
 
-                    Debug.WriteLine("");
-                    break;
-                }
+                        Debug.WriteLine("");
+                        break;
+                    }
 
                 case UsageContent usage:
-                {
-                    Debug.WriteLine($"[{agent}] [usage] " + $"Input={usage.Details?.InputTokenCount ?? 0}, " + $"Output={usage.Details?.OutputTokenCount ?? 0}");
+                    {
+                        Debug.WriteLine($"[{agent}] [usage] " + $"Input={usage.Details?.InputTokenCount ?? 0}, " + $"Output={usage.Details?.OutputTokenCount ?? 0}");
 
-                    break;
-                }
+                        break;
+                    }
 
                 case DataContent data:
-                {
-                    Debug.WriteLine($"[{agent}] [data] {data.MediaType}");
+                    {
+                        Debug.WriteLine($"[{agent}] [data] {data.MediaType}");
 
-                    break;
-                }
+                        break;
+                    }
 
                 case UriContent uri:
-                {
-                    Debug.WriteLine($"[{agent}] [uri] {uri.Uri}");
+                    {
+                        Debug.WriteLine($"[{agent}] [uri] {uri.Uri}");
 
-                    break;
-                }
+                        break;
+                    }
 
                 default:
-                {
-                    Debug.WriteLine($"[{agent}] [content:{content.GetType().Name}]");
+                    {
+                        Debug.WriteLine($"[{agent}] [content:{content.GetType().Name}]");
 
-                    Debug.WriteLine(content.ToString());
+                        Debug.WriteLine(content.ToString());
 
-                    break;
-                }
+                        break;
+                    }
             }
     }
 
@@ -689,8 +697,33 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
                 // COLLECTION OF CHAT MESSAGES
                 //------------------------------------------------------------------
                 case ICollection<ChatMessage> messages:
-                {
-                    foreach (ChatMessage message in messages)
+                    {
+                        foreach (ChatMessage message in messages)
+                        {
+                            string speaker = GetSpeaker(message);
+
+                            string text = !string.IsNullOrWhiteSpace(message.Text) ? message.Text : ExtractTextFromContents(message.Contents);
+
+                            if (ShowAgentMessages && !string.IsNullOrWhiteSpace(text))
+                            {
+                                Debug.WriteLine($"[{speaker}]");
+                                Debug.WriteLine(text);
+                                Debug.WriteLine("");
+                            }
+
+                            if (ShowToolCalls || ShowToolResults)
+                            {
+                                LogAIContents(speaker, message.Contents);
+                            }
+                        }
+
+                        break;
+                    }
+
+                //------------------------------------------------------------------
+                // SINGLE CHAT MESSAGE
+                //------------------------------------------------------------------
+                case ChatMessage message:
                     {
                         string speaker = GetSpeaker(message);
 
@@ -707,96 +740,71 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
                         {
                             LogAIContents(speaker, message.Contents);
                         }
+
+                        break;
                     }
-
-                    break;
-                }
-
-                //------------------------------------------------------------------
-                // SINGLE CHAT MESSAGE
-                //------------------------------------------------------------------
-                case ChatMessage message:
-                {
-                    string speaker = GetSpeaker(message);
-
-                    string text = !string.IsNullOrWhiteSpace(message.Text) ? message.Text : ExtractTextFromContents(message.Contents);
-
-                    if (ShowAgentMessages && !string.IsNullOrWhiteSpace(text))
-                    {
-                        Debug.WriteLine($"[{speaker}]");
-                        Debug.WriteLine(text);
-                        Debug.WriteLine("");
-                    }
-
-                    if (ShowToolCalls || ShowToolResults)
-                    {
-                        LogAIContents(speaker, message.Contents);
-                    }
-
-                    break;
-                }
 
                 //------------------------------------------------------------------
                 // RESPONSE UPDATES
                 //------------------------------------------------------------------
                 case AgentResponseUpdate update:
-                {
-                    string responseId = update.ResponseId ?? update.MessageId ?? Guid.NewGuid().ToString();
-
-                    string agent = GetAgentName(update.AgentId);
-
-                    string updateText = !string.IsNullOrWhiteSpace(update.Text) ? update.Text : ExtractTextFromContents(update.Contents);
-
-                    AppendUpdateText(responseId, agent, updateText);
-
-                    if (ShowToolCalls || ShowToolResults)
                     {
-                        LogAIContents(agent, update.Contents);
-                    }
+                        string responseId = update.ResponseId ?? update.MessageId ?? Guid.NewGuid().ToString();
 
-                    break;
-                }
+                        string agent = GetAgentName(update.AgentId);
+
+                        string updateText = !string.IsNullOrWhiteSpace(update.Text) ? update.Text : ExtractTextFromContents(update.Contents);
+
+                        AppendUpdateText(responseId, agent, updateText);
+
+                        if (ShowToolCalls || ShowToolResults)
+                        {
+                            LogAIContents(agent, update.Contents);
+                        }
+
+                        break;
+                    }
 
                 //------------------------------------------------------------------
                 // FINAL AGENT RESPONSE
                 //------------------------------------------------------------------
                 case AgentResponse response:
-                {
-                    string agent = GetAgentName(response.AgentId);
-
-                    string text = !string.IsNullOrWhiteSpace(response.Text) ? response.Text : string.Join(Environment.NewLine, response.Messages?.SelectMany(m => m.Contents).OfType<TextContent>().Select(t => t.Text) ?? Enumerable.Empty<string>());
-
-                    if (ShowAgentMessages && !string.IsNullOrWhiteSpace(text))
                     {
-                        Debug.WriteLine("");
-                        Debug.WriteLine("============================================================");
-                        Debug.WriteLine($"FINAL RESPONSE : {agent}");
-                        Debug.WriteLine("============================================================");
-                        Debug.WriteLine(text);
-                        Debug.WriteLine("");
-                    }
+                        string agent = GetAgentName(response.AgentId);
 
-                    if (response.Messages is not null)
-                    {
-                        foreach (ChatMessage msg in response.Messages)
-                            LogAIContents(GetSpeaker(msg), msg.Contents);
-                    }
+                        string text = !string.IsNullOrWhiteSpace(response.Text) ? response.Text : string.Join(Environment.NewLine, response.Messages?.SelectMany(m => m.Contents).OfType<TextContent>().Select(t => t.Text) ?? Enumerable.Empty<string>());
 
-                    break;
-                }
+                        if (ShowAgentMessages && !string.IsNullOrWhiteSpace(text))
+                        {
+                            Debug.WriteLine("");
+                            Debug.WriteLine("============================================================");
+                            Debug.WriteLine($"FINAL RESPONSE : {agent}");
+                            Debug.WriteLine("============================================================");
+                            Debug.WriteLine(text);
+                            Debug.WriteLine("");
+                        }
+
+                        if (response.Messages is not null)
+                        {
+                            foreach (ChatMessage msg in response.Messages)
+                                LogAIContents(GetSpeaker(msg), msg.Contents);
+                        }
+
+                        break;
+                    }
 
                 //------------------------------------------------------------------
                 // UNKNOWN
                 //------------------------------------------------------------------
                 default:
-                {
-                    if (ShowUnknownEvents)
                     {
-                        Debug.WriteLine($"[UNHANDLED] {evt.Data?.GetType().FullName ?? "<null>"}");
-                    }
+                        if (ShowUnknownEvents)
+                        {
+                            Debug.WriteLine($"[UNHANDLED] {evt.Data?.GetType().FullName ?? "<null>"}");
+                        }
 
-                    break;
-                }
+                        break;
+                    }
             }
         }
 

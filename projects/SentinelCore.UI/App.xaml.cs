@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 
@@ -12,12 +12,18 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
 
+using Microsoft.Agents.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
+using OpenTelemetry;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection;
@@ -27,6 +33,7 @@ using SentinelCore.Data.DBEntities;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Infrastructure;
 using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
+using SentinelCore.Orchestrations.Infrastructure.Diagnostics;
 using SentinelCore.Orchestrations.Mcp;
 using SentinelCore.UI.Models;
 using SentinelCore.UI.Services;
@@ -48,6 +55,12 @@ namespace SentinelCore.UI;
 public sealed partial class App
 {
     private IHost? _host;
+
+    /// <summary>
+    ///     The process-wide tracer provider that exports SentinelCore spans to the console.
+    ///     Created during startup and disposed during shutdown.
+    /// </summary>
+    private TracerProvider? _tracerProvider;
 
     /// <summary>
     ///     Tracks whether the <see cref="IHost" /> has been started.
@@ -150,6 +163,37 @@ public sealed partial class App
 
 
     /// <summary>
+    ///     Creates the process-wide tracer provider that exports SentinelCore spans to the console.
+    /// </summary>
+    /// <returns>The configured <see cref="TracerProvider" />.</returns>
+    /// <remarks>
+    ///     Subscribing <see cref="SentinelCoreDiagnostics.ActivitySourceName" /> is mandatory. The agent
+    ///     pipeline emits spans under that name through <c>UseOpenTelemetry</c>, and an
+    ///     <see cref="ActivitySource" /> with no listener records nothing. The workflow framework's
+    ///     telemetry is pointed at the same source, so one subscription covers agent, chat, tool, and
+    ///     workflow spans. <see cref="OpenTelemetryAgent.DefaultSourceName" /> is also subscribed so any
+    ///     agent the framework creates without an explicit source name is still exported.
+    /// </remarks>
+#pragma warning disable MAAI001 // OpenTelemetryAgent.DefaultSourceName is experimental but is the only public accessor for the name.
+    private static TracerProvider CreateTracerProvider()
+    {
+        return Sdk.CreateTracerProviderBuilder()
+                  .SetResourceBuilder(SentinelCoreDiagnostics.CreateResourceBuilder())
+                  .AddSource(SentinelCoreDiagnostics.ActivitySourceName)
+                  .AddSource(OpenTelemetryAgent.DefaultSourceName)
+                  .AddConsoleExporter()
+                  .Build();
+    }
+#pragma warning restore MAAI001
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Resolves a service from the DI container.
     /// </summary>
     public T? GetService<T>() where T : class
@@ -242,6 +286,10 @@ public sealed partial class App
             _host.Dispose();
             _host = null;
         }
+
+        // Released after the host so spans produced while it stopped are still exported.
+        _tracerProvider?.Dispose();
+        _tracerProvider = null;
 
         if (!_shutdownDisposed)
         {
@@ -376,6 +424,11 @@ public sealed partial class App
 
             this.Shutdown(1);
         }
+
+
+
+
+
     }
 
 
@@ -439,6 +492,9 @@ public sealed partial class App
 
         string? appLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
 
+        // Spans emitted by the agent pipeline flow through this provider to the console.
+        _tracerProvider = CreateTracerProvider();
+
         _host = Host.CreateDefaultBuilder(e.Args)
                 .ConfigureAppConfiguration(c => { c.SetBasePath(appLocation ?? string.Empty); })
                 .ConfigureServices(ConfigureServices)
@@ -453,23 +509,29 @@ public sealed partial class App
                     // and will be automatically resolved by the logging infrastructure.
                     // -- Custom Logging --
                     // Register CustomMAFFormatter and JsonLoggerProvider for structured logging
-                    // logging.AddFileLogger();
-
+                    logging.AddFileLogger();
+                    logging.AddOpenTelemetry(builder =>
+                    {
+                        // Without this the log exporter reports the default resource, so every log record
+                        // is stamped 'unknown_service:<process name>' while spans report ServiceName.
+                        builder.SetResourceBuilder(SentinelCoreDiagnostics.CreateResourceBuilder());
+                        builder.AddConsoleExporter();
+                        builder.IncludeFormattedMessage = true;
+                    });
 
 
                     // Add the JsonLoggerProvider here explicitly
                     CustomMAFFormatter formatter = new();
                     JsonLoggerOptions loggerOptions = new() { MinimumLevel = LogLevel.Trace, Indented = true, Output = JsonLoggerOutput.Console };
                     //       logging.AddProvider(new JsonLoggerProvider(loggerOptions, formatter));
+
                     logging.AddConsole();
 
-                    // Add the LogViewerLoggerProvider to forward all logs to the LogViewerWindow
-
-
-
-                    logging.SetMinimumLevel(LogLevel.Debug);
+                    logging.SetMinimumLevel(LogLevel.Trace);
                 })
+
                 .Build();
+
 
         await StartHostOnceAsync(ShutdownToken);
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 
@@ -17,6 +17,7 @@ using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Agents.Models;
+using SentinelCore.Orchestrations.Infrastructure.Diagnostics;
 
 
 
@@ -239,38 +240,38 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         ChatOptions chatOptions = new()
         {
-                ConversationId = Guid.NewGuid().ToString("N"),
-                Instructions = string.Concat(preset.DefaultSystemInstructions, preset.RoleInstructions), //Setting instructions at system level adds strength to them making them less likely to be ignored by agent, user level chat messages are suggestions in comparison.
-                Temperature = preset.ModelProfile?.Temperature,
-                MaxOutputTokens = preset.ModelProfile?.MaxOutputTokens ?? 25000,
-                TopP = preset.ModelProfile?.TopP ?? .10f,
-                TopK = preset.ModelProfile?.TopK ?? 30,
-                Seed = 69,
-                ModelId = preset.ModelProfile?.ModelId,
-                AllowMultipleToolCalls = true,
-                ToolMode = ChatToolMode.Auto,
-                Tools = preset.UseTools ? _builtToolCache.ToList() : new List<AITool>(),
-                ResponseFormat = chatResponseFormat ?? ChatResponseFormat.Json
+            ConversationId = Guid.NewGuid().ToString("N"),
+            Instructions = string.Concat(preset.DefaultSystemInstructions, preset.RoleInstructions), //Setting instructions at system level adds strength to them making them less likely to be ignored by agent, user level chat messages are suggestions in comparison.
+            Temperature = preset.ModelProfile?.Temperature,
+            MaxOutputTokens = preset.ModelProfile?.MaxOutputTokens ?? 45000,
+            TopP = preset.ModelProfile?.TopP ?? .10f,
+            TopK = preset.ModelProfile?.TopK ?? 30,
+            Seed = 69,
+            ModelId = preset.ModelProfile?.ModelId,
+            AllowMultipleToolCalls = true,
+            ToolMode = ChatToolMode.Auto,
+            Tools = preset.UseTools ? _builtToolCache.ToList() : new List<AITool>(),
+            ResponseFormat = chatResponseFormat ?? ChatResponseFormat.Json
         };
 
 
         return new ChatClientAgent(chatClient, new ChatClientAgentOptions
         {
-                Id = preset.AgentId,
-                Name = preset.AgentName,
-                Description = preset.Description,
-                ChatOptions = chatOptions,
-                AIContextProviders = preset.UseContextEnrichers ? contextProviders : null,
-                UseProvidedChatClientAsIs = false,
-                AllowConcurrentInvocation = false,
-                ClearOnChatHistoryProviderConflict = true,
-                WarnOnChatHistoryProviderConflict = false,
-                ThrowOnChatHistoryProviderConflict = true,
-                RequirePerServiceCallChatHistoryPersistence = false,
-                EnableMessageInjection = false,
-                DisableApprovalNotRequiredFunctionBypassing = false,
-                DisableApprovalResponseBinding = false,
-                ChatHistoryProvider = null
+            Id = preset.AgentId,
+            Name = preset.AgentName,
+            Description = preset.Description,
+            ChatOptions = chatOptions,
+            AIContextProviders = preset.UseContextEnrichers ? contextProviders : null,
+            UseProvidedChatClientAsIs = false,
+            AllowConcurrentInvocation = false,
+            ClearOnChatHistoryProviderConflict = false,
+            WarnOnChatHistoryProviderConflict = false,
+            ThrowOnChatHistoryProviderConflict = false,
+            RequirePerServiceCallChatHistoryPersistence = false,
+            EnableMessageInjection = false,
+            DisableApprovalNotRequiredFunctionBypassing = false,
+            DisableApprovalResponseBinding = false,
+            ChatHistoryProvider = null
         });
     }
 
@@ -296,7 +297,9 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         // Build the base chat client and wrap with logging middleware
         IChatClient chatclient = _chatClientFactory.CreateChatClient(model);
-        IChatClient loggingClient = chatclient.AsBuilder().UseLogging(_loggerFactory).Build();
+
+        // =====  USE ONLY FOR TESTING AGENT BEHAVIOR, NOT FOR PRODUCTION LOGGING =====
+        // IChatClient loggingClient = chatclient.AsBuilder()            .UseLogging(_loggerFactory)            .Build();
 
         // Prepare context providers when the preset requests any enrichers.
         List<AIContextProvider?> providers = null!;
@@ -307,7 +310,16 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         }
 
         // Build and cast to the public interface type.
-        return BuildAgent(preset, chatclient, forJsonSchema, providers);
+        AIAgent builtAgent = BuildAgent(preset, chatclient, forJsonSchema, providers);
+
+        // Spans are emitted under SentinelCoreDiagnostics.ActivitySourceName. The host must
+        // subscribe to that name on its tracer provider, otherwise nothing is exported.
+        // Payload capture is gated: raw prompts, responses, and tool results are only recorded
+        // when SENTINEL_TELEMETRY_SENSITIVE_DATA is set to true.
+        return builtAgent.AsBuilder()
+                         .UseOpenTelemetry(SentinelCoreDiagnostics.ActivitySourceName, cfg => cfg.EnableSensitiveData = SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled)
+                         .Build();
+
     }
 
 

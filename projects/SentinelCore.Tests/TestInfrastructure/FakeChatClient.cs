@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         FakeChatClient.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 
@@ -46,6 +46,22 @@ public sealed class FakeChatClient : IChatClient
 
 
 
+    /// <summary>
+    ///     Gets the <see cref="ChatOptions" /> supplied to the most recent
+    ///     <see cref="GetResponseAsync" /> call, or <see langword="null" /> when the client has not been called.
+    /// </summary>
+    /// <remarks>
+    ///     Tests use this to observe what the agent pipeline actually sent to the model provider
+    ///     (for example the tool definitions) without reflecting into agent internals.
+    /// </remarks>
+    public ChatOptions? LastOptions { get; private set; }
+
+
+
+
+
+
+
 
     public void Dispose()
     {
@@ -60,6 +76,7 @@ public sealed class FakeChatClient : IChatClient
 
     public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options, CancellationToken cancellationToken)
     {
+        LastOptions = options;
         return Task.FromResult(GetResponseResult);
     }
 

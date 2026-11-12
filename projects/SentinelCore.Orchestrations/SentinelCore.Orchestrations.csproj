@@ -18,6 +18,7 @@
 	<ItemGroup>
 		<PackageReference Include="ErikEJ.EntityFrameworkCore.DgmlBuilder" />
 		<PackageReference Include="Newtonsoft.Json" />
+		<PackageReference Include="OpenTelemetry.Exporter.Console" />
 		<ProjectReference Include="..\SentinelCore.CaseFlowEngine\SentinelCore.CaseFlowEngine.csproj" />
 		<ProjectReference Include="..\SentinelCore.Contracts\SentinelCore.Contracts.csproj" />
 		<PackageReference Include="Microsoft.Agents.AI" />
@@ -44,9 +45,7 @@
 		<PackageReference Include="Microsoft.Management.Infrastructure" />
 		<PackageReference Include="Microsoft.Windows.Compatibility" />
 		<PackageReference Include="OllamaSharp" />
-		<PackageReference Include="System.DirectoryServices.AccountManagement" />
 		<PackageReference Include="System.Management" />
-		<PackageReference Include="System.Management.Automation" />
 		<PackageReference Include="System.ServiceProcess.ServiceController" />
 		<PackageReference Include="System.Security.Cryptography.Xml" />
 	</ItemGroup>

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CoreChatViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 
@@ -55,6 +55,18 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private int _blockedCount;
+
+    /// <summary>
+    ///     Upper bound on a single case-count refresh. A stalled or unreachable case database must not
+    ///     hold the telemetry panel in a pending state indefinitely.
+    /// </summary>
+    private static readonly TimeSpan CaseCountsRefreshTimeout = TimeSpan.FromSeconds(15);
+
+    /// <summary>
+    ///     <c>1</c> while a case-count refresh is in flight. Concurrent requests coalesce onto the
+    ///     running refresh instead of issuing another database round-trip.
+    /// </summary>
+    private int _caseCountsRefreshInFlight;
 
     private readonly ICaseFlowEngine _caseFlowEngine;
 
@@ -159,8 +171,8 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         AddWelcomeMessage();
         _logger.LogTrace("CoreChatViewModel ready for user input.");
 
-        // Fire-and-forget initial case count load, cancelled if the app shuts down
-        _ = RefreshCaseCountsAsync();
+        // Fire-and-forget initial case count load; bounded and exception-safe by design.
+        RequestCaseCountsRefresh();
     }
 
 
@@ -249,7 +261,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// </summary>
     public void OnNavigatedTo(object? parameter)
     {
-        _ = RefreshCaseCountsAsync();
+        RequestCaseCountsRefresh();
         this.OnPropertyChanged(nameof(IsConfigIncomplete));
         this.OnPropertyChanged(nameof(ConfigGateMessage));
         SendCommand.NotifyCanExecuteChanged();
@@ -427,19 +439,56 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
     /// <summary>
+    ///     Starts a case-count refresh without awaiting it.
+    /// </summary>
+    /// <remarks>
+    ///     Safe to call from any thread and safe to call repeatedly. Overlapping requests coalesce onto
+    ///     the refresh already in flight, and <see cref="RefreshCaseCountsAsync" /> handles every failure
+    ///     internally, so the discarded task can never surface an unobserved exception.
+    /// </remarks>
+    private void RequestCaseCountsRefresh()
+    {
+        _ = RefreshCaseCountsAsync();
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Retrieves case status counts from the case flow engine and applies them to the UI thread via the dispatcher.
     /// </summary>
     /// <remarks>
-    ///     Performs a single grouped query to fetch all status counts to avoid multiple round-trips.
-    ///     Ignores OperationCanceledException during shutdown and logs other exceptions as warnings.
+    ///     Performs a single grouped query to fetch all status counts to avoid multiple round-trips, and bounds
+    ///     that query with <see cref="CaseCountsRefreshTimeout" /> so an unresponsive case database degrades to a
+    ///     reported warning instead of an indefinitely pending panel. Failures are surfaced through
+    ///     <see cref="ISystemReporter" /> rather than swallowed, and shutdown cancellation stays silent.
     /// </remarks>
     /// <returns>A Task that completes when the counts have been retrieved and applied, or when the operation is canceled.</returns>
     private async Task RefreshCaseCountsAsync()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        // A refresh is already running; it will apply the freshest counts it observes.
+        if (Interlocked.CompareExchange(ref _caseCountsRefreshInFlight, 1, 0) != 0)
+        {
+            _logger.LogTrace("Case status refresh already in flight; coalescing duplicate request.");
+            return;
+        }
+
         try
         {
             // Single grouped query instead of one round-trip per status.
-            IReadOnlyDictionary<CaseStatus, int> counts = await _caseFlowEngine.GetCaseStatusCountsAsync(_appShutdownToken).ConfigureAwait(false);
+            IReadOnlyDictionary<CaseStatus, int> counts = await _caseFlowEngine
+                                                          .GetCaseStatusCountsAsync(_appShutdownToken)
+                                                          .WithTimeout(CaseCountsRefreshTimeout, _appShutdownToken)
+                                                          .ConfigureAwait(false);
 
             if (_dispatcher.CheckAccess())
             {
@@ -450,13 +499,25 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
                 await _dispatcher.InvokeAsync(() => ApplyCaseCounts(counts)).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (_appShutdownToken.IsCancellationRequested)
         {
-            // App is shutting down — ignore
+            // App is shutting down — expected, nothing to report.
+        }
+        catch (TimeoutException ex)
+        {
+            _reporter.ReportWarning($"Case status counts did not load within {CaseCountsRefreshTimeout.TotalSeconds:0} seconds; the case database did not respond. Telemetry will retry on the next navigation or send.", ex);
+        }
+        catch (OperationCanceledException ex)
+        {
+            _reporter.ReportWarning("Case status count refresh was cancelled before it completed.", ex);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to refresh case status counts.");
+            _reporter.ReportError("Failed to refresh case status counts.", ex);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _caseCountsRefreshInFlight, 0);
         }
     }
 
@@ -534,6 +595,6 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         }
 
         // An orchestration may have created or advanced cases — refresh the telemetry panel.
-        _ = RefreshCaseCountsAsync();
+        RequestCaseCountsRefresh();
     }
 }

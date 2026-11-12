@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SentinelOutputEventArgs.cs
 // Author: Kyle L. Crowder
-// Build Num:  110415
+// Build Num:  110813
 
 
 
