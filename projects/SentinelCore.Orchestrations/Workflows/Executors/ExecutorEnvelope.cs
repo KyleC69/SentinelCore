@@ -2,11 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorEnvelope.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
-using SentinelCore.Data.DBEntities;
+using SentinelCore.CaseFlowEngine.DBEntities;
 
 using InvestigationObjective = SentinelCore.Orchestrations.Infrastructure.InvestigationObjective;
 

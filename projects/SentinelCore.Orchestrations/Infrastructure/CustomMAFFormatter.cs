@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CustomMAFFormatter.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -38,7 +38,7 @@ public sealed class CustomMAFFormatter
     /// </summary>
     private string CleanResponsePayload(string payload)
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new();
         sb.Append(Environment.NewLine);
         sb.AppendLine("==================== Starting of ChatResponse ============================");
         JsonElement messages;
@@ -194,14 +194,14 @@ public sealed class CustomMAFFormatter
     {
         return level switch
         {
-                LogLevel.Information => "INFO",
-                LogLevel.Critical => "CRIT",
-                LogLevel.Debug => "DBUG",
-                LogLevel.Error => "EROR",
-                LogLevel.Trace => "TRCE",
-                LogLevel.Warning => "WARN",
-                LogLevel.None => "NONE",
-                _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
+            LogLevel.Information => "INFO",
+            LogLevel.Critical => "CRIT",
+            LogLevel.Debug => "DBUG",
+            LogLevel.Error => "EROR",
+            LogLevel.Trace => "TRCE",
+            LogLevel.Warning => "WARN",
+            LogLevel.None => "NONE",
+            _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
         };
     }
 

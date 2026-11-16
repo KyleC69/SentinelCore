@@ -1,11 +1,26 @@
-﻿using System.Runtime.CompilerServices;
+﻿// Solution: SentinelCore
+// Project:   SentinelCore.Orchestrations
+// File:         ConcurrentGroupTeam.cs
+// Author: Kyle L. Crowder
+// Build Num:  111504
+
+
+
+using System.Runtime.CompilerServices;
 
 using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Exceptions;
 
+
+
+
 namespace SentinelCore.Orchestrations.Workflows;
+
+
+
+
 
 /// <summary>
 ///     Orchestration that runs a team of analyst agents through a group chat workflow whose speakers are selected in
@@ -13,15 +28,23 @@ namespace SentinelCore.Orchestrations.Workflows;
 /// </summary>
 internal sealed class ConcurrentGroupTeam : IOrchestration
 {
-    private static readonly (string Name, string Description)[] AnalystProfiles =
-    [
-        ("AnalystAlpha", "Analyzes assigned evidence and reports findings to the team."),
-        ("AnalystBravo", "Cross-checks findings and challenges unsupported conclusions."),
-        ("AnalystCharlie", "Correlates findings across sources and summarizes the team's position.")
-    ];
 
     private readonly ISentinelAgentFactory _agentFactory;
     private readonly List<AIAgent> _analysts = new(AnalystProfiles.Length);
+
+    private static readonly (string Name, string Description)[] AnalystProfiles =
+    [
+            ("AnalystAlpha", "Analyzes assigned evidence and reports findings to the team."),
+            ("AnalystBravo", "Cross-checks findings and challenges unsupported conclusions."),
+            ("AnalystCharlie", "Correlates findings across sources and summarizes the team's position.")
+    ];
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ConcurrentGroupTeam" /> class.
@@ -33,15 +56,27 @@ internal sealed class ConcurrentGroupTeam : IOrchestration
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Gets a human-readable explanation of what this orchestration does and when it is appropriate to use it.
     /// </summary>
-    public string Description => "This orchestration is designed to handle concurrent investigations by a team of analysts. It allows for multiple analysts to work on different aspects of an investigation simultaneously, improving efficiency and response time.";
+    public string Description
+    {
+        get => "This orchestration is designed to handle concurrent investigations by a team of analysts. It allows for multiple analysts to work on different aspects of an investigation simultaneously, improving efficiency and response time.";
+    }
 
-    /// <summary>
-    ///     Gets the display name used to identify this orchestration to callers and in diagnostics.
-    /// </summary>
-    public string Name => "Concurrent Group Investigation Team";
+
+
+
+
+
+
 
     /// <summary>
     ///     Starts a streaming group chat run for the supplied input message and returns the workflow event stream.
@@ -65,10 +100,7 @@ internal sealed class ConcurrentGroupTeam : IOrchestration
 
         try
         {
-            Workflow workflow = AgentWorkflowBuilder
-                    .CreateGroupChatBuilderWith(agents => new RoundRobinGroupChatManager(agents))
-                    .AddParticipants(_analysts)
-                    .Build();
+            Workflow workflow = AgentWorkflowBuilder.CreateGroupChatBuilderWith(agents => new RoundRobinGroupChatManager(agents)).AddParticipants(_analysts).Build();
 
             StreamingRun run = await InProcessExecution.OpenStreamingAsync(workflow, cancellationToken: token).ConfigureAwait(false);
 
@@ -96,6 +128,13 @@ internal sealed class ConcurrentGroupTeam : IOrchestration
         }
     }
 
+
+
+
+
+
+
+
     /// <summary>
     ///     Creates the analyst agents that participate in the group chat. Repeated calls after the participants exist are
     ///     no-ops, so callers may invoke it before every execution.
@@ -115,6 +154,28 @@ internal sealed class ConcurrentGroupTeam : IOrchestration
             _analysts.Add(await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, name, description).ConfigureAwait(false));
         }
     }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Gets the display name used to identify this orchestration to callers and in diagnostics.
+    /// </summary>
+    public string Name
+    {
+        get => "Concurrent Group Investigation Team";
+    }
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Projects the streaming run into the workflow event stream and disposes the run when enumeration completes.

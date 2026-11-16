@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CaseDetailViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -12,8 +12,8 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.Contracts.Cfe;
-using SentinelCore.Data.DBEntities;
 using SentinelCore.UI.Services;
 
 

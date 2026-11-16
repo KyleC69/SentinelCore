@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         McpServerRegistryTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -29,7 +29,7 @@ namespace SentinelCore.Tests;
 public class McpServerRegistryTests : IDisposable
 {
     private readonly TestMcpConnectionFactory _connectionFactory;
-    private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+    private readonly CancellationTokenSource _cts = new();
     private readonly McpServerRegistry _registry;
     private readonly InMemoryMcpServerRegistryStore _store;
     private readonly string _testServerId = "test-server";
@@ -43,11 +43,11 @@ public class McpServerRegistryTests : IDisposable
 
     public McpServerRegistryTests()
     {
-        _store = new InMemoryMcpServerRegistryStore();
-        _connectionFactory = new TestMcpConnectionFactory();
+        _store = new();
+        _connectionFactory = new();
         var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<McpServerRegistry>();
 
-        _registry = new McpServerRegistry(_store, _connectionFactory, logger);
+        _registry = new(_store, _connectionFactory, logger);
 
         // Define a test MCP server that connects to a local test server
         // We assume an MCP server is running on localhost:3000 via stdio transport
@@ -167,7 +167,7 @@ public class TestMcpConnectionFactory : IMcpConnectionFactory
         }
 
         // Create a stdio client pointing to the command
-        StdioClientTransport transport = new(new StdioClientTransportOptions { Name = definition.Id, Command = definition.CommandOrEndpoint, Arguments = definition.Arguments.ToArray() });
+        StdioClientTransport transport = new(new() { Name = definition.Id, Command = definition.CommandOrEndpoint, Arguments = definition.Arguments.ToArray() });
         McpClient client = await McpClient.CreateAsync(transport);
         return client;
     }

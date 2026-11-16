@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         DirectAnswerExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -10,7 +10,7 @@ using System.Diagnostics;
 
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Agents;
-using SentinelCore.Orchestrations.Agents.Models;
+using SentinelCore.Orchestrations.Models;
 
 
 

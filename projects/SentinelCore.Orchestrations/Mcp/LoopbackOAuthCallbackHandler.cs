@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         LoopbackOAuthCallbackHandler.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -79,7 +79,7 @@ public static class LoopbackOAuthCallbackHandler
                     throw new InvalidOperationException("OAuth callback did not contain an authorization code.");
                 }
 
-                return new AuthorizationResult { Code = code, State = state, Iss = iss };
+                return new() { Code = code, State = state, Iss = iss };
             }
             finally
             {

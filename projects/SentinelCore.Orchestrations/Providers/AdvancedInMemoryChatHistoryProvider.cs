@@ -2,14 +2,14 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AdvancedInMemoryChatHistoryProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
-using SentinelCore.Orchestrations.Agents.Models;
+using SentinelCore.Orchestrations.Models;
 
 
 
@@ -42,10 +42,10 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
         _maxHistorySize = maxHistorySize;
 
         // Provide defaults if not specified to avoid ArgumentNullExceptions
-        var initializer = stateInitializer ?? (session => new State());
+        var initializer = stateInitializer ?? (session => new());
         string key = stateKey ?? "AdvancedInMemoryChatHistory";
 
-        _sessionState = new ProviderSessionState<State>(initializer, key);
+        _sessionState = new(initializer, key);
     }
 
 
@@ -76,7 +76,7 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
             return;
         }
 
-        IEnumerable<ChatMessage> filteredRequestMessages = context.RequestMessages.Where(m => m.GetAgentRequestMessageSourceType() != AgentRequestMessageSourceType.ChatHistory);
+        IEnumerable<ChatMessage> filteredRequestMessages = context.RequestMessages.Where(m => m.GetMessageSourceType() != MessageSourceType.ChatHistory);
 
         State state = _sessionState.GetOrInitializeState(context.Session);
 
@@ -88,10 +88,10 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
 
             // Implement sliding window to prevent unbounded growth
             while (state.Messages.Count > _maxHistorySize)
-                    // Remove the oldest message (index 0)
-                    // Note: ChatMessages needs a RemoveAt method or we must handle it via the underlying list
-                    // Since ChatMessages is a custom wrapper, we assume it supports basic list operations or we'll need to update it.
-                    // For now, we'll use a safer approach if ChatMessages allows.
+                // Remove the oldest message (index 0)
+                // Note: ChatMessages needs a RemoveAt method or we must handle it via the underlying list
+                // Since ChatMessages is a custom wrapper, we assume it supports basic list operations or we'll need to update it.
+                // For now, we'll use a safer approach if ChatMessages allows.
                 try
                 {
                     // This is a placeholder for the pruning logic.
@@ -124,7 +124,7 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
             historySnapshot = state.Messages.ToList();
         }
 
-        IEnumerable<ChatMessage> stampedChatHistory = historySnapshot.Select(message => message.WithAgentRequestMessageSource(AgentRequestMessageSourceType.ChatHistory, this.GetType().FullName!));
+        IEnumerable<ChatMessage> stampedChatHistory = historySnapshot.Select(message => message.WithMessageSource(MessageSourceType.ChatHistory, this.GetType().FullName!));
 
         return stampedChatHistory.Concat(context.RequestMessages);
     }

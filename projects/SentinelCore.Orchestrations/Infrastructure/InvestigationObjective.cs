@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         InvestigationObjective.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -40,7 +40,7 @@ public sealed class InvestigationObjective
 
     [JsonPropertyName("investigationQuestions")]
     [Description("Questions that should be answered during the investigation.")]
-    public List<string> InvestigationQuestions { get; set; } = new List<string>();
+    public List<string> InvestigationQuestions { get; set; } = new();
 
 
     [JsonPropertyName("originalSignal")]

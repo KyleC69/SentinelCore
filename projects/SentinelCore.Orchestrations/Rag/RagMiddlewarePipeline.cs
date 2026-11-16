@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RagMiddlewarePipeline.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -42,7 +42,7 @@ public static class RagMiddlewarePipeline
         }
 
         ILogger<RagContextInjector> logger = loggerFactory.CreateLogger<RagContextInjector>();
-        return new RagContextInjector(searchService, options, logger);
+        return new(searchService, options, logger);
     }
 
 

@@ -2,12 +2,12 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         EvidenceMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.Contracts.CaseFlow;
-using SentinelCore.Data.DBEntities;
 
 
 
@@ -35,21 +35,21 @@ public static class EvidenceMappingExtensions
     {
         // Implementation logic will go here, mapping all public properties
         // to the fields of the EvidenceToEntity structure.
-        return new EvidenceEntity
+        return new()
         {
 
-                // Example mapping:
-                Id = evidence.Id,
-                CollectorAgent = evidence.CollectorAgent,
-                SourcePath = evidence.SourcePath,
-                SourceType = evidence.SourceType,
-                Observation = evidence.Observation,
-                ObservedAt = evidence.ObservedAt,
-                CreatedAt = evidence.CreatedAt,
-                Confidence = evidence.Confidence,
-                CaseId = evidence.CaseId,
-                CaseEntity = evidence.Case.ToEntity()
-                // Other properties...
+            // Example mapping:
+            Id = evidence.Id,
+            CollectorAgent = evidence.CollectorAgent,
+            SourcePath = evidence.SourcePath,
+            SourceType = evidence.SourceType,
+            Observation = evidence.Observation,
+            ObservedAt = evidence.ObservedAt,
+            CreatedAt = evidence.CreatedAt,
+            Confidence = evidence.Confidence,
+            CaseId = evidence.CaseId,
+            CaseEntity = evidence.Case.ToEntity()
+            // Other properties...
         };
     }
 }

@@ -1,8 +1,8 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         CoreChatViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -22,7 +22,7 @@ using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.Contracts.Events;
 using SentinelCore.Orchestrations.Abstractions;
-using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Models;
 using SentinelCore.Orchestrations.Services;
 using SentinelCore.UI.Services;
 
@@ -55,12 +55,6 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     [ObservableProperty, NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private int _blockedCount;
-
-    /// <summary>
-    ///     Upper bound on a single case-count refresh. A stalled or unreachable case database must not
-    ///     hold the telemetry panel in a pending state indefinitely.
-    /// </summary>
-    private static readonly TimeSpan CaseCountsRefreshTimeout = TimeSpan.FromSeconds(15);
 
     /// <summary>
     ///     <c>1</c> while a case-count refresh is in flight. Concurrent requests coalesce onto the
@@ -107,6 +101,12 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     [ObservableProperty] private string _statusMessage = string.Empty;
     private readonly IWorkflowEventProcessor _workflowEventProcessor;
+
+    /// <summary>
+    ///     Upper bound on a single case-count refresh. A stalled or unreachable case database must not
+    ///     hold the telemetry panel in a pending state indefinitely.
+    /// </summary>
+    private static readonly TimeSpan CaseCountsRefreshTimeout = TimeSpan.FromSeconds(15);
 
 
 
@@ -204,7 +204,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     ///     Gets the observable collection of chat messages displayed in the UI.
     ///     All mutations are marshaled to the UI thread by <see cref="AddToMessages" />.
     /// </summary>
-    public ObservableCollection<ChatMessage> Messages { get; } = new ObservableCollection<ChatMessage>();
+    public ObservableCollection<ChatMessage> Messages { get; } = new();
 
 
 
@@ -297,7 +297,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private void AddWelcomeMessage()
     {
-        Messages.Add(new ChatMessage(ChatRole.Assistant, "# SentinelCore 🛡️\n\nForensic investigation platform — ready.\n\nDescribe a signal or security event and I will open an investigation case.\n\n- Press **Enter** to send\n- Press **Shift+Enter** for a new line"));
+        Messages.Add(new(ChatRole.Assistant, "# SentinelCore 🛡️\n\nForensic investigation platform — ready.\n\nDescribe a signal or security event and I will open an investigation case.\n\n- Press **Enter** to send\n- Press **Shift+Enter** for a new line"));
     }
 
 
@@ -439,26 +439,6 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
     /// <summary>
-    ///     Starts a case-count refresh without awaiting it.
-    /// </summary>
-    /// <remarks>
-    ///     Safe to call from any thread and safe to call repeatedly. Overlapping requests coalesce onto
-    ///     the refresh already in flight, and <see cref="RefreshCaseCountsAsync" /> handles every failure
-    ///     internally, so the discarded task can never surface an unobserved exception.
-    /// </remarks>
-    private void RequestCaseCountsRefresh()
-    {
-        _ = RefreshCaseCountsAsync();
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
     ///     Retrieves case status counts from the case flow engine and applies them to the UI thread via the dispatcher.
     /// </summary>
     /// <remarks>
@@ -485,10 +465,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         try
         {
             // Single grouped query instead of one round-trip per status.
-            IReadOnlyDictionary<CaseStatus, int> counts = await _caseFlowEngine
-                                                          .GetCaseStatusCountsAsync(_appShutdownToken)
-                                                          .WithTimeout(CaseCountsRefreshTimeout, _appShutdownToken)
-                                                          .ConfigureAwait(false);
+            IReadOnlyDictionary<CaseStatus, int> counts = await _caseFlowEngine.GetCaseStatusCountsAsync(_appShutdownToken).WithTimeout(CaseCountsRefreshTimeout, _appShutdownToken).ConfigureAwait(false);
 
             if (_dispatcher.CheckAccess())
             {
@@ -529,6 +506,26 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
     /// <summary>
+    ///     Starts a case-count refresh without awaiting it.
+    /// </summary>
+    /// <remarks>
+    ///     Safe to call from any thread and safe to call repeatedly. Overlapping requests coalesce onto
+    ///     the refresh already in flight, and <see cref="RefreshCaseCountsAsync" /> handles every failure
+    ///     internally, so the discarded task can never surface an unobserved exception.
+    /// </remarks>
+    private void RequestCaseCountsRefresh()
+    {
+        _ = RefreshCaseCountsAsync();
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Sends the current input text to the orchestration, updates UI state, and appends returned responses to the
     ///     conversation.
     /// </summary>
@@ -553,6 +550,8 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         try
         {
             ChatMessage msg = new(ChatRole.User, InputText);
+
+            msg.WithMessageSource(MessageSourceType.SentinelCoreUi);
             AddToMessages(msg);
             InputText = string.Empty;
             IAsyncEnumerable<WorkflowEvent> result = await _orchestrationControl.ExecuteStreamingAsync(msg, _linkedCts.Token);
@@ -564,7 +563,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
                     string output = _workflowEventProcessor.ProcessEvent(evt);
                     if (!string.IsNullOrEmpty(output))
                     {
-                        AddToMessages(new ChatMessage(ChatRole.Assistant, output));
+                        AddToMessages(new(ChatRole.Assistant, output));
                     }
                 }
             }
@@ -585,7 +584,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
             // the dispatcher's unhandled-exception handler, which shuts the app down.
             _logger.LogError(ex, "Orchestration failed while sending a chat message.");
             StatusMessage = $"Request failed: {ex.Message}";
-            AddToMessages(new ChatMessage(ChatRole.Assistant, $"⚠️ The request failed: {ex.Message}"));
+            AddToMessages(new(ChatRole.Assistant, $"⚠️ The request failed: {ex.Message}"));
         }
         finally
         {

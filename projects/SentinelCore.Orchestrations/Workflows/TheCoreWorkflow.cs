@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -14,9 +14,11 @@ using Microsoft.Extensions.Logging;
 using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Abstractions;
+using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Exceptions;
+using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 using SentinelCore.Orchestrations.Infrastructure.Diagnostics;
 using SentinelCore.Orchestrations.Workflows.Executors;
 using SentinelCore.Orchestrations.Workflows.Helpers;
@@ -43,15 +45,21 @@ namespace SentinelCore.Orchestrations.Workflows;
 /// </remarks>
 public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 {
+    private AIAgent _adversarialAnalystAgent;
     private readonly ISentinelAgentFactory _agentFactory;
+    private bool _agentInitialized;
     private AIAgent? _classifierAgent;
+    private AIAgent _evidenceCollectorAgent;
     private readonly ExecutorFactory _executorFactory;
+    private AIAgent _finalReportWriterAgent;
     private readonly object _initLock = new();
+    private SemaphoreSlim _initializationGate = new(1, 1);
     private volatile bool _isInitialized;
 
 
 
-    private AIAgent? _magManagerAgent;
+    private AIAgent _managerAgent;
+    private AIAgent _researcherAgent;
 
     // Pre-created sub-workflow agents (initialized once via InitializeAsync)
     private AIAgent? _safetyAgent;
@@ -63,10 +71,8 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     private AgentSession? _theCoreSession;
     private Workflow? _theCoreWorkflow;
 
-    private AIAgent? _windowsWorkerAgent1;
-    private AIAgent? _windowsWorkerAgent2;
-    private AIAgent? _windowsWorkerAgent3;
-    private AIAgent? _windowsWorkerAgent4;
+
+
 
 
 
@@ -101,7 +107,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         Throw.IfNull(loggerFactory);
 
         _agentFactory = agentFactory;
-        _executorFactory = new ExecutorFactory(serviceProvider);
+        _executorFactory = new(serviceProvider);
     }
 
 
@@ -144,16 +150,30 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     ///     A task representing the asynchronous operation, which upon completion provides a
     ///     <see cref="WorkflowExecutionOutput" />.
     /// </returns>
-    public async Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage input, CancellationToken cancellationToken)
+    public async Task<IAsyncEnumerable<WorkflowEvent>?> ExecuteStreamingAsync(ChatMessage input, CancellationToken token)
     {
         Throw.IfNull(input);
+
+        using CancellationTokenSource executionCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        CancellationToken executionToken = executionCts.Token;
+
+
+
         try
         {
-            // Streaming execution — delegate the stream to the caller
-            StreamingRun run = await InProcessExecution.Lockstep.RunStreamingAsync(_theCoreWorkflow, input, cancellationToken: cancellationToken);
-            await run.TrySendMessageAsync(new TurnToken(true));
+            StreamingRun run = await InProcessExecution.RunStreamingAsync(_theCoreWorkflow, input, cancellationToken: executionToken).AsTask().WaitAsync(RunStartupTimeout, executionToken).ConfigureAwait(false);
+            bool turnAccepted = await run.TrySendMessageAsync(new TurnToken(true)).AsTask().WaitAsync(RunStartupTimeout, executionToken).ConfigureAwait(false);
+            if (!turnAccepted)
+            {
+                this.ReportExecutionFailure("The magnetic group workflow rejected the turn token, so no work was scheduled.");
+                return null;
+            }
+
             // Return the async-enumerable directly (do not await it)
-            return run.WatchStreamAsync(cancellationToken);
+            return run.WatchStreamAsync(false, executionToken);
+
+
+
         }
         catch (Exception ex)
         {
@@ -194,31 +214,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
                 // while we waited for the lock.
                 return;
             }
+
         }
 
-        // ── Build main workflow agents ─────────────────────────────────────────────────────────
+        await EnsureAgentInitializedAsync(cancellationToken);
 
-        _theCoreAgent = await _agentFactory.CreateAgentAsync(AgentPreset.CoreAgent, cancellationToken);
-
-        _classifierAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ClassifierAgent, cancellationToken);
-
-        _safetyAgent = await _agentFactory.CreateAgentAsync(AgentPreset.SafetyAgent, cancellationToken);
-
-        _theCoreSession = await _theCoreAgent.CreateSessionAsync(cancellationToken);
-
-        // ── Build MAG sub-workflow agents ─────────────────────────────────────────────────────
-        _magManagerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, cancellationToken);
-
-        _windowsWorkerAgent1 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, cancellationToken);
-
-        _windowsWorkerAgent2 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, cancellationToken);
-
-        _windowsWorkerAgent3 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, cancellationToken);
-        _windowsWorkerAgent4 = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, cancellationToken);
-
-        _reporter.ReportInfo("Agent profiles constructed.");
-        _theCoreWorkflow = await BuildWorkflow();
-        _isInitialized = true;
     }
 
 
@@ -267,30 +267,22 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     [Experimental("MAAI001")]
     private Workflow BuildEvidenceGatheringSubWorkflow()
     {
-        MagenticPromptOverrides over = new MagenticPromptOverrides
-        {
-                TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt,
-                TaskLedgerPlanUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanUpdatePrompt,
-                ProgressLedgerPrompt = Orchestrations.MagenticPromptOverrides.ProgressLedgerPrompt,
-                FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt,
-                TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt,
-                TaskLedgerFactsUpdatePrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsUpdatePrompt,
-                TaskLedgerFullPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFullPrompt
-        };
+        MagenticPromptOverrides over = new() { FinalAnswerPrompt = Orchestrations.MagenticPromptOverrides.FinalAnswerPrompt, TaskLedgerPlanPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerPlanPrompt, TaskLedgerFactsPrompt = Orchestrations.MagenticPromptOverrides.TaskLedgerFactsPrompt };
+        //-------------------  Magentic Group workflow  -------------------
+        Workflow workflow = new MagenticWorkflowBuilder(_managerAgent).AddParticipants(_evidenceCollectorAgent, _adversarialAnalystAgent, _researcherAgent, _finalReportWriterAgent) // Added reporting agent back in
+                .WithName("ForensicsInvestigationTeamWorkflow")
+                .WithDescription("A powerful manager coordinates the investigation team and monitors the activities and progress of the evidence collector, adversarial analyst, and researcher.")
+                .RequirePlanSignoff(false)
+                .WithPromptOverrides(over)
+                .WithOutputFrom(_finalReportWriterAgent)
+                .WithMaxRounds(15)
+                .WithMaxResets(3)
+                .WithMaxStalls(2)
+                .Build();
 
 
 
-
-
-        Throw.IfNull(_magManagerAgent);
-        Throw.IfNull(_windowsWorkerAgent1);
-        Throw.IfNull(_windowsWorkerAgent2);
-        Throw.IfNull(_windowsWorkerAgent3);
-        Throw.IfNull(_windowsWorkerAgent4);
-
-        Workflow subWorkflow = new MagenticWorkflowBuilder(_magManagerAgent).AddParticipants(_windowsWorkerAgent1, _windowsWorkerAgent2, _windowsWorkerAgent3, _windowsWorkerAgent4).WithMaxResets(3).WithMaxRounds(5).WithMaxStalls(2).RequirePlanSignoff(false).WithDescription("Magentic investigation team - sub-workflow for collecting evidence to support TheCore\'s hypothesis of the signal").WithName("EvidenceCollection").WithPromptOverrides().Build();
-
-        return subWorkflow;
+        return workflow;
     }
 
 
@@ -301,19 +293,19 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
     /// <summary>
-    ///     Builds and returns the workflow for the current orchestration.
+    ///     Constructs and initializes the core workflow for the orchestration process.
     /// </summary>
+    /// <remarks>
+    ///     This method is marked as experimental and may be subject to changes or removal in future versions.
+    /// </remarks>
     /// <returns>
     ///     A <see cref="Workflow" /> instance representing the constructed workflow.
     /// </returns>
-    /// <remarks>
-    ///     This method is designed to define and construct the workflow logic specific to this orchestration.
-    ///     The method is synchronous internally but returns <see cref="Task{Workflow}" /> to satisfy the
-    ///     <see cref="IOrchestration" /> interface contract.
-    /// </remarks>
     /// <exception cref="InvalidOperationException">
-    ///     Thrown when the workflow cannot be built because agents have not been initialized.
+    ///     Thrown if the workflow cannot be constructed due to invalid state or configuration.
     /// </exception>
+    /// <seealso cref="WorkflowBase" />
+    /// <seealso cref="IOrchestration" />
     [Experimental("MAAI001")]
     private async Task<Workflow> BuildWorkflow()
     {
@@ -321,20 +313,14 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         Throw.IfNull(_classifierAgent);
         Throw.IfNull(_safetyAgent);
         Throw.IfNull(_theCoreSession);
-        Throw.IfNull(_magManagerAgent);
-        Throw.IfNull(_windowsWorkerAgent1);
-        Throw.IfNull(_windowsWorkerAgent2);
-        Throw.IfNull(_windowsWorkerAgent3);
-        Throw.IfNull(_windowsWorkerAgent4);
 
         // ── Construct NON-Agent executors ────────────────────────────────────────────────────
 
         ExecutorCollection executors = _executorFactory.CreateAllExecutors();
 
         // ── Build sub-workflow ──────────────────────────────────────────────────────────────────
-        SubWorkflowExecutor subWorkflowExecutor = new(BuildEvidenceGatheringSubWorkflow(), _reporter);
         Workflow evidenceGatheringWorkflow = BuildEvidenceGatheringSubWorkflow();
-        //   ExecutorBinding evidenceGatheringBinding = evidenceGatheringWorkflow.BindAsExecutor("EvidenceSubWorkflow");
+        SubWorkflowExecutor subWorkflowExecutor = new(evidenceGatheringWorkflow, _reporter);
 
         ExecutorBinding safetyAgentBinding = _safetyAgent.BindAsExecutor(true);
 
@@ -344,6 +330,8 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         TheCoreExec theCoreExec = new(_theCoreAgent, _theCoreSession, _reporter);
         DirectAnswerExecutor directAnswerAgentExec = new(_theCoreAgent, _theCoreSession, _reporter);
 
+
+
         // ── Compose the switch-based routing graph ─────────────────────────────────────────
         // First stop Safety gate
         WorkflowBuilder builder = new(executors.SafetyExecutor);
@@ -352,12 +340,22 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         builder.AddEdge(executors.SafetyExecutor, executors.PatternCheckExecutor, GetCondition(false)); //Pass safety to next step
 
         builder.AddEdge(executors.PatternCheckExecutor, executors.WhiteListExecutor); // Check whitelist for pattern - Operator created list to ignore
-        builder.AddEdge(executors.WhiteListExecutor, classifierExec);
+
+        builder.AddEdge(executors.WhiteListExecutor, executors.TheCoreSwitchExec);
+
+        // -- ------- DirectAnswer Branch -------------------------
+        builder.AddEdge(executors.TheCoreSwitchExec, executors.DirectAnswerExecutor, GetCondition(true)); // TheCore DirectAnswer
+        builder.AddEdge(executors.DirectAnswerExecutor, executors.TerminateWorkflow);  //Direct Answer Termination
 
 
-        builder.AddSwitch(classifierExec, switchBuilder => switchBuilder.AddCase(GetCondition(NextStep.Investigate), executors.SignalClassifierExecutor).AddCase(GetCondition(NextStep.DirectAnswer), directAnswerAgentExec).AddCase(GetCondition(NextStep.RedAlert), executors.CriticalAlert).AddCase(GetCondition(NextStep.MoreInformationRequired), executors.MoreInformationExecutor).AddCase(GetCondition(NextStep.EscalateToHumanOperator), executors.HumanOperatorExecutor));
+        // -- ------- Investigate Branch -------------------------
+        //Open case send to TheCore
+        builder.AddEdge(executors.TheCoreSwitchExec, executors.SignalClassifierExecutor, GetCondition(false)); // Investigation Branch
+        builder.AddEdge(executors.SignalClassifierExecutor, executors.NewCaseExecutor) // TheCore generate the initial hypothesis objective
+                .AddEdge(executors.NewCaseExecutor, subWorkflowExecutor) // NewCase creates a new case and sends objective to the sub-workflow for evidence gathering
+                .AddEdge(subWorkflowExecutor, executors.TerminateWorkflow); // Sub-workflow evidence gathering Magnetic orchestration
 
-        builder.AddEdge(executors.MoreInformationExecutor, executors.TerminateWorkflow);
+
 
         // ------- RedAlert Branch -------------------------
         // Alert UI to critical error and mark case urgent
@@ -367,14 +365,9 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         //Mark case needs more info and alert operator
         builder.AddEdge(executors.MoreInformationExecutor, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
 
-        // -- ------- DirectAnswer Branch -------------------------
-        builder.AddEdge(directAnswerAgentExec, executors.TerminateWorkflow);
 
-        // -- ------- Investigate Branch -------------------------
-        //Open case send to TheCore
-        builder.AddEdge(executors.SignalClassifierExecutor, executors.NewCaseExecutor) // TheCore generate the initial hypothesis objective
-                .AddEdge(executors.NewCaseExecutor, subWorkflowExecutor) // NewCase creates a new case and sends objective to the sub-workflow for evidence gathering
-                .AddEdge(subWorkflowExecutor, executors.TerminateWorkflow); // Sub-workflow evidence gathering Magnetic orchestration
+
+
 
         //     .AddEdge(executors.AggregationExecutor, executors.PersistEvidenceExecutor)
         //     .AddEdge(executors.PersistEvidenceExecutor, executors.TerminateWorkflow); // Evidence is gathered — hand the synthesized results back to core for final synopsis.
@@ -393,7 +386,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // ── Register output sources ─────────────────────────────────────────────────────────
         // MAF only surfaces yielded values from executors registered via WithOutputFrom;
         // without this registration no executor output ever reaches the WorkflowOutputEvent stream.
-        builder.WithOutputFrom(classifierExec, directAnswerAgentExec, executors.SafetyExecutor, executors.CriticalAlert, executors.MoreInformationExecutor, executors.TerminateWorkflow, executors.HumanOperatorExecutor);
+        builder.WithOutputFrom(directAnswerAgentExec, executors.HumanOperatorExecutor);
 
         Workflow flow = builder.Build();
 
@@ -402,6 +395,110 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         return flow;
 
+    }
+
+
+
+
+
+
+
+
+    [Experimental("MAAI001")]
+    private async Task CreateAgentsAsync(CancellationToken token)
+    {
+
+
+        // ── Build main workflow agents ─────────────────────────────────────────────────────────
+
+        _theCoreAgent = await _agentFactory.CreateAgentAsync(AgentPreset.CoreAgent, token);
+
+        _classifierAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ClassifierAgent, token);
+
+        _safetyAgent = await _agentFactory.CreateAgentAsync(AgentPreset.SafetyAgent, token);
+
+        _theCoreSession = await _theCoreAgent.CreateSessionAsync(token);
+
+        // ── Build MAG sub-workflow agents ─────────────────────────────────────────────────────
+
+
+        _managerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, "ManagerCoordinator", "Coordinates the investigation team and monitors progress");
+        _evidenceCollectorAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS);
+        _adversarialAnalystAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "AdversarialAnalyst", "The challenger of the collected evidence", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS);
+        _researcherAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS);
+        _finalReportWriterAgent = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", AgentInstructionConstants.AGGREGATOR_INSTRUCTIONS);
+
+        //Participants must be verified and created before the sub-workflow is built. The sub-workflow is built here, but it is not executed directly. Instead, it is added to the parent workflow as a sub-workflow executor. This allows the parent workflow to manage the execution of the sub-workflow and handle its outputs appropriately.
+        Throw.IfNull(_managerAgent);
+        Throw.IfNull(_evidenceCollectorAgent);
+        Throw.IfNull(_adversarialAnalystAgent);
+        Throw.IfNull(_researcherAgent);
+        Throw.IfNull(_finalReportWriterAgent);
+
+
+
+        _reporter.ReportInfo("Agent profiles constructed.");
+        _theCoreWorkflow = await BuildWorkflow();
+        Throw.IfNull(_theCoreAgent);
+        Throw.IfNull(_classifierAgent);
+        _isInitialized = true;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Lazily initializes every agent the workflow needs on first use, avoiding the sync-over-async deadlocks that
+    ///     occur when building agents in the constructor.
+    /// </summary>
+    /// <remarks>
+    ///     Initialization is serialized by <see cref="_initializationGate" /> so concurrent executions cannot create
+    ///     duplicate agents, and the whole creation sequence is bounded by
+    ///     <see cref="WorkflowBase.AgentInitializationTimeout" /> so an
+    ///     unresponsive provider or tool server cannot stall execution. Failures are reported and rethrown so the caller
+    ///     can surface a meaningful error instead of failing later with a <see cref="NullReferenceException" />.
+    /// </remarks>
+    /// <param name="token">A <see cref="CancellationToken" /> to observe while initializing.</param>
+    /// <returns>A task that represents the asynchronous initialization operation.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="token" /> is cancelled.</exception>
+    [Experimental("MAAI001")]
+    private async Task EnsureAgentInitializedAsync(CancellationToken token)
+    {
+        if (_agentInitialized)
+        {
+            return;
+        }
+
+        await _initializationGate.WaitAsync(token).ConfigureAwait(false);
+        try
+        {
+            if (_agentInitialized)
+            {
+                return;
+            }
+
+            await CreateAgentsAsync(token).WaitAsync(AgentInitializationTimeout, token).ConfigureAwait(false);
+
+            _agentInitialized = true;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Caller cancellation is not an initialization failure, so it propagates without being reported.
+            throw;
+        }
+        catch (Exception e)
+        {
+            this.ReportExecutionFailure("Failed to initialize the custom group workflow agents.", e);
+            throw;
+        }
+        finally
+        {
+            _initializationGate.Release();
+        }
     }
 
 

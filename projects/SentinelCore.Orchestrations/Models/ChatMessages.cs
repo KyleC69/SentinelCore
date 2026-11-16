@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ChatMessages.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -11,7 +11,7 @@ using System.Collections;
 
 
 
-namespace SentinelCore.Orchestrations.Agents.Models;
+namespace SentinelCore.Orchestrations.Models;
 
 
 
@@ -57,16 +57,17 @@ public class ChatMessages : IEnumerable<ChatMessage>
 
 
 
+    public int Count
+    {
+        get => _messages.Count;
+    }
+
+
+
     public ChatMessage this[int index]
     {
         get => _messages[index];
         set => _messages[index] = value;
-    }
-
-
-    public int Count
-    {
-        get => _messages.Count;
     }
 
 
@@ -124,8 +125,8 @@ public class ChatMessages : IEnumerable<ChatMessage>
 
     public ChatMessages AddAssistantMessage(string content)
     {
-        _messages.Add(new ChatMessage(ChatRole.Assistant, content));
-        return new ChatMessages(_messages);
+        _messages.Add(new(ChatRole.Assistant, content));
+        return new(_messages);
     }
 
 
@@ -149,8 +150,8 @@ public class ChatMessages : IEnumerable<ChatMessage>
 
     public ChatMessages AddSystemMessage(string content)
     {
-        _messages.Add(new ChatMessage(ChatRole.System, content));
-        return new ChatMessages(_messages);
+        _messages.Add(new(ChatRole.System, content));
+        return new(_messages);
     }
 
 
@@ -162,8 +163,8 @@ public class ChatMessages : IEnumerable<ChatMessage>
 
     public ChatMessages AddUserMessage(string content)
     {
-        _messages.Add(new ChatMessage(ChatRole.User, content));
-        return new ChatMessages(_messages);
+        _messages.Add(new(ChatRole.User, content));
+        return new(_messages);
     }
 
 

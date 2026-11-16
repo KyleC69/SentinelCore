@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SubWorkflowExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -68,7 +68,7 @@ public sealed partial class SubWorkflowExecutor : Executor
         string? lastResponseId = null;
         WorkflowOutputEvent? finalOutput = null;
 
-        await foreach (WorkflowEvent workflowEvent in run.WatchStreamAsync(cancellationToken))
+        await foreach (WorkflowEvent workflowEvent in run.WatchStreamAsync(false, cancellationToken))
         {
             switch (workflowEvent)
             {

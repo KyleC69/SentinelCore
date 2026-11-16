@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         BlockPhrases.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -17,126 +17,126 @@ public static class SafetyTriggerTerms
     public static readonly IEnumerable<SafetyIndicator> AllIndicators = new List<SafetyIndicator>
     {
             // Self-harm / crisis (Weight: 5, Review: true)
-            new SafetyIndicator("suicide", "Self-harm", 5, true),
-            new SafetyIndicator("kill myself", "Self-harm", 5, true),
-            new SafetyIndicator("end my life", "Self-harm", 5, true),
-            new SafetyIndicator("self harm", "Self-harm", 4, true),
-            new SafetyIndicator("hurt myself", "Self-harm", 4, true),
-            new SafetyIndicator("overdose", "Self-harm", 5, true),
-            new SafetyIndicator("no reason to live", "Self-harm", 5, true),
-            new SafetyIndicator("want to die", "Self-harm", 5, true),
+            new("suicide", "Self-harm", 5, true),
+            new("kill myself", "Self-harm", 5, true),
+            new("end my life", "Self-harm", 5, true),
+            new("self harm", "Self-harm", 4, true),
+            new("hurt myself", "Self-harm", 4, true),
+            new("overdose", "Self-harm", 5, true),
+            new("no reason to live", "Self-harm", 5, true),
+            new("want to die", "Self-harm", 5, true),
 
             // Violence (Weight: 4, Review: true)
-            new SafetyIndicator("kill", "Violence", 4, true),
-            new SafetyIndicator("murder", "Violence", 4, true),
-            new SafetyIndicator("assassinate", "Violence", 4, true),
-            new SafetyIndicator("mass casualty", "Violence", 4, true),
-            new SafetyIndicator("shooting", "Violence", 4, true),
-            new SafetyIndicator("stabbing", "Violence", 4, true),
-            new SafetyIndicator("eliminate target", "Violence", 4, true),
-            new SafetyIndicator("violent revenge", "Violence", 3, false),
-            new SafetyIndicator("bomb", "Violence", 5, true),
-            new SafetyIndicator("explosive device", "Violence", 5, true),
+            new("kill", "Violence", 4, true),
+            new("murder", "Violence", 4, true),
+            new("assassinate", "Violence", 4, true),
+            new("mass casualty", "Violence", 4, true),
+            new("shooting", "Violence", 4, true),
+            new("stabbing", "Violence", 4, true),
+            new("eliminate target", "Violence", 4, true),
+            new("violent revenge", "Violence", 3, false),
+            new("bomb", "Violence", 5, true),
+            new("explosive device", "Violence", 5, true),
 
             // Weapons (Weight: 3, Review: false)
-            new SafetyIndicator("firearm modification", "Weapons", 3, false),
-            new SafetyIndicator("concealed weapon", "Weapons", 3, false),
-            new SafetyIndicator("ghost gun", "Weapons", 3, false),
-            new SafetyIndicator("weapon construction", "Weapons", 3, false),
-            new SafetyIndicator("improvised weapon", "Weapons", 3, false),
+            new("firearm modification", "Weapons", 3, false),
+            new("concealed weapon", "Weapons", 3, false),
+            new("ghost gun", "Weapons", 3, false),
+            new("weapon construction", "Weapons", 3, false),
+            new("improvised weapon", "Weapons", 3, false),
 
             // Criminal activity (Weight: 3, Review: false)
-            new SafetyIndicator("break into", "Crime", 3, false),
-            new SafetyIndicator("bypass security", "Crime", 3, false),
-            new SafetyIndicator("steal", "Crime", 2, false),
-            new SafetyIndicator("fraud", "Crime", 3, false),
-            new SafetyIndicator("identity theft", "Crime", 3, false),
-            new SafetyIndicator("counterfeit", "Crime", 2, false),
-            new SafetyIndicator("money laundering", "Crime", 3, false),
+            new("break into", "Crime", 3, false),
+            new("bypass security", "Crime", 3, false),
+            new("steal", "Crime", 2, false),
+            new("fraud", "Crime", 3, false),
+            new("identity theft", "Crime", 3, false),
+            new("counterfeit", "Crime", 2, false),
+            new("money laundering", "Crime", 3, false),
 
             // Cybersecurity abuse (Weight: 4, Review: true)
-            new SafetyIndicator("hack into", "Cybersecurity", 4, true),
-            new SafetyIndicator("credential theft", "Cybersecurity", 4, true),
-            new SafetyIndicator("password cracking", "Cybersecurity", 4, true),
-            new SafetyIndicator("ransomware", "Cybersecurity", 5, true),
-            new SafetyIndicator("malware", "Cybersecurity", 4, true),
-            new SafetyIndicator("keylogger", "Cybersecurity", 4, true),
-            new SafetyIndicator("privilege escalation", "Cybersecurity", 5, true),
-            new SafetyIndicator("exploit vulnerability", "Cybersecurity", 5, true),
-            new SafetyIndicator("data exfiltration", "Cybersecurity", 5, true),
-            new SafetyIndicator("phishing campaign", "Cybersecurity", 4, true),
-            new SafetyIndicator("botnet", "Cybersecurity", 4, true),
+            new("hack into", "Cybersecurity", 4, true),
+            new("credential theft", "Cybersecurity", 4, true),
+            new("password cracking", "Cybersecurity", 4, true),
+            new("ransomware", "Cybersecurity", 5, true),
+            new("malware", "Cybersecurity", 4, true),
+            new("keylogger", "Cybersecurity", 4, true),
+            new("privilege escalation", "Cybersecurity", 5, true),
+            new("exploit vulnerability", "Cybersecurity", 5, true),
+            new("data exfiltration", "Cybersecurity", 5, true),
+            new("phishing campaign", "Cybersecurity", 4, true),
+            new("botnet", "Cybersecurity", 4, true),
 
             // Dangerous chemicals (Weight: 5, Review: true)
-            new SafetyIndicator("poison", "Chemicals", 5, true),
-            new SafetyIndicator("toxic substance", "Chemicals", 4, true),
-            new SafetyIndicator("chemical weapon", "Chemicals", 5, true),
-            new SafetyIndicator("nerve agent", "Chemicals", 5, true),
+            new("poison", "Chemicals", 5, true),
+            new("toxic substance", "Chemicals", 4, true),
+            new("chemical weapon", "Chemicals", 5, true),
+            new("nerve agent", "Chemicals", 5, true),
 
             // Extremism indicators (Weight: 4, Review: true)
-            new SafetyIndicator("violent extremist", "Extremism", 4, true),
-            new SafetyIndicator("terrorist attack", "Extremism", 4, true),
-            new SafetyIndicator("recruitment", "Extremism", 3, false),
-            new SafetyIndicator("martyrdom operation", "Extremism", 5, true),
+            new("violent extremist", "Extremism", 4, true),
+            new("terrorist attack", "Extremism", 4, true),
+            new("recruitment", "Extremism", 3, false),
+            new("martyrdom operation", "Extremism", 5, true),
 
             // Coercion / abuse (Weight: 4, Review: true)
-            new SafetyIndicator("blackmail", "Abuse", 4, true),
-            new SafetyIndicator("extortion", "Abuse", 4, true),
-            new SafetyIndicator("kidnap", "Abuse", 4, true),
-            new SafetyIndicator("hostage", "Abuse", 4, true),
+            new("blackmail", "Abuse", 4, true),
+            new("extortion", "Abuse", 4, true),
+            new("kidnap", "Abuse", 4, true),
+            new("hostage", "Abuse", 4, true),
 
             // Financial scams (Weight: 3, Review: false)
-            new SafetyIndicator("investment scam", "Finance", 3, false),
-            new SafetyIndicator("pump and dump", "Finance", 3, false),
-            new SafetyIndicator("wire fraud", "Finance", 3, false),
-            new SafetyIndicator("account takeover", "Finance", 3, false),
+            new("investment scam", "Finance", 3, false),
+            new("pump and dump", "Finance", 3, false),
+            new("wire fraud", "Finance", 3, false),
+            new("account takeover", "Finance", 3, false),
 
             // Privacy invasion (Weight: 3, Review: false)
-            new SafetyIndicator("track without consent", "Privacy", 3, false),
-            new SafetyIndicator("spy on", "Privacy", 3, false),
-            new SafetyIndicator("surveillance target", "Privacy", 3, false),
-            new SafetyIndicator("doxxing", "Privacy", 4, true),
-            new SafetyIndicator("personal information leak", "Privacy", 3, false),
+            new("track without consent", "Privacy", 3, false),
+            new("spy on", "Privacy", 3, false),
+            new("surveillance target", "Privacy", 3, false),
+            new("doxxing", "Privacy", 4, true),
+            new("personal information leak", "Privacy", 3, false),
 
             // Evasion language (Weight: 3, Review: false)
-            new SafetyIndicator("undetectable", "Evasion", 3, false),
-            new SafetyIndicator("avoid detection", "Evasion", 3, false),
-            new SafetyIndicator("bypass monitoring", "Evasion", 3, false),
-            new SafetyIndicator("cover my tracks", "Evasion", 3, false),
-            new SafetyIndicator("leave no evidence", "Evasion", 3, false),
-            new SafetyIndicator("anonymous attack", "Evasion", 3, false)
+            new("undetectable", "Evasion", 3, false),
+            new("avoid detection", "Evasion", 3, false),
+            new("bypass monitoring", "Evasion", 3, false),
+            new("cover my tracks", "Evasion", 3, false),
+            new("leave no evidence", "Evasion", 3, false),
+            new("anonymous attack", "Evasion", 3, false)
     };
 
     public static readonly IEnumerable<SafetyIndicator> ContextEscalationTerms = new List<SafetyIndicator>
     {
-            new SafetyIndicator("urgent", "Context", 2, false),
-            new SafetyIndicator("immediately", "Context", 2, false),
-            new SafetyIndicator("must succeed", "Context", 3, true),
-            new SafetyIndicator("guaranteed", "Context", 3, true),
-            new SafetyIndicator("highest damage", "Context", 3, false),
-            new SafetyIndicator("maximum impact", "Context", 3, false),
-            new SafetyIndicator("most effective", "Context", 3, false),
-            new SafetyIndicator("best target", "Context", 3, false),
-            new SafetyIndicator("largest disruption", "Context", 3, false)
+            new("urgent", "Context", 2, false),
+            new("immediately", "Context", 2, false),
+            new("must succeed", "Context", 3, true),
+            new("guaranteed", "Context", 3, true),
+            new("highest damage", "Context", 3, false),
+            new("maximum impact", "Context", 3, false),
+            new("most effective", "Context", 3, false),
+            new("best target", "Context", 3, false),
+            new("largest disruption", "Context", 3, false)
     };
 
     public static readonly IEnumerable<SafetyIndicator> SuspiciousPhrases = new List<SafetyIndicator>
     {
-            new SafetyIndicator("how do i get away with", "Circumvention", 3, false),
-            new SafetyIndicator("without getting caught", "Circumvention", 3, false),
-            new SafetyIndicator("completely anonymous", "Circumvention", 2, false),
-            new SafetyIndicator("untraceable method", "Circumvention", 3, false),
-            new SafetyIndicator("step by step instructions", "Instruction", 2, false),
-            new SafetyIndicator("best way to attack", "Instruction", 3, false),
-            new SafetyIndicator("easiest target", "Instruction", 3, false),
-            new SafetyIndicator("remove all evidence", "Circumvention", 3, false),
-            new SafetyIndicator("disable protection", "Circumvention", 3, false),
-            new SafetyIndicator("circumvent safeguards", "Circumvention", 3, false),
-            new SafetyIndicator("bypass restrictions", "Circumvention", 3, false),
-            new SafetyIndicator("evade law enforcement", "Circumvention", 3, false),
-            new SafetyIndicator("avoid monitoring", "Circumvention", 3, false),
-            new SafetyIndicator("hide my activity", "Circumvention", 3, false),
-            new SafetyIndicator("erase logs", "Circumvention", 3, false)
+            new("how do i get away with", "Circumvention", 3, false),
+            new("without getting caught", "Circumvention", 3, false),
+            new("completely anonymous", "Circumvention", 2, false),
+            new("untraceable method", "Circumvention", 3, false),
+            new("step by step instructions", "Instruction", 2, false),
+            new("best way to attack", "Instruction", 3, false),
+            new("easiest target", "Instruction", 3, false),
+            new("remove all evidence", "Circumvention", 3, false),
+            new("disable protection", "Circumvention", 3, false),
+            new("circumvent safeguards", "Circumvention", 3, false),
+            new("bypass restrictions", "Circumvention", 3, false),
+            new("evade law enforcement", "Circumvention", 3, false),
+            new("avoid monitoring", "Circumvention", 3, false),
+            new("hide my activity", "Circumvention", 3, false),
+            new("erase logs", "Circumvention", 3, false)
     };
 
 

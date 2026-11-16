@@ -10,7 +10,7 @@ using SentinelCore.CaseFlowEngine.DBEntities;
 
 
 
-namespace SentinelCore.Data.DBEntities;
+namespace SentinelCore.CaseFlowEngine.DBEntities;
 
 public partial class SentinelCoreDBContext : DbContext
 {

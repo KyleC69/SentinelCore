@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         TaskExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -23,6 +23,23 @@ namespace SentinelCore.UI.Services;
 /// </remarks>
 public static class TaskExtensions
 {
+
+
+
+    /// <summary>
+    ///     Rejects timeouts that cannot represent a finite wait, so callers fail at the call site rather
+    ///     than at the point where the wait is scheduled.
+    /// </summary>
+    /// <param name="timeout">The timeout supplied by the caller.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout" /> is not positive.</exception>
+    /// <remarks>
+    ///     The upper bound is intentionally not duplicated here; <see cref="Task.WaitAsync(TimeSpan, CancellationToken)" />
+    ///     already rejects values it cannot schedule.
+    /// </remarks>
+    private static void ValidateTimeout(TimeSpan timeout)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout, TimeSpan.Zero);
+    }
 
 
 
@@ -95,27 +112,5 @@ public static class TaskExtensions
         ValidateTimeout(timeout);
 
         return task.WaitAsync(timeout, cancellationToken);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Rejects timeouts that cannot represent a finite wait, so callers fail at the call site rather
-    ///     than at the point where the wait is scheduled.
-    /// </summary>
-    /// <param name="timeout">The timeout supplied by the caller.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout" /> is not positive.</exception>
-    /// <remarks>
-    ///     The upper bound is intentionally not duplicated here; <see cref="Task.WaitAsync(TimeSpan, CancellationToken)" />
-    ///     already rejects values it cannot schedule.
-    /// </remarks>
-    private static void ValidateTimeout(TimeSpan timeout)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout, TimeSpan.Zero);
     }
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyTagger.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -40,7 +40,7 @@ public static class SafetyTagger
         ArgumentNullException.ThrowIfNull(message);
 
         ChatMessage taggedMessage = message;
-        taggedMessage.AdditionalProperties = new AdditionalPropertiesDictionary();
+        taggedMessage.AdditionalProperties = new();
 
         if (score > 0)
         {

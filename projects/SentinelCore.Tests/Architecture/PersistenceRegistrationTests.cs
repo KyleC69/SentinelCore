@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         PersistenceRegistrationTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -16,10 +16,8 @@ using Moq;
 using SentinelCore.CaseFlowEngine.CaseFlow;
 using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
-using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Data.DBEntities;
 using SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
@@ -87,7 +85,7 @@ public sealed class PersistenceRegistrationTests
     /// <returns>The strict factory mock.</returns>
     private static Mock<IDbContextFactory<SentinelCoreDBContext>> CreateMarkerFactory(out InvalidOperationException marker)
     {
-        marker = new InvalidOperationException("factory-invoked");
+        marker = new("factory-invoked");
 
         Mock<IDbContextFactory<SentinelCoreDBContext>> factory = new(MockBehavior.Strict);
         factory.Setup(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>())).ThrowsAsync(marker);
@@ -185,7 +183,7 @@ public sealed class PersistenceRegistrationTests
         // Arrange — mirror the composition root: factory registration plus the
         // SentinelCore service registrations.
         ServiceCollection services = new();
-        services.AddSentinelCore(new SentinelCoreSettings { OrchestrationType = OrchestrationType.TheCore });
+        services.AddSentinelCore(new() { OrchestrationType = OrchestrationType.TheCore });
         services.AddDbContextFactory<SentinelCoreDBContext>(options => options.UseSqlServer(TestConnectionString));
 
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -221,7 +219,7 @@ public sealed class PersistenceRegistrationTests
         SignalRepository repository = new(factory.Object);
 
         // Act & Assert
-        InvalidOperationException actual = await Assert.ThrowsAsync<InvalidOperationException>(() => repository.AddAsync(new Signal("pattern-lock conformance", "unit-test")));
+        InvalidOperationException actual = await Assert.ThrowsAsync<InvalidOperationException>(() => repository.AddAsync(new("pattern-lock conformance", "unit-test")));
 
         StringAssert.Contains(actual.Message, marker.Message);
         factory.Verify(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()), Times.Once);

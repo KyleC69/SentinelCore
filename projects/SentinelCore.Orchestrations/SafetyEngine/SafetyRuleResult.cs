@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyRuleResult.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -67,7 +67,7 @@ public sealed class SafetyRuleResult
 
     public static SafetyRuleResult Allow(string ruleName, string reason = "No violation detected.", int score = 0, IReadOnlyList<SafetyTriggerTerms.SafetyIndicator>? matchedIndicators = null)
     {
-        return new SafetyRuleResult(ruleName, SafetyAction.Allow, SafetySeverity.None, reason, score, matchedIndicators);
+        return new(ruleName, SafetyAction.Allow, SafetySeverity.None, reason, score, matchedIndicators);
     }
 
 
@@ -79,7 +79,7 @@ public sealed class SafetyRuleResult
 
     public static SafetyRuleResult Block(string ruleName, SafetySeverity severity, string reason, int score = 0, IReadOnlyList<SafetyTriggerTerms.SafetyIndicator>? matchedIndicators = null)
     {
-        return new SafetyRuleResult(ruleName, SafetyAction.Block, severity, reason, score, matchedIndicators);
+        return new(ruleName, SafetyAction.Block, severity, reason, score, matchedIndicators);
     }
 
 
@@ -91,6 +91,6 @@ public sealed class SafetyRuleResult
 
     public static SafetyRuleResult Warn(string ruleName, SafetySeverity severity, string reason, int score = 0, IReadOnlyList<SafetyTriggerTerms.SafetyIndicator>? matchedIndicators = null)
     {
-        return new SafetyRuleResult(ruleName, SafetyAction.Warn, severity, reason, score, matchedIndicators);
+        return new(ruleName, SafetyAction.Warn, severity, reason, score, matchedIndicators);
     }
 }

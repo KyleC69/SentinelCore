@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         Throw.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -200,7 +200,7 @@ public static class Throw
     //     Throws an exception indicating that a required service is not available.
     public static InvalidOperationException CreateMissingServiceException(Type serviceType, object? serviceKey)
     {
-        return new InvalidOperationException(serviceKey == null ? $"No service of type '{serviceType}' is available." : $"No service of type '{serviceType}' for the key '{serviceKey}' is available.");
+        return new(serviceKey == null ? $"No service of type '{serviceType}' is available." : $"No service of type '{serviceType}' for the key '{serviceKey}' is available.");
     }
 
 

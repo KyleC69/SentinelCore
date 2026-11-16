@@ -1,8 +1,8 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         MainWindow.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -63,6 +63,35 @@ public sealed partial class MainWindow
         _navigationService.Navigated += OnNavigated;
 
         NavChatButton.IsChecked = true;
+
+        ModeComboBox.SelectedIndex = 1;
+    }
+
+    /// <summary>
+    ///     Handles changes to the bottom mode selector, navigating to the
+    ///     page that corresponds to the selected mode.
+    /// </summary>
+    /// <param name="sender">The combo box that raised the event.</param>
+    /// <param name="e">The selection-changed event data.</param>
+    private void ModeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_navigationService is null)
+        {
+            return;
+        }
+
+        if (ModeComboBox.SelectedItem is System.Windows.Controls.ComboBoxItem item)
+        {
+            string? mode = item.Content?.ToString();
+            if (mode == "Chat")
+            {
+                NavigateTo(typeof(CoreChatViewModel).FullName!);
+            }
+            else if (mode == "Investigate")
+            {
+                NavigateTo(typeof(CreateCaseViewModel).FullName!);
+            }
+        }
     }
 
 

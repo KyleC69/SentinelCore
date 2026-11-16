@@ -2,14 +2,14 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         PatternMemoryStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
 using Microsoft.EntityFrameworkCore;
 
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.Contracts.Abstractions;
-using SentinelCore.Data.DBEntities;
 
 
 
@@ -206,14 +206,14 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
     /// <returns>The mapped pattern-memory result.</returns>
     private static PatternMemoryResult ToResult(PatternMemoryEntity e)
     {
-        return new PatternMemoryResult
+        return new()
         {
-                CaseId = e.CaseId,
-                PatternId = e.PatternMemoryId,
-                Summary = e.Summary!,
-                SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
-                SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
-                Timestamp = e.Timestamp
+            CaseId = e.CaseId,
+            PatternId = e.PatternMemoryId,
+            Summary = e.Summary!,
+            SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
+            SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
+            Timestamp = e.Timestamp
         };
     }
 }

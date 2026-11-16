@@ -2,14 +2,13 @@
 #nullable disable
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using SentinelCore.Data.DBEntities;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SentinelCore.Data.DBEntities
+namespace SentinelCore.CaseFlowEngine.DBEntities
 {
     public partial interface ISentinelCoreDBContextProcedures
     {

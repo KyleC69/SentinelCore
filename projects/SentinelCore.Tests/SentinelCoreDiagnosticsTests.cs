@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         SentinelCoreDiagnosticsTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -35,6 +35,7 @@ namespace SentinelCore.Tests;
 
 
 
+
 /// <summary>
 ///     Locks the telemetry contract between the agent pipeline (which emits spans) and the host
 ///     (which must subscribe to <see cref="SentinelCoreDiagnostics.ActivitySourceName" />).
@@ -49,164 +50,6 @@ public sealed class SentinelCoreDiagnosticsTests
 {
     private const string PromptText = "ping";
 
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Verifies that running an agent produced by <see cref="SentinelAgentFactory" /> emits at least one
-    ///     activity under <see cref="SentinelCoreDiagnostics.ActivitySourceName" />.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous test.</returns>
-    [TestMethod]
-    public async Task FactoryCreatedAgent_WhenRun_EmitsActivityUnderSentinelCoreSourceAsync()
-    {
-        // Arrange
-        List<Activity> captured = new();
-        using ActivityListener listener = CreateListener(captured);
-        ActivitySource.AddActivityListener(listener);
-
-        SentinelAgentFactory factory = CreateFactory();
-        AIAgent agent = await factory.CreateAgentAsync(AgentPreset.CoreAgent);
-
-        // Act
-        await agent.RunAsync(PromptText);
-
-        // Assert
-        Activity[] activities;
-        lock (captured)
-        {
-            activities = captured.ToArray();
-        }
-
-        Assert.IsTrue(activities.Length > 0, $"Expected at least one activity from source '{SentinelCoreDiagnostics.ActivitySourceName}', but none were emitted. The agent pipeline is no longer tracing under the shared source name.");
-        Assert.IsTrue(Array.TrueForAll(activities, activity => activity.Source.Name == SentinelCoreDiagnostics.ActivitySourceName), "Every captured activity must originate from the shared source name.");
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Verifies that a workflow configured with SentinelCore telemetry emits its build span under the
-    ///     shared source name instead of the workflow framework's internal default source.
-    /// </summary>
-    /// <remarks>
-    ///     Workflow telemetry is disabled unless <c>WithOpenTelemetry</c> is applied, and the framework's
-    ///     default source name is private. Pointing the workflow at the shared source is what lets a
-    ///     single host subscription export agent and workflow spans together.
-    /// </remarks>
-    [TestMethod]
-    public void WorkflowWithSentinelTelemetry_WhenBuilt_EmitsActivityUnderSentinelCoreSource()
-    {
-        // Arrange
-        List<Activity> captured = new();
-        using ActivityListener listener = CreateListener(captured);
-        ActivitySource.AddActivityListener(listener);
-
-        // Act
-        Workflow workflow = new WorkflowBuilder(new EvaluationExec("telemetry-probe"))
-                           .WithOpenTelemetry(activitySource: SentinelCoreDiagnostics.SharedActivitySource)
-                           .Build();
-
-        // Assert
-        Assert.IsNotNull(workflow);
-        Assert.IsTrue(captured.Count > 0, $"Expected the workflow build to emit at least one activity from source '{SentinelCoreDiagnostics.ActivitySourceName}', but none were emitted. Workflow telemetry is no longer routed to the shared source.");
-        Assert.IsTrue(captured.TrueForAll(activity => activity.Source.Name == SentinelCoreDiagnostics.ActivitySourceName), "Every workflow activity must originate from the shared source name.");
-    }
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Verifies that the shared process resource reports <see cref="SentinelCoreDiagnostics.ServiceName" />
-    ///     instead of the OpenTelemetry default <c>unknown_service:&lt;process name&gt;</c>.
-    /// </summary>
-    /// <remarks>
-    ///     Every pipeline builds its own resource, so a pipeline configured without this factory exports
-    ///     the default name and its telemetry cannot be correlated with the rest of the process. That
-    ///     mismatch is what this test locks down.
-    /// </remarks>
-    [TestMethod]
-    public void CreateResourceBuilder_ReportsSentinelCoreAsServiceName()
-    {
-        // Act
-        Resource resource = SentinelCoreDiagnostics.CreateResourceBuilder().Build();
-
-        // Assert
-        string? serviceName = GetServiceName(resource);
-        Assert.AreEqual(SentinelCoreDiagnostics.ServiceName, serviceName, "The shared resource must report the SentinelCore service name.");
-        Assert.IsFalse(serviceName?.StartsWith("unknown_service", StringComparison.Ordinal) ?? true, "The resource fell back to the OpenTelemetry default, so this pipeline's telemetry cannot be correlated with the rest of the process.");
-    }
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Verifies that a tracer provider configured the way the host configures it reports the shared
-    ///     service name rather than the OpenTelemetry default.
-    /// </summary>
-    /// <remarks>
-    ///     The logging pipeline consumes the same factory, but its resource cannot be asserted directly:
-    ///     <c>OpenTelemetryLoggerOptions</c> exposes no readable resource and <c>LogRecord</c> carries no
-    ///     resource reference. This test therefore guards the shared factory end to end through a real
-    ///     provider, and the host's two <c>SetResourceBuilder</c> call sites are covered by review.
-    /// </remarks>
-    [TestMethod]
-    public void TracerProvider_WhenConfiguredWithSharedResource_ReportsSentinelCoreAsServiceName()
-    {
-        // Arrange
-        using TracerProvider provider = Sdk.CreateTracerProviderBuilder()
-                                           .SetResourceBuilder(SentinelCoreDiagnostics.CreateResourceBuilder())
-                                           .Build();
-
-        // Act
-        string? serviceName = GetServiceName(provider.GetResource());
-
-        // Assert
-        Assert.AreEqual(SentinelCoreDiagnostics.ServiceName, serviceName, "The exporter would stamp 'unknown_service:<process name>' on every span.");
-    }
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Verifies that spans do not carry prompt, response, or tool payloads unless the operator opts in.
-    /// </summary>
-    [TestMethod]
-    public void IsSensitiveDataCaptureEnabled_WhenEnvironmentVariableIsUnset_ReturnsFalse()    {
-        WithSensitiveDataVariable(null, () => Assert.IsFalse(SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled, "Sensitive payload capture must default to off."));
-    }
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Verifies that the environment variable turns sensitive payload capture on.
-    /// </summary>
-    [TestMethod]
-    public void IsSensitiveDataCaptureEnabled_WhenEnvironmentVariableIsTrue_ReturnsTrue()
-    {
-        WithSensitiveDataVariable("true", () => Assert.IsTrue(SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled, "The opt-in environment variable must enable sensitive payload capture."));
-    }
 
 
 
@@ -261,21 +104,6 @@ public sealed class SentinelCoreDiagnosticsTests
 
 
     /// <summary>
-    ///     Reads the <c>service.name</c> attribute from <paramref name="resource" />.
-    /// </summary>
-    /// <param name="resource">The resource to inspect.</param>
-    /// <returns>The service name, or <see langword="null" /> when the resource does not declare one.</returns>
-    private static string? GetServiceName(Resource resource)
-    {
-        return resource.Attributes.FirstOrDefault(attribute => attribute.Key == "service.name").Value?.ToString();
-    }
-
-
-
-
-
-
-    /// <summary>
     ///     Determines whether <paramref name="activity" /> recorded <paramref name="payload" /> in its tags or
     ///     in the tags of its events.
     /// </summary>
@@ -290,6 +118,303 @@ public sealed class SentinelCoreDiagnosticsTests
         }
 
         return activity.Events.Any(activityEvent => activityEvent.Tags.Any(tag => tag.Value?.ToString()?.Contains(payload, StringComparison.Ordinal) == true));
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Builds a <see cref="SentinelAgentFactory" /> whose external collaborators are deterministic
+    ///     test doubles, so the only real behaviour under test is the agent construction pipeline.
+    /// </summary>
+    /// <param name="settings">Optional runtime settings to drive logging and telemetry toggles.</param>
+    /// <returns>A factory ready to create agents without touching the network.</returns>
+    private static SentinelAgentFactory CreateFactory(SentinelCoreSettings? settings = null)
+    {
+        Mock<IChatClientFactory> chatClientFactory = new();
+        chatClientFactory.Setup(factory => factory.CreateChatClient(It.IsAny<ModelProfile>())).Returns(() => new FakeChatClient(new(new ChatMessage(ChatRole.Assistant, "pong"))));
+
+        Mock<IModelResolver> modelResolver = new();
+        modelResolver.Setup(resolver => resolver.ResolveByTier(It.IsAny<ModelTier>())).Returns(new ModelProfile("test-model", "http://test.endpoint", 0.7f));
+
+        Mock<IPatternMatcher> patternMatcher = new();
+
+        Mock<ILoggerFactory> loggerFactory = new();
+        loggerFactory.Setup(factory => factory.CreateLogger(It.IsAny<string>())).Returns(NullLogger.Instance);
+
+        Mock<IMcpServerRegistry> mcpServerRegistry = new();
+        mcpServerRegistry.Setup(registry => registry.GetToolsFromCache()).Returns(new List<AITool> { AIFunctionFactory.Create(() => "ok", "noop") }.AsReadOnly());
+        mcpServerRegistry.Setup(registry => registry.ToolCount).Returns(1);
+
+        SentinelCoreSettings runtimeSettings = settings ?? new SentinelCoreSettings
+        {
+            ChatClientLoggingEnabled = true,
+            OpenTelemetryTracingEnabled = true,
+            OpenTelemetryLoggingEnabled = true,
+            TraceEnabled = true
+        };
+
+        return new SentinelAgentFactory(chatClientFactory.Object, modelResolver.Object, patternMatcher.Object, loggerFactory.Object, mcpServerRegistry.Object, new CaseEngineTools(), runtimeSettings);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates an <see cref="ActivityListener" /> that records every activity emitted under the
+    ///     SentinelCore source name into <paramref name="captured" />.
+    /// </summary>
+    /// <param name="captured">The collection that receives stopped activities.</param>
+    /// <returns>A listener that must be added to <see cref="ActivitySource.AddActivityListener" /> to take effect.</returns>
+    private static ActivityListener CreateListener(List<Activity> captured)
+    {
+        return new()
+        {
+            ShouldListenTo = source => source.Name == SentinelCoreDiagnostics.ActivitySourceName,
+            Sample = (ref _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStopped = activity =>
+            {
+                lock (captured)
+                {
+                    captured.Add(activity);
+                }
+            }
+        };
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Verifies that the shared process resource reports <see cref="SentinelCoreDiagnostics.ServiceName" />
+    ///     instead of the OpenTelemetry default <c>unknown_service:&lt;process name&gt;</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Every pipeline builds its own resource, so a pipeline configured without this factory exports
+    ///     the default name and its telemetry cannot be correlated with the rest of the process. That
+    ///     mismatch is what this test locks down.
+    /// </remarks>
+    [TestMethod]
+    public void CreateResourceBuilder_ReportsSentinelCoreAsServiceName()
+    {
+        // Act
+        Resource resource = SentinelCoreDiagnostics.CreateResourceBuilder().Build();
+
+        // Assert
+        string? serviceName = GetServiceName(resource);
+        Assert.AreEqual(SentinelCoreDiagnostics.ServiceName, serviceName, "The shared resource must report the SentinelCore service name.");
+        Assert.IsFalse(serviceName?.StartsWith("unknown_service", StringComparison.Ordinal) ?? true, "The resource fell back to the OpenTelemetry default, so this pipeline's telemetry cannot be correlated with the rest of the process.");
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Verifies that running an agent produced by <see cref="SentinelAgentFactory" /> emits at least one
+    ///     activity under <see cref="SentinelCoreDiagnostics.ActivitySourceName" />.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [TestMethod]
+    public async Task FactoryCreatedAgent_WhenRun_EmitsActivityUnderSentinelCoreSourceAsync()
+    {
+        // Arrange
+        List<Activity> captured = new();
+        using ActivityListener listener = CreateListener(captured);
+        ActivitySource.AddActivityListener(listener);
+
+        SentinelAgentFactory factory = CreateFactory();
+        AIAgent agent = await factory.CreateAgentAsync(AgentPreset.CoreAgent);
+
+        // Act
+        await agent.RunAsync(PromptText);
+
+        // Assert
+        Activity[] activities;
+        lock (captured)
+        {
+            activities = captured.ToArray();
+        }
+
+        Assert.IsTrue(activities.Length > 0, $"Expected at least one activity from source '{SentinelCoreDiagnostics.ActivitySourceName}', but none were emitted. The agent pipeline is no longer tracing under the shared source name.");
+        Assert.IsTrue(Array.TrueForAll(activities, activity => activity.Source.Name == SentinelCoreDiagnostics.ActivitySourceName), "Every captured activity must originate from the shared source name.");
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Verifies that OpenTelemetry tracing can be disabled independently from chat-client logging.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [TestMethod]
+    public async Task FactoryCreatedAgent_WhenTracingDisabled_DoesNotEmitActivitiesAsync()
+    {
+        // Arrange
+        List<Activity> captured = new();
+        using ActivityListener listener = CreateListener(captured);
+        ActivitySource.AddActivityListener(listener);
+
+        SentinelAgentFactory factory = CreateFactory(new()
+        {
+            ChatClientLoggingEnabled = true,
+            OpenTelemetryTracingEnabled = false,
+            OpenTelemetryLoggingEnabled = true,
+            TraceEnabled = true
+        });
+        AIAgent agent = await factory.CreateAgentAsync(AgentPreset.CoreAgent);
+
+        // Act
+        await agent.RunAsync(PromptText);
+
+        // Assert
+        Activity[] activities;
+        lock (captured)
+        {
+            activities = captured.ToArray();
+        }
+
+        Assert.AreEqual(0, activities.Length, "No SentinelCore activities should be emitted when OpenTelemetry tracing is disabled at factory settings level.");
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Verifies that disabling the chat-client logging wrapper does not disable OpenTelemetry tracing.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [TestMethod]
+    public async Task FactoryCreatedAgent_WhenChatClientLoggingDisabled_StillEmitsActivitiesAsync()
+    {
+        // Arrange
+        List<Activity> captured = new();
+        using ActivityListener listener = CreateListener(captured);
+        ActivitySource.AddActivityListener(listener);
+
+        SentinelAgentFactory factory = CreateFactory(new()
+        {
+            ChatClientLoggingEnabled = false,
+            OpenTelemetryTracingEnabled = true,
+            OpenTelemetryLoggingEnabled = true,
+            TraceEnabled = true
+        });
+        AIAgent agent = await factory.CreateAgentAsync(AgentPreset.CoreAgent);
+
+        // Act
+        await agent.RunAsync(PromptText);
+
+        // Assert
+        Activity[] activities;
+        lock (captured)
+        {
+            activities = captured.ToArray();
+        }
+
+        Assert.IsTrue(activities.Length > 0, "OpenTelemetry tracing should stay enabled even when chat-client logging is disabled.");
+        Assert.IsTrue(Array.TrueForAll(activities, activity => activity.Source.Name == SentinelCoreDiagnostics.ActivitySourceName), "Every captured activity must originate from the shared source name.");
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Reads the <c>service.name</c> attribute from <paramref name="resource" />.
+    /// </summary>
+    /// <param name="resource">The resource to inspect.</param>
+    /// <returns>The service name, or <see langword="null" /> when the resource does not declare one.</returns>
+    private static string? GetServiceName(Resource resource)
+    {
+        return resource.Attributes.FirstOrDefault(attribute => attribute.Key == "service.name").Value?.ToString();
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Verifies that the environment variable turns sensitive payload capture on.
+    /// </summary>
+    [TestMethod]
+    public void IsSensitiveDataCaptureEnabled_WhenEnvironmentVariableIsTrue_ReturnsTrue()
+    {
+        WithSensitiveDataVariable("true", () => Assert.IsTrue(SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled, "The opt-in environment variable must enable sensitive payload capture."));
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Verifies that spans do not carry prompt, response, or tool payloads unless the operator opts in.
+    /// </summary>
+    [TestMethod]
+    public void IsSensitiveDataCaptureEnabled_WhenEnvironmentVariableIsUnset_ReturnsFalse()
+    {
+        WithSensitiveDataVariable(null, () => Assert.IsFalse(SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled, "Sensitive payload capture must default to off."));
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Verifies that a tracer provider configured the way the host configures it reports the shared
+    ///     service name rather than the OpenTelemetry default.
+    /// </summary>
+    /// <remarks>
+    ///     The logging pipeline consumes the same factory, but its resource cannot be asserted directly:
+    ///     <c>OpenTelemetryLoggerOptions</c> exposes no readable resource and <c>LogRecord</c> carries no
+    ///     resource reference. This test therefore guards the shared factory end to end through a real
+    ///     provider, and the host's two <c>SetResourceBuilder</c> call sites are covered by review.
+    /// </remarks>
+    [TestMethod]
+    public void TracerProvider_WhenConfiguredWithSharedResource_ReportsSentinelCoreAsServiceName()
+    {
+        // Arrange
+        using TracerProvider provider = Sdk.CreateTracerProviderBuilder().SetResourceBuilder(SentinelCoreDiagnostics.CreateResourceBuilder()).Build();
+
+        // Act
+        string? serviceName = GetServiceName(provider.GetResource());
+
+        // Assert
+        Assert.AreEqual(SentinelCoreDiagnostics.ServiceName, serviceName, "The exporter would stamp 'unknown_service:<process name>' on every span.");
     }
 
 
@@ -326,59 +451,30 @@ public sealed class SentinelCoreDiagnosticsTests
 
 
 
-    /// <summary>
-    ///     Creates an <see cref="ActivityListener" /> that records every activity emitted under the
-    ///     SentinelCore source name into <paramref name="captured" />.
-    /// </summary>
-    /// <param name="captured">The collection that receives stopped activities.</param>
-    /// <returns>A listener that must be added to <see cref="ActivitySource.AddActivityListener" /> to take effect.</returns>
-    private static ActivityListener CreateListener(List<Activity> captured)
-    {
-        return new ActivityListener
-        {
-                ShouldListenTo = source => source.Name == SentinelCoreDiagnostics.ActivitySourceName,
-                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-                ActivityStopped = activity =>
-                {
-                    lock (captured)
-                    {
-                        captured.Add(activity);
-                    }
-                }
-        };
-    }
-
-
-
-
-
-
-
 
     /// <summary>
-    ///     Builds a <see cref="SentinelAgentFactory" /> whose external collaborators are deterministic
-    ///     test doubles, so the only real behaviour under test is the agent construction pipeline.
+    ///     Verifies that a workflow configured with SentinelCore telemetry emits its build span under the
+    ///     shared source name instead of the workflow framework's internal default source.
     /// </summary>
-    /// <returns>A factory ready to create agents without touching the network.</returns>
-    private static SentinelAgentFactory CreateFactory()
+    /// <remarks>
+    ///     Workflow telemetry is disabled unless <c>WithOpenTelemetry</c> is applied, and the framework's
+    ///     default source name is private. Pointing the workflow at the shared source is what lets a
+    ///     single host subscription export agent and workflow spans together.
+    /// </remarks>
+    [TestMethod]
+    public void WorkflowWithSentinelTelemetry_WhenBuilt_EmitsActivityUnderSentinelCoreSource()
     {
-        Mock<IChatClientFactory> chatClientFactory = new();
-        chatClientFactory.Setup(factory => factory.CreateChatClient(It.IsAny<ModelProfile>()))
-                         .Returns(() => new FakeChatClient(new ChatResponse(new ChatMessage(ChatRole.Assistant, "pong"))));
+        // Arrange
+        List<Activity> captured = new();
+        using ActivityListener listener = CreateListener(captured);
+        ActivitySource.AddActivityListener(listener);
 
-        Mock<IModelResolver> modelResolver = new();
-        modelResolver.Setup(resolver => resolver.ResolveByTier(It.IsAny<ModelTier>()))
-                     .Returns(new ModelProfile("test-model", "http://test.endpoint", 0.7f));
+        // Act
+        Workflow workflow = new WorkflowBuilder(new EvaluationExec("telemetry-probe")).WithOpenTelemetry(activitySource: SentinelCoreDiagnostics.SharedActivitySource).Build();
 
-        Mock<IPatternMatcher> patternMatcher = new();
-
-        Mock<ILoggerFactory> loggerFactory = new();
-        loggerFactory.Setup(factory => factory.CreateLogger(It.IsAny<string>())).Returns(NullLogger.Instance);
-
-        Mock<IMcpServerRegistry> mcpServerRegistry = new();
-        mcpServerRegistry.Setup(registry => registry.GetToolsFromCache()).Returns(new List<AITool> { AIFunctionFactory.Create(() => "ok", "noop") }.AsReadOnly());
-        mcpServerRegistry.Setup(registry => registry.ToolCount).Returns(1);
-
-        return new SentinelAgentFactory(chatClientFactory.Object, modelResolver.Object, patternMatcher.Object, loggerFactory.Object, mcpServerRegistry.Object);
+        // Assert
+        Assert.IsNotNull(workflow);
+        Assert.IsTrue(captured.Count > 0, $"Expected the workflow build to emit at least one activity from source '{SentinelCoreDiagnostics.ActivitySourceName}', but none were emitted. Workflow telemetry is no longer routed to the shared source.");
+        Assert.IsTrue(captured.TrueForAll(activity => activity.Source.Name == SentinelCoreDiagnostics.ActivitySourceName), "Every workflow activity must originate from the shared source name.");
     }
 }

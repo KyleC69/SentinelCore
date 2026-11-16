@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         TaskExtensionsTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -45,6 +45,28 @@ public sealed class TaskExtensionsTests
 
 
     /// <summary>
+    ///     Caller cancellation is reported as cancellation, never as a timeout.
+    /// </summary>
+    [TestMethod]
+    public async Task WithTimeout_CallerCancels_ThrowsOperationCanceledAsync()
+    {
+        // Arrange
+        using CancellationTokenSource cts = new();
+        await cts.CancelAsync();
+        Task<int> neverCompletes = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously).Task;
+
+        // Act / Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => neverCompletes.WithTimeout(GenerousTimeout, cts.Token));
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     A completed task yields its value unchanged.
     /// </summary>
     [TestMethod]
@@ -58,28 +80,6 @@ public sealed class TaskExtensionsTests
 
         // Assert
         Assert.AreEqual(42, result);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Caller cancellation is reported as cancellation, never as a timeout.
-    /// </summary>
-    [TestMethod]
-    public async Task WithTimeout_CallerCancels_ThrowsOperationCanceledAsync()
-    {
-        // Arrange
-        using CancellationTokenSource cts = new CancellationTokenSource();
-        await cts.CancelAsync();
-        Task<int> neverCompletes = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously).Task;
-
-        // Act / Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => neverCompletes.WithTimeout(GenerousTimeout, cts.Token));
     }
 
 
@@ -116,7 +116,7 @@ public sealed class TaskExtensionsTests
     public async Task WithTimeout_NonGenericCompletesWithinBudget_CompletesAsync()
     {
         // Arrange
-        TaskCompletionSource completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         Task bounded = completion.Task.WithTimeout(GenerousTimeout);
 
         // Act
@@ -155,26 +155,6 @@ public sealed class TaskExtensionsTests
 
 
     /// <summary>
-    ///     A <c>null</c> task is rejected instead of surfacing a <see cref="NullReferenceException" />.
-    /// </summary>
-    [TestMethod]
-    public void WithTimeout_NullTask_ThrowsArgumentNullException()
-    {
-        // Arrange
-        Task? missing = null;
-
-        // Act / Assert
-        Assert.Throws<ArgumentNullException>(() => { _ = missing!.WithTimeout(GenerousTimeout); });
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
     ///     Zero and negative budgets are rejected at the call site; an unbounded wait must be requested by
     ///     not calling this method at all.
     /// </summary>
@@ -189,6 +169,26 @@ public sealed class TaskExtensionsTests
 
         // Act / Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => { _ = completed.WithTimeout(TimeSpan.FromMilliseconds(timeoutMilliseconds)); });
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     A <c>null</c> task is rejected instead of surfacing a <see cref="NullReferenceException" />.
+    /// </summary>
+    [TestMethod]
+    public void WithTimeout_NullTask_ThrowsArgumentNullException()
+    {
+        // Arrange
+        Task? missing = null;
+
+        // Act / Assert
+        Assert.Throws<ArgumentNullException>(() => { _ = missing!.WithTimeout(GenerousTimeout); });
     }
 
 

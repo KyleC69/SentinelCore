@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyRuleEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -180,9 +180,9 @@ public sealed class SafetyRuleEngine
                 if (result.Action == SafetyAction.Block && _options.StopOnFirstBlock)
                 {
                     //ALL BLOCKED MESSAGES SHOULD BE TAGGED LIKE SO
-                    //   message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyResult"), "blocked");
+                    //   message.WithAgentRequestMessageSource(new MessageSourceType("SafetyResult"), "blocked");
                     // TODO: All messages should have a score attached.
-                    //   message.WithAgentRequestMessageSource(new AgentRequestMessageSourceType("SafetyScore"), "6");
+                    //   message.WithAgentRequestMessageSource(new MessageSourceType("SafetyScore"), "6");
 
                     //SYSTEMREPORTER IS USED FOR ALL OUTPUT IT IS AN AGGREGATE LOGGER
                     _reporter?.ReportWarning($"[{rule.Name}]- Stopping evaluation early due to block from rule: {rule.Name}");

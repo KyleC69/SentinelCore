@@ -2,11 +2,11 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ToolResult.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
-namespace SentinelCore.Orchestrations.Tools;
+namespace SentinelCore.Orchestrations.Agents.Core.Tools;
 
 
 
@@ -40,7 +40,7 @@ public sealed class ToolResult
     public bool Success { get; set; }
 
 
-    public static ToolResult Fail(string errorDetails, string message = "Fail") => new ToolResult { Success = false, ErrorDetails = errorDetails, Results = null };
+    public static ToolResult Fail(string errorDetails, string message = "Fail") => new() { Success = false, ErrorDetails = errorDetails, Results = null };
 
 
 
@@ -51,6 +51,6 @@ public sealed class ToolResult
 
     public static ToolResult Ok(string results, string message = "Ok")
     {
-        return new ToolResult { Success = true, ErrorDetails = null, Results = results, Message = message };
+        return new() { Success = true, ErrorDetails = null, Results = results, Message = message };
     }
 }

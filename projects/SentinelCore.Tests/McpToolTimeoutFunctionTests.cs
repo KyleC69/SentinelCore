@@ -2,12 +2,12 @@
 // Project:   SentinelCore.Tests
 // File:         McpToolTimeoutFunctionTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
+using SentinelCore.Orchestrations.Agents.Core.Tools;
 using SentinelCore.Orchestrations.Mcp;
-using SentinelCore.Orchestrations.Tools;
 
 using Xunit;
 
@@ -66,7 +66,7 @@ public class McpToolTimeoutFunctionTests
         using CancellationTokenSource cts = new();
 
         // Act
-        Task<object?> call = sut.InvokeAsync(new AIFunctionArguments(), cts.Token).AsTask();
+        Task<object?> call = sut.InvokeAsync(new(), cts.Token).AsTask();
         await cts.CancelAsync();
 
         // Assert
@@ -91,7 +91,7 @@ public class McpToolTimeoutFunctionTests
         McpToolTimeoutFunction sut = new(inner, TimeSpan.FromSeconds(5));
 
         // Act
-        object? result = await sut.InvokeAsync(new AIFunctionArguments());
+        object? result = await sut.InvokeAsync(new());
 
         // Assert
         XunitAssert.Equal("fast", sut.Name);
@@ -122,7 +122,7 @@ public class McpToolTimeoutFunctionTests
         McpToolTimeoutFunction sut = new(inner, TimeSpan.FromMilliseconds(200));
 
         // Act
-        Task<object?> call = sut.InvokeAsync(new AIFunctionArguments()).AsTask();
+        Task<object?> call = sut.InvokeAsync(new()).AsTask();
         Task winner = await Task.WhenAny(call, Task.Delay(TimeSpan.FromSeconds(10)));
 
         // Assert
@@ -150,7 +150,7 @@ public class McpToolTimeoutFunctionTests
         McpToolTimeoutFunction sut = new(inner, TimeSpan.FromSeconds(5));
 
         // Act
-        object? result = await sut.InvokeAsync(new AIFunctionArguments());
+        object? result = await sut.InvokeAsync(new());
 
         // Assert
         ToolResult tool = XunitAssert.IsType<ToolResult>(result);

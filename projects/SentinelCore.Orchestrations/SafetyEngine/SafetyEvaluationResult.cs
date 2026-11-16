@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyEvaluationResult.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -85,6 +85,6 @@ public sealed class SafetyEvaluationResult
 
         bool isAllowed = blocking is null;
         string summary = isAllowed ? violations.Count == 0 ? "All safety rules passed." : $"Prompt allowed with {violations.Count} warning(s)." : $"Prompt blocked by rule '{blocking!.RuleName}': {blocking.Reason}";
-        return new SafetyEvaluationResult(isAllowed, results, highestSeverity, summary, blocking, totalScore, matchedIndicators);
+        return new(isAllowed, results, highestSeverity, summary, blocking, totalScore, matchedIndicators);
     }
 }

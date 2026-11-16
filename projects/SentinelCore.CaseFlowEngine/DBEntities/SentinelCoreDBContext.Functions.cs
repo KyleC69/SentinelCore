@@ -4,9 +4,8 @@ using System;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using SentinelCore.Data.DBEntities;
 
-namespace SentinelCore.Data.DBEntities
+namespace SentinelCore.CaseFlowEngine.DBEntities
 {
     public partial class SentinelCoreDBContext
     {

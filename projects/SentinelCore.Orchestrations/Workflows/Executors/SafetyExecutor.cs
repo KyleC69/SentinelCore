@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Abstractions;
-using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Models;
 using SentinelCore.Orchestrations.SafetyEngine;
 using SentinelCore.Orchestrations.SafetyEngine.Rules;
 using SentinelCore.Orchestrations.Workflows.Helpers;
@@ -101,7 +101,7 @@ public sealed partial class SafetyExecutor : Executor
 
         // Initialize the rule engine with provided or default safety rules
         var ruleList = rules?.ToList() ?? DefaultRules.ToList();
-        _ruleEngine = new SafetyRuleEngine(ruleList, loggerFactory, reporter: _reporter);
+        _ruleEngine = new(ruleList, loggerFactory, reporter: _reporter);
     }
 
 
@@ -141,7 +141,7 @@ public sealed partial class SafetyExecutor : Executor
     /// </remarks>
     private static ChatMessage ApplySafetyTags(ChatMessage message, SafetyEvaluationResult result)
     {
-        message.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        message.AdditionalProperties ??= new();
 
         // Apply standard safety metadata
         message.AdditionalProperties["SafetyScore"] = result.TotalScore;
@@ -182,7 +182,7 @@ public sealed partial class SafetyExecutor : Executor
             _reporter.ReportError($"[{Name}] Input message was null.");
             ChatMessage fallback = new(ChatRole.Assistant, $"[{Name}] Input message was null.");
             await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
-            return new DetectionBoolResult(fallback, true);
+            return new(fallback, true);
         }
 
         try
@@ -197,7 +197,7 @@ public sealed partial class SafetyExecutor : Executor
             if (string.IsNullOrEmpty(result?.Text))
             {
                 _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Defaulting to blocked for safety.");
-                return new DetectionBoolResult(message, true);
+                return new(message, true);
             }
 
             // DetectionBoolResult.IsTrue = true means the message IS blocked/detected
@@ -223,7 +223,7 @@ public sealed partial class SafetyExecutor : Executor
 
             _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
 
-            return new DetectionBoolResult(msg, true);
+            return new(msg, true);
         }
     }
 

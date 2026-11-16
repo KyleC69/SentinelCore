@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 using Microsoft.Data.SqlTypes;
 using Microsoft.EntityFrameworkCore;
 
-namespace SentinelCore.Data.DBEntities;
+namespace SentinelCore.CaseFlowEngine.DBEntities;
 
 [Table("PatternMemoryEntity")]
 [Index("CaseId", Name = "IX_PatternMemory_CaseRecordId")]
@@ -26,6 +26,9 @@ public partial class PatternMemoryEntity
 
     public int CaseId { get; set; }
 
+
+
+    [CanBeNull] public string Signal { get; set; }
     [MaxLength(1024)]
     public SqlVector<float>? SignalEmbedding { get; set; }
 
@@ -34,11 +37,32 @@ public partial class PatternMemoryEntity
 
     [Required] [CanBeNull] public string Summary { get; set; }
 
+
+
+    
+    public string FindingSummary { get; set; }
+
+
+
+
+
+
+
+    [MaxLength(1024)]
+    public SqlVector<float>? FindingEmbedding { get;set; }
+    
+    public string ConclusionSummary { get; set; }
+
+    [MaxLength(1024)]
+    public SqlVector<float>? ConclusionEmbedding { get; set; }
+
+
+
     [Precision(2)]
     public DateTime Timestamp { get; set; }
 
     [InverseProperty("PatternMemory")]
     public virtual CaseEntity CaseEntity { get; set; }
     
-    [CanBeNull] public string Signal { get; set; }
+  
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RegexBlockRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -51,7 +51,7 @@ public sealed class RegexBlockRule : ISafetyRule
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Description = description ?? "Blocks prompts matching configured regex patterns.";
         _severity = severity;
-        _patterns = patterns.Select(p => new CompiledPattern(p, new Regex(p, regexOptions))).ToList().AsReadOnly();
+        _patterns = patterns.Select(p => new CompiledPattern(p, new(p, regexOptions))).ToList().AsReadOnly();
     }
 
 

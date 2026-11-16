@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace SentinelCore.Data.DBEntities;
+namespace SentinelCore.CaseFlowEngine.DBEntities;
 
 [Table("RemediationEntity")]
 [Index("CaseId", Name = "IX_RemediationEntities_CaseID")]

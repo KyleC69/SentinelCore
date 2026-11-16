@@ -6,15 +6,12 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-using SentinelCore.CaseFlowEngine;
-using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.Contracts.Cfe;
-using SentinelCore.Data.DBEntities;
 
 
 
 
-namespace SentinelCore.Data.DBEntities;
+namespace SentinelCore.CaseFlowEngine.DBEntities;
 
 [Table("CaseEntity")]
 [Index("SignalEntityId", Name = "IX_CaseEntity", IsUnique = true)]

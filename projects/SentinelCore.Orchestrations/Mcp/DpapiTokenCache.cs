@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         DpapiTokenCache.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -67,7 +67,7 @@ public sealed class DpapiTokenCache : ITokenCache
         lock (_lock)
         {
             TokenContainer? token = _tokens.Values.FirstOrDefault();
-            return new ValueTask<TokenContainer?>(token);
+            return new(token);
         }
     }
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyReviewExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -82,7 +82,7 @@ public sealed partial class SafetyReviewExecutor : Executor
         {
             _reporter.ReportError($"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}.");
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(ChatMessage)}."), cancellationToken).ConfigureAwait(false);
-            return new ChatMessage(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
+            return new(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
         }
 
         try
@@ -96,7 +96,7 @@ public sealed partial class SafetyReviewExecutor : Executor
             if (result is null)
             {
                 _reporter.ReportError($"[{Name}] ProcessMessageAsync returned null. Using fallback {nameof(ChatMessage)}.");
-                result = new ChatMessage(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
+                result = new(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
             }
 
             // --- Status: Final output ---
@@ -121,7 +121,7 @@ public sealed partial class SafetyReviewExecutor : Executor
             // --- Status: fallback output ---
             _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
 
-            return new ChatMessage(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
+            return new(ChatRole.Assistant, $"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
         }
     }
 

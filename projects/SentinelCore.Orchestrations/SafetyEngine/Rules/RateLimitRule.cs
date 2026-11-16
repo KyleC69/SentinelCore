@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RateLimitRule.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -47,7 +47,7 @@ public sealed class RateLimitRule : ISafetyRule
         _window = TimeSpan.FromMinutes(1);
         _severity = SafetySeverity.High;
         _allowBurst = true;
-        _buckets = new ConcurrentDictionary<string, RateLimitBucket>(StringComparer.OrdinalIgnoreCase);
+        _buckets = new(StringComparer.OrdinalIgnoreCase);
         Description = "Enforces rate limiting of 100 requests per 60 seconds.";
     }
 
@@ -80,7 +80,7 @@ public sealed class RateLimitRule : ISafetyRule
         _window = window;
         _severity = severity;
         _allowBurst = allowBurst;
-        _buckets = new ConcurrentDictionary<string, RateLimitBucket>(StringComparer.OrdinalIgnoreCase);
+        _buckets = new(StringComparer.OrdinalIgnoreCase);
         Description = description ?? $"Enforces rate limiting of {maxRequests} requests per {window.TotalSeconds} seconds.";
     }
 
@@ -106,7 +106,7 @@ public sealed class RateLimitRule : ISafetyRule
         string agentId = context.AgentName ?? "default";
         DateTimeOffset now = DateTimeOffset.UtcNow;
 
-        RateLimitBucket bucket = _buckets.GetOrAdd(agentId, _ => new RateLimitBucket(_maxRequests, _window, _allowBurst));
+        RateLimitBucket bucket = _buckets.GetOrAdd(agentId, _ => new(_maxRequests, _window, _allowBurst));
 
         bool isAllowed = bucket.TryConsume(now);
 
@@ -215,7 +215,7 @@ public sealed class RateLimitRule : ISafetyRule
             _capacity = capacity;
             _window = window;
             _allowBurst = allowBurst;
-            _requests = new Queue<DateTimeOffset>();
+            _requests = new();
         }
 
 

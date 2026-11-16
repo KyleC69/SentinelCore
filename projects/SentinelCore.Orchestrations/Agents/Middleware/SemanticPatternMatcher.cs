@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SemanticPatternMatcher.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -137,7 +137,7 @@ public sealed class SemanticPatternMatcher : IPatternMatcher
             [
                     .. storeResults.Select(r => new PatternMatchResult
                     {
-                            Context = new PatternContext
+                            Context = new()
                             {
                                     PatternId = r.PatternId,
                                     CaseId = r.CaseId,

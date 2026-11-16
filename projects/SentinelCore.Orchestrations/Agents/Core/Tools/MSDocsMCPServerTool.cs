@@ -2,11 +2,10 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MSDocsMCPServerTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -94,7 +93,7 @@ public sealed class MsDocsMcpServerTool : AIFunction
                 }
 
                 string requestTool = string.IsNullOrWhiteSpace(toolName) ? "search" : toolName;
-                Dictionary<string, object?> payload = new Dictionary<string, object?> { ["query"] = query, ["maxTokenBudget"] = maxTokenBudget };
+                Dictionary<string, object?> payload = new() { ["query"] = query, ["maxTokenBudget"] = maxTokenBudget };
 
                 object? result = await CallToolAsync(httpClient, endpoint, requestTool, payload, cancellationToken).ConfigureAwait(false);
                 return new { endpoint, tool = requestTool, query, result };
@@ -108,7 +107,7 @@ public sealed class MsDocsMcpServerTool : AIFunction
                 }
 
                 string requestTool = string.IsNullOrWhiteSpace(toolName) ? "fetch" : toolName;
-                Dictionary<string, object?> payload = new Dictionary<string, object?> { ["url"] = url };
+                Dictionary<string, object?> payload = new() { ["url"] = url };
 
                 object? result = await CallToolAsync(httpClient, endpoint, requestTool, payload, cancellationToken).ConfigureAwait(false);
                 return new { endpoint, tool = requestTool, url, result };
@@ -145,11 +144,11 @@ public sealed class MsDocsMcpServerTool : AIFunction
 
     private static HttpClient CreateHttpClient()
     {
-        HttpClient client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+        HttpClient client = new() { Timeout = TimeSpan.FromSeconds(60) };
 
         client.DefaultRequestHeaders.Accept.Clear();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+        client.DefaultRequestHeaders.Accept.Add(new("text/event-stream"));
         client.DefaultRequestHeaders.UserAgent.ParseAdd("SentinelCore/1.0");
         return client;
     }

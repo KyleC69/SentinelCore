@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         AgentModelCard.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -165,6 +165,6 @@ public sealed partial class AgentModelCard : ObservableObject
             return null;
         }
 
-        return new ModelProfile(Endpoint.Trim(), ModelId.Trim(), Temperature, MaxOutputTokens, topK: TopK, topP: TopP, provider: Provider, apiKey: string.IsNullOrWhiteSpace(ApiKey) ? null : ApiKey, alias: string.IsNullOrWhiteSpace(Alias) ? null : Alias.Trim());
+        return new(Endpoint.Trim(), ModelId.Trim(), Temperature, MaxOutputTokens, topK: TopK, topP: TopP, provider: Provider, apiKey: string.IsNullOrWhiteSpace(ApiKey) ? null : ApiKey, alias: string.IsNullOrWhiteSpace(Alias) ? null : Alias.Trim());
     }
 }

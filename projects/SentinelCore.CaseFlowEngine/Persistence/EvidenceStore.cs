@@ -2,15 +2,15 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         EvidenceStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
 using Microsoft.EntityFrameworkCore;
 
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.CaseFlow;
-using SentinelCore.Data.DBEntities;
 
 
 

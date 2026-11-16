@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         WorkflowEventProcessorTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -168,7 +168,7 @@ public class WorkflowEventProcessorTests
     [TestInitialize]
     public void Setup()
     {
-        _mockReporter = new Mock<ISystemReporter>();
-        _processor = new WorkflowEventProcessor(_mockReporter.Object);
+        _mockReporter = new();
+        _processor = new(_mockReporter.Object);
     }
 }

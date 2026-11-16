@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -13,7 +13,7 @@ using SentinelCore.Orchestrations.Workflows.Executors;
 
 
 
-namespace SentinelCore.Orchestrations.Workflows;
+namespace SentinelCore.Orchestrations.Infrastructure.DependencyInjection;
 
 
 
@@ -69,21 +69,22 @@ internal sealed class ExecutorFactory
     /// <returns>A container holding every executor wired into the workflow graph.</returns>
     public ExecutorCollection CreateAllExecutors()
     {
-        return new ExecutorCollection
+        return new()
         {
-                SafetyExecutor = Create<SafetyExecutor>(),
-                EscalatedExecutor = Create<EscalatedExecutor>(),
-                PatternCheckExecutor = Create<PatternCheckExecutor>(),
-                HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
-                PersistEvidenceExecutor = Create<PersistEvidence>(),
-                NewCaseExecutor = Create<NewCaseExecutor>(),
-                AggregationExecutor = Create<AggregationExecutor>(),
-                MoreInformationExecutor = Create<MoreInformationExecutor>(),
-                CriticalAlert = Create<CriticalAlert>(),
-                TerminateWorkflow = Create<TerminateWorkflow>(),
-                SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
-                WhiteListExecutor = Create<WhiteListExecutor>(),
-                SignalClassifierExecutor = Create<SignalClassifierExecutor>()
+            SafetyExecutor = Create<SafetyExecutor>(),
+            EscalatedExecutor = Create<EscalatedExecutor>(),
+            PatternCheckExecutor = Create<PatternCheckExecutor>(),
+            HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
+            PersistEvidenceExecutor = Create<PersistEvidence>(),
+            NewCaseExecutor = Create<NewCaseExecutor>(),
+            TheCoreSwitchExec = Create<TheCoreSwitchExec>(),
+            MoreInformationExecutor = Create<MoreInformationExecutor>(),
+            CriticalAlert = Create<CriticalAlert>(),
+            TerminateWorkflow = Create<TerminateWorkflow>(),
+            SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
+            WhiteListExecutor = Create<WhiteListExecutor>(),
+            SignalClassifierExecutor = Create<SignalClassifierExecutor>(),
+            DirectAnswerExecutor = Create<DirectAnswerExecutor>()
         };
     }
 }
@@ -98,7 +99,7 @@ internal sealed class ExecutorFactory
 /// </summary>
 internal sealed class ExecutorCollection
 {
-    public required AggregationExecutor AggregationExecutor { get; init; }
+    public required TheCoreSwitchExec TheCoreSwitchExec { get; init; }
     public required CriticalAlert CriticalAlert { get; init; }
     public required EscalatedExecutor EscalatedExecutor { get; init; }
     public required HumanOperatorExecutor HumanOperatorExecutor { get; init; }
@@ -111,4 +112,5 @@ internal sealed class ExecutorCollection
     public required SignalClassifierExecutor SignalClassifierExecutor { get; init; }
     public required TerminateWorkflow TerminateWorkflow { get; init; }
     public required WhiteListExecutor WhiteListExecutor { get; init; }
+    public required DirectAnswerExecutor DirectAnswerExecutor { get; init; }
 }

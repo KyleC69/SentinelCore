@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -19,6 +19,7 @@ using SentinelCore.Contracts.Events;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
+using SentinelCore.Orchestrations.Agents.Core.Tools;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Mcp;
@@ -73,6 +74,9 @@ public static class SentinelCoreServiceExtensions
                 .Configure(opt =>
                 {
 
+                    opt.ChatClientLoggingEnabled = options.ChatClientLoggingEnabled;
+                    opt.OpenTelemetryTracingEnabled = options.OpenTelemetryTracingEnabled;
+                    opt.OpenTelemetryLoggingEnabled = options.OpenTelemetryLoggingEnabled;
                     opt.TraceEnabled = options.TraceEnabled;
                     opt.TraceLogLevel = options.TraceLogLevel;
 
@@ -127,6 +131,7 @@ public static class SentinelCoreServiceExtensions
         // AgentProfileBuilder is obsolete – no longer registered.
         services.AddSingleton<ISystemReporter, SystemReporter>();
         services.AddSingleton<TheCoreWorkflow>();
+        services.AddSingleton<CaseEngineTools>();
         // Register factory with model resolver dependency
         services.AddSingleton<ISentinelAgentFactory>(sp =>
         {
@@ -135,7 +140,9 @@ public static class SentinelCoreServiceExtensions
             IPatternMatcher patternMatcher = sp.GetRequiredService<IPatternMatcher>();
             ILoggerFactory loggerFactory = sp.GetRequiredService<ILoggerFactory>();
             IMcpServerRegistry registry = sp.GetRequiredService<IMcpServerRegistry>();
-            return new SentinelAgentFactory(chatFactory, modelResolver, patternMatcher, loggerFactory, registry);
+            CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
+            SentinelCoreSettings runtimeSettings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<SentinelCoreSettings>>().Value;
+            return new SentinelAgentFactory(chatFactory, modelResolver, patternMatcher, loggerFactory, registry, caseEngineTools, runtimeSettings);
         });
 
         // -- Agent construction contributors (pipeline) --

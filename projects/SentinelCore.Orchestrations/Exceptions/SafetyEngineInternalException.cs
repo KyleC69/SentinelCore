@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyEngineInternalException.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -28,7 +28,7 @@ public class SafetyEngineInternalException : Exception
 
 
 
-    public Dictionary<string, object> ContextData { get; } = new Dictionary<string, object>();
+    public Dictionary<string, object> ContextData { get; } = new();
 
 
 

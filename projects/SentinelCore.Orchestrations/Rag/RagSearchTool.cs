@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RagSearchTool.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Orchestrations.Tools;
+using SentinelCore.Orchestrations.Agents.Core.Tools;
 
 
 

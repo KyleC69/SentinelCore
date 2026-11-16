@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SentinelCoreSettings.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -56,9 +56,24 @@ public sealed class SentinelCoreSettings
     public IDictionary<ModelTier, ModelProfile> TierModels { get; set; } = new Dictionary<ModelTier, ModelProfile>();
 
     /// <summary>
-    ///     Enables agent trace logging.
+    ///     Enables the diagnostic <see cref="IChatClient" /> logging wrapper in <c>SentinelAgentFactory</c>.
     /// </summary>
-    public bool TraceEnabled { get; set; }
+    public bool ChatClientLoggingEnabled { get; set; } = true;
+
+    /// <summary>
+    ///     Enables OpenTelemetry tracing on agents through <c>UseOpenTelemetry</c>.
+    /// </summary>
+    public bool OpenTelemetryTracingEnabled { get; set; } = true;
+
+    /// <summary>
+    ///     Enables OpenTelemetry log export in the host logging pipeline.
+    /// </summary>
+    public bool OpenTelemetryLoggingEnabled { get; set; } = true;
+
+    /// <summary>
+    ///     Legacy flag preserved for compatibility. Maps to <see cref="ChatClientLoggingEnabled" />.
+    /// </summary>
+    public bool TraceEnabled { get; set; } = true;
 
     /// <summary>
     ///     Minimum log level emitted when agent tracing is enabled.

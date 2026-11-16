@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         RagSearchService.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -337,7 +337,7 @@ public sealed class RagSearchService : IRagSearchService
     {
         if (_inMemoryIndex.Count == 0)
         {
-            return new List<RagSearchResult>();
+            return new();
         }
 
         string[] queryTerms = query.ToLowerInvariant().Split(new[] { ' ', ',', '.', '?', '!', ';', ':', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);

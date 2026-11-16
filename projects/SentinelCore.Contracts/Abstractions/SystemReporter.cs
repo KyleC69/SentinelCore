@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SystemReporter.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -72,7 +72,7 @@ public sealed class SystemReporter : ISystemReporter
         }
 
         _logger.LogDebug("[DEBUG] {Message}", message);
-        _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
+        _publisher.RaiseSentinelOutputEvent(new("System", message, ActivityType.System));
     }
 
 
@@ -119,7 +119,7 @@ public sealed class SystemReporter : ISystemReporter
         }
 
         _logger.LogInformation("[INFO] {Message}", message);
-        _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
+        _publisher.RaiseSentinelOutputEvent(new("System", message, ActivityType.System));
     }
 
 
@@ -142,6 +142,6 @@ public sealed class SystemReporter : ISystemReporter
         }
 
         _logger.LogWarning(ex, "[WARNING] {Message}", message);
-        _publisher.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", message, ActivityType.System));
+        _publisher.RaiseSentinelOutputEvent(new("System", message, ActivityType.System));
     }
 }

@@ -2,17 +2,17 @@
 // Project:   SentinelCore.Orchestrations
 // File:         NewCaseExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
 using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.CaseFlow;
-using SentinelCore.Data.DBEntities;
-using SentinelCore.Orchestrations.Agents.Models;
+using SentinelCore.Orchestrations.Models;
 
 
 
@@ -34,7 +34,7 @@ public sealed partial class NewCaseExecutor : Executor
 {
     private readonly ICaseFlowEngine _caseEng;
 
-    private ChatMessages _chatMessages = new ChatMessages();
+    private ChatMessages _chatMessages = new();
     private readonly ISystemReporter _reporter;
 
 

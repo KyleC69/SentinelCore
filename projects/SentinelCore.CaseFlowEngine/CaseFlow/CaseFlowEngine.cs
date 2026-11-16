@@ -2,17 +2,17 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseFlowEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Contracts.Cfe;
-using SentinelCore.Data.DBEntities;
 
 
 
@@ -135,9 +135,9 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     private static readonly Dictionary<int, HashSet<int>> AllowedTransitions = new()
     {
-            [(int)CaseStatus.Open] = new HashSet<int> { (int)CaseStatus.Analysis, (int)CaseStatus.Cancelled },
-            [(int)CaseStatus.Analysis] = new HashSet<int> { (int)CaseStatus.Investigation, (int)CaseStatus.AwaitingInput, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
-            [(int)CaseStatus.Investigation] = new HashSet<int>
+        [(int)CaseStatus.Open] = new() { (int)CaseStatus.Analysis, (int)CaseStatus.Cancelled },
+        [(int)CaseStatus.Analysis] = new() { (int)CaseStatus.Investigation, (int)CaseStatus.AwaitingInput, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
+        [(int)CaseStatus.Investigation] = new()
             {
                     (int)CaseStatus.Review,
                     (int)CaseStatus.AwaitingInput,
@@ -146,7 +146,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
                     (int)CaseStatus.Alerted,
                     (int)CaseStatus.Cancelled
             },
-            [(int)CaseStatus.Review] = new HashSet<int>
+        [(int)CaseStatus.Review] = new()
             {
                     (int)CaseStatus.Complete,
                     (int)CaseStatus.Investigation,
@@ -154,8 +154,8 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
                     (int)CaseStatus.Escalated,
                     (int)CaseStatus.Cancelled
             },
-            [(int)CaseStatus.AwaitingInput] = new HashSet<int> { (int)CaseStatus.Investigation, (int)CaseStatus.Escalated, (int)CaseStatus.Cancelled },
-            [(int)CaseStatus.Escalated] = new HashSet<int>
+        [(int)CaseStatus.AwaitingInput] = new() { (int)CaseStatus.Investigation, (int)CaseStatus.Escalated, (int)CaseStatus.Cancelled },
+        [(int)CaseStatus.Escalated] = new()
             {
                     (int)CaseStatus.Investigation,
                     (int)CaseStatus.AwaitingInput,
@@ -163,11 +163,11 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
                     (int)CaseStatus.Alerted,
                     (int)CaseStatus.Cancelled
             },
-            [(int)CaseStatus.Alerted] = new HashSet<int> { (int)CaseStatus.Escalated, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
-            [(int)CaseStatus.Blocked] = new HashSet<int> { (int)CaseStatus.AwaitingInput, (int)CaseStatus.Escalated, (int)CaseStatus.Alerted, (int)CaseStatus.Cancelled },
-            [(int)CaseStatus.Complete] = new HashSet<int> { (int)CaseStatus.Closed },
-            [(int)CaseStatus.Cancelled] = new HashSet<int> { (int)CaseStatus.Closed },
-            [(int)CaseStatus.Closed] = new HashSet<int>()
+        [(int)CaseStatus.Alerted] = new() { (int)CaseStatus.Escalated, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
+        [(int)CaseStatus.Blocked] = new() { (int)CaseStatus.AwaitingInput, (int)CaseStatus.Escalated, (int)CaseStatus.Alerted, (int)CaseStatus.Cancelled },
+        [(int)CaseStatus.Complete] = new() { (int)CaseStatus.Closed },
+        [(int)CaseStatus.Cancelled] = new() { (int)CaseStatus.Closed },
+        [(int)CaseStatus.Closed] = new()
     };
 
 

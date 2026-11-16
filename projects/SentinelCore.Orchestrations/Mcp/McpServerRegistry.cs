@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         McpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -210,7 +210,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
             foreach (McpServerDefinition definition in definitions)
             {
                 ValidateDefinition(definition);
-                _entries[definition.Id] = new McpServerEntry(definition);
+                _entries[definition.Id] = new(definition);
             }
 
             _logger.LogInformation("Loaded {Count} persisted MCP server definition(s).", definitions.Count);
@@ -249,7 +249,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
             throw new InvalidOperationException($"MCP server with ID '{definition.Id}' is already registered.");
         }
 
-        _entries[definition.Id] = new McpServerEntry(definition);
+        _entries[definition.Id] = new(definition);
 
         try
         {
@@ -487,7 +487,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
         McpServerDefinition current = entry.Definition;
         McpServerDefinition updated = new(current.Id, current.DisplayName, current.TransportType, current.CommandOrEndpoint, current.Arguments, current.WorkingDirectory, current.EnvironmentVariables, current.OAuthSettings, assignedAgentNames);
 
-        _entries[id] = new McpServerEntry(updated) { Status = entry.Status, ToolNames = entry.ToolNames, LastError = entry.LastError, Client = entry.Client };
+        _entries[id] = new(updated) { Status = entry.Status, ToolNames = entry.ToolNames, LastError = entry.LastError, Client = entry.Client };
 
         try
         {
@@ -717,7 +717,7 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
         public McpServerInfo ToInfo()
         {
-            return new McpServerInfo(Definition, Status, ToolNames, LastError);
+            return new(Definition, Status, ToolNames, LastError);
         }
     }
 }

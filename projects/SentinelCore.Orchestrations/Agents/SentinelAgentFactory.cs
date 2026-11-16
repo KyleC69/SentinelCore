@@ -2,11 +2,9 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
-
-#pragma warning disable MAAI001
 
 using Microsoft.Extensions.Logging;
 
@@ -15,9 +13,10 @@ using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
+using SentinelCore.Orchestrations.Agents.Core.Tools;
 using SentinelCore.Orchestrations.Agents.Middleware;
-using SentinelCore.Orchestrations.Agents.Models;
 using SentinelCore.Orchestrations.Infrastructure.Diagnostics;
+using SentinelCore.Orchestrations.Models;
 
 
 
@@ -38,9 +37,9 @@ namespace SentinelCore.Orchestrations.Agents;
 ///     based on the provided <see cref="AgentProfile" /> or preset name.
 ///     <para>
 ///         This factory is the canonical composition boundary for the chat client,
-///         context providers, tools, and agent options. It applies a mandatory
-///         <see cref="LoggingChatClient" /> wrapper to every chat client and configures
-///         pattern memory and MAF context compaction from the agent preset.
+///         context providers, tools, and agent options. It applies optional chat-client
+///         logging and OpenTelemetry instrumentation according to <see cref="SentinelCoreSettings" />
+///         and configures pattern memory and MAF context compaction from the agent preset.
 ///     </para>
 ///     <para>
 ///         Instructions and response format are per-call concerns handled by executors
@@ -53,10 +52,11 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 {
     private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
     private readonly Lock _builtAgentsLock = new();
-    private bool _enableTrace = true;
-    private bool _enableTelemetry = true;
     private IReadOnlyList<AITool> _builtToolCache;
+    private readonly CaseEngineTools _caseTools;
     private readonly IChatClientFactory _chatClientFactory;
+    private readonly bool _enableChatClientLogging;
+    private readonly bool _enableOpenTelemetryTracing;
     private readonly ILogger<SentinelAgentFactory> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -65,7 +65,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     private readonly IModelResolver _modelResolver;
 
     private readonly IPatternMatcher _patternMatcher;
-    private IMcpServerRegistry _registry;
+    private readonly IMcpServerRegistry _registry;
 
 
 
@@ -82,8 +82,10 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="patternMatcher">The pattern matcher used by the Core agent's pattern-memory context provider.</param>
     /// <param name="loggerFactory">The logger factory used by client-level and pattern-memory logging.</param>
     /// <param name="registry">The MCP server registry for managing MCP server instances.</param>
+    /// <param name="caseEngineTools">The case-engine tools used by tool-enabled agents.</param>
+    /// <param name="settings">Runtime SentinelCore settings that control logging and telemetry switches.</param>
     /// <exception cref="ArgumentNullException">Thrown when any required dependency is <c>null</c>.</exception>
-    public SentinelAgentFactory(IChatClientFactory chatClientFactory, IModelResolver modelResolver, IPatternMatcher patternMatcher, ILoggerFactory loggerFactory, IMcpServerRegistry registry)
+    public SentinelAgentFactory(IChatClientFactory chatClientFactory, IModelResolver modelResolver, IPatternMatcher patternMatcher, ILoggerFactory loggerFactory, IMcpServerRegistry registry, CaseEngineTools caseEngineTools, SentinelCoreSettings settings)
     {
         _chatClientFactory = chatClientFactory ?? throw new ArgumentNullException(nameof(chatClientFactory));
         _modelResolver = modelResolver ?? throw new ArgumentNullException(nameof(modelResolver));
@@ -91,6 +93,12 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _logger = loggerFactory.CreateLogger<SentinelAgentFactory>();
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        _caseTools = caseEngineTools ?? throw new ArgumentNullException(nameof(caseEngineTools));
+
+        SentinelCoreSettings runtimeSettings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _enableChatClientLogging = runtimeSettings.ChatClientLoggingEnabled;
+        _enableOpenTelemetryTracing = runtimeSettings.OpenTelemetryTracingEnabled;
+
         _builtToolCache = _registry.GetToolsFromCache();
         _registry.ToolCacheChanged += OnToolCacheChanged;
 
@@ -194,10 +202,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     private void AddPresetContextProviders(AgentPresetDefinition preset, List<AIContextProvider> contextProviders)
     {
         ArgumentNullException.ThrowIfNull(preset);
-        if (contextProviders is not List<AIContextProvider>)
-        {
-            contextProviders = new List<AIContextProvider>();
-        }
+        contextProviders ??= [];
 
         /*
          TEMPORARILY DISABLED UNTIL PATTERN MEMORY IS STABLE
@@ -250,12 +255,12 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             ModelId = preset.ModelProfile?.ModelId,
             AllowMultipleToolCalls = true,
             ToolMode = ChatToolMode.Auto,
-            Tools = preset.UseTools ? _builtToolCache.ToList() : new List<AITool>(),
+            Tools = preset.UseTools ? _builtToolCache.ToList() : [],
             ResponseFormat = chatResponseFormat ?? ChatResponseFormat.Json
         };
 
 
-        return new ChatClientAgent(chatClient, new ChatClientAgentOptions
+        return new(chatClient, new ChatClientAgentOptions
         {
             Id = preset.AgentId,
             Name = preset.AgentName,
@@ -303,11 +308,14 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         List<AIContextProvider?> providers = null!;
         if (preset.UseContextEnrichers || preset.UsePatternMemory || preset.UseRagSearch)
         {
-            providers = new();
+            providers = [];
             AddPresetContextProviders(preset, providers);
         }
+
+
+
         AIAgent builtAgent;
-        if (_enableTrace)
+        if (_enableChatClientLogging)
         {
             // =====  USE ONLY FOR TESTING AGENT BEHAVIOR, NOT FOR PRODUCTION LOGGING =====
             IChatClient loggingClient = chatclient.AsBuilder().UseLogging(_loggerFactory).Build();
@@ -321,18 +329,11 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         }
 
 
-        // Spans are emitted under SentinelCoreDiagnostics.ActivitySourceName. The host must
-        // subscribe to that name on its tracer provider, otherwise nothing is exported.
-        // Payload capture is gated: raw prompts, responses, and tool results are only recorded
-        // when SENTINEL_TELEMETRY_SENSITIVE_DATA is set to true.
-        //   return builtAgent.AsBuilder()
-        //                    .UseOpenTelemetry(SentinelCoreDiagnostics.ActivitySourceName, cfg => cfg.EnableSensitiveData = SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled)
-        //                    .Build();
-        if (_enableTelemetry)
+
+        if (_enableOpenTelemetryTracing)
         {
             builtAgent = builtAgent.AsBuilder()
-                                   .UseOpenTelemetry(SentinelCoreDiagnostics.ActivitySourceName, cfg => cfg.EnableSensitiveData = SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled)
-                                   .Build();
+                    .UseOpenTelemetry(SentinelCoreDiagnostics.ActivitySourceName, cfg => cfg.EnableSensitiveData = SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled).Build();
         }
 
 

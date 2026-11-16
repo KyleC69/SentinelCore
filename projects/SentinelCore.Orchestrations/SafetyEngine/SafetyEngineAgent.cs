@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyEngineAgent.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -99,7 +99,7 @@ public sealed class SafetyEngineAgent
     {
         ChatMessage blockMessage = new(ChatRole.Assistant, _options.BlockedResponseMessage ?? $"Request blocked by safety policy: {evaluationResult.Summary}");
 
-        return new AgentResponse(blockMessage);
+        return new(blockMessage);
     }
 
 
@@ -117,7 +117,7 @@ public sealed class SafetyEngineAgent
     public AgentResponseUpdate CreateBlockedResponseUpdate(SafetyEvaluationResult evaluationResult)
     {
         string message = _options.BlockedResponseMessage ?? $"Request blocked by safety policy: {evaluationResult.Summary}";
-        return new AgentResponseUpdate(ChatRole.Assistant, message);
+        return new(ChatRole.Assistant, message);
     }
 
 
@@ -187,7 +187,7 @@ public sealed class SafetyEngineAgent
     /// <returns>The agent response, either a blocked response or the inner agent's response.</returns>
     public async Task<AgentResponse> InterceptRunAsync(IEnumerable<ChatMessage> messages, AgentSession? session, AgentRunOptions? options, AIAgent innerAgent, CancellationToken cancellationToken)
     {
-        options ??= new AgentRunOptions();
+        options ??= new();
 
         IList<ChatMessage> messageList = messages as IList<ChatMessage> ?? messages.ToList();
         SafetyEvaluationContext context = new((IReadOnlyList<ChatMessage>)messageList);
@@ -195,7 +195,7 @@ public sealed class SafetyEngineAgent
         SafetyEvaluationResult evaluationResult = await EvaluateRulesAsync(context, cancellationToken);
 
         // Attach the evaluation result to options AdditionalProperties so callers can inspect it.
-        options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        options.AdditionalProperties ??= new();
         options.AdditionalProperties[EvaluationResultKey] = evaluationResult;
 
         if (!evaluationResult.IsAllowed)
@@ -242,7 +242,7 @@ public sealed class SafetyEngineAgent
         SafetyEvaluationResult evaluationResult = await EvaluateRulesAsync(context, cancellationToken);
 
         // Attach the evaluation result to options AdditionalProperties so callers can inspect it.
-        options.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        options.AdditionalProperties ??= new();
         options.AdditionalProperties[EvaluationResultKey] = evaluationResult;
 
         if (!evaluationResult.IsAllowed)

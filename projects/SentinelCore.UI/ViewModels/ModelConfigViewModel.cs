@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         ModelConfigViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -37,10 +37,12 @@ namespace SentinelCore.UI.ViewModels;
 public sealed partial class ModelConfigViewModel : ObservableObject, INavigationAware
 {
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private ObservableCollection<AgentModelCard> _cards = [];
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _isBusy;
 
     private readonly ILogger<ModelConfigViewModel> _logger;
@@ -137,10 +139,10 @@ public sealed partial class ModelConfigViewModel : ObservableObject, INavigation
             foreach (KeyValuePair<ModelTier, ModelProfile> entry in _settings.TierModels)
             {
                 _settings.TierModels.TryGetValue(entry.Key, out ModelProfile? profile);
-                cards.Add(new AgentModelCard(entry.Key, profile));
+                cards.Add(new(entry.Key, profile));
             }
 
-            Cards = new ObservableCollection<AgentModelCard>(cards);
+            Cards = new(cards);
             _logger.LogTrace("Loaded {Count} agent model cards.", cards.Count);
         }
         catch (Exception ex)

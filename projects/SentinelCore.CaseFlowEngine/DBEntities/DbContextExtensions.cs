@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SentinelCore.Data.DBEntities
+namespace SentinelCore.CaseFlowEngine.DBEntities
 {
     public static class DbContextExtensions
     {

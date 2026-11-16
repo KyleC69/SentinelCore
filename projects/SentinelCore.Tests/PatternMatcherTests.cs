@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         PatternMatcherTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -38,9 +38,9 @@ public class SemanticPatternMatcherTests
 
     public SemanticPatternMatcherTests()
     {
-        _mockPatternStore = new Mock<IPatternMemoryStore>();
-        _mockLogger = new Mock<ILogger<SemanticPatternMatcher>>();
-        _matcher = new SemanticPatternMatcher(_mockPatternStore.Object, _mockLogger.Object);
+        _mockPatternStore = new();
+        _mockLogger = new();
+        _matcher = new(_mockPatternStore.Object, _mockLogger.Object);
     }
 
 

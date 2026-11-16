@@ -2,12 +2,12 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseEntityExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.Contracts.CaseFlow;
-using SentinelCore.Data.DBEntities;
 
 
 
@@ -26,20 +26,20 @@ public static class CaseEntityExtensions
     /// </summary>
     public static CaseEntity ToEntity(this Case dto) =>
             // Implementation to map DTO properties to CaseEntity structure.
-            new CaseEntity
+            new()
             {
 
-                    // Example mapping:
-                    Id = dto.Id,
-                    //SignalEntity 
-                    CaseStatus = 0,
-                    UpdatedAt = DateTime.Now,
-                    PatternMemory = null,
-                    CaseTranscript = dto.CaseTranscript,
-                    EvidenceEntities = null,
-                    RemediationEntities = null,
-                    InvestigationObjective = null,
-                    Notes = null
-                    // ... other properties ...
+                // Example mapping:
+                Id = dto.Id,
+                //SignalEntity 
+                CaseStatus = 0,
+                UpdatedAt = DateTime.Now,
+                PatternMemory = null,
+                CaseTranscript = dto.CaseTranscript,
+                EvidenceEntities = null,
+                RemediationEntities = null,
+                InvestigationObjective = null,
+                Notes = null
+                // ... other properties ...
             };
 }

@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace SentinelCore.Data.DBEntities;
+namespace SentinelCore.CaseFlowEngine.DBEntities;
 
 [Table("SignalEntity")]
 [Index("SignalId", Name = "AK_Signals_SignalId", IsUnique = true)]

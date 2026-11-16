@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         LogViewerLoggerProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -39,7 +39,7 @@ public sealed class LogViewerLoggerProvider : ILoggerProvider
     /// <inheritdoc />
     public ILogger CreateLogger(string categoryName)
     {
-        return _loggers.GetOrAdd(categoryName, name => new LogViewerLogger(name));
+        return _loggers.GetOrAdd(categoryName, name => new(name));
     }
 
 

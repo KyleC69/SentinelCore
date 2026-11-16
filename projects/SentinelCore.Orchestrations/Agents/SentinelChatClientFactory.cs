@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelChatClientFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -44,7 +44,7 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
         ArgumentNullException.ThrowIfNull(loggerFactory);
 
         _loggerFactory = loggerFactory;
-        _httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+        _httpClient = new() { Timeout = TimeSpan.FromMinutes(10) };
     }
 
 
@@ -58,13 +58,13 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
     {
         IChatClient baseClient = model.Provider switch
         {
-                ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
-                //ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
-                //ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
-                // ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
-                //  ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
-                ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
-                _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
+            ModelProfile.ModelProvider.Ollama => CreateOllamaClient(model),
+            //ModelProfile.ModelProvider.OpenAI => CreateOpenAIClient(model),
+            //ModelProfile.ModelProvider.AzureOpenAI => CreateAzureOpenAIClient(model),
+            // ModelProfile.ModelProvider.GitHubModels => CreateGitHubModelsClient(model),
+            //  ModelProfile.ModelProvider.Anthropic => CreateAnthropicClient(model),
+            ModelProfile.ModelProvider.OnnxRuntime => CreateOnnxClient(model),
+            _ => throw new NotSupportedException($"Provider {model.Provider} not supported")
         };
 
         return baseClient;
@@ -126,7 +126,7 @@ public sealed class SentinelChatClientFactory : IChatClientFactory
     {
         string endpoint = model.Endpoint ?? "http://127.0.0.1:11434";
         string modelId = model.ModelId ?? "gemma4";
-        _httpClient.BaseAddress = new Uri(endpoint);
+        _httpClient.BaseAddress = new(endpoint);
         OllamaApiClient client = new(_httpClient, modelId);
         client.SelectedModel = modelId;
 

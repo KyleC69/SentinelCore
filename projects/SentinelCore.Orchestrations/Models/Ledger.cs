@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         Ledger.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -11,7 +11,7 @@ using System.Text.Json.Serialization;
 
 
 
-namespace SentinelCore.Orchestrations.Agents.Models;
+namespace SentinelCore.Orchestrations.Models;
 
 
 

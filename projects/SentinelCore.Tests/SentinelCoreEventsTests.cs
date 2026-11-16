@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         SentinelCoreEventsTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -31,10 +31,10 @@ public sealed class SentinelCoreEventsTests
     [TestMethod]
     public void EventCapture_Clear_ResetsAllLists()
     {
-        EventCapture capture = new EventCapture();
-        capture.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("a", "1", ActivityType.Core));
-        capture.RaiseOrchestrationEvent(new OrchestrationActivityArgs("msg", "src"));
-        capture.RaiseError("err", new Exception("test"));
+        EventCapture capture = new();
+        capture.RaiseSentinelOutputEvent(new("a", "1", ActivityType.Core));
+        capture.RaiseOrchestrationEvent(new("msg", "src"));
+        capture.RaiseError("err", new("test"));
 
         capture.Clear();
 
@@ -53,11 +53,11 @@ public sealed class SentinelCoreEventsTests
     [TestMethod]
     public void EventCapture_RaisesAllChannels()
     {
-        EventCapture capture = new EventCapture();
+        EventCapture capture = new();
 
-        capture.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("TheCore", "output", ActivityType.Core));
-        capture.RaiseOrchestrationEvent(new OrchestrationActivityArgs("msg", "src"));
-        capture.RaiseError("err", new Exception("test"));
+        capture.RaiseSentinelOutputEvent(new("TheCore", "output", ActivityType.Core));
+        capture.RaiseOrchestrationEvent(new("msg", "src"));
+        capture.RaiseError("err", new("test"));
 
         Assert.AreEqual(1, capture.SentinelOutputEvents.Count);
         Assert.AreEqual(1, capture.OrchestrationEvents.Count);
@@ -74,7 +74,7 @@ public sealed class SentinelCoreEventsTests
     [TestMethod]
     public void RaiseError_WithSubscriber_InvokesSubscriber()
     {
-        SentinelCoreEvents events = new SentinelCoreEvents();
+        SentinelCoreEvents events = new();
         string? receivedMessage = null;
         Exception? receivedException = null;
         events.ErrorOccurred += (msg, ex) =>
@@ -100,11 +100,11 @@ public sealed class SentinelCoreEventsTests
     [TestMethod]
     public void RaiseOrchestrationEvent_WithSubscriber_InvokesSubscriber()
     {
-        SentinelCoreEvents events = new SentinelCoreEvents();
+        SentinelCoreEvents events = new();
         OrchestrationActivityArgs? received = null;
         events.OrchestrationEvent += args => received = args;
 
-        OrchestrationActivityArgs payload = new OrchestrationActivityArgs("starting workflow", "Orchestrator");
+        OrchestrationActivityArgs payload = new("starting workflow", "Orchestrator");
         events.RaiseOrchestrationEvent(payload);
 
         Assert.IsNotNull(received);
@@ -122,15 +122,15 @@ public sealed class SentinelCoreEventsTests
     [TestMethod]
     public void RaiseSentinelOutputEvent_CapturesAllActivityTypes()
     {
-        SentinelCoreEvents events = new SentinelCoreEvents();
+        SentinelCoreEvents events = new();
         List<SentinelOutputEventArgs> received = [];
         events.SentinelOutputEvent += args => received.Add(args);
 
-        events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("TheCore", "reasoning", ActivityType.Reasoning));
-        events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("TheCore", "tool result", ActivityType.Tooling));
-        events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("WorkflowManager", "plan", ActivityType.Manager));
-        events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("registry_agent", "scan", ActivityType.Participant));
-        events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("System", "info", ActivityType.System));
+        events.RaiseSentinelOutputEvent(new("TheCore", "reasoning", ActivityType.Reasoning));
+        events.RaiseSentinelOutputEvent(new("TheCore", "tool result", ActivityType.Tooling));
+        events.RaiseSentinelOutputEvent(new("WorkflowManager", "plan", ActivityType.Manager));
+        events.RaiseSentinelOutputEvent(new("registry_agent", "scan", ActivityType.Participant));
+        events.RaiseSentinelOutputEvent(new("System", "info", ActivityType.System));
 
         Assert.AreEqual(5, received.Count);
         Assert.AreEqual(ActivityType.Reasoning, received[0].ActivityType);
@@ -150,9 +150,9 @@ public sealed class SentinelCoreEventsTests
     [TestMethod]
     public void RaiseSentinelOutputEvent_WithNoSubscriber_DoesNotThrow()
     {
-        SentinelCoreEvents events = new SentinelCoreEvents();
+        SentinelCoreEvents events = new();
 
-        events.RaiseSentinelOutputEvent(new SentinelOutputEventArgs("TheCore", "output", ActivityType.Core));
+        events.RaiseSentinelOutputEvent(new("TheCore", "output", ActivityType.Core));
     }
 
 
@@ -165,11 +165,11 @@ public sealed class SentinelCoreEventsTests
     [TestMethod]
     public void RaiseSentinelOutputEvent_WithSubscriber_InvokesSubscriber()
     {
-        SentinelCoreEvents events = new SentinelCoreEvents();
+        SentinelCoreEvents events = new();
         SentinelOutputEventArgs? received = null;
         events.SentinelOutputEvent += args => received = args;
 
-        SentinelOutputEventArgs payload = new SentinelOutputEventArgs("TheCore", "activity output", ActivityType.Core);
+        SentinelOutputEventArgs payload = new("TheCore", "activity output", ActivityType.Core);
         events.RaiseSentinelOutputEvent(payload);
 
         Assert.IsNotNull(received);
@@ -188,7 +188,7 @@ public sealed class SentinelCoreEventsTests
     [TestMethod]
     public void SentinelOutputEventArgs_Constructor_SetsProperties()
     {
-        SentinelOutputEventArgs args = new SentinelOutputEventArgs("TheCore", "hypothesis", ActivityType.Core);
+        SentinelOutputEventArgs args = new("TheCore", "hypothesis", ActivityType.Core);
 
         Assert.AreEqual("TheCore", args.AgentName);
         Assert.AreEqual("hypothesis", args.Message);

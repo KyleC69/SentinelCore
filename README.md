@@ -2,8 +2,8 @@
 
 **Advanced AI Assisted Forensic Investigation Platform for Windows**
 
-### **STATUS UPDATE 11/5** I have almost worked out the inconsistancies in the final reporting of the Magentic orchestration group. This orchestration is very complex and the nature of forensics demands a very high level of accuracy and precision. There is a delecate balance between the layered instruction sets, the built-in templates used in the orchestrations and the models hallucinations. The system is now producing consistent and accurate reports with fact verification and cross referencing of the evidence collected. The system is now able to produce a report that is very close to what a human investigator would produce. The aggregator/report writer is currently being fined tuned to ensure that the final report is as accurate and complete as possible. A snippet of a report is shown below.
-
+### **STATUS UPDATE 11/14** I have solved the workflow instability with the investigation team and can move forward. The solution can be seen in the CustomGroupWorkflow.cs file. The agents are displaying emergent behavior and are flowing naturally adapting to each case. 
+The group orchestration this application uses is very complex and the nature of forensics demands a very high level of accuracy and precision. There is a delecate balance between the layered instruction sets, the built-in templates used in the orchestrations and the models interpretations of it all.
 
 ---
 ![SignalFound](assets/ReportSnippet.png)
@@ -17,7 +17,7 @@ At the heart of the system is the Magentic Orchestration Group from Microsoft., 
 
 The investigation is designed to flow with available evidence and not be biased by goals or influenced by false evidence. The final report is designed to be used by the operator or IT manager as a guide in deciding how to proceed or if further action is required. This system performs zero destructive operations to the environment. 
 
-Each investigation produces detailed evidenciary artifacts and findings which are recorded and make up the pattern memory component simplifying future investigations. The operator can also select signals to ignore or deescalate as being benign and not needing investigating.
+
 
 Built on the Microsoft Agent Framework (MAF) with .NET 10, Sentinel Core combines deterministic case lifecycle management, a rule-based safety engine, pattern memory, Explore the power of MAF and versatility with this application using multi-agents, RAG, context enriching, workflows, executors, multi-provider flexibility. NOTE: MAF is still under development and experiemental expect changes.
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CaseListViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -247,7 +247,7 @@ public sealed partial class CaseListViewModel : ObservableObject, INavigationAwa
             Cases.Clear();
             foreach (CaseStatus status in Enum.GetValues<CaseStatus>())
             {
-                Cases.Add(new CaseRow { Status = status, Count = counts.TryGetValue(status, out int count) ? count : 0 });
+                Cases.Add(new() { Status = status, Count = counts.TryGetValue(status, out int count) ? count : 0 });
             }
 
             _logger.LogTrace("Case list loaded — {Count} status entries", Cases.Count);

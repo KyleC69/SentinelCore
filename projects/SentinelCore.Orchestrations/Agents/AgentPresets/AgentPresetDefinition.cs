@@ -2,12 +2,12 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentPresetDefinition.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Orchestrations.Agents.Models;
+using SentinelCore.Orchestrations.Models;
 
 
 
@@ -58,12 +58,12 @@ public sealed record AgentPresetDefinition
 
 
 
-    public string Description { get; set; }
+    public required string Description { get; set; }
 
     /// <summary>
     ///     Gets the model profile for this agent, which defines the specific model configuration to be used.
     /// </summary>
-    public ModelProfile ModelProfile { get; set; }
+    public ModelProfile? ModelProfile { get; set; }
 
     public string? RoleInstructions { get; set; }
 
@@ -73,6 +73,12 @@ public sealed record AgentPresetDefinition
     ///     roles, and to change the default model for a role without changing the agent's preset.
     /// </summary>
     public ModelTier Tier { get; set; } = ModelTier.Utility;
+
+    /// <summary>
+    ///     Array of tool domains(groups) assiged to this preset
+    ///     Agents can have zero(0) or multiple domains attached
+    /// </summary>
+    public int[] ToolDomains { get; set; } = [0];
 
 
 
@@ -110,19 +116,19 @@ public sealed record AgentPresetDefinition
     /// <returns></returns>
     private static AgentPresetDefinition AggregatorRole()
     {
-        return new AgentPresetDefinition
+        return new()
         {
-                AgentId = "AggregatorAgent",
-                AgentName = "AggregatorAgent",
-                Description = "Utility agent responsible for collecting and collating information while performing auxiliary tasks and supporting core workflow operations.",
-                UseTools = false,
-                RoleInstructions = AgentInstructionConstants.AGGREGATOR_INSTRUCTIONS,
-                Tier = ModelTier.Utility,
-                UseLogging = true,
-                UsePatternMemory = false,
-                UseRagSearch = false,
-                UseContextEnrichers = false,
-                DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
+            AgentId = "AggregatorAgent",
+            AgentName = "AggregatorAgent",
+            Description = "Utility agent responsible for collecting and collating information while performing auxiliary tasks and supporting core workflow operations.",
+            UseTools = false,
+            RoleInstructions = AgentInstructionConstants.AGGREGATOR_INSTRUCTIONS,
+            Tier = ModelTier.Utility,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
     }
 
@@ -135,19 +141,19 @@ public sealed record AgentPresetDefinition
 
     public static AgentPresetDefinition ClassifierRole(string? id = null, string? name = null)
     {
-        return new AgentPresetDefinition
+        return new()
         {
-                AgentId = id ?? "ClassifierAgent",
-                AgentName = name ?? "ClassifierAgent",
-                Description = "Agent responsible for classifying inputs. Primary usage is in complex workflow switching.",
-                Tier = ModelTier.Utility,
-                UseLogging = true,
-                UsePatternMemory = false,
-                UseRagSearch = false,
-                UseContextEnrichers = false,
-                UseTools = false,
-                RoleInstructions = AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN,
-                DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
+            AgentId = id ?? "ClassifierAgent",
+            AgentName = name ?? "ClassifierAgent",
+            Description = "Agent responsible for classifying inputs. Primary usage is in complex workflow switching.",
+            Tier = ModelTier.Utility,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false,
+            UseTools = false,
+            RoleInstructions = AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
     }
 
@@ -164,19 +170,19 @@ public sealed record AgentPresetDefinition
     /// </summary>
     public static AgentPresetDefinition CoreRole(string? name = null, string? id = null)
     {
-        return new AgentPresetDefinition
+        return new()
         {
-                AgentName = name ?? "TheCore",
-                AgentId = id ?? "TheCore",
-                Description = "Core reasoning agent responsible for advanced analytical tasks and operator support.",
-                Tier = ModelTier.Core,
-                UsePatternMemory = true,
-                UseLogging = true,
-                UseRagSearch = true,
-                UseContextEnrichers = true,
-                UseTools = true,
-                RoleInstructions = AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS,
-                DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
+            AgentName = name ?? "TheCore",
+            AgentId = id ?? "TheCore",
+            Description = "Core reasoning agent responsible for advanced analytical tasks and operator support.",
+            Tier = ModelTier.Core,
+            UsePatternMemory = true,
+            UseLogging = true,
+            UseRagSearch = true,
+            UseContextEnrichers = true,
+            UseTools = true,
+            RoleInstructions = AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
     }
 
@@ -191,14 +197,14 @@ public sealed record AgentPresetDefinition
     {
         return presetName switch
         {
-                AgentPreset.CoreAgent => CoreRole(),
-                AgentPreset.ManagerAgent => ManagerRole(),
-                AgentPreset.SafetyAgent => SafetyAgent(),
-                AgentPreset.UtilityAgent => UtilityRole(),
-                AgentPreset.ClassifierAgent => ClassifierRole(),
-                AgentPreset.WorkerAgent => WorkerRole(),
-                AgentPreset.AggregatorAgent => AggregatorRole(),
-                _ => throw new ArgumentOutOfRangeException(nameof(presetName), presetName, null)
+            AgentPreset.CoreAgent => CoreRole(),
+            AgentPreset.ManagerAgent => ManagerRole(),
+            AgentPreset.SafetyAgent => SafetyAgent(),
+            AgentPreset.UtilityAgent => UtilityRole(),
+            AgentPreset.ClassifierAgent => ClassifierRole(),
+            AgentPreset.WorkerAgent => WorkerRole(),
+            AgentPreset.AggregatorAgent => AggregatorRole(),
+            _ => throw new ArgumentOutOfRangeException(nameof(presetName), presetName, null)
         };
 
     }
@@ -217,19 +223,45 @@ public sealed record AgentPresetDefinition
     /// </summary>
     public static AgentPresetDefinition ManagerRole(string? name = null, string? id = null)
     {
-        return new AgentPresetDefinition
+        return new()
         {
-                AgentName = name ?? "GroupManagerAgent",
-                AgentId = id ?? "GroupManagerAgent",
-                Description = "Manager/orchestrator agent responsible for coordinating Magentic Group Orchestration workflows.",
-                Tier = ModelTier.Manager,
-                UseLogging = true,
-                UsePatternMemory = false,
-                UseRagSearch = true,
-                UseContextEnrichers = false,
-                UseTools = false,
-                RoleInstructions = AgentInstructionConstants.MAG_MANAGER_INSTRUCTIONS,
-                DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
+            AgentName = name ?? "GroupManagerAgent",
+            AgentId = id ?? "GroupManagerAgent",
+            Description = "Manager/orchestrator agent responsible for coordinating Magentic Group Orchestration workflows.",
+            Tier = ModelTier.Manager,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = true,
+            UseContextEnrichers = false,
+            UseTools = false,
+            RoleInstructions = AgentInstructionConstants.MAG_MANAGER_INSTRUCTIONS,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
+        };
+    }
+
+
+
+
+
+
+
+
+    private static AgentPresetDefinition ReportExtractor(string? name = null, string? id = null)
+    {
+        return new()
+        {
+            AgentId = id ?? "ReportExtractorAgent",
+            AgentName = name ?? "ReportExtractorAgent",
+            Description = "Agent responsible for extracting structured data from unstructured reports.",
+            UseTools = true,
+            RoleInstructions = null,
+            Tier = ModelTier.Utility,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S,
+            ToolDomains = new[] { 2 } // Assigned to CaseFlowEngine domain (domain ID 2)
         };
     }
 
@@ -242,20 +274,20 @@ public sealed record AgentPresetDefinition
 
     public static AgentPresetDefinition SafetyAgent(string? id = null, string? name = null)
     {
-        return new AgentPresetDefinition
+        return new()
         {
-                AgentId = id ?? "SafetyAgent",
-                AgentName = name ?? "SafetyAgent",
-                ModelProfile = null,
-                Description = "Safety geared agent to operate within the system safties.",
-                Tier = ModelTier.Utility,
-                UseLogging = true,
-                UsePatternMemory = false,
-                UseRagSearch = false,
-                UseContextEnrichers = false,
-                UseTools = false,
-                RoleInstructions = AgentInstructionConstants.SAFETY_AGENT_INSTRUCTIONS,
-                DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
+            AgentId = id ?? "SafetyAgent",
+            AgentName = name ?? "SafetyAgent",
+            ModelProfile = null,
+            Description = "Safety geared agent to operate within the system safties.",
+            Tier = ModelTier.Utility,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false,
+            UseTools = false,
+            RoleInstructions = AgentInstructionConstants.SAFETY_AGENT_INSTRUCTIONS,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
     }
 
@@ -272,19 +304,19 @@ public sealed record AgentPresetDefinition
     /// </summary>
     public static AgentPresetDefinition UtilityRole(string? name = null, string? id = null)
     {
-        return new AgentPresetDefinition
+        return new()
         {
-                AgentId = id ?? "UtilityAgent",
-                AgentName = name ?? "UtilityAgent",
-                Description = "Utility agent responsible for performing auxiliary tasks and supporting core workflow operations.",
-                Tier = ModelTier.Utility,
-                UseLogging = true,
-                UsePatternMemory = false,
-                UseTools = true,
-                RoleInstructions = AgentInstructionConstants.UTILITY_AGENT_INSTRUCTIONS,
-                UseRagSearch = false,
-                UseContextEnrichers = false,
-                DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
+            AgentId = id ?? "UtilityAgent",
+            AgentName = name ?? "UtilityAgent",
+            Description = "Utility agent responsible for performing auxiliary tasks and supporting core workflow operations.",
+            Tier = ModelTier.Utility,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseTools = true,
+            RoleInstructions = AgentInstructionConstants.UTILITY_AGENT_INSTRUCTIONS,
+            UseRagSearch = false,
+            UseContextEnrichers = false,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
     }
 
@@ -297,19 +329,19 @@ public sealed record AgentPresetDefinition
 
     private static AgentPresetDefinition WorkerRole(string? name = null, string? id = null)
     {
-        return new AgentPresetDefinition
+        return new()
         {
-                AgentId = id ?? "GenericWorkerAgent",
-                AgentName = name ?? "GenericWorkerAgent",
-                Description = "All purpose expert Windows Forensic Investigator. " + "This agent is responsible for performing investigative tasks and supporting core workflow operations.",
-                UseTools = true,
-                RoleInstructions = null,
-                Tier = ModelTier.Worker,
-                UseLogging = true,
-                UsePatternMemory = false,
-                UseRagSearch = false,
-                UseContextEnrichers = false,
-                DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
+            AgentId = id ?? "GenericWorkerAgent",
+            AgentName = name ?? "GenericWorkerAgent",
+            Description = "All purpose expert Windows Forensic Investigator. " + "This agent is responsible for performing investigative tasks and supporting core workflow operations.",
+            UseTools = true,
+            RoleInstructions = null,
+            Tier = ModelTier.Worker,
+            UseLogging = true,
+            UsePatternMemory = false,
+            UseRagSearch = false,
+            UseContextEnrichers = false,
+            DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
     }
 }

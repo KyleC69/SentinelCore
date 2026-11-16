@@ -2,13 +2,12 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorRegistration.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
 using Microsoft.Extensions.DependencyInjection;
 
-using SentinelCore.Orchestrations.Workflows;
 using SentinelCore.Orchestrations.Workflows.Executors;
 
 
@@ -44,7 +43,7 @@ public static class ExecutorRegistrations
         services.AddTransient<SafetyExecutor>();
         services.AddTransient<HumanOperatorExecutor>();
         services.AddTransient<DirectAnswerExecutor>();
-        services.AddTransient<AggregationExecutor>();
+        services.AddTransient<TheCoreSwitchExec>();
         services.AddTransient<CriticalAlert>();
         services.AddTransient<SignalClassifierExecutor>();
         return services;

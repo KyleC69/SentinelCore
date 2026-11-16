@@ -2,7 +2,9 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreDiagnostics.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
+
+
 
 using System.Diagnostics;
 
@@ -12,6 +14,7 @@ using OpenTelemetry.Resources;
 
 
 namespace SentinelCore.Orchestrations.Infrastructure.Diagnostics;
+
 
 
 
@@ -38,6 +41,17 @@ public static class SentinelCoreDiagnostics
     public const string ActivitySourceName = "SentinelCore";
 
     /// <summary>
+    ///     The environment variable that opts in to capturing raw prompt, response, and tool payloads
+    ///     in spans.
+    /// </summary>
+    /// <remarks>
+    ///     Set to <c>true</c> (case-insensitive) to enable sensitive capture. Any other value, or an
+    ///     unset variable, leaves spans limited to metadata such as token counts, operation names, and
+    ///     durations.
+    /// </remarks>
+    public const string SensitiveDataEnvironmentVariable = "SENTINEL_TELEMETRY_SENSITIVE_DATA";
+
+    /// <summary>
     ///     The OpenTelemetry <c>service.name</c> that identifies this process to every exporter.
     /// </summary>
     /// <remarks>
@@ -51,31 +65,18 @@ public static class SentinelCoreDiagnostics
     public const string ServiceName = "SentinelCore";
 
     /// <summary>
-    ///     Creates the resource that identifies this process to an OpenTelemetry pipeline.
+    ///     Gets a value indicating whether agent spans may include raw prompt, response, and tool payloads.
     /// </summary>
-    /// <returns>A new <see cref="ResourceBuilder" /> carrying <see cref="ServiceName" />.</returns>
     /// <remarks>
-    ///     Every pipeline in the process must pass the result to <c>SetResourceBuilder</c>: the tracer
-    ///     provider and the logging pipeline each build their own resource, so configuring only one of
-    ///     them produces the <c>unknown_service:&lt;process name&gt;</c> mismatch this method exists to
-    ///     prevent. <see cref="ResourceBuilder" /> is mutable and caches the resource it builds, so a
-    ///     fresh instance is returned per call instead of a shared singleton.
+    ///     Sensitive capture is opt-in and off by default because spans carry user prompts, model
+    ///     responses, tool arguments, and tool results. The environment variable is read on every access
+    ///     so the gate can be exercised by tests and changed between orchestrations without restarting
+    ///     the process.
     /// </remarks>
-    public static ResourceBuilder CreateResourceBuilder()
+    public static bool IsSensitiveDataCaptureEnabled
     {
-        return ResourceBuilder.CreateDefault().AddService(ServiceName);
+        get => bool.TryParse(Environment.GetEnvironmentVariable(SensitiveDataEnvironmentVariable), out bool enabled) && enabled;
     }
-
-    /// <summary>
-    ///     The environment variable that opts in to capturing raw prompt, response, and tool payloads
-    ///     in spans.
-    /// </summary>
-    /// <remarks>
-    ///     Set to <c>true</c> (case-insensitive) to enable sensitive capture. Any other value, or an
-    ///     unset variable, leaves spans limited to metadata such as token counts, operation names, and
-    ///     durations.
-    /// </remarks>
-    public const string SensitiveDataEnvironmentVariable = "SENTINEL_TELEMETRY_SENSITIVE_DATA";
 
     /// <summary>
     ///     Gets the <see cref="ActivitySource" /> shared by SentinelCore instrumentation.
@@ -95,14 +96,26 @@ public static class SentinelCoreDiagnostics
     /// </remarks>
     public static ActivitySource SharedActivitySource { get; } = new(ActivitySourceName);
 
+
+
+
+
+
+
+
     /// <summary>
-    ///     Gets a value indicating whether agent spans may include raw prompt, response, and tool payloads.
+    ///     Creates the resource that identifies this process to an OpenTelemetry pipeline.
     /// </summary>
+    /// <returns>A new <see cref="ResourceBuilder" /> carrying <see cref="ServiceName" />.</returns>
     /// <remarks>
-    ///     Sensitive capture is opt-in and off by default because spans carry user prompts, model
-    ///     responses, tool arguments, and tool results. The environment variable is read on every access
-    ///     so the gate can be exercised by tests and changed between orchestrations without restarting
-    ///     the process.
+    ///     Every pipeline in the process must pass the result to <c>SetResourceBuilder</c>: the tracer
+    ///     provider and the logging pipeline each build their own resource, so configuring only one of
+    ///     them produces the <c>unknown_service:&lt;process name&gt;</c> mismatch this method exists to
+    ///     prevent. <see cref="ResourceBuilder" /> is mutable and caches the resource it builds, so a
+    ///     fresh instance is returned per call instead of a shared singleton.
     /// </remarks>
-    public static bool IsSensitiveDataCaptureEnabled => bool.TryParse(Environment.GetEnvironmentVariable(SensitiveDataEnvironmentVariable), out bool enabled) && enabled;
+    public static ResourceBuilder CreateResourceBuilder()
+    {
+        return ResourceBuilder.CreateDefault().AddService(ServiceName);
+    }
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Tests
 // File:         AgentFactoryToolTests.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -15,6 +15,7 @@ using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
+using SentinelCore.Orchestrations.Agents.Core.Tools;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Tests.TestInfrastructure;
 
@@ -33,8 +34,6 @@ namespace SentinelCore.Tests;
 [TestClass]
 public sealed class AgentFactoryToolTests
 {
-    private const string PromptText = "ping";
-    private const string RegistryToolName = "registry_noop";
 
     private FakeChatClient _chatClient = null!;
     private Mock<IChatClientFactory> _chatClientFactoryMock = null!;
@@ -43,6 +42,8 @@ public sealed class AgentFactoryToolTests
     private Mock<IMcpServerRegistry> _mcpServerRegistryMock = null!;
     private Mock<IModelResolver> _modelResolverMock = null!;
     private Mock<IPatternMatcher> _patternMatcherMock = null!;
+    private const string PromptText = "ping";
+    private const string RegistryToolName = "registry_noop";
 
 
 
@@ -86,23 +87,29 @@ public sealed class AgentFactoryToolTests
     [TestInitialize]
     public void TestInitialize()
     {
-        _chatClient = new FakeChatClient(new ChatResponse(new ChatMessage(ChatRole.Assistant, "pong")));
+        _chatClient = new(new(new ChatMessage(ChatRole.Assistant, "pong")));
 
-        _chatClientFactoryMock = new Mock<IChatClientFactory>();
+        _chatClientFactoryMock = new();
         _chatClientFactoryMock.Setup(factory => factory.CreateChatClient(It.IsAny<ModelProfile>())).Returns(_chatClient);
 
-        _modelResolverMock = new Mock<IModelResolver>();
+        _modelResolverMock = new();
         _modelResolverMock.Setup(resolver => resolver.ResolveByTier(It.IsAny<ModelTier>())).Returns(new ModelProfile("test-model", "http://test.endpoint", 0.7f));
 
-        _patternMatcherMock = new Mock<IPatternMatcher>();
+        _patternMatcherMock = new();
 
-        _loggerFactoryMock = new Mock<ILoggerFactory>();
+        _loggerFactoryMock = new();
         _loggerFactoryMock.Setup(x => x.CreateLogger(It.IsAny<string>())).Returns(NullLogger.Instance);
 
-        _mcpServerRegistryMock = new Mock<IMcpServerRegistry>();
+        _mcpServerRegistryMock = new();
         _mcpServerRegistryMock.Setup(x => x.GetToolsFromCache()).Returns(new List<AITool> { AIFunctionFactory.Create(() => "ok", RegistryToolName) }.AsReadOnly());
         _mcpServerRegistryMock.Setup(x => x.ToolCount).Returns(1);
 
-        _factory = new SentinelAgentFactory(_chatClientFactoryMock.Object, _modelResolverMock.Object, _patternMatcherMock.Object, _loggerFactoryMock.Object, _mcpServerRegistryMock.Object);
+        _factory = new(_chatClientFactoryMock.Object, _modelResolverMock.Object, _patternMatcherMock.Object, _loggerFactoryMock.Object, _mcpServerRegistryMock.Object, new CaseEngineTools(), new()
+        {
+            ChatClientLoggingEnabled = true,
+            OpenTelemetryTracingEnabled = true,
+            OpenTelemetryLoggingEnabled = true,
+            TraceEnabled = true
+        });
     }
 }

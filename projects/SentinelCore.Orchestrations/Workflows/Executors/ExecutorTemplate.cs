@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorTemplate.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -158,7 +158,7 @@ public sealed partial class ExecutorTemplate : Executor
 
             // --- Status: fallback output ---
             _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(ChatMessage)} due to error.");
-            return new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}");
+            return new(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}");
         }
 
         return default;

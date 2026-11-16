@@ -2,12 +2,12 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         SignalMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.Contracts.CaseFlow;
-using SentinelCore.Data.DBEntities;
 
 
 
@@ -33,14 +33,14 @@ public static class SignalMappingExtensions
     {
         ArgumentNullException.ThrowIfNull(signal);
 
-        return new SignalEntity
+        return new()
         {
-                Id = signal.Id,
-                CaseId = 0, // or map if the contract exposes CaseId
-                SignalText = signal.SignalText,
-                Source = signal.Source,
-                FirstSeen = signal.Timestamp,
-                Notes = signal.Notes
+            Id = signal.Id,
+            CaseId = 0, // or map if the contract exposes CaseId
+            SignalText = signal.SignalText,
+            Source = signal.Source,
+            FirstSeen = signal.Timestamp,
+            Notes = signal.Notes
         };
     }
 }

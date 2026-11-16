@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         ArtifactEntity.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -10,8 +10,6 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 using Microsoft.EntityFrameworkCore;
-
-using SentinelCore.Data.DBEntities;
 
 
 

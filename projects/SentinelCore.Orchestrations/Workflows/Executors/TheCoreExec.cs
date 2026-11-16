@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -10,7 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Agents;
-using SentinelCore.Orchestrations.Agents.Models;
+using SentinelCore.Orchestrations.Models;
 
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using InvestigationObjective = SentinelCore.Orchestrations.Infrastructure.InvestigationObjective;
@@ -196,7 +196,7 @@ internal sealed partial class TheCoreExec : Executor
         {
             _reporter.ReportError($"[{Name}] Input message was null. Gracefully falling back to {nameof(InvestigationObjective)}.");
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"[{Name}] Input message was null. Returning fallback {nameof(InvestigationObjective)}."), cancellationToken).ConfigureAwait(false);
-            return new InvestigationObjective { Id = 0, Source = "Fallback", SourceType = "Fallback", SignalSummary = "Fallback" };
+            return new() { Id = 0, Source = "Fallback", SourceType = "Fallback", SignalSummary = "Fallback" };
         }
 
         try
@@ -230,7 +230,7 @@ internal sealed partial class TheCoreExec : Executor
             await context.YieldOutputAsync(new ChatMessage(ChatRole.Assistant, $"⚠️ An internal error occurred in {Name}: {ex.Message}"), cancellationToken).ConfigureAwait(false);
 
             _reporter.ReportInfo($"[{Name}] Returning fallback {nameof(InvestigationObjective)} due to error.");
-            return new InvestigationObjective { Id = 0, Source = "Fallback", SourceType = "Fallback", SignalSummary = "Fallback" };
+            return new() { Id = 0, Source = "Fallback", SourceType = "Fallback", SignalSummary = "Fallback" };
         }
     }
 }

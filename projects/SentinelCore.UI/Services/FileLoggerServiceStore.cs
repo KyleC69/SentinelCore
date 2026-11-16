@@ -1,8 +1,8 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.UI
 // File:         FileLoggerServiceStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  110813
+// Build Num:  111504
 
 
 
@@ -23,15 +23,15 @@ namespace SentinelCore.UI.Services;
 
 internal sealed class FileLoggerServiceStore : ILogger
 {
-    private readonly string _category;
+    private readonly string? _category;
 
 
 
-    private static readonly object Lock = new();
+    private static readonly Lock Lock = new();
 
     private static readonly string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SentinelCore", $"SentinelCore_{DateTime.Now:yyyyMMdd_HHmmss}.log");
 
-    private static readonly Lazy<StreamWriter> _logWriter = new Lazy<StreamWriter>(InitializeLogWriter);
+    private static readonly Lazy<StreamWriter> LogWriter = new(InitializeLogWriter);
 
 
 
@@ -75,7 +75,7 @@ internal sealed class FileLoggerServiceStore : ILogger
         if (isAI && state is IDictionary<string, object> dict)
         {
             // Check for GetStreamingResponseAsync update using KVPs in the state
-            if (dict.TryGetValue("Method", out object methodObj) && methodObj is string method && method.Equals("GetStreamingResponseAsync", StringComparison.OrdinalIgnoreCase) && dict.TryGetValue("IsUpdate", out object isUpdateObj) && isUpdateObj is bool isUpdate && isUpdate)
+            if (dict.TryGetValue("Method", out object? methodObj) && methodObj is string method && method.Equals("GetStreamingResponseAsync", StringComparison.OrdinalIgnoreCase) && dict.TryGetValue("IsUpdate", out object? isUpdateObj) && isUpdateObj is bool isUpdate && isUpdate)
             {
                 return; // Skip logging this update
             }
@@ -128,9 +128,9 @@ internal sealed class FileLoggerServiceStore : ILogger
 
     public static void Dispose()
     {
-        if (_logWriter.IsValueCreated)
+        if (LogWriter.IsValueCreated)
         {
-            _logWriter.Value.Dispose();
+            LogWriter.Value.Dispose();
         }
     }
 
@@ -146,7 +146,7 @@ internal sealed class FileLoggerServiceStore : ILogger
 
         string directory = Path.GetDirectoryName(LogFilePath)!;
         Directory.CreateDirectory(directory);
-        StreamWriter writer = new StreamWriter(LogFilePath, append: true);
+        StreamWriter writer = new(LogFilePath, append: true);
         writer.AutoFlush = true;
         return writer;
     }
@@ -186,8 +186,8 @@ internal sealed class FileLoggerServiceStore : ILogger
     {
         lock (Lock)
         {
-            StreamWriter writer = _logWriter.Value;
-            writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{logLevel}] {message}");
+            StreamWriter writer = LogWriter.Value;
+            writer.WriteLine($"{_category}]> {DateTime.Now:yyyy-MM-dd HH:mm:ss} [{logLevel}] {message}");
         }
     }
 }
@@ -198,7 +198,6 @@ internal sealed class FileLoggerServiceStore : ILogger
 
 internal sealed class FileLoggerProvider : ILoggerProvider
 {
-    private string _category;
 
 
 
