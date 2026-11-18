@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.Cfe;

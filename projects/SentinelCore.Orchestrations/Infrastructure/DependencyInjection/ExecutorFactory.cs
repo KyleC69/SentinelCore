@@ -83,8 +83,7 @@ internal sealed class ExecutorFactory
             TerminateWorkflow = Create<TerminateWorkflow>(),
             SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
             WhiteListExecutor = Create<WhiteListExecutor>(),
-            SignalClassifierExecutor = Create<SignalClassifierExecutor>(),
-            DirectAnswerExecutor = Create<DirectAnswerExecutor>()
+            SignalClassifierExecutor = Create<SignalClassifierExecutor>()
         };
     }
 }
@@ -112,5 +111,4 @@ internal sealed class ExecutorCollection
     public required SignalClassifierExecutor SignalClassifierExecutor { get; init; }
     public required TerminateWorkflow TerminateWorkflow { get; init; }
     public required WhiteListExecutor WhiteListExecutor { get; init; }
-    public required DirectAnswerExecutor DirectAnswerExecutor { get; init; }
 }

@@ -25,11 +25,6 @@ public sealed class McpServerRow
 {
 
     /// <summary>
-    ///     The logical agent names assigned to use this server, formatted for display.
-    /// </summary>
-    public string AssignedAgentsText { get; set; } = string.Empty;
-
-    /// <summary>
     ///     The command for stdio servers or the endpoint URL for HTTP servers.
     /// </summary>
     public string CommandOrEndpoint { get; set; } = string.Empty;

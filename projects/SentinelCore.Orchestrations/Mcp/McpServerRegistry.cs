@@ -185,6 +185,19 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
     /// <inheritdoc />
+    public IReadOnlyList<McpServerInfo> GetServersSnapshot()
+    {
+        return [.. _entries.Values.Select(e => e.ToInfo())];
+    }
+
+
+
+
+
+
+
+
+    /// <inheritdoc />
     public Task<IReadOnlyList<McpServerInfo>> ListAsync(CancellationToken cancellationToken = default)
     {
         List<McpServerInfo> infos = _entries.Values.Select(e => e.ToInfo()).ToList();
@@ -469,41 +482,6 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
 
 
-
-
-
-    /// <inheritdoc />
-    public async Task UpdateAssignmentsAsync(string id, IReadOnlyList<string> assignedAgentNames, CancellationToken cancellationToken = default)
-    {
-        ThrowIfDisposed();
-        ArgumentException.ThrowIfNullOrWhiteSpace(id);
-        ArgumentNullException.ThrowIfNull(assignedAgentNames);
-
-        if (!_entries.TryGetValue(id, out McpServerEntry? entry))
-        {
-            throw new InvalidOperationException($"MCP server '{id}' is not registered.");
-        }
-
-        McpServerDefinition current = entry.Definition;
-        McpServerDefinition updated = new(current.Id, current.DisplayName, current.TransportType, current.CommandOrEndpoint, current.Arguments, current.WorkingDirectory, current.EnvironmentVariables, current.OAuthSettings, assignedAgentNames);
-
-        _entries[id] = new(updated) { Status = entry.Status, ToolNames = entry.ToolNames, LastError = entry.LastError, Client = entry.Client };
-
-        try
-        {
-            await PersistAsync(cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation("Updated agent assignments for MCP server {ServerId}.", id);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to persist updated assignments for MCP server {ServerId}.", id);
-            throw;
-        }
-    }
 
 
 

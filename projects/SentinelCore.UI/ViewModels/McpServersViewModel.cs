@@ -31,19 +31,11 @@ namespace SentinelCore.UI.ViewModels;
 /// <summary>
 ///     View-model for the MCP Servers management page.
 ///     Allows users to view, add, remove, start, and stop MCP servers that
-///     supply tools to Sentinel agents. Agent assignments can be configured
-///     so that only selected agents receive a server's tools.
+///     supply tools to Sentinel agents. Which agent receives a server's tools
+///     is decided at the agent creation call site, not on the server definition.
 /// </summary>
 public sealed partial class McpServersViewModel : ObservableObject, INavigationAware, IDisposable
 {
-
-    /// <summary>
-    ///     Guards <see cref="LoadSelectedServerAssignmentsAsync" /> against stale
-    ///     results when the selection changes while a load is in flight.
-    /// </summary>
-    private int _assignmentLoadVersion;
-
-    [ObservableProperty] private ObservableCollection<string> _availableAgents = [];
 
     private readonly IDialogService _dialogService;
     private readonly IDispatcherService _dispatcher;
@@ -63,13 +55,10 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
     [NotifyCanExecuteChangedFor(nameof(StopServerCommand))]
     [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))]
-    [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
     private bool _isBusy;
 
     private readonly CancellationTokenSource _lifecycleCts = new();
     private readonly ILogger<McpServersViewModel> _logger;
-
-    [ObservableProperty] private ObservableCollection<AgentAssignmentRow> _newServerAgentAssignments = [];
 
     [ObservableProperty] private string _newServerArgumentsText = string.Empty;
 
@@ -95,10 +84,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
     [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
     [NotifyCanExecuteChangedFor(nameof(StopServerCommand))]
     [NotifyCanExecuteChangedFor(nameof(RemoveServerCommand))]
-    [NotifyCanExecuteChangedFor(nameof(UpdateAssignmentsCommand))]
     private McpServerRow? _selectedServer;
-
-    [ObservableProperty] private ObservableCollection<AgentAssignmentRow> _selectedServerAgentAssignments = [];
 
     [ObservableProperty] private ObservableCollection<McpServerRow> _servers = [];
 
@@ -134,7 +120,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         HookCommand(StartServerCommand);
         HookCommand(StopServerCommand);
         HookCommand(RemoveServerCommand);
-        HookCommand(UpdateAssignmentsCommand);
     }
 
 
@@ -143,15 +128,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
 
 
-
-    /// <summary>
-    ///     Gets a value indicating whether a server is selected, driving the
-    ///     assignment editor visibility.
-    /// </summary>
-    public bool HasSelectedServer
-    {
-        get => SelectedServer is not null;
-    }
 
     /// <summary>
     ///     Gets a value indicating whether the add-server form targets a stdio server,
@@ -246,9 +222,8 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             string id = Guid.NewGuid().ToString("N");
             IReadOnlyList<string> arguments = ParseArguments(NewServerArgumentsText);
             IReadOnlyDictionary<string, string> environment = ParseEnvironment(NewServerEnvironmentText);
-            IReadOnlyList<string> assignedAgents = NewServerAgentAssignments.Where(r => r.IsAssigned).Select(r => r.AgentName).ToList();
 
-            McpServerDefinition definition = new(id, NewServerDisplayName.Trim(), NewServerTransportType, NewServerCommandOrEndpoint.Trim(), arguments, string.IsNullOrWhiteSpace(NewServerWorkingDirectory) ? null : NewServerWorkingDirectory.Trim(), environment.Count > 0 ? environment : null, assignedAgentNames: assignedAgents.Count > 0 ? assignedAgents : null);
+            McpServerDefinition definition = new(id, NewServerDisplayName.Trim(), NewServerTransportType, NewServerCommandOrEndpoint.Trim(), arguments, string.IsNullOrWhiteSpace(NewServerWorkingDirectory) ? null : NewServerWorkingDirectory.Trim(), environment.Count > 0 ? environment : null);
 
             await _registry.RegisterAsync(definition, token);
 
@@ -281,12 +256,11 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
 
     /// <summary>
-    ///     Applies freshly loaded rows and agent names to the bound collections,
-    ///     preserving the selected server when it still exists.
+    ///     Applies freshly loaded rows to the bound collection, preserving the
+    ///     selected server when it still exists.
     /// </summary>
     /// <param name="rows">The freshly mapped server rows.</param>
-    /// <param name="agentNames">The freshly loaded agent names.</param>
-    private void ApplyLoadedData(List<McpServerRow> rows, List<string> agentNames)
+    private void ApplyLoadedData(List<McpServerRow> rows)
     {
         string? selectedId = SelectedServer?.Id;
 
@@ -294,18 +268,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         foreach (McpServerRow row in rows)
         {
             Servers.Add(row);
-        }
-
-        AvailableAgents.Clear();
-        foreach (string agent in agentNames)
-        {
-            AvailableAgents.Add(agent);
-        }
-
-        NewServerAgentAssignments.Clear();
-        foreach (string agent in agentNames)
-        {
-            NewServerAgentAssignments.Add(new() { AgentName = agent });
         }
 
         // Restore the selection when the server still exists; otherwise clear it.
@@ -421,8 +383,8 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
 
     /// <summary>
-    ///     Loads the server list and agent catalog into the bound collections.
-    ///     The collections are mutated in place (never reassigned) so the
+    ///     Loads the server list into the bound collection.
+    ///     The collection is mutated in place (never reassigned) so the
     ///     <see cref="SelectedServer" /> binding survives a refresh.
     /// </summary>
     /// <param name="token">Cancellation token.</param>
@@ -445,68 +407,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 
         List<McpServerRow> rows = servers.Select(MapToRow).ToList();
 
-        // Load agent names for the assignment editor
-        List<string> agentNames = [];
-        try
-        {
-            // Get agent names from the registry or use a default list
-            // For now, we'll use a simple approach - in a real app this might come from a service
-            agentNames = ["Core", "Manager", "DomainAgent1", "DomainAgent2"];
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to load agent names, using defaults");
-            agentNames = ["Core", "Manager"];
-        }
-
-        ApplyLoadedData(rows, agentNames);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Populates the assignment editor for the currently selected server from the registry.
-    ///     A version guard discards stale results when the selection changes mid-load.
-    /// </summary>
-    /// <param name="token">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous load operation.</returns>
-    private async Task LoadSelectedServerAssignmentsAsync(CancellationToken token)
-    {
-        McpServerRow? selected = SelectedServer;
-        if (selected is null)
-        {
-            return;
-        }
-
-        int version = ++_assignmentLoadVersion;
-
-        try
-        {
-            McpServerInfo? info = await _registry.GetAsync(selected.Id, token).ConfigureAwait(false);
-            if (info is null)
-            {
-                return;
-            }
-
-
-            // Discard the result when the selection changed while loading.
-            if (version != _assignmentLoadVersion || !ReferenceEquals(SelectedServer, selected))
-            {
-            }
-
-
-
-
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to load agent assignments for MCP server {ServerId}", selected.Id);
-        }
+        ApplyLoadedData(rows);
     }
 
 
@@ -526,7 +427,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             CommandOrEndpoint = server.Definition.CommandOrEndpoint,
             Status = server.Status,
             ToolNamesText = string.Join(", ", server.ToolNames),
-            AssignedAgentsText = server.Definition.AssignedAgentNames.Count > 0 ? string.Join(", ", server.Definition.AssignedAgentNames) : "All agents",
             LastError = server.LastError
         };
     }
@@ -549,41 +449,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
 #pragma warning restore CS8632, CS0448, CS0618, IDE0060
     {
         this.OnPropertyChanged(nameof(IsStdioTransport));
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Reloads the assignment editor whenever the selected server changes.
-    /// </summary>
-    /// <param name="oldValue">The previously selected server row.</param>
-    /// <param name="newValue">The newly selected server row.</param>
-#pragma warning disable IDE0060
-    partial void OnSelectedServerChanged(McpServerRow? oldValue, McpServerRow? newValue)
-#pragma warning restore IDE0060
-    {
-        this.OnPropertyChanged(nameof(HasSelectedServer));
-
-        if (newValue is null)
-        {
-            if (_dispatcher.CheckAccess())
-            {
-                SelectedServerAgentAssignments.Clear();
-            }
-            else
-            {
-                _dispatcher.Invoke(() => SelectedServerAgentAssignments.Clear());
-            }
-
-            return;
-        }
-
-        _ = LoadSelectedServerAssignmentsAsync(_lifecycleCts.Token);
     }
 
 
@@ -726,7 +591,7 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         }
 
         // Destructive action — confirm before removing the server registration.
-        bool confirmed = _dialogService.Confirm("Remove MCP Server", $"Remove '{SelectedServer.DisplayName}'? Its tools will no longer be available to assigned agents.", "Remove", isDestructive: true);
+        bool confirmed = _dialogService.Confirm("Remove MCP Server", $"Remove '{SelectedServer.DisplayName}'? Its tools will no longer be available to agents.", "Remove", isDestructive: true);
 
         if (!confirmed)
         {
@@ -772,8 +637,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
         NewServerTransportType = McpServerTransportType.Stdio;
         NewServerWorkingDirectory = string.Empty;
         NewServerEnvironmentText = string.Empty;
-
-        foreach (AgentAssignmentRow row in NewServerAgentAssignments) row.IsAssigned = false;
     }
 
 
@@ -879,46 +742,6 @@ public sealed partial class McpServersViewModel : ObservableObject, INavigationA
             ResultMessage = $"Error stopping server: {ex.Message}";
             ShowResult = true;
             await LoadAsync(token).ConfigureAwait(false);
-        }
-        finally
-        {
-            SetBusyState(false);
-        }
-    }
-
-
-
-
-
-
-
-
-    [RelayCommand(CanExecute = nameof(CanRemoveServer))]
-    private async Task UpdateAssignmentsAsync(CancellationToken token)
-    {
-        if (SelectedServer is null)
-        {
-            return;
-        }
-
-        SetBusyState(true);
-        ShowResult = false;
-
-        try
-        {
-            List<string> assigned = SelectedServerAgentAssignments.Where(r => r.IsAssigned).Select(r => r.AgentName).ToList();
-
-            await _registry.UpdateAssignmentsAsync(SelectedServer.Id, assigned, token).ConfigureAwait(false);
-            _logger.LogInformation("Updated agent assignments for MCP server {ServerId} via UI", SelectedServer.Id);
-            ResultMessage = "Agent assignments updated.";
-            ShowResult = true;
-            await LoadAsync(token).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to update agent assignments for MCP server {ServerId}", SelectedServer.Id);
-            ResultMessage = $"Error updating assignments: {ex.Message}";
-            ShowResult = true;
         }
         finally
         {

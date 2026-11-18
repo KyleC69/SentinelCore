@@ -158,7 +158,7 @@ public sealed class SentinelCoreDiagnosticsTests
             TraceEnabled = true
         };
 
-        return new SentinelAgentFactory(chatClientFactory.Object, modelResolver.Object, patternMatcher.Object, loggerFactory.Object, mcpServerRegistry.Object, new CaseEngineTools(), runtimeSettings);
+        return new SentinelAgentFactory(chatClientFactory.Object, modelResolver.Object, patternMatcher.Object, loggerFactory.Object, mcpServerRegistry.Object, [], runtimeSettings);
     }
 
 

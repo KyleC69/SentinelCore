@@ -53,7 +53,7 @@ public sealed class MsDocsMcpServerTool : AIFunction
 
     public override string Name
     {
-        get => "mslearn_mcp_query";
+        get => "local_docs_query";
     }
 
 

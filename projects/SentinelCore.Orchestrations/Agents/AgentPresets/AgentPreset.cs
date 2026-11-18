@@ -20,5 +20,6 @@ public enum AgentPreset
     UtilityAgent,
     ClassifierAgent,
     WorkerAgent,
-    AggregatorAgent
+    AggregatorAgent,
+    ReportExtractorAgent
 }

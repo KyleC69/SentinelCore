@@ -51,7 +51,7 @@ public class McpServerRegistryTests : IDisposable
 
         // Define a test MCP server that connects to a local test server
         // We assume an MCP server is running on localhost:3000 via stdio transport
-        McpServerDefinition testDefinition = new(id: _testServerId, displayName: "Test MCP Server", transportType: McpServerTransportType.Stdio, commandOrEndpoint: "echo", arguments: Array.Empty<string>(), workingDirectory: null, environmentVariables: null, oauthSettings: null, assignedAgentNames: new List<string>());
+        McpServerDefinition testDefinition = new(id: _testServerId, displayName: "Test MCP Server", transportType: McpServerTransportType.Stdio, commandOrEndpoint: "echo", arguments: Array.Empty<string>(), workingDirectory: null, environmentVariables: null, oauthSettings: null);
 
         _store.AddOrUpdateDefinition(testDefinition);
     }

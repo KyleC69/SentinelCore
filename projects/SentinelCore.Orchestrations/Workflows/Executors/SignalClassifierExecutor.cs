@@ -1,4 +1,4 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
 // File:         SignalClassifierExecutor.cs
 // Author: Kyle L. Crowder
@@ -88,7 +88,7 @@ public sealed partial class SignalClassifierExecutor : Executor
 
 
 
-        _agent = await _agentfactory.CreateAgentAsync(AgentPreset.ClassifierAgent, AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN, ChatResponseFormat.Json, token);
+        _agent = await _agentfactory.CreateAgentAsync(AgentPreset.ClassifierAgent, AgentToolSelection.None, AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN, ChatResponseFormat.Json, token);
         Throw.IfNull(_agent);
         AgentSession session = await _agent.CreateSessionAsync(token);
         string classify = "The following signal should be classified and an InvestigationObjective should be generated based on its content. Provide as much information as you can on the signal, and be sure to respond with a Json object, no wrapping or additional commentary allowed." + "\r\n\r\n" + envelope.SignalText;

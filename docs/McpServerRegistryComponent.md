@@ -17,7 +17,9 @@ version: v1.0
 
 ## Purpose
 
-The MCP Server Registry lets end users register external **Model Context Protocol (MCP)** servers whose tools become available to Sentinel agents. Servers are managed from a WPF admin page (add/remove, start/stop, status monitoring) and can be **assigned to specific agents** — a server assigned to `CoreChat` only exposes its tools to that agent, while an unassigned server is available to every agent.
+The MCP Server Registry lets end users register external **Model Context Protocol (MCP)** servers whose tools become available to Sentinel agents. Servers are managed from a WPF admin page (add/remove, start/stop, status monitoring).
+
+A server definition carries **no per-agent assignment**. Which tools an agent receives is decided at agent creation time through `AgentToolSelection` and the tool-domain vocabulary (see `ToolingComponent.md` and ADR-005). The registry's only job is to publish the tools; the factory decides who gets them.
 
 **Key Principle:** MCP tools flow through the same `AITool` pipeline as built-in domain tools. `McpClientTool` inherits from `AIFunction`, so registry tools are injected into agent construction without adapters or wrappers.
 
@@ -30,7 +32,7 @@ The MCP Server Registry lets end users register external **Model Context Protoco
 │                     SentinelCore.UI (WPF)                          │
 │  McpServersPage / McpServersViewModel                              │
 │  • add / remove / start / stop / refresh                           │
-│  • status + tool list + assigned agents display                    │
+│  • status + tool list display                                      │
 └───────────────────────────────┬────────────────────────────────────┘
                                 │ IMcpServerRegistry
                                 ▼
@@ -40,8 +42,8 @@ The MCP Server Registry lets end users register external **Model Context Protoco
 │  │  McpServerRegistry (IMcpServerRegistry)                      │  │
 │  │  • RegisterAsync / RemoveAsync / StartAsync / StopAsync      │  │
 │  │  • ListAsync / GetAsync                                      │  │
-│  │  • GetToolsForAgentAsync(agentName) → IReadOnlyList<AITool>   │  │
-│  │  • LoadPersistedAsync (hosted initializer)                   │  │
+│  │  • GetToolsFromCache / GetServersSnapshot (readiness)        │  │
+│  │  • LoadPersistedAsync (called from App startup)              │  │
 │  └──────────────┬───────────────────────────────────────────────┘  │
 │                 │ IMcpConnectionFactory                             │
 │  ┌──────────────▼───────────────────────────────────────────────┐  │
@@ -58,11 +60,11 @@ The MCP Server Registry lets end users register external **Model Context Protoco
 │  └──────────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────┘
                                 ▲
-                                │ GetToolsForAgentAsync(logicalAgentName)
+                                │ GetToolsFromCache() + local AIFunction tools
                                 │
 ┌───────────────────────────────┴────────────────────────────────────┐
-│  SentinelAgentFactory.BuildAgentOptionsAsync                        │
-│  merges profile.Tools with registry tools for the agent            │
+│  SentinelAgentFactory.ResolveTools(presetKind, toolSelection)       │
+│  narrows the merged catalog to the selected tool domains            │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -72,16 +74,15 @@ The MCP Server Registry lets end users register external **Model Context Protoco
 
 | Type | Purpose |
 | ------ | --------- |
-| `IMcpServerRegistry` | Registry surface: register/remove/start/stop/list/get + `GetToolsForAgentAsync` |
+| `IMcpServerRegistry` | Registry surface: register/remove/start/stop/list/get, `GetAllToolsAsync`, `GetToolsFromCache`, `GetServersSnapshot` |
 | `IMcpServerRegistryStore` | Persistence abstraction (load/save definitions) |
-| `ISentinelAgentCatalog` | Lists logical agent names for per-agent assignment UI |
-| `McpServerDefinition` | Immutable server config: id, display name, transport, command/endpoint, args, working dir, env vars, OAuth settings, assigned agent names |
+| `McpServerDefinition` | Immutable server config: id, display name, transport, command/endpoint, args, working dir, env vars, OAuth settings |
 | `McpServerInfo` | Runtime snapshot: definition + status + tool names + last error |
 | `McpServerStatus` | Lifecycle enum: `Stopped`, `Starting`, `Connected`, `Error` |
 | `McpServerTransportType` | `Stdio` or `Http` |
 | `McpOAuthSettings` | Client id, authorization/token endpoints, scopes |
 
-**Assignment semantics:** `McpServerDefinition.AssignedAgentNames` empty ⇒ available to **all** agents; otherwise only listed agents receive the server's tools (case-insensitive match against the logical agent name passed to `SentinelAgentFactory`).
+**Selection semantics:** the registry never filters tools by agent. `GetToolsFromCache()` returns every tool from every connected server, and `SentinelAgentFactory` narrows that set using the `AgentToolSelection` supplied at the call site — `None`, `All`, `ByNames`, or `ByDomains`. `All` applies no filter at all, so any server loaded at startup contributes to it.
 
 ---
 
@@ -94,9 +95,7 @@ The MCP Server Registry lets end users register external **Model Context Protoco
 | `LoopbackOAuthCallbackHandler` | Temporary `HttpListener` on a loopback port + system browser launch for the auth-code + PKCE flow |
 | `DpapiTokenCache` | DPAPI-encrypted access/refresh token cache (`mcp-tokens.bin` next to the registry file) |
 | `JsonFileMcpServerRegistryStore` | JSON persistence at `%APPDATA%\SentinelCore\mcp-servers.json` (override with `SENTINEL_MCP_REGISTRY_PATH`) |
-cancels a call after 30 s and returns `ToolResult.Fail` (never throws); success returns `ToolResult.Ok` (see ADR-002)
-| `McpServerRegistryInitializer` |
-| `SentinelAgentCatalog` | Static list of logical agent names: `CoreChat`, `Classifier`, `TheCore`, `SafetyAgent`, `Manager`, `Worker1`, `Worker2`, `Worker3` |
+| `McpToolTimeoutFunction` | `DelegatingAIFunction` that cancels a call after 30 s and returns `ToolResult.Fail` (never throws); success returns `ToolResult.Ok` (see ADR-002) |
 
 ### Tool enumeration
 
@@ -110,17 +109,25 @@ No MCP wait is unbounded: initialize handshake 30 s (`McpClientOptions.Initializ
 
 ## 3. Agent Integration (`SentinelAgentFactory`)
 
-`SentinelAgentFactory` takes `IMcpServerRegistry` in its constructor. `BuildAgentOptionsAsync` merges the profile's built-in tools with `registry.GetToolsForAgentAsync(profile.AgentName)`:
+`SentinelAgentFactory` takes `IMcpServerRegistry` in its constructor and merges registry tools with the DI-supplied local `AIFunction` tools into a single catalog keyed by tool name:
 
 ```csharp
-IReadOnlyList<AITool> mcpTools = await _mcpServerRegistry
-    .GetToolsForAgentAsync(logicalAgentName, cancellationToken)
-    .ConfigureAwait(false);
-
-List<AITool> tools = [.. profile.Tools, .. mcpTools];
+Dictionary<string, AITool> catalog = new(StringComparer.OrdinalIgnoreCase);
+foreach (AITool tool in _builtToolCache) catalog[tool.Name] = tool;
+foreach (AITool tool in _localTools) catalog[tool.Name] = tool;
 ```
 
-Because injection is centralized in the factory, **every** agent built through `ISentinelAgentFactory` (CoreChat, workflow agents, dynamic agents) receives its assigned MCP tools without per-agent wiring.
+`ResolveTools(presetKind, toolSelection)` then narrows that catalog:
+
+| Selection | Tools bound |
+| --------- | ----------- |
+| `null` | The role toolset for `presetKind` (`AgentToolRoleToolsets.For`), or none for a tool-free role |
+| `None` | None |
+| `All` | The entire catalog — every MCP server loaded at startup plus every local tool, unfiltered |
+| `ByNames` | Exactly the named tools; an unknown name throws `InvalidOperationException` (feature block) |
+| `ByDomains` | The union of tools claimed by the supplied domains' match rules |
+
+Because resolution is centralized in the factory, **every** agent built through `ISentinelAgentFactory` receives its toolset from the same vocabulary. Adding a tool to an MCP server requires no code change: domain rules match names by prefix and token, so new tools are claimed automatically, and anything unclaimed is logged and surfaced as a UI warning rather than silently dropped.
 
 ---
 
@@ -128,10 +135,9 @@ Because injection is centralized in the factory, **every** agent built through `
 
 | Type | Purpose |
 | ------ | --------- |
-| `McpServersViewModel` | View-model: add/remove/start/stop/refresh commands, add-server form (display name, transport, command/endpoint, args, working dir, env vars, per-agent checkboxes), status/tool/agent display, `UpdateAssignmentsCommand` for the selected server, `INavigationAware` + `IDisposable` |
-| `McpServersPage` | WPF page with toolbar, collapsible add-server form (stdio-only fields disable when HTTP transport is selected), a `DataGrid` of `McpServerRow` entries with a color-coded status indicator (green = connected, amber = starting, red = error, muted = stopped), and a per-agent assignment editor for the selected server |
-| `McpServerRow` | Display model: id, display name, transport, command/endpoint, status, tool names, assigned agents text, last error |
-| `AgentAssignmentRow` | One logical agent in the assignment editors: agent name + checked state (unchecked everywhere = available to all agents) |
+| `McpServersViewModel` | View-model: add/remove/start/stop/refresh commands, add-server form (display name, transport, command/endpoint, args, working dir, env vars), status/tool display, `INavigationAware` + `IDisposable` |
+| `McpServersPage` | WPF page with toolbar, collapsible add-server form (stdio-only fields disable when HTTP transport is selected), and a `DataGrid` of `McpServerRow` entries with a color-coded status indicator (green = connected, amber = starting, red = error, muted = stopped) |
+| `McpServerRow` | Display model: id, display name, transport, command/endpoint, status, tool names, last error |
 
 Navigation is wired through `SentinelCoreUIServiceExtensions` (page mapping + ViewModel registration) and the `MainWindow` radio-button tab set ("MCP Servers").
 
@@ -144,8 +150,9 @@ Navigation is wired through `SentinelCoreUIServiceExtensions` (page mapping + Vi
 - `IMcpServerRegistry` → `McpServerRegistry` (singleton)
 - `IMcpServerRegistryStore` → `JsonFileMcpServerRegistryStore` (singleton)
 - `IMcpConnectionFactory` → `McpConnectionFactory` (singleton)
-- `ISentinelAgentCatalog` → `SentinelAgentCatalog` (singleton)
-- `IHostedService` → `McpServerRegistryInitializer`
+
+There is no hosted-service initializer: `App.xaml.cs` calls `LoadPersistedAsync` during startup so the
+UI owns the lifecycle and nothing is auto-started behind the user's back.
 
 `AddSentinelCoreUi` (UI) registers `McpServersViewModel` and maps `McpServersPage`.
 
@@ -155,8 +162,8 @@ Navigation is wired through `SentinelCoreUIServiceExtensions` (page mapping + Vi
 
 | Test file | Coverage |
 | ----------- | ---------- |
-| `McpServerRegistryTests` | Registration, removal, persistence restore, get/list, per-agent filtering (universal vs assigned vs stopped), stop transitions. Uses a `FakeMcpClient` subclass of `McpClient` whose `SendRequestAsync` returns a canned `tools/list` JSON-RPC result — the SDK's non-virtual `ListToolsAsync` pipeline deserializes it into real `McpClientTool` instances. |
-| `McpServersViewModelTests` | Constructor null-guards, command gating (add/remove), add/remove/start/stop command interactions with a mocked registry, refresh loading of servers and agent names, double-dispose safety. |
+| `McpServerRegistryTests` | Registration, removal, persistence restore, get/list, tool enumeration across connected vs stopped servers, stop transitions. Uses a `FakeMcpClient` subclass of `McpClient` whose `SendRequestAsync` returns a canned `tools/list` JSON-RPC result — the SDK's non-virtual `ListToolsAsync` pipeline deserializes it into real `McpClientTool` instances. |
+| `McpServersViewModelTests` | Constructor null-guards, command gating (add/remove), add/remove/start/stop command interactions with a mocked registry, refresh loading of servers, double-dispose safety. |
 | `AgentBuilderTests` | `SentinelAgentFactory` constructor guards and MCP registry injection via a `FakeMcpServerRegistry`. |
 
 **Note on `FakeMcpClient`:** the `McpClient` constructor is an experimental SDK extensibility API (`MCPEXP002`); the test file suppresses the diagnostic with a file-level `#pragma warning disable MCPEXP002`.
@@ -168,10 +175,10 @@ Navigation is wired through `SentinelCoreUIServiceExtensions` (page mapping + Vi
 | Rule | Status | Notes |
 | ------ | -------- | ------- |
 | Real SDK types only | ✅ | `McpClient`, `McpClientTool`, `AIFunction` — no adapters |
-| Centralized tool injection | ✅ | `SentinelAgentFactory` merges registry tools |
+| Centralized tool resolution | ✅ | `SentinelAgentFactory.ResolveTools` owns every tool decision |
 | Persistence overridable | ✅ | `SENTINEL_MCP_REGISTRY_PATH` |
-| UI stays in control of lifecycle | ✅ | Initializer loads but never auto-starts |
-| Per-agent assignment | ✅ | `AssignedAgentNames` + case-insensitive match |
+| UI stays in control of lifecycle | ✅ | `App.xaml.cs` loads persisted servers; nothing auto-starts |
+| No per-agent assignment on the server | ✅ | Assignment is a call-site concern (`AgentToolSelection`) |
 | Failures isolated per server | ✅ | Tool-list errors logged, not thrown |
 
 ---
@@ -180,9 +187,9 @@ Navigation is wired through `SentinelCoreUIServiceExtensions` (page mapping + Vi
 
 | Item | Location | Status |
 | ------ | ---------- | -------- |
-| Per-agent assignment editor UI | `McpServersPage` | ✅ Checkbox editors in both the add form and the selected-server panel |
 | Token refresh on expiry | `McpConnectionFactory` | ⚠️ Refresh token stored; proactive refresh not implemented |
 | Server health polling | `McpServerRegistry` | ❌ Status only updates on explicit start/stop/refresh |
+| Readiness gate | `IModelConfigGate` | ✅ A server not `Connected` blocks agent actions and raises the UI banner (ADR-005) |
 
 ---
 
@@ -190,7 +197,9 @@ Navigation is wired through `SentinelCoreUIServiceExtensions` (page mapping + Vi
 
 | Document | Description |
 | ---------- | ------------- |
-| `ToolingComponent.md` | Static tool registry and role-based toolsets |
+| `ToolingComponent.md` | Rule-based tool-domain vocabulary and role-based toolsets |
+| `ADR/003-Agent-Tool-Selection.md` | Call-site toolset selection |
+| `ADR/005-Tool-Domain-Vocabulary.md` | Domains as match rules; readiness gate |
 | `OrchestrationComponent.md` | Agent construction pipeline |
 | `ContractsComponent.md` | Shared abstractions |
 | `user/ConfigurationAndCustomization.md` | Environment variable overrides |
@@ -202,3 +211,4 @@ Navigation is wired through `SentinelCoreUIServiceExtensions` (page mapping + Vi
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | v1.0 | 2026-09-09 | Kyle | Initial documentation for the MCP server registry feature |
+| v1.1 | 2026-02-20 | Kyle | Removed per-agent assignment (`AssignedAgentNames`, `ISentinelAgentCatalog`, `AgentAssignmentRow`, `GetToolsForAgentAsync`, assignment editor UI). Tool assignment is now a call-site decision through `AgentToolSelection`. Corrected stale implementation/DI tables. |

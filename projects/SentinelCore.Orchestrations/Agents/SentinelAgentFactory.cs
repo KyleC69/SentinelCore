@@ -1,4 +1,4 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
@@ -13,7 +13,6 @@ using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
-using SentinelCore.Orchestrations.Agents.Core.Tools;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Infrastructure.Diagnostics;
 using SentinelCore.Orchestrations.Models;
@@ -53,10 +52,10 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
     private readonly Lock _builtAgentsLock = new();
     private IReadOnlyList<AITool> _builtToolCache;
-    private readonly CaseEngineTools _caseTools;
     private readonly IChatClientFactory _chatClientFactory;
     private readonly bool _enableChatClientLogging;
     private readonly bool _enableOpenTelemetryTracing;
+    private readonly IReadOnlyList<AITool> _localTools;
     private readonly ILogger<SentinelAgentFactory> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -82,10 +81,10 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="patternMatcher">The pattern matcher used by the Core agent's pattern-memory context provider.</param>
     /// <param name="loggerFactory">The logger factory used by client-level and pattern-memory logging.</param>
     /// <param name="registry">The MCP server registry for managing MCP server instances.</param>
-    /// <param name="caseEngineTools">The case-engine tools used by tool-enabled agents.</param>
+    /// <param name="localTools">The in-process tools that <see cref="AgentToolSelection" /> can bind to an agent.</param>
     /// <param name="settings">Runtime SentinelCore settings that control logging and telemetry switches.</param>
     /// <exception cref="ArgumentNullException">Thrown when any required dependency is <c>null</c>.</exception>
-    public SentinelAgentFactory(IChatClientFactory chatClientFactory, IModelResolver modelResolver, IPatternMatcher patternMatcher, ILoggerFactory loggerFactory, IMcpServerRegistry registry, CaseEngineTools caseEngineTools, SentinelCoreSettings settings)
+    public SentinelAgentFactory(IChatClientFactory chatClientFactory, IModelResolver modelResolver, IPatternMatcher patternMatcher, ILoggerFactory loggerFactory, IMcpServerRegistry registry, IEnumerable<AITool> localTools, SentinelCoreSettings settings)
     {
         _chatClientFactory = chatClientFactory ?? throw new ArgumentNullException(nameof(chatClientFactory));
         _modelResolver = modelResolver ?? throw new ArgumentNullException(nameof(modelResolver));
@@ -93,7 +92,8 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _logger = loggerFactory.CreateLogger<SentinelAgentFactory>();
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
-        _caseTools = caseEngineTools ?? throw new ArgumentNullException(nameof(caseEngineTools));
+        ArgumentNullException.ThrowIfNull(localTools);
+        _localTools = [.. localTools];
 
         SentinelCoreSettings runtimeSettings = settings ?? throw new ArgumentNullException(nameof(settings));
         _enableChatClientLogging = runtimeSettings.ChatClientLoggingEnabled;
@@ -111,10 +111,16 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+    /// <summary>
+    ///     Creates an agent from a preset using the preset's default toolset behaviour.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="cancellationToken">A token that cancels agent construction.</param>
+    /// <returns>The constructed agent.</returns>
     public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, CancellationToken cancellationToken = default)
     {
         // 2‑parameter overload forwards to the 3‑parameter overload with no task instructions.
-        return await CreateAgentAsync(presetName, null, cancellationToken);
+        return await CreateAgentAsync(presetName, (string?)null, cancellationToken);
     }
 
 
@@ -124,6 +130,13 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+    /// <summary>
+    ///     Creates an agent from a preset using the preset's default toolset behaviour.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
+    /// <param name="cancellationToken">A token that cancels agent construction.</param>
+    /// <returns>The constructed agent.</returns>
     public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string? taskInstructions, CancellationToken cancellationToken = default)
     {
         // 3‑parameter overload forwards to the 4‑parameter overload with no JSON schema.
@@ -137,12 +150,20 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+    /// <summary>
+    ///     Creates an agent from a preset, optionally producing JSON that conforms to a schema.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
+    /// <param name="forJsonSchema">When supplied, the agent must answer with JSON matching this schema.</param>
+    /// <param name="token">A token that cancels agent construction.</param>
+    /// <returns>The constructed agent.</returns>
     public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string? taskInstructions, ChatResponseFormatJson? forJsonSchema, CancellationToken token)
     {
         // Resolve the preset definition from the enum
         AgentPresetDefinition preset = AgentPresetDefinition.FromName(presetName);
         // Forward to core implementation that performs all setup.
-        return await CreateAgentCoreAsync(preset, taskInstructions, forJsonSchema, token);
+        return await CreateAgentCoreAsync(presetName, preset, taskInstructions, forJsonSchema, null, token);
     }
 
 
@@ -152,6 +173,14 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+    /// <summary>
+    ///     Creates a named agent from a preset, overriding the preset's name and description.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="agentName">The name assigned to this agent instance.</param>
+    /// <param name="agentDescription">The description assigned to this agent instance.</param>
+    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
+    /// <returns>The constructed agent.</returns>
     public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, string taskInstructions)
     {
         // Resolve the preset definition from the enum
@@ -161,16 +190,19 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         preset.Description = agentDescription;
 
 
-        return await CreateAgentCoreAsync(preset, taskInstructions, null, CancellationToken.None);
+        return await CreateAgentCoreAsync(presetName, preset, taskInstructions, null, null, CancellationToken.None);
     }
 
 
 
 
-
-
-
-
+    /// <summary>
+    ///     Creates a named agent from a preset, overriding the preset's name and description.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="agentName">The name assigned to this agent instance.</param>
+    /// <param name="agentDescription">The description assigned to this agent instance.</param>
+    /// <returns>The constructed agent.</returns>
     public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription)
     {
         _logger.LogInformation("Creating agent with preset: {PresetName}, name: {AgentName}, description: {AgentDescription}", presetName, agentName, agentDescription);
@@ -181,9 +213,108 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             throw new InvalidOperationException($"Preset definition for {presetName} could not be resolved.");
         }
 
-        _logger.LogInformation("Agent created successfully: {AgentName}", agentName);
-        return await CreateAgentCoreAsync(presetDefinition, null, null, CancellationToken.None);
+        presetDefinition.AgentName = agentName;
+        presetDefinition.Description = agentDescription;
 
+        return await CreateAgentCoreAsync(presetName, presetDefinition, null, null, null, CancellationToken.None);
+    }
+
+
+
+
+    /// <summary>
+    ///     Creates an agent from a preset with an explicit tool selection.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="toolSelection">The tools to bind to the agent.</param>
+    /// <param name="cancellationToken">A token that cancels agent construction.</param>
+    /// <returns>The constructed agent.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
+    public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, AgentToolSelection toolSelection, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(toolSelection);
+        return await CreateAgentAsync(presetName, toolSelection, null, null, cancellationToken);
+    }
+
+
+
+
+    /// <summary>
+    ///     Creates an agent from a preset with an explicit tool selection.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="toolSelection">The tools to bind to the agent.</param>
+    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
+    /// <param name="cancellationToken">A token that cancels agent construction.</param>
+    /// <returns>The constructed agent.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
+    public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, AgentToolSelection toolSelection, string? taskInstructions, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(toolSelection);
+        return await CreateAgentAsync(presetName, toolSelection, taskInstructions, null, cancellationToken);
+    }
+
+
+
+
+    /// <summary>
+    ///     Creates an agent from a preset with an explicit tool selection, optionally producing JSON that
+    ///     conforms to a schema.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="toolSelection">The tools to bind to the agent.</param>
+    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
+    /// <param name="forJsonSchema">When supplied, the agent must answer with JSON matching this schema.</param>
+    /// <param name="token">A token that cancels agent construction.</param>
+    /// <returns>The constructed agent.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
+    public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, AgentToolSelection toolSelection, string? taskInstructions, ChatResponseFormatJson? forJsonSchema, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(toolSelection);
+        AgentPresetDefinition preset = AgentPresetDefinition.FromName(presetName);
+        return await CreateAgentCoreAsync(presetName, preset, taskInstructions, forJsonSchema, toolSelection, token);
+    }
+
+
+
+
+    /// <summary>
+    ///     Creates a named agent from a preset with an explicit tool selection.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="agentName">The name assigned to this agent instance.</param>
+    /// <param name="agentDescription">The description assigned to this agent instance.</param>
+    /// <param name="toolSelection">The tools to bind to the agent.</param>
+    /// <returns>The constructed agent.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
+    public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, AgentToolSelection toolSelection)
+    {
+        ArgumentNullException.ThrowIfNull(toolSelection);
+        return await CreateAgentAsync(presetName, agentName, agentDescription, null, toolSelection);
+    }
+
+
+
+
+    /// <summary>
+    ///     Creates a named agent from a preset with an explicit tool selection.
+    /// </summary>
+    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
+    /// <param name="agentName">The name assigned to this agent instance.</param>
+    /// <param name="agentDescription">The description assigned to this agent instance.</param>
+    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
+    /// <param name="toolSelection">The tools to bind to the agent.</param>
+    /// <returns>The constructed agent.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
+    public async Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, string? taskInstructions, AgentToolSelection toolSelection)
+    {
+        ArgumentNullException.ThrowIfNull(toolSelection);
+
+        AgentPresetDefinition preset = AgentPresetDefinition.FromName(presetName);
+        preset.AgentName = agentName;
+        preset.Description = agentDescription;
+
+        return await CreateAgentCoreAsync(presetName, preset, taskInstructions, null, toolSelection, CancellationToken.None);
     }
 
 
@@ -232,16 +363,25 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <summary>
     ///     Constructs the final <see cref="AIAgent" /> from the configured chat client and context providers.
     /// </summary>
+    /// <param name="presetKind">The preset enum that structurally identifies the agent's role.</param>
     /// <param name="preset">The preset that supplies the agent identity.</param>
-    /// <param name="profile">The model settings that supply chat options.</param>
+    /// <param name="toolSelection">
+    ///     The call-site tool selection, or <c>null</c> to keep the preset-driven default toolset behaviour.
+    /// </param>
     /// <param name="chatClient">The configured chat client that serves model requests.</param>
-    /// <param name="chatResponseFormat"></param>
+    /// <param name="chatResponseFormat">The response format the agent must produce, or <c>null</c> for JSON.</param>
     /// <param name="contextProviders">The context providers that enrich agent invocations.</param>
     /// <returns>A fully configured <see cref="ChatClientAgent" />.</returns>
-    private ChatClientAgent BuildAgent(AgentPresetDefinition preset, IChatClient chatClient, ChatResponseFormat? chatResponseFormat = null, List<AIContextProvider?>? contextProviders = null)
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the Manager preset is given a non-empty toolset, or when a named tool cannot be resolved.
+    /// </exception>
+    private ChatClientAgent BuildAgent(AgentPreset presetKind, AgentPresetDefinition preset, AgentToolSelection? toolSelection, IChatClient chatClient, ChatResponseFormat? chatResponseFormat = null, List<AIContextProvider?>? contextProviders = null)
     {
 
-        Throw.IfNullOrEmpty(_builtToolCache.ToList());
+        IReadOnlyList<AITool> tools = ResolveTools(presetKind, toolSelection);
+        EnsureManagerHasNoTools(presetKind, tools);
+
+
 
         ChatOptions chatOptions = new()
         {
@@ -255,7 +395,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             ModelId = preset.ModelProfile?.ModelId,
             AllowMultipleToolCalls = true,
             ToolMode = ChatToolMode.Auto,
-            Tools = preset.UseTools ? _builtToolCache.ToList() : [],
+            Tools = [.. tools],
             ResponseFormat = chatResponseFormat ?? ChatResponseFormat.Json
         };
 
@@ -288,10 +428,214 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
+    ///     Resolves the tools that are bound to an agent for the supplied selection.
+    /// </summary>
+    /// <param name="presetKind">The preset enum that selects the role toolset used when no selection is supplied.</param>
+    /// <param name="toolSelection">
+    ///     The call-site tool selection, or <c>null</c> to bind the preset's role toolset.
+    /// </param>
+    /// <returns>The tools to bind to the agent. Never <c>null</c>.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when a named tool cannot be resolved or the selection kind is not supported.
+    /// </exception>
+    private IReadOnlyList<AITool> ResolveTools(AgentPreset presetKind, AgentToolSelection? toolSelection)
+    {
+        if (toolSelection is null)
+        {
+            // No preset decides the toolset; the role vocabulary does. A tool-free role binds nothing.
+            IReadOnlyList<AgentToolDomain> roleDomains = AgentToolRoleToolsets.For(presetKind);
+
+            return roleDomains.Count == 0 ? [] : ResolveDomainTools(roleDomains);
+        }
+
+        switch (toolSelection.Kind)
+        {
+            case AgentToolSelectionKind.None:
+                return [];
+            case AgentToolSelectionKind.All:
+                return [.. BuildToolCatalog().Values];
+            case AgentToolSelectionKind.Named:
+                return ResolveNamedTools(toolSelection.ToolNames);
+            case AgentToolSelectionKind.Domains:
+                return ResolveDomainTools(toolSelection.Domains);
+            default:
+                throw new InvalidOperationException($"Unsupported tool selection kind '{toolSelection.Kind}'.");
+        }
+    }
+
+
+
+
+    /// <summary>
+    ///     Builds the merged MCP and local tool catalog keyed by tool name.
+    /// </summary>
+    /// <returns>The merged catalog. The returned dictionary is not cached and is safe to mutate.</returns>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when a local tool collides with any other tool, which is always a code defect.
+    /// </exception>
+    private Dictionary<string, AITool> BuildToolCatalog()
+    {
+        Dictionary<string, AITool> catalog = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (AITool tool in _builtToolCache)
+        {
+            if (!catalog.TryAdd(tool.Name, tool))
+            {
+                // Two MCP servers advertising the same tool name is external configuration, not a
+                // code defect, so the first registration wins instead of aborting the workflow.
+                _logger.LogWarning(
+                    "The MCP tool name '{ToolName}' is advertised by more than one MCP server; the first registration is used.",
+                    tool.Name);
+            }
+        }
+
+        foreach (AITool tool in _localTools)
+        {
+            if (!catalog.TryAdd(tool.Name, tool))
+            {
+                // A local tool that collides with any other tool is a code defect and must fail fast.
+                throw new InvalidOperationException(
+                    $"The local tool '{tool.Name}' collides with another MCP or local tool. Local tool names must be unique.");
+            }
+        }
+
+        return catalog;
+    }
+
+
+
+
+    /// <summary>
+    ///     Resolves an explicit list of tool names against the merged MCP and local tool catalog.
+    /// </summary>
+    /// <param name="toolNames">The case-insensitive tool names requested by the call site.</param>
+    /// <returns>The resolved tools in the requested order.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when any requested tool name is not registered.</exception>
+    private IReadOnlyList<AITool> ResolveNamedTools(IReadOnlyList<string> toolNames)
+    {
+        Dictionary<string, AITool> catalog = BuildToolCatalog();
+        List<AITool> resolved = new(toolNames.Count);
+        List<string> unknown = [];
+
+        foreach (string toolName in toolNames)
+        {
+            if (catalog.TryGetValue(toolName, out AITool? tool))
+            {
+                resolved.Add(tool);
+            }
+            else
+            {
+                unknown.Add(toolName);
+            }
+        }
+
+        if (unknown.Count > 0)
+        {
+            string available = string.Join(", ", catalog.Keys.Order(StringComparer.OrdinalIgnoreCase));
+            throw new InvalidOperationException(
+                $"The following tools are not registered in the MCP or local tool catalog: {string.Join(", ", unknown)}. Available tools: {available}.");
+        }
+
+        return resolved;
+    }
+
+
+
+
+
+    /// <summary>
+    ///     Resolves the tools claimed by the supplied domains against the merged MCP and local tool catalogue.
+    /// </summary>
+    /// <param name="domains">The domains whose tools should be bound.</param>
+    /// <returns>The union of the domain tools, de-duplicated by name and ordered for deterministic construction.</returns>
+    /// <remarks>
+    ///     Domains hold rules rather than fixed name lists, so a tool that is added later is claimed automatically.
+    ///     An empty result is a soft warning, never a failure: a domain can legitimately be empty when the server
+    ///     that owns it is not loaded, and the call site decides whether that matters.
+    /// </remarks>
+    private IReadOnlyList<AITool> ResolveDomainTools(IReadOnlyList<AgentToolDomain> domains)
+    {
+        Dictionary<string, AITool> catalog = BuildToolCatalog();
+        HashSet<string> selected = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (AgentToolDomain domain in domains)
+        {
+            foreach (string toolName in domain.SelectFrom(catalog.Keys))
+            {
+                _ = selected.Add(toolName);
+            }
+        }
+
+        if (selected.Count == 0)
+        {
+            _logger.LogWarning(
+                    "The domain tool selection [{Domains}] resolved to zero tools against a catalogue of {ToolCount} tool(s). The agent is built with an empty toolset.",
+                    string.Join(", ", domains.Select(domain => domain.Name)),
+                    catalog.Count);
+
+            return [];
+        }
+
+        return [.. selected.Order(StringComparer.OrdinalIgnoreCase).Select(toolName => catalog[toolName])];
+    }
+
+
+
+
+
+    /// <summary>
+    ///     Reports the catalogue tools that no domain claims so the vocabulary can be extended instead of
+    ///     silently losing reachability.
+    /// </summary>
+    /// <param name="toolNames">The live catalogue of tool names to test.</param>
+    private void ReportUnclassifiedTools(IEnumerable<string> toolNames)
+    {
+        IReadOnlyList<string> unclassified = AgentToolDomainCatalog.Unclassified(toolNames);
+
+        if (unclassified.Count > 0)
+        {
+            _logger.LogWarning(
+                    "{Count} tool(s) are not claimed by any tool domain: {Tools}. They remain reachable through AgentToolSelection.All and by explicit name.",
+                    unclassified.Count,
+                    string.Join(", ", unclassified));
+        }
+    }
+
+
+
+
+    /// <summary>
+    ///     Enforces PL-3: the Manager agent must never be given a toolset.
+    /// </summary>
+    /// <param name="presetKind">The preset enum that identifies the agent's role.</param>
+    /// <param name="tools">The tools that were resolved for the agent.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the Manager preset is given a non-empty toolset.</exception>
+    private static void EnsureManagerHasNoTools(AgentPreset presetKind, IReadOnlyList<AITool> tools)
+    {
+        if (presetKind == AgentPreset.ManagerAgent && tools.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "PL-3 forbids tools on the Manager agent. The Manager only coordinates the magnetic orchestration workflow and must never reason or call tools.");
+        }
+    }
+
+
+
+
+    /// <summary>
     ///     Shared implementation for creating an <see cref="AIAgent" /> from a preset definition.
     ///     Handles model resolution, chat client construction with logging, and optional context providers.
     /// </summary>
-    private async Task<AIAgent> CreateAgentCoreAsync(AgentPresetDefinition preset, string? taskInstructions, ChatResponseFormatJson? forJsonSchema, CancellationToken token = default)
+    /// <param name="presetKind">The preset enum that structurally identifies the agent's role.</param>
+    /// <param name="preset">The resolved preset definition that supplies the agent identity and defaults.</param>
+    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
+    /// <param name="forJsonSchema">When supplied, the agent must answer with JSON matching this schema.</param>
+    /// <param name="toolSelection">
+    ///     The call-site tool selection, or <c>null</c> to keep the preset-driven default toolset behaviour.
+    /// </param>
+    /// <param name="token">A token that cancels agent construction.</param>
+    /// <returns>A fully configured <see cref="AIAgent" />.</returns>
+    private async Task<AIAgent> CreateAgentCoreAsync(AgentPreset presetKind, AgentPresetDefinition preset, string? taskInstructions, ChatResponseFormatJson? forJsonSchema, AgentToolSelection? toolSelection, CancellationToken token = default)
     {
         // Resolve the appropriate model profile based on the preset's tier
         ModelProfile? model = _modelResolver.ResolveByTier(preset.Tier);
@@ -320,12 +664,12 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
             // =====  USE ONLY FOR TESTING AGENT BEHAVIOR, NOT FOR PRODUCTION LOGGING =====
             IChatClient loggingClient = chatclient.AsBuilder().UseLogging(_loggerFactory).Build();
             // Build and cast to the public interface type.
-            builtAgent = BuildAgent(preset, loggingClient, forJsonSchema, providers);
+            builtAgent = BuildAgent(presetKind, preset, toolSelection, loggingClient, forJsonSchema, providers);
         }
         else
         {
             // Build and cast to the public interface type.
-            builtAgent = BuildAgent(preset, chatclient, forJsonSchema, providers);
+            builtAgent = BuildAgent(presetKind, preset, toolSelection, chatclient, forJsonSchema, providers);
         }
 
 
@@ -347,6 +691,9 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+    /// <summary>
+    ///     Handles a change notification from the MCP server registry by refreshing the tool cache.
+    /// </summary>
     private void OnToolCacheChanged()
     {
         RefreshToolCache();
@@ -360,18 +707,15 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
-    ///     Registers a worker agent with the next available positive numeric suffix.
-    /// </summary>
-    /// <param name="preset">The worker preset whose identity is being registered.</param>
-    /// <returns>A copy of the worker preset with a unique agent identifier and name.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="preset" /> is <c>null</c>.</exception>
-    /// <summary>
     ///     Refreshes the tool cache by querying the MCP server registry for the latest tools.
     ///     This should be called when the MCP server registry changes (e.g., after servers are started).
     /// </summary>
     public void RefreshToolCache()
     {
         _builtToolCache = _registry.GetToolsFromCache();
+
+        List<string> catalogNames = [.. _builtToolCache.Select(tool => tool.Name), .. _localTools.Select(tool => tool.Name)];
+        ReportUnclassifiedTools(catalogNames);
     }
 
 
@@ -381,6 +725,13 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+    /// <summary>
+    ///     Registers a worker agent with the next available positive numeric suffix.
+    /// </summary>
+    /// <param name="agentId">The base identifier of the worker agent.</param>
+    /// <param name="agentName">The base display name of the worker agent.</param>
+    /// <returns>The unique agent identifier and display name assigned to the worker.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="agentId" /> or <paramref name="agentName" /> is <c>null</c>.</exception>
     private (string, string) RegisterUniqueWorkerAgent(string agentId, string agentName)
     {
         ArgumentNullException.ThrowIfNull(agentId);

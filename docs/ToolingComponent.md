@@ -3,27 +3,36 @@ title: "Tooling Component"
 status: Active
 component: Tooling
 last_updated: 2026-07-19
-version: v1.0
+version: v2.0
 ---
 
 # SentinelCore Tooling Component
 
 **Project:** `SentinelCore.Orchestrations`
-**Namespace:** `SentinelCore.Orchestrations.Application`
-**Dependencies:** `SentinelCore.Contracts` (AgentRole, AITool), `Microsoft.Extensions.AI`
-**Consumers:** `SentinelCore.Orchestrations` (AgentSpecBuilder, DomainAgentFactory, CoreAgentFactory, MagneticCoopOrchestration)
+**Namespace:** `SentinelCore.Orchestrations.Abstractions`
+**Dependencies:** `SentinelCore.Contracts` (MCP contracts, `AITool`), `Microsoft.Extensions.AI`
+**Consumers:** `SentinelAgentFactory` (tool resolution), `TheCoreWorkflow`, `ConcurrentGroupTeam`, `CustomGroupWorkflow`
 
 ---
 
 ## Purpose
 
-The Tooling component provides **centralized, static tool resolution** for all agents in SentinelCore. It defines 30+ domain-specific read tools mapped to Windows configuration surfaces, exposes role-based toolsets, and serves as the single source of truth for "which tools does this agent get?"
+The MCP server (SentinelCore-MCP) supplies the read-only operating-system interrogation surface and defines 140+ tools.
+The Orchestrations project supplies a small set of in-process `AIFunction` tools for mutation.
 
-**Key Principle:** Tools are **read-only** — they gather evidence, they don't mutate system state. Mutation is handled by the host application, not agents.
+**Key Principle:** Tools are **read-only** — they gather evidence, they don't mutate system state.
+
+Mutation is handled by the internal local tools, which are named with the `local_` prefix.
+
+**Second Key Principle:** An agent's toolset is a **call-site decision**. Nothing in the preset or the MCP server
+definition decides which tools an agent receives.
 
 ---
 
-## Architecture Position
+## Architecture Position — superseded diagram
+
+> The diagram below shows the removed `ToolRegistry` shape. The current composition is described in sections 1-5:
+> the call site supplies an `AgentToolSelection` and `SentinelAgentFactory.ResolveTools` turns it into a toolset.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -54,329 +63,225 @@ The Tooling component provides **centralized, static tool resolution** for all a
 
 ---
 
-## 1. DomainToolNames — 30 Windows Configuration Domains
+## 1. Tool domains — rules, never lists
 
-**File:** `Application/ToolRegistry.cs`
-**Type:** `static readonly Dictionary<string, string[]>`
+The earlier design mapped a domain to a fixed array of tool names. That design has one fatal flaw: **when a tool is
+added or renamed, every domain that named it silently loses it.** A domain that lists `read_registry_key` stops
+working the moment the server renames it to `Registry_Read_Key`, and nothing reports the loss.
 
-Maps **domain name** → **array of tool names** (each tool name maps to a function in `AIFunctionFactory`).
+The delivered design maps a domain to **membership rules over names** instead. Membership is recomputed against the
+live catalogue on every resolution, so:
+
+- a tool added later is claimed automatically by its area prefix;
+- a tool renamed into a different area is claimed by its new area;
+- a tool that no rule claims is **reported** rather than silently dropped — see `AgentToolDomainCatalog.Unclassified`.
+
+Domains may overlap on purpose. `Registry_Read_Acl` belongs to both `Registry` and `Permissions`; the factory
+de-duplicates by tool name so the model call never sees the same tool twice.
+
+**File:** `Abstractions/AgentToolSelection.cs`
+**Types:** `AgentToolDomain`, `ToolMatchRule`, `AgentToolDomainCatalog`
+
+| Domain | Rules | Purpose |
+| ---------- | --------- | --------- |
+| `AllowedCommands` | `AllowedCommands_` | Configured command allow-list surface |
+| `Auditing` | `Auditing_`, tokens `AuditPol`, `AccessChk` | Audit policy, effective permissions |
+| `Autoruns` | `Autoruns_` | Autorun locations, image-hijack persistence |
+| `Bitlocker` | `Bitlocker_` | BitLocker status, protectors, recovery keys |
+| `Browser` | `Browser_` | Browser policy, profiles, extensions |
+| `CaseLifecycle` | `local_case_` | Internal case creation and report persistence |
+| `Certificates` | `Certificate_`, tokens `Certificates`, `SigCheck` | Code-signing certificates, signatures |
+| `Com` | `COM_` | COM registration, component hijacking |
+| `Defender` | `Defender_` | Defender status, scan and threat history |
+| `Devices` | `Device_`, tokens `Devices`, `PnP`, `PnpListDevices` | Plug-and-play devices |
+| `Documentation` | `local_docs_`, tokens `mslearn`, `docs` | Vendor documentation lookups |
+| `Driver` | `Driver_`, token `Drivers` | Kernel and file-system drivers |
+| `Dns` | `DNS_` | Resolution and resolver cache |
+| `EventLog` | `Event_Log_`, token `EventLog` | Event channels and queries |
+| `FileSystem` | `File_System_`, token `FileSystem` | Files, streams, hashes, ACLs, metadata |
+| `Firewall` | `Firewall_` | Firewall profiles and rules |
+| `GroupPolicy` | `Group_Policy_`, tokens `GroupPolicy`, `GPO` | GPO and resultant policy |
+| `Hotfix` | `Hotfix_`, token `Hotfixes` | Installed updates |
+| `Logon` | `Logon_` | Interactive and network logons |
+| `Memory` | `Memory_`, tokens `VMMap`, `RAMMap` | Physical and virtual memory |
+| `Modules` | `Module_`, tokens `Modules`, `ListDlls` | Loaded modules and DLLs |
+| `Network` | `Network_` | Connections, ARP cache, routes, adapters |
+| `Permissions` | tokens `Acl`, `AccessChk`, `Access` | ACLs and effective permissions |
+| `Pipes` | `Pipe_`, tokens `Pipes`, `PipeList` | Named pipes |
+| `PowerShell` | `PowerShell_` | Read-only PowerShell execution and history |
+| `Process` | `Process_`, tokens `PsList`, `ProcDump`, `Handle` | Processes, handles, dumps |
+| `Registry` | `Registry_` | Registry keys, values, hives |
+| `ScheduledTasks` | `ScheduledTasks_`, token `ScheduledTask` | Tasks and triggers |
+| `SearchIndex` | `Search_`, token `SearchIndex` | Windows Search crawl scope |
+| `Security` | `Security_` | Security policy, zones, hardening |
+| `Service` | `Service_`, token `Services` | Services, state and configuration |
+| `Sessions` | `Sessions_`, token `LogonSessions` | Logon and remote sessions |
+| `ShellTaskbar` | `Shell_Taskbar_`, token `ShellTaskbar` | Shell and taskbar configuration |
+| `Software` | `Software_` | Installed software inventory |
+| `System` | `System_` | System information, machine state |
+| `Tokens` | `Token_`, token `Tokens` | Token privileges and integrity level |
+| `Uac` | `UAC_` | User Account Control, elevation state |
+| `Volume` | `Volume_`, token `Volumes` | Volumes, partitions, disk layout |
+| `WebResearch` | `Web_`, tokens `WebSearch`, `WebResearch` | Web search and page retrieval |
+| `Wmi` | `WMI_` | WMI namespaces, classes and queries |
+
+> Every single-segment stem declared through the `Area(...)` helper contributes **both** a prefix rule and a token
+> rule. The token rule is what keeps a vendor-prefixed name such as `Sysinternals_PsList_List_Processes` claimable
+> without naming the vendor, and it is why a singular/plural change alone cannot empty a domain.
+
+---
+
+## 2. Matchers
+
+**Type:** `ToolMatchRule` — only two strategies exist, and neither can throw during matching.
+
+| Matcher | Semantics | Example |
+| --------- | ----------- | --------- |
+| `Prefix(stem)` | The name starts with the stem plus `_`. The separator is appended automatically. | `Prefix("Power")` becomes `Power_`, which does **not** claim `PowerShell_Run_Command` |
+| `Token(token)` | Any underscore-delimited segment of the name equals the token, case-insensitively. Vendor independent. | `Token("PsList")` claims both `PsList_List_Processes` and `Sysinternals_PsList_List_Processes` |
+
+There is deliberately no `Suffix`, no `Exact`, and no throwing matcher. A rule that cannot match simply claims
+nothing, and `Unclassified` surfaces the consequence.
+
+---
+
+## 3. Categories — composite domains
+
+**Property:** `AgentToolDomainCatalog.Categories`
+
+A category is itself an `AgentToolDomain` whose rules are the union of its members' rules. It therefore flows through
+the same resolution path and needs no separate selection kind.
+
+| Category | Member domains |
+| ---------- | ---------------- |
+| `Forensics` | FileSystem, Registry, EventLog, Process, Service, Driver, ScheduledTasks |
+| `Persistence` | Autoruns, ScheduledTasks, Service, Driver, Com, ShellTaskbar |
+| `Identity` | Security, Logon, Sessions, Tokens, Uac |
+| `NetworkAccess` | Network, Firewall, Dns |
+| `Cryptography` | Certificates, Bitlocker |
+| `Configuration` | GroupPolicy, Auditing, Wmi, System, AllowedCommands |
+| `Execution` | Process, PowerShell, Com, Wmi |
+| `MemoryInspection` | Memory, Modules, Pipes |
+| `Hardware` | Devices, Driver, Volume, Hotfix, Software |
+| `Hardening` | Defender, Security, Auditing, Firewall, Permissions |
+| `CaseWork` | CaseLifecycle, Documentation |
+| `Utilities` | System, SearchIndex, Browser, Volume |
+
+---
+
+## 4. Role toolsets
+
+**Type:** `AgentToolRoleToolsets` — maps an `AgentPreset` to the domains that role may use, so a call site names the
+job rather than a list of tools.
+
+| Preset | Toolset | Domains |
+| -------- | --------- | --------- |
+| `CoreAgent` | `CoreReasoning` | CaseLifecycle, Documentation, WebResearch |
+| `SafetyAgent` | `Guardrails` | Security, Auditing, Permissions, Defender, Firewall, GroupPolicy, Uac |
+| `WorkerAgent` | `CaseWork` | FileSystem, Registry, EventLog, Process, Service, Driver, ScheduledTasks |
+| `UtilityAgent` | `Utilities` | System, SearchIndex, Browser, Volume |
+| `AggregatorAgent` | `EvidenceVerification` | Documentation |
+| `ManagerAgent` | none | PL-3 forbids tools on the Manager |
+| `ClassifierAgent` | none | The Classifier only routes input |
+
+The Core agent is the human interface. It answers case questions and general knowledge chat, and it dispatches
+workers for deeper status checks so its own context stays free of tool results. It therefore holds **no**
+operating-system domains. RAG search domains will join `CoreReasoning` when the RAG engine lands.
+
+---
+
+## 5. Selection kinds
+
+| Kind | Factory | Behaviour | Failure mode |
+| ------ | --------- | ----------- | -------------- |
+| `None` | `AgentToolSelection.None` | Binds nothing | none |
+| `All` | `AgentToolSelection.All` | Binds **every** tool in the merged catalogue, MCP and local, with no filters | none |
+| `Named` | `FromNames(...)` | Binds exactly the names given; duplicates collapsed | An unknown name throws — a **feature block**, not process death |
+| `Domains` | `FromDomains(...)`, `FromRole(...)` | Binds the union of what the domains' rules claim | An empty result logs a warning and binds nothing — **soft**, never fatal |
+
+`All` is the debug catch-all. It must stay unfiltered: any MCP server loaded at startup is automatically included.
+Only the testing harness (`CustomGroupWorkflow`) uses it.
+
+`Unclassified` is the structural guarantee behind the whole design:
 
 ```csharp
+IReadOnlyList<string> unclaimed = AgentToolDomainCatalog.Unclassified(liveToolNames);
+```
+
+A non-empty result means a tool exists that no domain claims. The factory logs it on every tool-cache refresh and the
+UI surfaces it as a warning. The tool is still reachable through `All` and by explicit name — it is never lost.
+
+---
+
+## 6. Readiness gate
+
+`IModelConfigGate` has three tiers. The gate is global because `Send()` starts the entire master workflow, not just
+the Core agent.
+
+| Tier | Trigger | Effect |
+| ------ | --------- | -------- |
+| **Blocking** | Ollama unreachable, or any registered MCP server not `Connected` | The banner names the missing service; agent actions are blocked |
+| **Warning** | A selected domain or role resolves to zero tools; `Unclassified` is non-empty | Banner only; the workflow still runs |
+| **Silent** | `None`, or a narrow selection that resolved successfully | Nothing |
+
+MCP loss is therefore **fail-fast and visible, not terminal**: the same banner that reports a missing Ollama instance
+reports a disconnected server, and the system recovers as soon as the server reconnects.
+
+---
+
+## 7. Drift rules
+
+When adding or changing a tool:
+
+1. Name it `<Area>_<Verb>_<Noun>` using the area prefix of the domain that should own it.
+2. Add a domain rule only when the new area is not covered. Prefer `Area(...)` over hand-written rules.
+3. Watch for the `Unclassified` warning in the log. A warning is the signal that step 1 or 2 was skipped — it is
+   not an error.
+
+When adding an MCP server: register it, then confirm its tool names use area prefixes. Tools whose names deviate will
+appear in `Unclassified` rather than being silently unreachable.
+
+---
+
+
+
+## 8. Superseded shape (reference only)
+
+The shape below was removed. It is kept here so the difference stays obvious: a domain that names tools loses them
+when a name changes.
+
+```csharp
+// REMOVED — do not reintroduce.
 private static readonly Dictionary<string, string[]> DomainToolNames = new(StringComparer.OrdinalIgnoreCase)
 {
     ["registry"] = ["read_registry_key", "search_registry_keys", "read_registry_value"],
     ["filesystem"] = ["read_file", "list_directory", "search_files", "get_file_hash"],
-    ["environment"] = ["get_environment_variables", "get_environment_variable"],
-    ["bootconfig"] = ["read_bcd_store", "get_boot_configuration"],
-    ["accessibility"] = ["get_accessibility_settings", "get_high_contrast_settings", "get_narrator_settings"],
-    ["searchindexing"] = ["get_search_index_status", "get_indexed_locations", "get_search_indexer_performance"],
-    ["shellexplorer"] = ["get_shell_folder_settings", "get_file_associations", "get_context_menu_handlers"],
-    ["certificates"] = ["list_certificates", "get_certificate_details", "get_certificate_chain"],
-    ["eventlog"] = ["query_event_log", "get_event_log_names", "export_event_log"],
-    ["applocker"] = ["get_applocker_policy", "get_applocker_rules", "get_applocker_events"],
-    ["windowsupdate"] = ["get_windows_update_status", "get_update_history", "get_pending_updates"],
-    ["pnpdevices"] = ["list_pnp_devices", "get_device_properties", "get_device_driver_details"],
-    ["hyperv"] = ["list_virtual_machines", "get_vm_configuration", "get_vm_network_adapters"],
-    ["audio"] = ["get_audio_devices", "get_audio_endpoint_properties", "get_audio_session_info"],
-    ["printers"] = ["list_printers", "get_printer_properties", "get_print_queue"],
-    ["grouppolicy"] = ["get_gpo_list", "get_gpo_details", "get_rsop_data"],
-    ["firewall"] = ["get_firewall_rules", "get_firewall_profiles", "get_firewall_logs"],
-    ["localaccounts"] = ["list_local_users", "get_user_properties", "list_local_groups"],
-    ["rdp"] = ["get_rdp_configuration", "get_rdp_sessions", "get_rdp_security_settings"],
-    ["services"] = ["list_services", "get_service_details", "get_service_dependencies"],
-    ["scheduledtasks"] = ["list_scheduled_tasks", "get_task_details", "get_task_history"],
-    ["power"] = ["get_power_plan", "get_power_settings", "get_battery_status"],
-    ["network"] = ["get_network_adapters", "get_network_connections", "get_dns_client_settings"],
-    ["dcom"] = ["get_dcom_configuration", "get_dcom_applications", "get_dcom_security"],
-    ["wmi"] = ["query_wmi", "get_wmi_namespaces", "get_wmi_class_definition"],
-    ["drivers"] = ["list_drivers", "get_driver_details", "get_driver_signature_status"],
-    ["processes"] = ["list_processes", "get_process_details", "get_process_modules"],
-    ["performance"] = ["get_performance_counters", "get_system_performance", "get_process_performance"],
-    ["installedapps"] = ["list_installed_applications", "get_application_details", "get_application_uninstall_info"],
-    ["browserconfig"] = ["get_browser_policies", "get_browser_extensions", "get_browser_profiles"],
-    ["fonts"] = ["list_installed_fonts", "get_font_details", "get_font_substitutions"],
-    ["notifications"] = ["get_notification_settings", "get_notification_history", "get_focus_assist_settings"],
-    ["vpn"] = ["list_vpn_connections", "get_vpn_connection_details", "get_vpn_profile_xml"],
-    ["wireless"] = ["get_wireless_profiles", "get_wireless_networks", "get_wireless_adapter_settings"],
-    ["proxy"] = ["get_proxy_configuration", "get_winhttp_proxy", "get_ie_proxy_settings"],
-    ["sensors"] = ["list_sensors", "get_sensor_data", "get_sensor_properties"],
-    ["battery"] = ["get_battery_status", "get_battery_health", "get_battery_charge_history"],
-    ["display"] = ["get_display_configuration", "get_monitor_details", "get_display_scaling"],
-    ["credentials"] = ["list_credential_manager_entries", "get_credential_details", "list_web_credentials"],
-    ["uac"] = ["get_uac_configuration", "get_uac_prompt_behavior", "get_consent_prompt_behavior"],
-    ["defender"] = ["get_defender_status", "get_defender_scan_history", "get_defender_threat_history"],
-    ["bitlocker"] = ["get_bitlocker_status", "get_bitlocker_volume_status", "get_bitlocker_key_protectors"]
+    // ...one fixed array per area...
 };
 ```
 
-### Domain Categories
-
-| Category | Domains |
-| ---------- | --------- |
-| **Core OS** | registry, filesystem, environment, bootconfig |
-| **User Experience** | accessibility, searchindexing, shellexplorer, notifications, display, fonts |
-| **Security** | certificates, applocker, firewall, localaccounts, rdp, credentials, uac, defender, bitlocker |
-| **System Management** | windowsupdate, pnpdevices, services, scheduledtasks, power, drivers, processes, performance |
-| **Networking** | network, dcom, wmi, vpn, wireless, proxy |
-| **Virtualization** | hyperv |
-| **Hardware** | audio, printers, sensors, battery |
-| **Applications** | installedapps, browserconfig |
-| **Policy & Config** | grouppolicy, dcom, wmi |
-
----
-
-## 2. RoleToolNames — Role-Based Toolsets
-
-**File:** `Application/ToolRegistry.cs`
-**Type:** `static readonly Dictionary<AgentRole, string[]>`
-
-Maps **AgentRole** → **tool names** (referencing `DomainToolNames` keys or direct tool names).
+The replacement is a rule set per area, for example:
 
 ```csharp
-private static readonly Dictionary<AgentRole, string[]> RoleToolNames = new()
-{
-    [AgentRole.Core] = [
-        "read_registry_key", "search_registry_keys", "read_registry_value",
-        "read_file", "list_directory", "search_files", "get_file_hash",
-        "get_environment_variables", "get_environment_variable",
-        "query_event_log", "get_event_log_names", "export_event_log",
-        "list_services", "get_service_details", "get_service_dependencies",
-        "list_processes", "get_process_details", "get_process_modules",
-        "list_pnp_devices", "get_device_properties", "get_device_driver_details",
-        "get_windows_update_status", "get_update_history", "get_pending_updates",
-        "get_firewall_rules", "get_firewall_profiles", "get_firewall_logs",
-        "get_gpo_list", "get_gpo_details", "get_rsop_data",
-        "get_defender_status", "get_defender_scan_history", "get_defender_threat_history",
-        "get_bitlocker_status", "get_bitlocker_volume_status", "get_bitlocker_key_protectors"
-    ],
-
-    [AgentRole.Manager] = [],  // No tools — orchestrates only
-
-    [AgentRole.Domain] = [],   // Resolved dynamically via GetToolByDomain
-
-    [AgentRole.Worker] = [
-        "read_file", "list_directory", "search_files",
-        "query_wmi", "get_wmi_namespaces", "get_wmi_class_definition",
-        "list_processes", "get_process_details"
-    ],
-
-    [AgentRole.General] = [
-        "read_file", "list_directory", "search_files"
-    ],
-
-    [AgentRole.Aggregator] = []  // No tools — aggregates only
-};
+public static AgentToolDomain Registry { get; } =
+    new("Registry", "Registry keys, values and hives.", Area("Registry"));
 ```
 
-### Role Toolset Summary
-
-| Role | Tool Count | Purpose |
-| ------ | ------------ | --------- |
-| `Core` | ~40 | Full forensic investigation toolkit |
-| `Manager` | 0 | Pure orchestration |
-| `Domain` | Dynamic (3 typical) | Per-domain via `GetToolByDomain` |
-| `Worker` | 7 | General investigation + WMI + processes |
-| `General` | 3 | Basic file/evidence gathering |
-| `Aggregator` | 0 | Result synthesis only |
-
----
-
-## 3. Public API
-
-### GetToolByDomain(string domain)
+The role axis followed the same change. `RoleToolNames` keyed on the deleted `AgentRole` enum and listed tool names;
+`AgentToolRoleToolsets` now keys on `AgentPreset` and lists **domains**:
 
 ```csharp
-public static IList<AITool>? GetToolByDomain(string domain)
-{
-    if (!DomainToolNames.TryGetValue(domain, out var toolNames))
-        return null;
-
-    return toolNames.Select(name => AIFunctionFactory.CreateFunctionByName(name))
-                    .Where(tool => tool != null)
-                    .Cast<AITool>()
-                    .ToList();
-}
-```
-
-**Returns:** `IList<AITool>?` — null if domain not found, empty list if tools not registered in factory.
-
-**Used by:** `DomainAgentFactory.CreateAgent(domain, description)`
-
----
-
-### GetToolsByNames(IEnumerable<string> toolNames)
-
-```csharp
-public static IReadOnlyList<AITool> GetToolsByNames(IEnumerable<string> toolNames)
-{
-    return toolNames.Select(name => AIFunctionFactory.CreateFunctionByName(name))
-                    .Where(tool => tool != null)
-                    .Cast<AITool>()
-                    .ToList();
-}
-```
-
-**Returns:** `IReadOnlyList<AITool>` — filters out nulls (unregistered tools).
-
-**Used by:** `GetToolsetByRole`, `AgentSpecBuilder`
-
----
-
-### GetToolsetByRole(AgentRole role)
-
-```csharp
-public static IReadOnlyList<AITool> GetToolsetByRole(AgentRole role)
-{
-    if (!RoleToolNames.TryGetValue(role, out var toolNames))
-        return [];
-
-    return GetToolsByNames(toolNames);
-}
-```
-
-**Returns:** `IReadOnlyList<AITool>` — empty list if role not found.
-
-**Used by:** `AgentSpecBuilder.BuildAgentSpec(role)` → `AgentSpec.Tools`
-
----
-
-### GetAllTools()
-
-```csharp
-public static IReadOnlyList<AITool> GetAllTools()
-{
-    return DomainToolNames.Values
-        .SelectMany(names => names)
-        .Distinct()
-        .Select(name => AIFunctionFactory.CreateFunctionByName(name))
-        .Where(tool => tool != null)
-        .Cast<AITool>()
-        .ToList();
-}
-```
-
-**Returns:** `IReadOnlyList<AITool>` — all registered tools across all domains.
-
-**Used by:** Diagnostics, tool discovery, testing.
-
----
-
-## 4. AIFunctionFactory Integration
-
-**External Dependency:** `Microsoft.Extensions.AI` / `AIFunctionFactory`
-
-Tools are **not defined in ToolRegistry** — they are created by name via `AIFunctionFactory.CreateFunctionByName(name)`. The factory must be configured with all tool implementations at startup.
-
-### Expected Tool Signatures (by name pattern)
-
-| Tool Name Pattern | Expected Signature |
-| ------------------- | ------------------- |
-| `read_*` | `string ReadX(string path/key/id)` |
-| `list_*` | `IEnumerable<X> ListX(string filter?)` |
-| `search_*` | `IEnumerable<X> SearchX(string query)` |
-| `get_*` | `X GetX(string id)` |
-| `query_*` | `IEnumerable<X> QueryX(string query)` |
-| `export_*` | `byte[] ExportX(string path)` |
-
-### Registration Pattern (in DI setup)
-
-```csharp
-services.AddSingleton<IAIFunctionFactory, AIFunctionFactory>();
-
-// Each tool registered as a function:
-// builder.Services.AddAIFunction("read_registry_key", () => new ReadRegistryKeyFunction(...));
-// builder.Services.AddAIFunction("search_registry_keys", () => new SearchRegistryKeysFunction(...));
-// ... etc for all 30+ tools
-```
-
----
-
-## 5. Consumer Integration
-
-### AgentSpecBuilder (Role → Tools)
-
-```csharp
-// In AgentSpecBuilder.BuildAgentSpec(AgentRole role)
-IReadOnlyList<AITool> tools = ToolRegistry.GetToolsetByRole(role);
-// → AgentSpec.Tools = tools
-```
-
-### DomainAgentFactory (Domain → Tools)
-
-```csharp
-// In DomainAgentFactory.CreateAgent(string domain, string description)
-IList<AITool>? domainTools = ToolRegistry.GetToolByDomain(domain);
-IReadOnlyList<AITool> tools = domainTools is not null ? domainTools.ToList() : [];
-// → AgentSpec.Tools = tools (overrides role defaults)
-```
-
-### CoreAgentFactory (Core + MCP)
-
-```csharp
-// In CoreAgentFactory.Create()
-AgentSpec baseSpec = _specBuilder.BuildAgentSpec(AgentRole.Core);
-// baseSpec.Tools already has Core toolset from ToolRegistry
-
-List<AITool> coreTools = [
-    new MicrosoftDocsSearchTool(mcp),
-    new MicrosoftDocsFetchTool(mcp),
-    new MicrosoftCodeSampleSearchTool(mcp)
+// Current.
+public static IReadOnlyList<AgentToolDomain> CoreReasoning { get; } =
+[
+    AgentToolDomainCatalog.CaseLifecycle,
+    AgentToolDomainCatalog.Documentation,
+    AgentToolDomainCatalog.WebResearch
 ];
-
-AgentSpec spec = baseSpec with { Tools = [.. baseSpec.Tools, .. coreTools] };
 ```
 
-### MagneticCoopOrchestration (Direct Role Toolsets)
-
-```csharp
-var manager = _agentBuilder.Build(_specBuilder.BuildAgentSpec(AgentRole.Manager));
-// Manager gets RoleToolNames[Manager] = []
-
-var worker1 = _agentBuilder.Build(_specBuilder.BuildAgentSpec(AgentRole.Worker));
-// Worker gets RoleToolNames[Worker] = 7 tools
-
-var critic = _agentBuilder.Build(_specBuilder.BuildAgentSpec(AgentRole.General));
-// Critic gets RoleToolNames[General] = 3 tools
-```
-
----
-
-## 6. Pattern-Lock Compliance
-
-| Rule | Status | Notes |
-| ------ | -------- | ------- |
-| Static tool registry | ✅ | `ToolRegistry` is static class |
-| Domain → tools mapping | ✅ | `DomainToolNames` dictionary |
-| Role → tools mapping | ✅ | `RoleToolNames` dictionary |
-| Tools are read-only | ✅ | All tools are evidence-gathering |
-| Core gets MCP at factory | ✅ | Not in registry |
-| Domain tools dynamic | ✅ | `GetToolByDomain` |
-| No circular dependencies | ✅ | Depends only on Contracts + Microsoft.Extensions.AI |
-
----
-
-## 7. Open Items / TODOs
-
-| Item | Location | Status |
-| ------ | ---------- | -------- |
-| `AIFunctionFactory` registration | DI setup | ⚠️ Not in this component |
-| Tool implementations | Separate project | ❌ Not in Orchestrations |
-| Tool validation at startup | `ToolRegistry` | ❌ No validation |
-| Domain tool count consistency | `DomainToolNames` | ⚠️ Most have 3, some vary |
-| Role toolset for Aggregator | `RoleToolNames` | ✅ Empty (by design) |
-| Dynamic composite agents | `MagneticCoopOrchestration` | ⚠️ References 'dynamic_agent' tool |
-| Tool versioning | Registry | ❌ Not implemented |
-
----
-
-## 8. Related Documentation
-
-| Document | Description |
-| ---------- | ------------- |
-| `DynamicAgentsComponent.md` | AgentSpecBuilder, AgentSpec, role-based construction |
-| `DomainAgentSurfaces.md` | DomainAgentFactory, CoreAgentFactory, tool integration |
-| `OrchestrationComponent.md` | MagneticCoopOrchestration, agent construction pipeline |
-| `ContractsComponent.md` | `AgentRole`, `AITool`, `ModelSettings` definitions |
+Call sites use `AgentToolSelection.FromRole(AgentPreset.CoreAgent)`. A call site that needs something narrower or
+wider passes `FromNames(...)` or `FromDomains(...)` instead; the role toolset is a default, not a cage.
 
 ---
 
@@ -385,3 +290,4 @@ var critic = _agentBuilder.Build(_specBuilder.BuildAgentSpec(AgentRole.General))
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | v1.0 | 2025-07-18 | Kyle | Initial documentation from source code analysis |
+| v2.0 | 2026-07-19 | Kyle | Replaced the removed `ToolRegistry` shape with the delivered rule-based domain vocabulary: `AgentToolDomain` / `ToolMatchRule` / `AgentToolDomainCatalog`, role toolsets keyed on `AgentPreset`, four selection kinds, `Unclassified` safety net, and the three-tier readiness gate |

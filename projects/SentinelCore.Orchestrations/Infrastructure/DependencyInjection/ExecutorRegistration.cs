@@ -42,7 +42,7 @@ public static class ExecutorRegistrations
         services.AddTransient<PatternCheckExecutor>();
         services.AddTransient<SafetyExecutor>();
         services.AddTransient<HumanOperatorExecutor>();
-        services.AddTransient<DirectAnswerExecutor>();
+        //services.AddTransient<DirectAnswerExecutor>();
         services.AddTransient<TheCoreSwitchExec>();
         services.AddTransient<CriticalAlert>();
         services.AddTransient<SignalClassifierExecutor>();

@@ -74,11 +74,7 @@ public sealed record AgentPresetDefinition
     /// </summary>
     public ModelTier Tier { get; set; } = ModelTier.Utility;
 
-    /// <summary>
-    ///     Array of tool domains(groups) assiged to this preset
-    ///     Agents can have zero(0) or multiple domains attached
-    /// </summary>
-    public int[] ToolDomains { get; set; } = [0];
+
 
 
 
@@ -100,8 +96,6 @@ public sealed record AgentPresetDefinition
     /// </summary>
     public bool UseRagSearch { get; init; }
 
-    public bool UseTools { get; set; }
-
 
 
 
@@ -121,7 +115,6 @@ public sealed record AgentPresetDefinition
             AgentId = "AggregatorAgent",
             AgentName = "AggregatorAgent",
             Description = "Utility agent responsible for collecting and collating information while performing auxiliary tasks and supporting core workflow operations.",
-            UseTools = false,
             RoleInstructions = AgentInstructionConstants.AGGREGATOR_INSTRUCTIONS,
             Tier = ModelTier.Utility,
             UseLogging = true,
@@ -151,7 +144,6 @@ public sealed record AgentPresetDefinition
             UsePatternMemory = false,
             UseRagSearch = false,
             UseContextEnrichers = false,
-            UseTools = false,
             RoleInstructions = AgentInstructionConstants.SENTINELCORE_OBJECTIVE_GEN,
             DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
@@ -180,7 +172,6 @@ public sealed record AgentPresetDefinition
             UseLogging = true,
             UseRagSearch = true,
             UseContextEnrichers = true,
-            UseTools = true,
             RoleInstructions = AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS,
             DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
@@ -204,6 +195,7 @@ public sealed record AgentPresetDefinition
             AgentPreset.ClassifierAgent => ClassifierRole(),
             AgentPreset.WorkerAgent => WorkerRole(),
             AgentPreset.AggregatorAgent => AggregatorRole(),
+            AgentPreset.ReportExtractorAgent => ReportExtractor(),
             _ => throw new ArgumentOutOfRangeException(nameof(presetName), presetName, null)
         };
 
@@ -233,7 +225,6 @@ public sealed record AgentPresetDefinition
             UsePatternMemory = false,
             UseRagSearch = true,
             UseContextEnrichers = false,
-            UseTools = false,
             RoleInstructions = AgentInstructionConstants.MAG_MANAGER_INSTRUCTIONS,
             DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
@@ -253,7 +244,6 @@ public sealed record AgentPresetDefinition
             AgentId = id ?? "ReportExtractorAgent",
             AgentName = name ?? "ReportExtractorAgent",
             Description = "Agent responsible for extracting structured data from unstructured reports.",
-            UseTools = true,
             RoleInstructions = null,
             Tier = ModelTier.Utility,
             UseLogging = true,
@@ -261,7 +251,6 @@ public sealed record AgentPresetDefinition
             UseRagSearch = false,
             UseContextEnrichers = false,
             DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S,
-            ToolDomains = new[] { 2 } // Assigned to CaseFlowEngine domain (domain ID 2)
         };
     }
 
@@ -285,7 +274,6 @@ public sealed record AgentPresetDefinition
             UsePatternMemory = false,
             UseRagSearch = false,
             UseContextEnrichers = false,
-            UseTools = false,
             RoleInstructions = AgentInstructionConstants.SAFETY_AGENT_INSTRUCTIONS,
             DefaultSystemInstructions = AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S
         };
@@ -312,7 +300,6 @@ public sealed record AgentPresetDefinition
             Tier = ModelTier.Utility,
             UseLogging = true,
             UsePatternMemory = false,
-            UseTools = true,
             RoleInstructions = AgentInstructionConstants.UTILITY_AGENT_INSTRUCTIONS,
             UseRagSearch = false,
             UseContextEnrichers = false,
@@ -334,7 +321,6 @@ public sealed record AgentPresetDefinition
             AgentId = id ?? "GenericWorkerAgent",
             AgentName = name ?? "GenericWorkerAgent",
             Description = "All purpose expert Windows Forensic Investigator. " + "This agent is responsible for performing investigative tasks and supporting core workflow operations.",
-            UseTools = true,
             RoleInstructions = null,
             Tier = ModelTier.Worker,
             UseLogging = true,

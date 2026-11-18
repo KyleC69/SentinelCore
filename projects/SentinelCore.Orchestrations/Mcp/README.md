@@ -1,4 +1,4 @@
-﻿# SentinelCore MCP Integration
+# SentinelCore MCP Integration
 
 The **SentinelCore.Orchestrations.Mcp** component provides first-class integration with the **Model Context Protocol (MCP)**, enabling SentinelCore agents to discover, connect to, and consume tools exposed by MCP servers.
 
@@ -14,7 +14,6 @@ MCP (Model Context Protocol) is an open standard that allows AI applications to 
 | **OAuth Authentication** | Full OAuth 2.0 support for protected HTTP MCP endpoints, including automatic token caching via DPAPI on Windows. |
 | **Persistent Registry** | Server definitions are stored in a JSON file and reloaded on startup. |
 | **Tool Discovery & Caching** | Automatically discovers tools from connected servers and caches them for low-latency agent access. |
-| **Agent Assignment** | Optional per-server agent allow-lists to control which agents may use which tools. |
 | **Timeout & Fault Tolerance** | Every tool invocation is wrapped with a configurable timeout; failures return structured `ToolResult` objects instead of throwing. |
 | **Observable Events** | `ServersChanged` and `ToolCacheChanged` events enable UI or orchestration layers to react to registry mutations. |
 
@@ -33,7 +32,7 @@ MCP (Model Context Protocol) is an open standard that allows AI applications to 
 │  • Register/Start/Stop/List servers                             │
 │  • LoadPersistedAsync / PersistAsync                            │
 │  • GetAllToolsAsync / GetToolsFromCache                         │
-│  • UpdateAssignmentsAsync                                       │
+│  • GetServersSnapshot (readiness)                               │
 │  • Events: ServersChanged, ToolCacheChanged                     │
 └────────────────────────────────┬────────────────────────────────┘
                                  │
@@ -67,7 +66,7 @@ All public contracts live in **`SentinelCore.Contracts.Mcp`** and have no implem
 | `McpServerStatus` | `Stopped`, `Starting`, `Connected`, `Error`. |
 | `McpServerTransportType` | `Stdio` or `Http`. |
 | `McpOAuthSettings` | Client ID, redirect URI, scopes for OAuth-protected HTTP servers. |
-| `IMcpServerRegistry` | Registry operations (register, start, stop, list, load, get tools, assignments). |
+| `IMcpServerRegistry` | Registry operations (register, start, stop, list, load, get tools, snapshot). |
 | `IMcpConnectionFactory` | Creates connected `McpClient` instances from a definition. |
 | `IMcpServerRegistryStore` | Persistence abstraction (JSON file implementation provided). |
 
@@ -135,19 +134,28 @@ IReadOnlyList<AITool> allTools = await registry.GetAllToolsAsync();
 // Or use the low-latency cache (populated on each connect/disconnect)
 IReadOnlyList<AITool> cachedTools = registry.GetToolsFromCache();
 
-// Pass tools to your agent
-var agent = agentFactory.CreateAgent(instructions, allTools);
+// The factory owns tool resolution; the registry only publishes the tools.
+AIAgent agent = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, AgentToolSelection.All);
 ```
 
-### 5. Agent Assignment (Optional)
+### 5. Tool Assignment
 
-Restrict a server to specific logical agent names:
+A server definition carries no per-agent assignment. Which agent receives a server's tools is decided at
+agent creation time through `AgentToolSelection` and the tool-domain vocabulary:
 
 ```csharp
-await registry.UpdateAssignmentsAsync("github", ["SecurityAnalyst", "CodeReviewer"]);
+// Role toolset: the agent gets the domains its role owns.
+var worker = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, AgentToolSelection.FromRole(AgentPreset.WorkerAgent));
+
+// Explicit domains: the agent gets only tools claimed by these rules.
+var narrow = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, AgentToolSelection.FromDomains(AgentToolDomainCatalog.Registry));
+
+// Debug catch-all: every tool from every loaded MCP server plus the local catalog.
+var debug = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, AgentToolSelection.All);
 ```
 
-Only agents whose name matches an entry in `AssignedAgentNames` will receive that server's tools.
+See [docs/ToolingComponent.md](../../../docs/ToolingComponent.md) for the domain vocabulary and
+[ADR-005](../../../docs/ADR/005-Tool-Domain-Vocabulary.md) for the rationale.
 
 ### 6. React to Changes (UI / Orchestration)
 

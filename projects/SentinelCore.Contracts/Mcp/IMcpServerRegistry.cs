@@ -71,6 +71,23 @@ public interface IMcpServerRegistry
 
 
     /// <summary>
+    ///     Gets a synchronous snapshot of the registered servers and their connection state.
+    /// </summary>
+    /// <remarks>
+    ///     This exists so readiness checks can run from a synchronous property without blocking on
+    ///     <see cref="ListAsync" />. The returned list is a point-in-time snapshot.
+    /// </remarks>
+    /// <returns>A read-only list of the current server states.</returns>
+    IReadOnlyList<McpServerInfo> GetServersSnapshot();
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Gets a read-only list of available McpServerInfo objects asynchronously.
     /// </summary>
     /// <remarks>
@@ -150,21 +167,4 @@ public interface IMcpServerRegistry
 
 
 
-
-
-
-
-    /// <summary>
-    ///     Updates the assigned agent names for the specified MCP server and persists the change.
-    /// </summary>
-    /// <remarks>
-    ///     Validates inputs, replaces the server definition with updated assignments, persists the registry,
-    ///     and logs the update.
-    /// </remarks>
-    /// <param name="id">Identifier of the MCP server to update.</param>
-    /// <param name="assignedAgentNames">New list of agent names to assign to the server.</param>
-    /// <param name="cancellationToken">Token to observe while awaiting the asynchronous operation.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the specified MCP server is not registered.</exception>
-    Task UpdateAssignmentsAsync(string id, IReadOnlyList<string> assignedAgentNames, CancellationToken cancellationToken = default);
 }

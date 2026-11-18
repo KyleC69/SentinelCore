@@ -1,4 +1,4 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
 // File:         ConcurrentGroupTeam.cs
 // Author: Kyle L. Crowder
@@ -151,7 +151,7 @@ internal sealed class ConcurrentGroupTeam : IOrchestration
         foreach ((string name, string description) in AnalystProfiles)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            _analysts.Add(await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, name, description).ConfigureAwait(false));
+            _analysts.Add(await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, name, description, AgentToolSelection.FromRole(AgentPreset.WorkerAgent)).ConfigureAwait(false));
         }
     }
 

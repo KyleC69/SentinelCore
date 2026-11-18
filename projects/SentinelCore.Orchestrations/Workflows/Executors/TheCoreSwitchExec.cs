@@ -81,9 +81,9 @@ public sealed partial class TheCoreSwitchExec : Executor
 
 
         // --- Status: Executor start ---
-        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(ChatMessage).Name}");
+        _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {nameof(ChatMessage)}");
 
-        _switchAgent = await _factory.CreateAgentAsync(AgentPreset.UtilityAgent, SWITCH_INSTRUCTIONS, CancellationToken.None);
+        _switchAgent = await _factory.CreateAgentAsync(AgentPreset.UtilityAgent, AgentToolSelection.None, SWITCH_INSTRUCTIONS, ChatResponseFormat.ForJsonSchema<CoreSwitchDecision>(), CancellationToken.None);
         //===================================================================
 
 
@@ -103,7 +103,7 @@ public sealed partial class TheCoreSwitchExec : Executor
                 await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message);
 
                 // Invoke the agent for spam detection
-                var response = await this._switchAgent.RunAsync<CoreSwitchDecision>(message).ConfigureAwait(false);
+                var response = await this._switchAgent.RunAsync<CoreSwitchDecision>(message, null, cancellationToken: cancellationToken).ConfigureAwait(false);
                 CoreSwitchDecision? detectionResult = JsonSerializer.Deserialize<CoreSwitchDecision>(response.Text);
 
                 await context.SendMessageAsync(message).AsTask().ConfigureAwait(false);

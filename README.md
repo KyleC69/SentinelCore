@@ -297,8 +297,6 @@ This registers **all** SentinelCore services unconditionally:
 | `IMcpServerRegistry`         | Singleton | MCP server registry                              |
 | `IMcpServerRegistryStore`    | Singleton | MCP registry persistence (JSON file)             |
 | `IMcpConnectionFactory`      | Singleton | MCP client connection factory                    |
-| `ISentinelAgentCatalog`      | Singleton | Logical agent name catalog                       |
-| `McpServerRegistryInitializer` | Hosted  | Loads persisted MCP servers at startup           |
 | Executors                    | Transient | All workflow executors                           |
 
 > **Note:** `AddSentinelCore` does **not** register a `DbContext` factory. The composition root must call `services.AddDbContextFactory<SentinelCoreDBContext>(...)` (and `AddDbContextFactory<SentinelRAGDBContext>(...)` for the remote KB) — see pattern-lock PL-7. Without it, persistence consumers fail activation with an `IDbContextFactory` error.
@@ -373,13 +371,15 @@ await registry.RegisterAsync(new McpServerDefinition(
     id: "windows-toolkit",
     displayName: "Windows Troubleshooting Toolkit",
     transportType: McpServerTransportType.Stdio,
-    commandOrEndpoint: "SentinelCore.Mcp.Windows",
-    assignedAgentNames: []));   // empty = available to every agent
+    commandOrEndpoint: "SentinelCore.Mcp.Windows"));
 
 await registry.StartAsync("windows-toolkit", cancellationToken);
 ```
 
-A server with an empty `AssignedAgentNames` list is available to all agents; otherwise only the listed logical agent names receive its tools. The WPF host exposes this through the **MCP Servers** page.
+A server definition carries no per-agent assignment. Which agent receives a server's tools is decided at
+agent creation time through `AgentToolSelection` and the tool-domain vocabulary — see
+[docs/ToolingComponent.md](docs/ToolingComponent.md). The WPF host exposes server management through the
+**MCP Servers** page.
 
 ---
 
@@ -398,7 +398,7 @@ projects/
 │   ├── Events/                      # ISentinelCoreEvents, SentinelCoreEvents, ActivityType,
 │   │                                # SentinelOutputEventArgs, OrchestrationActivityArgs
 │   └── Mcp/                         # IMcpServerRegistry, IMcpServerRegistryStore,
-│                                    # ISentinelAgentCatalog, McpServerDefinition, McpServerInfo,
+│                                    # McpServerDefinition, McpServerInfo,
 │                                    # McpServerStatus, McpServerTransportType, McpOAuthSettings
 │
 ├── SentinelCore.CaseFlowEngine/     # Case lifecycle, persistence, pattern memory
@@ -413,7 +413,7 @@ projects/
 ├── SentinelCore.Orchestrations/     # Agent construction, orchestration, safety, MCP, DI
 │   ├── Abstractions/                # IOrchestration, IOrchestrationControl, IAgentPersona
 │   ├── Agents/                      # AgentProfile, AgentProfileBuilder, SentinelAgentFactory,
-│   │                                # SentinelChatClientFactory, SentinelAgentCatalog,
+│   │                                # SentinelChatClientFactory,
 │   │                                # AgentMiddlewarePipeline, CaseGenerator
 │   │   ├── AgentPresets/            # CoreChat, Classifier, TheCore, SafetyAgent, Manager,
 │   │   │                            # Worker1-3 presets, MiddlewareFlags, ModelTier
@@ -483,9 +483,8 @@ projects/
 | `ISignalRepository`          | Persist and retrieve signals.                                          |
 | `ISentinelCoreEvents`        | Event hub for UI integration (output, errors, orchestration).          |
 | `ISystemReporter`            | Report errors, warnings, and info to logging + event stream.           |
-| `IMcpServerRegistry`         | Register, start, stop, and query MCP servers; resolve per-agent tools. |
+| `IMcpServerRegistry`         | Register, start, stop, and query MCP servers; publish their tools.     |
 | `IMcpServerRegistryStore`    | Persistence abstraction for MCP server definitions.                    |
-| `ISentinelAgentCatalog`      | Lists the logical agent names used by the platform.                    |
 | `ISentinelCoreBuilder`       | Configures optional SentinelCore modules during host startup.          |
 | `CaseStatus`                 | The 12 case lifecycle statuses.                                        |
 | `SentinelCoreSettings`       | All configurable runtime options passed to `AddSentinelCore`.          |
@@ -580,7 +579,7 @@ separation of ideas and an actual group discussion that can produced inventive a
 Send it logs overnight and come in the next day with a list of remediation steps
 to fix what it found. Tools are exploratory only, operator applies fixes.
 
-The Windows diagnostic tools are no longer part of this repository — they have moved into a separate MCP server project so they can be managed and deployed independently. The library itself now ships only `CaseTool` (case creation) plus the MCP client tools (`MsDocsMcpServerTool`, `SimpleMcpClientTool`). Tools reach agents through `IMcpServerRegistry.GetToolsForAgentAsync()`.
+The Windows diagnostic tools are no longer part of this repository — they have moved into a separate MCP server project so they can be managed and deployed independently. The library itself now ships only `CaseTool` (case creation) plus the MCP client tools (`MsDocsMcpServerTool`, `SimpleMcpClientTool`). Tools reach agents through `IMcpServerRegistry.GetToolsFromCache()`, narrowed per agent by `AgentToolSelection` at the creation call site (see [docs/ToolingComponent.md](docs/ToolingComponent.md)).
 
 The domain surface map below describes the Windows configuration domains the toolkit covers (see [docs/DomainToolChart.md](docs/DomainToolChart.md) for the authoritative list):
 

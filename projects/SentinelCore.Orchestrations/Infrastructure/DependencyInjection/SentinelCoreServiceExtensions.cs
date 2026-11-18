@@ -132,6 +132,7 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<ISystemReporter, SystemReporter>();
         services.AddSingleton<TheCoreWorkflow>();
         services.AddSingleton<CaseEngineTools>();
+        RegisterLocalAgentTools(services);
         // Register factory with model resolver dependency
         services.AddSingleton<ISentinelAgentFactory>(sp =>
         {
@@ -140,14 +141,10 @@ public static class SentinelCoreServiceExtensions
             IPatternMatcher patternMatcher = sp.GetRequiredService<IPatternMatcher>();
             ILoggerFactory loggerFactory = sp.GetRequiredService<ILoggerFactory>();
             IMcpServerRegistry registry = sp.GetRequiredService<IMcpServerRegistry>();
-            CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
+            IEnumerable<AITool> localTools = sp.GetServices<AITool>();
             SentinelCoreSettings runtimeSettings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<SentinelCoreSettings>>().Value;
-            return new SentinelAgentFactory(chatFactory, modelResolver, patternMatcher, loggerFactory, registry, caseEngineTools, runtimeSettings);
+            return new SentinelAgentFactory(chatFactory, modelResolver, patternMatcher, loggerFactory, registry, localTools, runtimeSettings);
         });
-
-        // -- Agent construction contributors (pipeline) --
-        // Each contributor owns exactly one concern. Adding a new middleware type
-        // requires only a new contributor class and DI registration — no factory changes.
 
         services.AddSingleton<IOrchestrationFactory, OrchestrationFactory>();
         services.RegisterExecutors();
@@ -166,6 +163,58 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<IMcpConnectionFactory, McpConnectionFactory>();
         // McpServerRegistryInitializer moved to App.xaml.cs OnStartup for explicit control
 
+
+        return services;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Registers the in-process agent tools that <see cref="AgentToolSelection" /> can bind to an agent
+    ///     alongside MCP-server tools.
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection" /> to which the tools will be added.</param>
+    /// <returns>The updated <see cref="IServiceCollection" /> with the local agent tools registered.</returns>
+    /// <remarks>
+    ///     Only invocable tools may be registered here, which means every registration must derive from
+    ///     <see cref="AIFunction" />. Plain <see cref="AITool" /> metadata stubs cannot be invoked by an agent
+    ///     and must never be exposed through this catalog.
+    /// </remarks>
+    private static IServiceCollection RegisterLocalAgentTools(IServiceCollection services)
+    {
+        services.AddSingleton<AITool>(_ => new MsDocsMcpServerTool());
+
+        services.AddSingleton<AITool>(sp =>
+        {
+            CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
+            return AIFunctionFactory.Create(
+                caseEngineTools.CreateCase,
+                name: "local_case_create",
+                description: "Creates a new investigative case for the Sentinel Core platform from a natural-language signal description.");
+        });
+
+        services.AddSingleton<AITool>(sp =>
+        {
+            CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
+            return AIFunctionFactory.Create(
+                caseEngineTools.InsertReport,
+                name: "local_case_insert_report",
+                description: "Inserts the final investigation report for a case.");
+        });
+
+        services.AddSingleton<AITool>(sp =>
+        {
+            CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
+            return AIFunctionFactory.Create(
+                caseEngineTools.InsertPatternSummaries,
+                name: "local_case_insert_pattern_summaries",
+                description: "Inserts the summaries extracted from the final investigation report.");
+        });
 
         return services;
     }

@@ -344,8 +344,8 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         builder.AddEdge(executors.WhiteListExecutor, executors.TheCoreSwitchExec);
 
         // -- ------- DirectAnswer Branch -------------------------
-        builder.AddEdge(executors.TheCoreSwitchExec, executors.DirectAnswerExecutor, GetCondition(true)); // TheCore DirectAnswer
-        builder.AddEdge(executors.DirectAnswerExecutor, executors.TerminateWorkflow);  //Direct Answer Termination
+        builder.AddEdge(executors.TheCoreSwitchExec, directAnswerAgentExec, GetCondition(true)); // TheCore DirectAnswer
+        builder.AddEdge(directAnswerAgentExec, executors.TerminateWorkflow);  //Direct Answer Termination
 
 
         // -- ------- Investigate Branch -------------------------
@@ -359,11 +359,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         // ------- RedAlert Branch -------------------------
         // Alert UI to critical error and mark case urgent
-        builder.AddEdge(executors.CriticalAlert, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
+        //  builder.AddEdge(executors.CriticalAlert, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
 
         // -- ------- MoreInformation Branch -------------------------
         //Mark case needs more info and alert operator
-        builder.AddEdge(executors.MoreInformationExecutor, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
+        //    builder.AddEdge(executors.MoreInformationExecutor, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
 
 
 
@@ -374,7 +374,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         //.AddEdge(theCoreExec, executors.TerminateWorkflow)
 
         // ---------------  EscalateToHumanOperator Branch -------------------------
-        builder.AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
+        //  builder.AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
 
         builder.WithName("TheCoreWorkflow").WithDescription("The main investigation and case management workflow");
 
@@ -386,7 +386,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // ── Register output sources ─────────────────────────────────────────────────────────
         // MAF only surfaces yielded values from executors registered via WithOutputFrom;
         // without this registration no executor output ever reaches the WorkflowOutputEvent stream.
-        builder.WithOutputFrom(directAnswerAgentExec, executors.HumanOperatorExecutor);
+        builder.WithOutputFrom(directAnswerAgentExec);
 
         Workflow flow = builder.Build();
 
@@ -411,22 +411,22 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         // ── Build main workflow agents ─────────────────────────────────────────────────────────
 
-        _theCoreAgent = await _agentFactory.CreateAgentAsync(AgentPreset.CoreAgent, token);
+        _theCoreAgent = await _agentFactory.CreateAgentAsync(AgentPreset.CoreAgent, AgentToolSelection.FromRole(AgentPreset.CoreAgent), token);
 
-        _classifierAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ClassifierAgent, token);
+        _classifierAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ClassifierAgent, AgentToolSelection.None, token);
 
-        _safetyAgent = await _agentFactory.CreateAgentAsync(AgentPreset.SafetyAgent, token);
+        _safetyAgent = await _agentFactory.CreateAgentAsync(AgentPreset.SafetyAgent, AgentToolSelection.FromRole(AgentPreset.SafetyAgent), token);
 
         _theCoreSession = await _theCoreAgent.CreateSessionAsync(token);
 
         // ── Build MAG sub-workflow agents ─────────────────────────────────────────────────────
 
 
-        _managerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, "ManagerCoordinator", "Coordinates the investigation team and monitors progress");
-        _evidenceCollectorAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS);
-        _adversarialAnalystAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "AdversarialAnalyst", "The challenger of the collected evidence", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS);
-        _researcherAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS);
-        _finalReportWriterAgent = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", AgentInstructionConstants.AGGREGATOR_INSTRUCTIONS);
+        _managerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, "ManagerCoordinator", "Coordinates the investigation team and monitors progress", AgentToolSelection.None);
+        _evidenceCollectorAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS, AgentToolSelection.FromRole(AgentPreset.WorkerAgent));
+        _adversarialAnalystAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "AdversarialAnalyst", "The challenger of the collected evidence", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS, AgentToolSelection.FromRole(AgentPreset.WorkerAgent));
+        _researcherAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS, AgentToolSelection.FromRole(AgentPreset.WorkerAgent));
+        _finalReportWriterAgent = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", AgentInstructionConstants.AGGREGATOR_INSTRUCTIONS, AgentToolSelection.FromRole(AgentPreset.AggregatorAgent));
 
         //Participants must be verified and created before the sub-workflow is built. The sub-workflow is built here, but it is not executed directly. Instead, it is added to the parent workflow as a sub-workflow executor. This allows the parent workflow to manage the execution of the sub-workflow and handle its outputs appropriately.
         Throw.IfNull(_managerAgent);

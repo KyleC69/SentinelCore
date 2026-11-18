@@ -32,11 +32,11 @@ public sealed class McpServerDefinition
     /// <param name="workingDirectory">Working directory for stdio servers.</param>
     /// <param name="environmentVariables">Environment variables for stdio servers.</param>
     /// <param name="oauthSettings">Optional OAuth settings for HTTP servers.</param>
-    /// <param name="assignedAgentNames">
-    ///     Optional collection of logical agent names that are allowed to use this server.
-    ///     When empty, the server is available to all agents.
-    /// </param>
-    public McpServerDefinition(string id, string displayName, McpServerTransportType transportType, string commandOrEndpoint, IReadOnlyList<string>? arguments = null, string? workingDirectory = null, IReadOnlyDictionary<string, string>? environmentVariables = null, McpOAuthSettings? oauthSettings = null, IReadOnlyList<string>? assignedAgentNames = null)
+    /// <remarks>
+    ///     A server definition carries no per-agent assignment. Which tools an agent receives is decided at the
+    ///     call site through <c>AgentToolSelection</c> and the tool-domain vocabulary, never by the server.
+    /// </remarks>
+    public McpServerDefinition(string id, string displayName, McpServerTransportType transportType, string commandOrEndpoint, IReadOnlyList<string>? arguments = null, string? workingDirectory = null, IReadOnlyDictionary<string, string>? environmentVariables = null, McpOAuthSettings? oauthSettings = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
@@ -50,7 +50,6 @@ public sealed class McpServerDefinition
         WorkingDirectory = workingDirectory;
         EnvironmentVariables = environmentVariables ?? new Dictionary<string, string>();
         OAuthSettings = oauthSettings;
-        AssignedAgentNames = assignedAgentNames ?? [];
     }
 
 
@@ -63,11 +62,6 @@ public sealed class McpServerDefinition
     /// <summary>Gets the command-line arguments for stdio servers.</summary>
     public IReadOnlyList<string> Arguments { get; }
 
-    /// <summary>
-    ///     Gets the collection of logical agent names allowed to use this server.
-    ///     An empty collection means the server is available to all agents.
-    /// </summary>
-    public IReadOnlyList<string> AssignedAgentNames { get; }
 
     /// <summary>
     ///     Gets the executable command for stdio servers or the MCP endpoint URL for HTTP servers.
