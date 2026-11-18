@@ -215,17 +215,15 @@ UI surfaces it as a warning. The tool is still reachable through `All` and by ex
 
 ## 6. Readiness gate
 
-`IModelConfigGate` has three tiers. The gate is global because `Send()` starts the entire master workflow, not just
-the Core agent.
+`IModelConfigGate` has blocking-readiness and warning-generation surfaces. The gate is global because `Send()` starts the entire master workflow, not just the Core agent.
 
-| Tier | Trigger | Effect |
-| ------ | --------- | -------- |
-| **Blocking** | Ollama unreachable, or any registered MCP server not `Connected` | The banner names the missing service; agent actions are blocked |
-| **Warning** | A selected domain or role resolves to zero tools; `Unclassified` is non-empty | Banner only; the workflow still runs |
+| Tier | Trigger | Current effect |
+| --- | --- | --- |
+| **Blocking** | Ollama unreachable, or any registered MCP server is not `Connected` | `CanSend()` reports failure and the UI blocks the send action |
+| **Warning generation** | A selected domain or role resolves to zero tools, or `Unclassified` is non-empty | The factory/service can log or generate warning information, but `CoreChatViewModel` does not currently consume `GetReadinessWarnings()` |
 | **Silent** | `None`, or a narrow selection that resolved successfully | Nothing |
 
-MCP loss is therefore **fail-fast and visible, not terminal**: the same banner that reports a missing Ollama instance
-reports a disconnected server, and the system recovers as soon as the server reconnects.
+Blocking model/MCP readiness is visible through the existing UI gate. Tool-domain warning surfacing remains incomplete and should not be described as a displayed banner.
 
 ---
 
@@ -242,8 +240,6 @@ When adding an MCP server: register it, then confirm its tool names use area pre
 appear in `Unclassified` rather than being silently unreachable.
 
 ---
-
-
 
 ## 8. Superseded shape (reference only)
 
@@ -288,6 +284,7 @@ wider passes `FromNames(...)` or `FromDomains(...)` instead; the role toolset is
 ## Version History
 
 | Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| --------- | ------ | -------- | --------- |
 | v1.0 | 2025-07-18 | Kyle | Initial documentation from source code analysis |
 | v2.0 | 2026-07-19 | Kyle | Replaced the removed `ToolRegistry` shape with the delivered rule-based domain vocabulary: `AgentToolDomain` / `ToolMatchRule` / `AgentToolDomainCatalog`, role toolsets keyed on `AgentPreset`, four selection kinds, `Unclassified` safety net, and the three-tier readiness gate |
+| 2.1.0 | unknown | unknown | Clarified that domain warning data is generated/logged but `CoreChatViewModel` does not currently consume `GetReadinessWarnings()`. |

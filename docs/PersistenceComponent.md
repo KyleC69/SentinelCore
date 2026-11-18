@@ -8,10 +8,25 @@ version: v1.0
 
 # SentinelCore Persistence Component
 
+This document summarizes the persistence module and labels its older direct-context examples as non-authoritative.
+
+## Current Implementation
+
+- `SentinelCore.UI` registers `IDbContextFactory<SentinelCoreDBContext>` with `AddDbContextFactory`; `SentinelRAGDBContext` registration is currently commented out.
+- Case-flow persistence services must inject `IDbContextFactory<SentinelCoreDBContext>`, create a context inside each operation, and dispose it before returning.
+- `AddSentinelCore` registers no real persistence by default. The host calls `AddCaseFlowEngine` to replace the null case-flow services.
+- `SentinelCoreDBContext` is the active case-flow context. Generated EF classes and migrations remain the authoritative schema source.
+- Some entity mappings and DbSet descriptions below predate the current generated model and should be compared with the source before use.
+
+Use this document when reviewing persistence registration, context lifetimes, EF mappings, or optional-module behavior.
+
+## Historical and Model Reference
+
+### Project Context
+
 **Project:** `SentinelCore.CaseFlowEngine`
-**Namespaces:** `SentinelCore.CaseFlowEngine.Persistence`
-**Dependencies:** `Microsoft.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.Extensions.VectorData`
-**Consumers:** `SentinelCore.CaseFlowEngine` (CaseFlowEngine), `SentinelCoreHost` (via DI)
+
+**Namespace:** `SentinelCore.CaseFlowEngine.Persistence`
 
 ---
 
@@ -20,6 +35,7 @@ version: v1.0
 The Persistence component provides **SQL Server-backed data storage** for all case investigation artifacts. It uses Entity Framework Core with SQL Server's native `vector` type for embedding storage and similarity search.
 
 **Entities Persisted:**
+
 - Cases (aggregate root)
 - Signals (triggering events)
 - Evidence (collected artifacts)
@@ -208,6 +224,7 @@ public class SentinelCoreDbContext : DbContext
 ```
 
 **Key Configuration Points:**
+
 - **Vector columns**: `vector(1536)` for SQL Server native vector similarity search
 - **Cascade deletes**: Case deletion removes all related entities
 - **Unique indexes**: On business keys (CaseId, SignalId, EvidenceId, PlanId, StepId, PatternId)
@@ -693,7 +710,7 @@ public static IServiceCollection AddCaseFlowEngine(this IServiceCollection servi
 ## 7. Database Schema Summary
 
 | Table | Primary Key | Key Indexes | Vector Columns |
-|-------|-------------|-------------|----------------|
+| ------- | ------------- | ------------- | ---------------- |
 | Cases | Id (int) | CaseRecordId (unique), CaseId (unique), Status | - |
 | Signals | Id (int) | SignalId (unique), CaseEntityId (FK) | - |
 | Evidence | Id (int) | EvidenceId (unique), CaseEntityId (FK) | - |
@@ -707,7 +724,7 @@ public static IServiceCollection AddCaseFlowEngine(this IServiceCollection servi
 ## 8. Pattern-Lock Compliance
 
 | Rule | Status | Notes |
-|------|--------|-------|
+| ------ | -------- | ------- |
 | Abstractions in Contracts | ✅ | `ICaseRepository`, `ISignalRepository`, `IEvidenceStore`, `IPatternMemoryStore` |
 | EF Core in CaseFlowEngine | ✅ | Implementation isolated to persistence project |
 | SQL Server vector type | ✅ | `SqlVector<float>(1536)` with `vector(1536)` column |
@@ -720,7 +737,7 @@ public static IServiceCollection AddCaseFlowEngine(this IServiceCollection servi
 ## 9. Open Items / TODOs
 
 | Item | Location | Status |
-|------|----------|--------|
+| ------ | ---------- | -------- |
 | Vector index creation | Migration/SQL | ⚠️ Manual SQL needed |
 | Embedding dimension constant | Shared constant | ❌ Hardcoded 1536 in multiple places |
 | Connection resilience | DbContext config | ⚠️ Basic retry only |
@@ -735,7 +752,7 @@ public static IServiceCollection AddCaseFlowEngine(this IServiceCollection servi
 ## 10. Related Documentation
 
 | Document | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `CaseFlowEngineComponent.md` | Case lifecycle, repositories usage |
 | `MemoryLayerComponent.md` | PatternMemoryStore, vector search |
 | `ContractsComponent.md` | Repository abstractions, DTOs |
@@ -748,3 +765,4 @@ public static IServiceCollection AddCaseFlowEngine(this IServiceCollection servi
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | v1.0 | 2025-07-18 | Kyle | Initial documentation from source code analysis |
+| 2.0.0 | unknown | unknown | Added factory-based context and optional-module status; labeled earlier direct-context and entity examples as non-authoritative. |

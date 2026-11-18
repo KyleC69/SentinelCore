@@ -8,16 +8,24 @@ version: v1.0
 
 # SentinelCore Dynamic Agents Component
 
-**Project:** `SentinelCore.Orchestrations`
-**Namespaces:** `SentinelCore.Orchestrations.Agents`, `SentinelCore.Orchestrations.Personas`
-**Dependencies:** `SentinelCore.Contracts` (AgentRole, AgentSpec, ModelSettings, SentinelCoreSettings), `Microsoft.Extensions.AI`, `Microsoft.Agents.AI`
-**Consumers:** `SentinelCore.Orchestrations` (orchestrators, factories), `SentinelCoreHost` (via DI)
+This document describes the current preset-based agent construction pipeline and preserves the earlier design as historical context.
 
----
+## Current Implementation
 
-## Purpose
+- `SentinelAgentFactory` is the construction boundary for all agents.
+- `AgentPresetDefinition.FromName(AgentPreset)` supplies each preset's identity, instructions, model tier, middleware-related flags, and default context behavior.
+- `ModelResolver.ResolveByTier(ModelTier)` resolves the `ModelProfile` from `SentinelCoreSettings.TierModels`.
+- `SentinelChatClientFactory` constructs the active Ollama `IChatClient`; other declared provider values are not active in the default factory switch.
+- `AgentToolSelection` chooses tools at the call site by `None`, `All`, named tools, or domain rules. `AgentToolRoleToolsets` supplies role defaults when a selection is requested from a role.
+- The Manager preset must remain tool-free under pattern lock PL-3.
+- Pattern-memory context injection is currently commented out in `AddPresetContextProviders`.
+- `SentinelAgentFactory` sets preset instructions, identity, model parameters, tools, response format, and concurrency options on the MAF `ChatClientAgent`.
 
-The Dynamic Agents component defines **how agents are specified, constructed, and personalized** in SentinelCore. It provides the two-stage construction pipeline (`IAgentSpecBuilder` → `IAgentBuilder`), the immutable `AgentSpec` record, the 6-role `AgentRole` enum, and the 35-persona `PersonaRegistry`. This component is the **agent identity and configuration layer** — every agent in the system flows through this pipeline.
+Use this document when changing agent presets, model resolution, tool selection, or the agent construction pipeline.
+
+## Historical Reference
+
+`AgentRole`, `AgentSpec`, `AgentSpecBuilder`, `AgentBuilder`, `CoreAgentFactory`, and `DomainAgentFactory` belong to the former design. Their detailed descriptions below are retained as legacy design context and are not current APIs.
 
 ---
 
@@ -93,7 +101,7 @@ public enum AgentRole
 ### Role Responsibilities Summary
 
 | Role | Lifetime | Tools | Event Channel | Persona |
-|------|----------|-------|---------------|---------|
+| ------ | ---------- | ------- | --------------- | --------- |
 | `Core` | Application | Role defaults + MCP (factory) | `TheCoreActivity` / `TheCoreReasoning` / `TheCoreTooling` | `TheCore` |
 | `Manager` | Workflow | **None** | `MagneticParticipantActivity` | `TheManager` |
 | `Domain` | Per-task | Domain-specific (30 domains) | `MagneticParticipantActivity` | `TheAnalyst` |
@@ -317,7 +325,7 @@ public enum PersonaType
 ### Role → PersonaType Assignments
 
 | AgentRole | PersonaType | Purpose |
-|-----------|-------------|---------|
+| ----------- | ------------- | --------- |
 | `Core` | `TheCore` | Senior forensic investigator |
 | `Manager` | `TheManager` | Magnetic orchestration coordinator |
 | `Domain` | `TheAnalyst` | Focused evidence gatherer |
@@ -328,6 +336,7 @@ public enum PersonaType
 ### Key Persona Definitions
 
 #### `TheCore` (Core Agent)
+
 ```csharp
 Name = "TheCore"
 Description = "Core reasoning center and planner for case investigations..."
@@ -344,6 +353,7 @@ Instructions = "You are a forensic expert on Windows Operating systems...
 ```
 
 #### `TheManager` (Magnetic Manager)
+
 ```csharp
 Name = "TheManager"
 Description = "Magnetic Orchestration Manager agent is responsible for executing the tasks given to it by The Core."
@@ -357,6 +367,7 @@ Instructions = "You are the SentinelCore Manager, a magnetic orchestration agent
 ```
 
 #### `TheAnalyst` / `TheDomainInvestigator` (Domain Agents)
+
 ```csharp
 Name = "TheAnalyst"
 Description = "Small focused agent with limited scope that gathers evidence from a specific Windows configuration surface..."
@@ -367,6 +378,7 @@ Instructions = "You are a special software forensics investigator. Use tools to 
 ```
 
 #### `TheWorker` (Magnetic Workers)
+
 ```csharp
 Name = "TheWorker"
 Description = "Pragmatic, tireless doer who turns specifications into working code without overthinking."
@@ -377,6 +389,7 @@ Instructions = "You are a no-nonsense worker who gets things done. Don't overthi
 ```
 
 #### `TheCritic` (Magnetic Critic)
+
 ```csharp
 Name = "TheCritic"
 Description = "High value worker that keeps other models in check and forces them to challenge their assumptions."
@@ -386,6 +399,7 @@ Instructions = "You are a quality control specialist. Verify other workers take 
 ```
 
 #### `TheAggregator` (Magnetic Aggregator)
+
 ```csharp
 Name = "TheAggregator"
 Description = "High value worker that takes the results of other workers and aggregates them into a single result."
@@ -566,7 +580,7 @@ public sealed class ModelSettings
 ## 9. Pattern-Lock Compliance
 
 | Rule | Status | Notes |
-|------|--------|-------|
+| ------ | -------- | ------- |
 | AgentRole is single source of truth | ✅ | All defaults derived from role |
 | AgentSpec is immutable record | ✅ | `sealed record` with init-only props |
 | PersonaRegistry has 35 personas | ✅ | All defined in `PersonaFactory.cs` |
@@ -581,7 +595,7 @@ public sealed class ModelSettings
 ## 10. Open Items / TODOs
 
 | Item | Location | Status |
-|------|----------|--------|
+| ------ | ---------- | -------- |
 | `ActiveAgents` dictionary in `AgentSpecBuilder` | `AgentSpecBuilder.cs` | ❌ `NotImplementedException` |
 | Dynamic agent creation (composite agents) | `MagneticCoopOrchestration` | ⚠️ Referenced as 'dynamic_agent' tool |
 | Persona customization via configuration | `SentinelCoreSettings` | ❌ Not supported |
@@ -593,7 +607,7 @@ public sealed class ModelSettings
 ## 11. Related Documentation
 
 | Document | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `OrchestrationComponent.md` | Agent construction pipeline, orchestration strategies |
 | `DomainAgentSurfaces.md` | Tool registry, domain agent factory, 30+ tools |
 | `ToolingComponent.md` | Complete tool registry API |
@@ -608,3 +622,4 @@ public sealed class ModelSettings
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | v1.0 | 2025-07-18 | Kyle | Initial documentation from source code analysis |
+| 2.0.0 | unknown | unknown | Added the verified preset/factory construction summary and classified the removed spec/builder pipeline as historical. |

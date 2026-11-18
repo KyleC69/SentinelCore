@@ -11,7 +11,7 @@ version: v1.0
 **Projects:** `SentinelCore.Contracts` (contracts), `SentinelCore.Orchestrations` (implementation), `SentinelCore.UI` (management page)
 **Namespaces:** `SentinelCore.Mcp` (contracts), `SentinelCore.Orchestrations.Mcp` (implementation), `SentinelCore.UI.ViewModels` / `SentinelCore.UI.Views` (UI)
 **Dependencies:** `ModelContextProtocol` 2.1.0 (C# SDK), `Microsoft.Extensions.AI`, `Microsoft.Extensions.Hosting.Abstractions`
-**Consumers:** `SentinelAgentFactory` (tool injection), `SentinelCoreAdmin` (WPF shell)
+**Consumers:** `SentinelAgentFactory` (tool injection), `SentinelCore.UI` (active WPF host and management pages)
 
 ---
 
@@ -21,7 +21,7 @@ The MCP Server Registry lets end users register external **Model Context Protoco
 
 A server definition carries **no per-agent assignment**. Which tools an agent receives is decided at agent creation time through `AgentToolSelection` and the tool-domain vocabulary (see `ToolingComponent.md` and ADR-005). The registry's only job is to publish the tools; the factory decides who gets them.
 
-**Key Principle:** MCP tools flow through the same `AITool` pipeline as built-in domain tools. `McpClientTool` inherits from `AIFunction`, so registry tools are injected into agent construction without adapters or wrappers.
+**Key Principle:** MCP tools flow through the same `AITool` pipeline as local domain tools. `McpClientTool` is wrapped as `McpToolTimeoutFunction` before registry publication so invocation timeout and structured failure behavior are consistent.
 
 ---
 
@@ -82,7 +82,7 @@ A server definition carries **no per-agent assignment**. Which tools an agent re
 | `McpServerTransportType` | `Stdio` or `Http` |
 | `McpOAuthSettings` | Client id, authorization/token endpoints, scopes |
 
-**Selection semantics:** the registry never filters tools by agent. `GetToolsFromCache()` returns every tool from every connected server, and `SentinelAgentFactory` narrows that set using the `AgentToolSelection` supplied at the call site — `None`, `All`, `ByNames`, or `ByDomains`. `All` applies no filter at all, so any server loaded at startup contributes to it.
+**Selection semantics:** the registry never filters tools by agent. `GetToolsFromCache()` returns every wrapped tool from every connected server, and `SentinelAgentFactory` narrows that set using the `AgentToolSelection` supplied at the call site — `None`, `All`, `Named` from `FromNames(...)`, or `Domains` from `FromDomains(...)`. `All` applies no filter at all, so any server loaded at startup contributes to it.
 
 ---
 
@@ -124,10 +124,10 @@ foreach (AITool tool in _localTools) catalog[tool.Name] = tool;
 | `null` | The role toolset for `presetKind` (`AgentToolRoleToolsets.For`), or none for a tool-free role |
 | `None` | None |
 | `All` | The entire catalog — every MCP server loaded at startup plus every local tool, unfiltered |
-| `ByNames` | Exactly the named tools; an unknown name throws `InvalidOperationException` (feature block) |
-| `ByDomains` | The union of tools claimed by the supplied domains' match rules |
+| `Named` (`FromNames(...)`) | Exactly the named tools; an unknown name throws `InvalidOperationException` (feature block) |
+| `Domains` (`FromDomains(...)`) | The union of tools claimed by the supplied domains' match rules |
 
-Because resolution is centralized in the factory, **every** agent built through `ISentinelAgentFactory` receives its toolset from the same vocabulary. Adding a tool to an MCP server requires no code change: domain rules match names by prefix and token, so new tools are claimed automatically, and anything unclaimed is logged and surfaced as a UI warning rather than silently dropped.
+Because resolution is centralized in the factory, **every** agent built through `ISentinelAgentFactory` receives its toolset from the same vocabulary. Adding a tool to an MCP server requires no code change: domain rules match names by prefix and token, so new tools are claimed automatically. Anything unclaimed is logged by the factory; complete UI warning surfacing should not be assumed.
 
 ---
 
@@ -174,7 +174,7 @@ UI owns the lifecycle and nothing is auto-started behind the user's back.
 
 | Rule | Status | Notes |
 | ------ | -------- | ------- |
-| Real SDK types only | ✅ | `McpClient`, `McpClientTool`, `AIFunction` — no adapters |
+| Real SDK types only | ✅ | `McpClient` and `McpClientTool`; registry tools are wrapped by the `McpToolTimeoutFunction` `AIFunction` adapter for timeout/result handling |
 | Centralized tool resolution | ✅ | `SentinelAgentFactory.ResolveTools` owns every tool decision |
 | Persistence overridable | ✅ | `SENTINEL_MCP_REGISTRY_PATH` |
 | UI stays in control of lifecycle | ✅ | `App.xaml.cs` loads persisted servers; nothing auto-starts |
@@ -209,6 +209,7 @@ UI owns the lifecycle and nothing is auto-started behind the user's back.
 ## Version History
 
 | Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| --------- | ------ | -------- | --------- |
 | v1.0 | 2026-09-09 | Kyle | Initial documentation for the MCP server registry feature |
+| 1.0.1 | unknown | unknown | Updated the consumer host name from the retired shell to `SentinelCore.UI`. |
 | v1.1 | 2026-02-20 | Kyle | Removed per-agent assignment (`AssignedAgentNames`, `ISentinelAgentCatalog`, `AgentAssignmentRow`, `GetToolsForAgentAsync`, assignment editor UI). Tool assignment is now a call-site decision through `AgentToolSelection`. Corrected stale implementation/DI tables. |

@@ -1,12 +1,22 @@
-Kyle, let’s run a **full end‑to‑end example** through your Sentinel Core schema so you can see exactly how the system behaves in a real incident. I’ll pick a scenario that’s realistic, dangerous if misdiagnosed, and shows the value of the safety valve.
+# Example Incident Flow
+
+> Status: Illustrative example. This walkthrough describes an intended end-to-end safety and investigation design. It is not a transcript of the current `TheCoreWorkflow`, and not all branches shown here are wired in the codebase. Use [workflowDiagram.md](./workflowDiagram.md) for the active graph.
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Marked the incident walkthrough as illustrative and distinguished it from the active workflow. |
+
+The following hypothetical example demonstrates how an incident could pass through a SentinelCore-style investigation schema. The scenario is intentionally realistic and shows the proposed role of a safety valve.
 
 We’ll walk through:
 
-1. **Signal → TheCore initial hypothesis**  
-2. **Workers gather evidence**  
-3. **Aggregator produces the packet**  
-4. **Safety Valve evaluates it**  
-5. **TheCore produces final diagnosis + remediation**  
+1. **Signal → TheCore initial hypothesis**
+2. **Workers gather evidence**
+3. **Aggregator produces the packet**
+4. **Safety Valve evaluates it**
+5. **TheCore produces final diagnosis + remediation**
 6. **Safety Valve applies risk gating to remediation**
 
 This will show the entire flow in action.
@@ -16,12 +26,13 @@ This will show the entire flow in action.
 # 🧪 Example Incident: Sudden Latency Spike on Customer API
 
 ### **Signal**
+
 A monitoring system fires:
 
 > “API latency increased from 120ms → 2400ms in 3 minutes.”
 
-Severity: **High**  
-Domain: **Performance**  
+Severity: **High**
+Domain: **Performance**
 Potential impact: **Customer outage**
 
 ---
@@ -32,7 +43,7 @@ TheCore forms a first-pass guess:
 
 > “Likely cause: database connection pool exhaustion.”
 
-Confidence: **0.62**  
+Confidence: **0.62**
 Reason: Latency spikes often correlate with DB bottlenecks.
 
 ---
@@ -41,10 +52,10 @@ Reason: Latency spikes often correlate with DB bottlenecks.
 
 Workers launched:
 
-- **Log Analyzer Worker**  
-- **Metrics Worker**  
-- **DB Health Worker**  
-- **Config Diff Worker**  
+- **Log Analyzer Worker**
+- **Metrics Worker**
+- **DB Health Worker**
+- **Config Diff Worker**
 - **Security Worker** (just in case)
 
 ---
@@ -195,8 +206,9 @@ Workers launched:
 # 5. TheCore Final Diagnosis + Remediation
 
 ### **Diagnosis**
-> Root cause: Database connection pool exhaustion  
-> Confidence: **0.87**  
+>
+> Root cause: Database connection pool exhaustion
+> Confidence: **0.87**
 > Status: **Safe to accept**
 
 ### **Remediation Plan**
@@ -245,30 +257,35 @@ Workers launched:
 # 🧠 What This Example Demonstrates
 
 ### **1. The safety valve prevented a dangerous action**
-Restarting the API service is **high-risk**.  
-Confidence was **0.87**, but threshold was **0.90**.  
+
+Restarting the API service is **high-risk**.
+Confidence was **0.87**, but threshold was **0.90**.
 So the safety valve **blocked automation** and required human approval.
 
 ### **2. Low-risk and medium-risk steps were allowed**
+
 Increasing the pool size is reversible and low-impact → auto-approved.
 
 ### **3. TheCore didn’t blindly trust its initial hypothesis**
+
 It waited for:
-- strong evidence  
-- worker agreement  
-- consistency  
-- safety valve approval  
+
+- strong evidence
+- worker agreement
+- consistency
+- safety valve approval
 
 ### **4. The operator gets a clear, safe, actionable plan**
+
 With confidence, risk tags, and safety gating.
 
 ---
 
 If you want, we can run:
 
-- a **security incident example**  
-- a **system outage example**  
-- a **false-positive signal example**  
-- a **catastrophic misdiagnosis scenario** to show how the safety valve stops it  
+- a **security incident example**
+- a **system outage example**
+- a **false-positive signal example**
+- a **catastrophic misdiagnosis scenario** to show how the safety valve stops it
 
 Which one do you want to simulate next?

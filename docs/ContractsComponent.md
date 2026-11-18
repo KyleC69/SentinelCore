@@ -6,18 +6,23 @@ last_updated: 2026-07-19
 version: v1.0
 ---
 
-# SentinelCore Contracts & Abstractions Component
+# SentinelCore Contracts and Abstractions Component
 
-**Project:** `SentinelCore.Contracts`
-**Namespaces:** `SentinelCore.Contracts.Abstractions`, `SentinelCore.Contracts.CaseFlow`, `SentinelCore.Contracts.Contracts`, `SentinelCore.Contracts.Events`, `SentinelCore.Contracts.SafetyEngine`
-**Dependencies:** `Microsoft.Extensions.AI`, `System.ComponentModel.DataAnnotations`
-**Consumers:** `SentinelCore.Orchestrations`, `SentinelCore.CaseFlowEngine`, `SentinelCoreHost`
+This document describes the shared contract boundary and marks model descriptions from earlier refactors as historical.
 
----
+## Current Implementation
 
-## Purpose
+- `SentinelCore.Contracts` has no project references to other solution projects and targets `net10.0`.
+- Current namespaces include `Abstractions`, `CaseFlow`, `Cfe`, `Contracts`, `DependencyInjection`, `Events`, and `Mcp`.
+- `SentinelCoreSettings` exposes `TierModels`, RAG, safety, tracing, and optional SQL configuration.
+- Agent presets, orchestration interfaces, and safety rules are implemented in `SentinelCore.Orchestrations`, not in Contracts.
+- Persistence-facing contracts remain in the Contracts project, but some methods expose concrete EF entity types from the CaseFlowEngine implementation boundary in the current code.
 
-The Contracts component is the **foundation layer** of SentinelCore — it defines all shared abstractions, DTOs, enums, events, and configuration types with **zero dependencies** on other SentinelCore projects. It is the contract surface that both Orchestrations and CaseFlowEngine implement against.
+Use this document when identifying shared abstractions or checking that a proposed dependency does not point upward from Contracts.
+
+## Historical Reference
+
+The detailed model lists and role-based safety/agent interfaces below contain material from earlier API shapes. The current source files are authoritative when an example differs.
 
 **Architectural Rule:** `SentinelCore.Contracts` has **no project references** to any other SentinelCore project. It is the stable, versioned API surface.
 
@@ -246,6 +251,7 @@ public enum CaseStatus
 ```
 
 **State Transitions (enforced by CaseFlowEngine):**
+
 ```
 Created → SignalReceived → Planning → PlanReady → Investigating
                                                       ↓
@@ -683,7 +689,7 @@ public enum SafetyVerdict
 ## 6. Pattern-Lock Compliance
 
 | Rule | Status | Notes |
-|------|--------|-------|
+| ------ | -------- | ------- |
 | Zero dependencies on other SentinelCore projects | ✅ | Pure abstractions/DTOs |
 | All repository abstractions defined | ✅ | 4 interfaces |
 | All case flow DTOs defined | ✅ | 8 record types |
@@ -694,12 +700,18 @@ public enum SafetyVerdict
 | Records are immutable | ✅ | All DTOs are `sealed record` |
 | XML docs on all public types | ✅ | Comprehensive documentation |
 
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Added current contract-boundary guidance and classified obsolete agent, safety, and model examples as historical. |
+
 ---
 
 ## 7. Open Items / TODOs
 
 | Item | Location | Status |
-|------|----------|--------|
+| ------ | ---------- | -------- |
 | `IEmbeddingService` abstraction | Abstractions | ❌ Not defined |
 | `IContentSafetyClient` abstraction | SafetyEngine | ❌ Not defined |
 | Safety rule configuration in Settings | SentinelCoreSettings | ❌ Not added |
@@ -712,7 +724,7 @@ public enum SafetyVerdict
 ## 8. Related Documentation
 
 | Document | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `CaseFlowEngineComponent.md` | CaseFlowEngine implementation of repositories |
 | `PersistenceComponent.md` | EF Core entities implementing these abstractions |
 | `DynamicAgentsComponent.md` | AgentSpec, AgentRole, AgentPersona usage |

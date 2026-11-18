@@ -1,9 +1,11 @@
 ## Architecture Decision Record: DTO-to-EFCore Boundary Definition (ADR-001)
 
-**Status:** Proposed
+**Status:** Review required
 **Date:** 2026-10-13
 **Architects:** [Agent/Copilot]
 **Impacted Components:** `Contracts/` (DTOs), `CaseFlowEngine/`, `SentinelCore.Tests/`
+
+> 2026-11 review note: The proposed boundary is only partially reflected in the implementation. Some persistence-facing contracts expose EF entity types, and the current mappings live on the persistence side. This ADR should be amended or superseded before it is cited as an enforced boundary.
 
 ---
 
@@ -15,7 +17,7 @@ The persistence layer relies on explicit EF Core entities (e.g., `CaseEntity`, `
 
 ### 2. Proposed Solution
 
-We propose establishing a strict, explicit **Data Transfer Object (DTO) $\rightarrow$ EF Entity Mapping Boundary**.
+We propose establishing a strict, explicit **Data Transfer Object (DTO) --> EF Entity Mapping Boundary**.
 
 1. **Source of Truth:** The EF Core Entity model (the `Entity` classes) remains the single source of truth for persistence.
 2. **Mapping Contract:** Every DTO class in the `Contracts/` project that needs to be persisted must implement a mapping method, `public TEntity ToEntity()`, where `TEntity` is the corresponding EF Entity type.

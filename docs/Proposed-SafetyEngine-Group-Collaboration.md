@@ -1,10 +1,18 @@
-: Create a safety rule engine that will be implemented as middleware to attach to the AIAgent using the Agent Framework version 1.30. It should be in C# and follow best practices and design principles. It should support both streaming and non streaming callback methods
-CoopAgent_Framework: Below is a **complete, production‑ready safety‑rule engine** that can be dropped in as **middleware** for the **AIAgent** (Agent Framework v1.30).
-The design follows SOLID, clean‑architecture, and .NET best‑practices, and it works for both **streaming** and **non‑streaming** response modes.
+# Proposed Safety Engine Group Collaboration
+
+> Status: Historical proposal. It proposes an MAF middleware architecture that is not the active `SafetyExecutor` workflow path. Use [SafetyEngineComponent.md](./SafetyEngineComponent.md) for current behavior and [SafetyRailsComponent.md](./SafetyRailsComponent.md) for the superseded middleware design.
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Classified the middleware collaboration design as historical and non-authoritative. |
+
+The original proposal asked for a safety-rule engine implemented as middleware attached to an `AIAgent`, with streaming and non-streaming support. The response below described a production-ready candidate, but it must not be treated as the implemented architecture.
 
 ---
 
-## 1. High‑level Architecture
+## 1. High-level Architecture
 
 ```
 +-------------------+          +-------------------+          +-------------------+
@@ -331,7 +339,7 @@ public sealed class SafetyOptions
 ### Why this design is **best‑practice**
 
 | Principle | How it is satisfied |
-|-----------|--------------------|
+| ----------- | -------------------- |
 | **Single Responsibility** | `SafetyMiddleware` only orchestrates rule execution; each rule encapsulates its own logic. |
 | **Open/Closed** | New rules are added by implementing `ISafetyRule` – no change to middleware. |
 | **Dependency Injection** | Rules, logger, and options are injected. The middleware can be registered with the built‑in DI container. |
@@ -932,7 +940,7 @@ Because each rule receives a **fresh `SafetyContext`** per evaluation, they can 
 ## 6. Extensibility Points
 
 | What | How to extend |
-|------|---------------|
+| ------ | --------------- |
 | **Add a new rule** | Implement `ISafetyRule` and register it in DI (`services.AddSingleton<ISafetyRule, MyRule>()`). |
 | **Change decision logic** | Derive from `SafetyEngineMiddleware` or replace it with a custom implementation that overrides `RunAllRulesAsync`. |
 | **Custom metadata extraction** | Implement `IMetadataProvider` on your request DTO or replace `ExtractMetadata` with a delegate via options. |
@@ -1376,7 +1384,7 @@ The streaming call never yields any chunk because the request is rejected **befo
 ## 6. Extending the Engine (Design‑Pattern Highlights)
 
 | Pattern | Where it appears | Why it matters |
-|---------|-------------------|----------------|
+| --------- | ------------------- | ---------------- |
 | **Strategy** | `ISafetyRule<TReq,TResp>` implementations | Add new checks without touching the engine. |
 | **Chain‑of‑Responsibility** | `SafetyRuleMiddleware` short‑circuits the pipeline | Prevents the downstream agent from running when a rule fails. |
 | **Decorator** | The middleware decorates the original `IAgent` call | Keeps the agent implementation oblivious to safety concerns. |
@@ -2339,7 +2347,7 @@ public sealed class SafetyOptions
 ### Why this design is **best‑practice**
 
 | Principle | How it is satisfied |
-|-----------|--------------------|
+| ----------- | -------------------- |
 | **Single Responsibility** | `SafetyMiddleware` only orchestrates rule execution; each rule encapsulates its own logic. |
 | **Open/Closed** | New rules are added by implementing `ISafetyRule` – no change to middleware. |
 | **Dependency Injection** | Rules, logger, and options are injected. The middleware can be registered with the built‑in DI container. |
@@ -2923,7 +2931,7 @@ public sealed class CustomMetadataRule : ISafetyRule
 ## 5. Streaming vs. Non‑Streaming – How the Engine Handles Both
 
 | Phase | Non‑Streaming (`Task<T>`) | Streaming (`IAsyncEnumerable<T>`) |
-|-------|---------------------------|-----------------------------------|
+| ------- | --------------------------- | ----------------------------------- |
 | **Pre‑check** | Executed once before the downstream call. | Same – executed once before the first chunk. |
 | **Post‑check** | Executed once after the whole response is materialized. | Executed **after each chunk** (the `CurrentChunk` field is populated). |
 | **Short‑circuit** | Returns a *blocked* response object. | Stops the enumeration (`yield break`) or emits a single “blocked” chunk. |
@@ -2936,7 +2944,7 @@ Because each rule receives a **fresh `SafetyContext`** per evaluation, they can 
 ## 6. Extensibility Points
 
 | What | How to extend |
-|------|---------------|
+| ------ | --------------- |
 | **Add a new rule** | Implement `ISafetyRule` and register it in DI (`services.AddSingleton<ISafetyRule, MyRule>()`). |
 | **Change decision logic** | Derive from `SafetyEngineMiddleware` or replace it with a custom implementation that overrides `RunAllRulesAsync`. |
 | **Custom metadata extraction** | Implement `IMetadataProvider` on your request DTO or replace `ExtractMetadata` with a delegate via options. |
@@ -3379,7 +3387,7 @@ The streaming call never yields any chunk because the request is rejected **befo
 ## 6. Extending the Engine (Design‑Pattern Highlights)
 
 | Pattern | Where it appears | Why it matters |
-|---------|-------------------|----------------|
+| --------- | ------------------- | ---------------- |
 | **Strategy** | `ISafetyRule<TReq,TResp>` implementations | Add new checks without touching the engine. |
 | **Chain‑of‑Responsibility** | `SafetyRuleMiddleware` short‑circuits the pipeline | Prevents the downstream agent from running when a rule fails. |
 | **Decorator** | The middleware decorates the original `IAgent` call | Keeps the agent implementation oblivious to safety concerns. |
@@ -3986,5 +3994,3 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-
-

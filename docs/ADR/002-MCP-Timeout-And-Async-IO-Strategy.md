@@ -1,4 +1,4 @@
-## Architecture Decision Record: MCP Timeout and Async File I/O Strategy (ADR-002)
+# Architecture Decision Record: MCP Timeout and Async File I/O Strategy (ADR-002)
 
 **Status:** Proposed
 **Date:** 2026-11-01
@@ -7,7 +7,7 @@
 
 ---
 
-### 1. Context and Problem Statement
+## 1. Context and Problem Statement
 
 The application intermittently never completes (about 2 clean end-to-end runs out of hundreds). A paused debug session showed no
 user code running: the WPF dispatcher was idle, and two thread-pool workers were parked in native reads on non-async handles
@@ -31,7 +31,7 @@ The MCP code had no upper bound on connect, tool listing, or tool invocation, so
 4. **Failed start must not leak a child process:** if tool listing fails after a connection was created, the client is disposed.
 5. **File I/O rules**
    - No `.Wait()`, `.Result`, or `GetAwaiter().GetResult()` on async work inside async call paths
-	 (`TheCoreWorkflow.BuildWorkflow` now awaits the debug visualization and tolerates IO failure).
+  (`TheCoreWorkflow.BuildWorkflow` now awaits the debug visualization and tolerates IO failure).
    - Async file reads use `FileOptions.Asynchronous` (`JsonFileMcpServerRegistryStore.LoadAsync`).
    - Persisted state is written atomically (temp file + `File.Move(overwrite: true)`) and saves are serialized with a `SemaphoreSlim`.
 
@@ -45,7 +45,7 @@ The MCP code had no upper bound on connect, tool listing, or tool invocation, so
 * Slow but legitimate MCP tools longer than 30 s will now fail; the default is configurable per wrapper instance
   (future work: surface as configuration).
 * The tool type exposed by the registry is `McpToolTimeoutFunction` rather than `McpClientTool`; no code depended on the concrete type.
-* Remaining known, accepted risk: `SafetyRuleEngine.Evaluate` blocks with `Task.Wait(30 s)` (bounded, synchronous API by contract);
+- Remaining known, accepted risk: `SafetyRuleEngine.Evaluate` blocks with `Task.Wait(30 s)` (bounded, synchronous API by contract);
   small synchronous local-file reads/writes in `FileModelConfigStore`, `DpapiTokenCache` and the logging sinks are left unchanged.
 
 ### 5. Verification Strategy

@@ -8,11 +8,21 @@ version: v1.0
 
 # SentinelCore Safety Engine Component
 
+This document inventories the safety-rule engine and distinguishes the implemented executor path from unfinished integration behavior.
+
 **Project:** `SentinelCore.Orchestrations`
+
 **Namespace:** `SentinelCore.Orchestrations.SafetyEngine`
-**Primary caller:** `SentinelCore.Orchestrations.Workflows.Executors.SafetyExecutor`
-**Primary middleware path:** `SafetyEngineAgent`
-**Related rules:** `SentinelCore.Orchestrations.SafetyEngine.Rules.*`
+
+**Active workflow caller:** `SentinelCore.Orchestrations.Workflows.Executors.SafetyExecutor`
+
+**Related agent adapter:** `SafetyEngineAgent` (separate from the active executor path)
+
+Use this document when changing safety-rule evaluation, workflow routing, or safety metadata propagation.
+
+## Implementation Caveat
+
+`SafetyExecutor` uses 13 default rules when no `ISafetyRule` services are supplied. It evaluates the message, but then derives `isBlocked` from `message.GetMetaTagByKey("IsAllowed")`. The call to `ApplySafetyTags` is currently commented out, so an ordinary incoming message does not receive the fresh verdict. A detected message can therefore proceed as if allowed. Consumers should not treat the active safety gate as enforcing rule outcomes until this defect is corrected.
 
 ## Purpose
 
@@ -42,11 +52,11 @@ flowchart LR
     B --> C[SafetyRuleEngine]
     C --> D[ISafetyRule implementations]
     D --> E[SafetyEvaluationResult]
-    E --> F{Allowed?}
-    F -- Yes --> G[Continue workflow]
-    F -- No --> H[Return blocked ChatMessage]
+    E --> F{DetectionBoolResult.IsTrue?}
+    F -- No --> G[PatternCheckExecutor]
+    F -- Yes --> H[SafetyReviewExecutor]
 
-    I[AIAgent pipeline] --> J[SafetyEngineAgent]
+    I[Separate agent path] --> J[SafetyEngineAgent]
     J --> C
 ```
 
@@ -119,16 +129,14 @@ Current behavior:
 - Validates null input and reports through `ISystemReporter`.
 - Builds a `SafetyEvaluationContext` from the incoming `ChatMessage`.
 - Calls `SafetyRuleEngine.EvaluateAsync(...)`.
-- Returns a blocked assistant message when `IsAllowed` is false.
-- Returns the original message when the evaluation passes.
+- Returns `DetectionBoolResult` where `IsTrue` means the message was detected/blocked.
+- Returns the original message. The metadata-tagging call is commented out, so downstream code cannot derive `IsAllowed` from message metadata without explicit state added by a future change.
 
 It is intentionally a caller of the safety engine, not the engine implementation.
 
 ## Rule Source
 
-`BlocklistRule` is currently the primary safety rule that uses `SafetyTriggerTerms.GetAllIndicators()` plus compatibility overloads for explicit indicator or string lists.
-
-This file is still the place to evolve the rule vocabulary, but the engine contract remains the shared `ISafetyRule` / `SafetyRuleResult` model.
+`SafetyExecutor` defaults to 13 rules when no `ISafetyRule` services are supplied. `BlocklistRule` is one of those rules and consumes `SafetyTriggerTerms.GetAllIndicators()`; the remaining defaults cover code injection, data exfiltration, encoding evasion, harmful content, limits, PII, prompt injection, repetition, role escalation, system-prompt extraction, tokens, and URL blocking.
 
 ## Template Alignment
 
@@ -145,13 +153,19 @@ Workflow executors should follow the conventions in [ExecutorTemplate.cs](../pro
 
 ## Known Gaps
 
-The current implementation is functional, but these items remain unresolved relative to the earlier design proposal:
+The current implementation has unresolved integration gaps:
 
-- No dedicated `SafetyReviewerExec` exists yet.
-- No threshold-based scoring pipeline exists in the executor.
-- `BlocklistRule` still behaves as a compatibility blocklist rule rather than a weighted scoring engine.
-- Conditional review/critical branches are not present in the workflow graph.
+- `SafetyReviewExecutor` and a blocked-route edge from `SafetyExecutor` exist, but the current message-metadata defect prevents a fresh rule block from reliably reaching that route.
+- The review executor is not evidence of a complete human-style or remediation review pipeline.
+- Safety settings and output-sanitization options are not consistently applied across the executor path.
+- Rule evaluation is implemented, but the `ApplySafetyTags` call remains disabled, so the aggregate verdict is not propagated as trusted message metadata.
 
 ## Documentation Scope
 
 This document is the canonical reference for the current safety-engine implementation. It is aligned to what exists in the repository today, not to future proposed behavior.
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Corrected the active rule count, executor result shape, blocked-route destination, and disabled message-tagging status. |

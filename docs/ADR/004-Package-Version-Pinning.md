@@ -31,12 +31,14 @@ were nevertheless wrong for two reasons:
 1. They violated the explicit .NET 10 pin.
 2. They contradicted the Microsoft Agent Framework wave. `Microsoft.Agents.AI 1.28.0` (the `net10.0`
    dependency group) declares:
+
    ```
    Microsoft.Extensions.AI 10.11.0
    Microsoft.Extensions.AI.Abstractions 10.11.0
    Microsoft.Extensions.DependencyInjection.Abstractions 10.0.13
    Microsoft.Extensions.Logging.Abstractions 10.0.13
    ```
+
    The `11.0.0` pins therefore forced MAF onto a newer `Microsoft.Extensions.AI` major than the one
    it was compiled and tested against.
 
@@ -111,8 +113,7 @@ the exact point where a future bump would be made.
   pre-existing and unrelated (5 × `ChatMessagesTests` shared-state, 1 × PL-7 EF architecture test,
   1 × missing `IEvidenceStore` DI registration).
 - `AgentFactoryToolTests`: **10/10 passed**.
-- `dotnet --version` resolves to `10.0.404`; no `global.json` exists that could pull the installed
-  .NET 11 SDK.
+- At the time of this decision, `dotnet --version` resolved to `10.0.404`. The repository now contains `global.json`; use that file as the current SDK pin rather than the historical command output in this ADR.
 
 ---
 

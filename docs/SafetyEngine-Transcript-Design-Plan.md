@@ -1,4 +1,12 @@
- Safety Engine Transcript Rebuild: Correct Architecture and Design Plan
+# Safety Engine Transcript Design Plan
+
+> Status: Historical target design. The transcript-derived requirements below remain useful design input, but implementation status must be checked against [SafetyEngineComponent.md](./SafetyEngineComponent.md) and the active `SafetyExecutor` source. In particular, metadata tagging and complete blocked/review routing are not fully implemented.
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Classified transcript requirements as target design and identified the active implementation gaps. |
 
 ## Source of truth
 

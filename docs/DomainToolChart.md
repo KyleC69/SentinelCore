@@ -5,6 +5,18 @@ component: Tools
 last_updated: 2026-07-10
 ---
 
+# Domain Tool Chart
+
+This is a capability-design reference, not an inventory of tools implemented in this repository. Current tool availability is determined by connected MCP servers and the local tool registrations resolved through `AgentToolSelection`; use [ToolingComponent.md](./ToolingComponent.md) for the implemented tool-domain rules.
+
+Use this document when mapping a proposed investigation surface to a safe Windows API.
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Classified the chart as a capability proposal and linked current implemented tool resolution. |
+
 | **Domain**     | **Recommended Safe API / System Interface**                              |
 | -------------- | ------------------------------------------------------------------------ |
 | registry       | Win32 Registry API (RegOpenKeyEx, RegQueryValueEx)                       |

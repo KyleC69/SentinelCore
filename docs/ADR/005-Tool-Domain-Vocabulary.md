@@ -142,7 +142,7 @@ banner and `CanSend()`.
 | Tier | Condition | Behaviour |
 | ---- | --------- | --------- |
 | **Blocking** | Ollama is not reachable, **or** any registered MCP server is not `Connected` | `CanSend()` is false and the banner names the failing servers. The same gate that already guarded on Ollama now guards on MCP health. |
-| **Warning** | A selected domain or role resolved to zero tools, **or** `AgentToolDomainCatalog.Unclassified` reports catalogue tools no domain claims | Non-blocking banner text. An empty domain is a legitimate state while a server is stopped, so it must not block. |
+| **Warning** | A selected domain or role resolves to zero tools, **or** `AgentToolDomainCatalog.Unclassified` reports catalogue tools that no domain claims | Intended as non-blocking user-visible status. The current factory logs these conditions, but complete UI warning surfacing should be verified before treating this row as implemented. |
 | **Silent** | `None`, or a narrow selection that resolved cleanly | No banner. |
 
 The gate is global because `Send()` starts the whole master workflow, not just the Core agent; a
@@ -199,10 +199,10 @@ silently shrinking an agent's toolset.
 * `SentinelCore.Tests/AgentFactoryToolTests.cs` asserts observable behaviour through the
   `FakeChatClient`'s recorded `ChatOptions`, never factory internals:
   * an omitted selection binds the role toolset — the Worker role claims a `registry_*` tool and
-	leaves an unrelated local tool unbound;
+ leaves an unrelated local tool unbound;
   * `None` binds zero tools; `All` binds both an MCP tool and a local tool;
   * `FromNames` binds exactly one tool and resolves case-insensitively; an unknown name throws and
-	names the missing tool;
+ names the missing tool;
   * `FromDomains` collapses duplicates and binds only tools its rules claim;
   * `ManagerAgent` with a non-empty toolset throws (PL-3);
   * construction succeeds with an empty MCP catalogue.
@@ -214,6 +214,6 @@ silently shrinking an agent's toolset.
 
 ### 7. Related
 
-* `docs/ADR/003-Agent-Tool-Selection.md` — the selection type this ADR extends.
-* `docs/ToolingComponent.md` — the component reference for the vocabulary.
-* `architecture/pattern-lock.md` PL-3 — the Manager agent must not have tools.
+* [ADR-003](./003-Agent-Tool-Selection.md) - the selection type this ADR extends.
+* [ToolingComponent](../ToolingComponent.md) - the component reference for the vocabulary.
+* [Pattern lock PL-3](../../architecture/pattern-lock.md) - the Manager agent must not have tools.

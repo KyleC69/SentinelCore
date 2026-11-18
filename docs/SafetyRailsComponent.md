@@ -8,18 +8,20 @@ version: v1.0
 
 # SentinelCore Safety Rails Component
 
-**Project:** `SentinelCore.Contracts` (abstractions) + `SentinelCore.Orchestrations` (implementation)
-**Namespaces:** `SentinelCore.Contracts.SafetyEngine`, `SentinelCore.Orchestrations.Agents.Middleware`
-**Dependencies:** `Microsoft.Extensions.AI`, `Microsoft.Agents.AI`
-**Consumers:** `SentinelCore.Orchestrations` (AgentBuilder for Core agent), `SentinelCoreHost` (via DI)
+> Status: Superseded by [SafetyEngineComponent.md](./SafetyEngineComponent.md). This file preserves the former middleware-oriented design and is not an active runtime reference.
 
----
+The current workflow uses `SafetyExecutor` and `SafetyRuleEngine` in `SentinelCore.Orchestrations`. The removed `ISafetyMiddleware`, `SafetyContext`, `SafetyResult`, and `SafetyVerdict` types described below must not be implemented or consumed as if they were current.
+
+Use the [Safety Engine Component](./SafetyEngineComponent.md) when changing active workflow safety behavior. Use this document only to understand why the middleware design was retired.
+
+## Historical Safety Rails Design
 
 ## Purpose
 
 The Safety Rails component provides **defense-in-depth safety controls** for AI agents in SentinelCore. It implements a middleware-based safety pipeline that intercepts agent interactions, applies configurable safety rules, and can block, modify, or flag unsafe content before it reaches the model or the user.
 
 **Key Principles:**
+
 - **Middleware-based** — integrates into the `ChatClient` pipeline via `IChatClient` decorator
 - **Rule-based** — composable `ISafetyRule` implementations for different safety concerns
 - **Role-aware** — applied selectively (currently only to `AgentRole.Core`)
@@ -459,6 +461,7 @@ public AIAgent Build(AgentSpec spec)
 ```
 
 **Key Points:**
+
 - Safety middleware only applied to `AgentRole.Core`
 - Uses DI to resolve `ISafetyMiddleware` (defaults to `NullSafetyMiddleware`)
 - Applied **after** event publishing, **before** pattern memory injector
@@ -672,7 +675,7 @@ public interface ISentinelCoreEvents
 ## 7. Pattern-Lock Compliance
 
 | Rule | Status | Notes |
-|------|--------|-------|
+| ------ | -------- | ------- |
 | Abstractions in Contracts | ✅ | `ISafetyMiddleware`, `ISafetyRule`, `SafetyContext`, `SafetyResult`, `SafetyVerdict` |
 | Middleware-based | ✅ | Implements `IChatClient` decorator pattern |
 | Role-aware (Core only) | ✅ | Applied in `AgentBuilder` for `AgentRole.Core` |
@@ -686,7 +689,7 @@ public interface ISentinelCoreEvents
 ## 8. Open Items / TODOs
 
 | Item | Location | Status |
-|------|----------|--------|
+| ------ | ---------- | -------- |
 | `ISafetyRule` implementations | Orchestrations | ❌ None implemented yet |
 | `IContentSafetyClient` abstraction | Contracts | ❌ Not defined |
 | Safety rule configuration | Settings | ❌ Not in `SentinelCoreSettings` |
@@ -701,7 +704,7 @@ public interface ISentinelCoreEvents
 ## 9. Related Documentation
 
 | Document | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `DynamicAgentsComponent.md` | AgentBuilder pipeline, Core agent construction |
 | `ContractsComponent.md` | Safety abstractions, ISentinelCoreEvents |
 | `OrchestrationComponent.md` | Agent construction pipeline, middleware ordering |
@@ -714,3 +717,4 @@ public interface ISentinelCoreEvents
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | v1.0 | 2025-07-18 | Kyle | Initial documentation from source code analysis |
+| 2.0.0 | unknown | unknown | Marked the middleware architecture superseded and redirected active-runtime guidance to the safety-engine component. |

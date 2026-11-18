@@ -8,22 +8,22 @@ version: v1.0
 
 # SentinelCore Domain Agent Surfaces Component
 
-**Project:** `SentinelCore.Orchestrations`
-**Namespaces:** `SentinelCore.Orchestrations.Application`, `SentinelCore.Orchestrations.Agents.Domain`, `SentinelCore.Orchestrations.Tools`
-**Dependencies:** `SentinelCore.Contracts` (abstractions, settings, events), `Microsoft.Extensions.AI`, `Microsoft.Agents.AI`
-**Consumers:** `SentinelCore.Orchestrations` (orchestrators), `SentinelCoreHost` (via DI)
+This document is a domain-capability reference for the current tool vocabulary, not a claim that every listed operating-system API is implemented in this repository.
 
----
+## Current Implementation
 
-## Purpose
+- Tool availability comes from running MCP servers plus local `AITool` registrations.
+- `SentinelAgentFactory` builds the live catalog and resolves tools through `AgentToolSelection`.
+- `AgentToolDomainCatalog` defines name-based membership rules, composite categories, and the `Unclassified` check.
+- Agent presets map to role-default domains in `AgentToolRoleToolsets`; a call site may override that default.
+- The Manager and Classifier presets are tool-free. Tool access is never inferred from an MCP server definition alone.
+- See [ToolingComponent.md](./ToolingComponent.md) for the authoritative current tool-selection model.
 
-The Domain Agent Surfaces component defines **how domain-specific agents are configured, what tools they have access to, and how they are instantiated**. It bridges the gap between the generic agent construction pipeline (`IAgentSpecBuilder` → `IAgentBuilder`) and the concrete domain-specific capabilities needed for Windows system investigation.
+Use this document when designing or reviewing domain coverage. The removed `ToolRegistry` and `DomainAgentFactory` descriptions below are historical.
 
-This component consists of:
-1. **ToolRegistry** — Static registry mapping 30+ Windows domains to read-only tools
-2. **DomainAgentFactory** — Factory that creates domain agents with domain-specific toolsets
-3. **Domain Tool Implementations** — 30+ read-only tools for Windows system surfaces
-4. **MCP Research Tools** — Microsoft Docs search/fetch/code-sample tools for Core agent
+## Historical Domain Reference
+
+The former design used a static `ToolRegistry` and a dedicated domain-agent factory. Those sections are retained to preserve capability intent.
 
 ---
 
@@ -142,7 +142,7 @@ private static readonly Dictionary<AgentRole, IReadOnlyList<string>> RoleToolNam
 ### Public API
 
 | Method | Signature | Purpose |
-|--------|-----------|---------|
+| -------- | ----------- | --------- |
 | `GetToolByDomain` | `IList<AITool>? GetToolByDomain(string domain)` | Instantiates all tools for a domain |
 | `GetToolsByNames` | `IList<AITool> GetToolsByNames(IEnumerable<string> toolNames)` | Instantiates tools by exact type names |
 | `GetToolsetByRole` | `IList<AITool> GetToolsetByRole(AgentRole role)` | Gets role-based default toolset |
@@ -167,6 +167,7 @@ private static AITool? CreateTool(string toolName)
 ```
 
 **All tools must:**
+
 - Be in `SentinelCore.Orchestrations.Tools` namespace
 - Inherit from `Microsoft.Extensions.AI.AITool`
 - Have a parameterless constructor
@@ -218,7 +219,7 @@ public AIAgent CreateAgent(string domain, string description)
 ### Key Behaviors
 
 | Aspect | Behavior |
-|--------|----------|
+| -------- | ---------- |
 | **Agent Name** | `{domain}_agent` (e.g., `registry_agent`, `services_agent`) |
 | **Tools** | Exactly the tools mapped to `domain` in `DomainToolNames` |
 | **Persona** | Base `Domain` persona from `PersonaFactory`, description overridden if provided |
@@ -249,7 +250,7 @@ Instructions = "You are a domain specialist agent. Your role is to investigate a
 ### Tool Categories (30 domains)
 
 | Domain | Tool Class | Purpose |
-|--------|------------|---------|
+| -------- | ------------ | --------- |
 | `registry` | `RegistryReadTool` | Read registry keys/values |
 | `dcom` | `DcomReadTool` | DCOM configuration |
 | `wmi` | `WmiQueryTool` | WMI/CIM queries |
@@ -316,6 +317,7 @@ public sealed class RegistryReadTool : AITool
 ### Purpose
 
 Creates **The Core Agent** — the central investigative agent with:
+
 - Role-based defaults from `AgentSpecBuilder` (`AgentRole.Core`)
 - **MCP (Model Context Protocol) research tools** requiring runtime endpoint
 
@@ -359,7 +361,7 @@ AgentSpec spec = baseSpec with
 ## 5. AgentRole → Tool/Event Routing Summary
 
 | Role | Tools | Event Channel | Lifetime | Factory |
-|------|-------|---------------|----------|---------|
+| ------ | ------- | --------------- | ---------- | --------- |
 | `Core` | Role defaults + MCP tools | `TheCoreActivity` / `TheCoreReasoning` / `TheCoreTooling` | Application | `CoreAgentFactory` |
 | `Manager` | **None** | `MagneticParticipantActivity` | Workflow | `MagneticCoopOrchestration` |
 | `Domain` | Domain-specific (30 domains) | `MagneticParticipantActivity` | Per-task | `DomainAgentFactory` |
@@ -419,7 +421,7 @@ var magneticResult = await _magneticOrchestration.ExecuteTasksAsync(plan, coreAg
 ## 8. Pattern-Lock Compliance
 
 | Rule | Status | Notes |
-|------|--------|-------|
+| ------ | -------- | ------- |
 | No DI registration of tools | ✅ | Static registry, `Activator.CreateInstance` |
 | Tools are read-only | ✅ | All 30 tools query-only |
 | Domain agents per-task lifetime | ✅ | `DomainAgentFactory.CreateAgent()` called per task |
@@ -433,7 +435,7 @@ var magneticResult = await _magneticOrchestration.ExecuteTasksAsync(plan, coreAg
 ## 9. Open Items / TODOs
 
 | Item | Location | Status |
-|------|----------|--------|
+| ------ | ---------- | -------- |
 | Case manipulation tools for Core agent | `CoreAgentFactory.cs` (commented) | ❌ Not implemented |
 | `web_search_tool` for Core | `CoreAgentFactory.cs` (commented) | ❌ Not implemented |
 | Tool parameter validation schemas | `Tools/*.cs` | ⚠️ Partial |
@@ -446,7 +448,7 @@ var magneticResult = await _magneticOrchestration.ExecuteTasksAsync(plan, coreAg
 ## 10. Related Documentation
 
 | Document | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `OrchestrationComponent.md` | Agent construction pipeline, orchestration strategies |
 | `DynamicAgentsComponent.md` | Agent roles, specs, personas, dynamic creation |
 | `ToolingComponent.md` | Complete tool registry API, all 30+ tools detail |
@@ -461,3 +463,4 @@ var magneticResult = await _magneticOrchestration.ExecuteTasksAsync(plan, coreAg
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | v1.0 | 2025-07-18 | Kyle | Initial documentation from source code analysis |
+| 2.0.0 | unknown | unknown | Replaced the active interpretation of domain agents and static tool registry with the current `AgentToolSelection` and live-catalog model. |

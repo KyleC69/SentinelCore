@@ -1,6 +1,16 @@
 # Safety Engine Implementation Checklist
 
-This checklist reflects the transcript-backed architecture and the current codebase review. Each item is marked as:
+> Status: Historical implementation checklist. It records a target transcript-backed design and is not the sole source of runtime truth. The current `SafetyExecutor` does not call `ApplySafetyTags`; safety metadata is therefore not attached by that path, and `SafetyReviewExecutor` is wired to the blocked route but should not be assumed to provide a complete human-like review outcome.
+
+Use [SafetyEngineComponent.md](./SafetyEngineComponent.md) and [SafetyRailsComponent.md](./SafetyRailsComponent.md) for the current executor behavior and the retired middleware design. The checkbox history below is retained for migration tracking.
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Marked the checklist historical and documented disabled metadata tagging and incomplete review behavior. |
+
+Each item is marked as:
 
 - [x] = fully implemented to the design described in the transcript
 - [~] = partially implemented or implemented but not fully aligned to the intended boundary

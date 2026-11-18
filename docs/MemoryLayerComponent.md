@@ -8,21 +8,21 @@ version: v1.0
 
 # SentinelCore Memory Layer Component
 
-**Project:** `SentinelCore.Contracts` (abstractions) + `SentinelCore.CaseFlowEngine` (implementation)
-**Namespaces:** `SentinelCore.Contracts.Abstractions`, `SentinelCore.CaseFlowEngine.CaseFlow`, `SentinelCore.CaseFlowEngine.Persistence`
-**Dependencies:** `Microsoft.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.Extensions.VectorData`
-**Consumers:** `SentinelCore.CaseFlowEngine` (CaseFlowEngine), `SentinelCore.Orchestrations` (CoreAgentFactory via PatternMemoryInjector)
+This document records the pattern-memory implementation and its incomplete integration points.
 
----
+## Current Implementation
 
-## Purpose
+- `IPatternMemoryStore` and `PatternMemoryResult` define the cross-layer memory contract.
+- The case-flow module contains an EF-backed `PatternMemoryStore`; `SemanticPatternMatcher` provides the orchestration-side search/matching surface.
+- `SentinelAgentFactory.AddPresetContextProviders` currently leaves pattern-memory injection disabled, so past patterns are not injected into agent context by default.
+- The current search path must be evaluated as an in-progress implementation; do not assume native SQL vector similarity or automatic learning after case closure.
+- `StoreAsync` and some vector workflows remain incomplete or non-production paths.
 
-The Memory Layer provides **vector-based pattern memory** for case investigations. It enables the Core agent to:
-1. **Store** investigation patterns (signal + summary embeddings) after case resolution
-2. **Search** for similar historical patterns when new signals arrive
-3. **Inject** relevant pattern context into the Core agent's prompt via `PatternMemoryInjector`
+Use this document when changing pattern persistence, matching, embeddings, or the Core agent's context-enrichment pipeline.
 
-This implements **case-based reasoning** — learning from past investigations to accelerate future ones.
+## Historical Reference
+
+The sections below describe the target end-to-end pattern-memory design. They are not evidence that injection, embedding generation, and similarity search are fully active today.
 
 ---
 
@@ -150,6 +150,7 @@ public sealed record PatternMemory
 ```
 
 **Key Design Decisions:**
+
 - **Two embeddings**: Signal (what triggered the case) + Summary (what was learned)
 - **1536 dimensions**: Matches common embedding models (e.g., `text-embedding-3-small`, `all-MiniLM-L6-v2`)
 - **ReadOnlyMemory<float>**: Zero-copy, efficient for vector operations
@@ -185,6 +186,7 @@ public class PatternMemoryEntity
 ```
 
 **Key Points:**
+
 - `SqlVector<float>(1536)` — SQL Server vector type for native vector similarity search
 - Fixed 1536 dimensions — must match embedding model output
 - FK to `CaseEntity` — enables case-to-pattern navigation
@@ -224,6 +226,7 @@ public class SentinelCoreDbContext : DbContext
 ```
 
 **Vector Search Capability:**
+
 ```sql
 -- SQL Server vector similarity search (cosine distance)
 SELECT TOP (@topK) *
@@ -375,7 +378,7 @@ public interface IEmbeddingService
 ### Integration Points Needed
 
 | Location | Purpose |
-|----------|---------|
+| ---------- | --------- |
 | `CaseFlowEngine.AdvanceCaseAsync` | Generate embeddings when storing pattern |
 | `PatternMemoryInjector.GetContextAsync` | Generate embedding for query signal |
 | DI Registration | Register embedding service (Ollama, OpenAI, etc.) |
@@ -383,7 +386,7 @@ public interface IEmbeddingService
 ### Recommended Models (1536 dims)
 
 | Model | Dimensions | Provider |
-|-------|------------|----------|
+| ------- | ------------ | ---------- |
 | `text-embedding-3-small` | 1536 | OpenAI |
 | `text-embedding-ada-002` | 1536 | OpenAI |
 | `all-MiniLM-L6-v2` | 384 | SentenceTransformers (needs dimension adjustment) |
@@ -394,7 +397,7 @@ public interface IEmbeddingService
 ## 6. Pattern-Lock Compliance
 
 | Rule | Status | Notes |
-|------|--------|-------|
+| ------ | -------- | ------- |
 | Abstraction in Contracts | ✅ | `IPatternMemoryStore`, `PatternMemory` DTO |
 | Implementation in CaseFlowEngine | ✅ | EF Core entity + DbContext |
 | Vector search via SQL Server | ✅ | `SqlVector<float>(1536)` |
@@ -408,7 +411,7 @@ public interface IEmbeddingService
 ## 7. Open Items / TODOs
 
 | Item | Location | Status |
-|------|----------|--------|
+| ------ | ---------- | -------- |
 | `IEmbeddingService` abstraction | Contracts | ❌ Not defined |
 | Embedding generation in `AdvanceCaseAsync` | CaseFlowEngine | ❌ NotImplementedException |
 | Embedding generation in `PatternMemoryInjector` | Orchestrations | ⚠️ Placeholder |
@@ -422,7 +425,7 @@ public interface IEmbeddingService
 ## 8. Related Documentation
 
 | Document | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `CaseFlowEngineComponent.md` | Case lifecycle, AdvanceCaseAsync, pattern storage trigger |
 | `DynamicAgentsComponent.md` | Core agent construction, PatternMemoryInjector middleware |
 | `PersistenceComponent.md` | SentinelCoreDbContext, all entities, SQL Server config |
@@ -435,3 +438,4 @@ public interface IEmbeddingService
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | v1.0 | 2025-07-18 | Kyle | Initial documentation from source code analysis |
+| 2.0.0 | unknown | unknown | Added current implementation caveats for disabled injection, incomplete storage, and non-authoritative target-design sections. |

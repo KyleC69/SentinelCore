@@ -8,6 +8,20 @@ version: v1.0
 
 # Case Flow Engine Component
 
+This document describes the optional case-flow module while retaining older model and safety examples as historical reference.
+
+## Current Implementation
+
+- The library registers `NullCaseFlowEngine` by default. A host enables the EF-backed implementation through `AddCaseFlowEngine`.
+- The active persistence services consume `IDbContextFactory<SentinelCoreDBContext>` and create one context per operation under pattern lock PL-7.
+- `CaseFlowEngine` owns transition validation and persistence-facing case operations.
+- Case advancement is not gated by the removed `ISafetyMiddleware` types; current safety evaluation is a workflow concern.
+- The exact current entity and contract shapes are in `SentinelCore.CaseFlowEngine` and `SentinelCore.Contracts`. Guid, aggregate, repository, and safety examples below may describe a previous API revision.
+
+Use this document when changing case lifecycle behavior, persistence registration, or host opt-in semantics.
+
+## Historical and Design Reference
+
 ## 1. Purpose & Role
 
 The **Case Flow Engine (CFE)** is the **single owner of case lifecycle state**. It owns the deterministic state machine that drives a case from `Open` through investigation to `Complete`, `Cancelled`, or `Closed`. It does not orchestrate agents, reason over evidence, or execute tools — it only advances state, persists records, and enforces invariants.
@@ -16,10 +30,10 @@ The **Case Flow Engine (CFE)** is the **single owner of case lifecycle state**. 
 
 **Role in the system:**
 
-* **Single source of truth** for case state and progression.
-* **Owner of the case lifecycle**: defines and enforces allowed states and transitions.
-* **Coordinator of work**: requests actions from the Core/Manager agent pair but never performs reasoning itself.
-* **Guardrail for scope**: prevents uncontrolled branching, looping, or state drift.
+- **Single source of truth** for case state and progression.
+- **Owner of the case lifecycle**: defines and enforces allowed states and transitions.
+- **Coordinator of work**: requests actions from the Core/Manager agent pair but never performs reasoning itself.
+- **Guardrail for scope**: prevents uncontrolled branching, looping, or state drift.
 
 The CFE is *not* an agent and does *not* call LLMs directly. It is a deterministic state machine that manages the case state.
 
@@ -27,12 +41,12 @@ The CFE is *not* an agent and does *not* call LLMs directly. It is a determinist
 
 ## 2. Responsibilities
 
-* **Case creation** from a `Signal` (the triggering event)
-* **State transitions** via `AdvanceCaseAsync(caseId, newStatus)` with validation
-* **Persistence coordination** via `ICaseRepository`, `IEvidenceStore`, `ISignalRepository`, `IPatternMemoryStore`
-* **Safety gating** via `ISafetyMiddleware` before state transitions
-* **Evidence linkage** — every evidence item is tied to a `CaseRecordId`
-* **Signal-to-case binding** — atomic creation of `Signal` + `Case` + FK link in one transaction
+- **Case creation** from a `Signal` (the triggering event)
+- **State transitions** via `AdvanceCaseAsync(caseId, newStatus)` with validation
+- **Persistence coordination** via `ICaseRepository`, `IEvidenceStore`, `ISignalRepository`, `IPatternMemoryStore`
+- **Safety gating** via `ISafetyMiddleware` before state transitions
+- **Evidence linkage** — every evidence item is tied to a `CaseRecordId`
+- **Signal-to-case binding** — atomic creation of `Signal` + `Case` + FK link in one transaction
 
 ---
 
@@ -52,12 +66,12 @@ public interface ICaseFlowEngine
 }
 ```
 
-* `CreateCaseAsync(Signal)` → returns `Guid` (the `CaseId`). Creates `Case` with `Status = CaseStatus.Open`, persists `Signal` + `Case` atomically via `ICaseRepository.CreateCaseWithSignalAsync`.
-* `AdvanceCaseAsync(Guid, CaseStatus)` → validates transition, updates `Case.Status` and `Case.UpdatedAt`, persists via `ICaseRepository.UpdateAsync`.
-* `GetCaseCountByStatusAsync(CaseStatus)` → count for a single status.
-* `GetCaseStatusCountsAsync()` → counts for **all** statuses in one grouped query; statuses with no cases report zero. UI list/count screens must use this instead of per-status loops (see PL-8.6).
-* `GetCaseByIdAsync(Guid)` → the case with the given business id, or `null` when not found.
-* `GetAllowedTransitions(CaseStatus)` → the statuses reachable from the given status per the lifecycle map; UIs use this to offer only legal advance targets.
+- `CreateCaseAsync(Signal)` → returns `Guid` (the `CaseId`). Creates `Case` with `Status = CaseStatus.Open`, persists `Signal` + `Case` atomically via `ICaseRepository.CreateCaseWithSignalAsync`.
+- `AdvanceCaseAsync(Guid, CaseStatus)` → validates transition, updates `Case.Status` and `Case.UpdatedAt`, persists via `ICaseRepository.UpdateAsync`.
+- `GetCaseCountByStatusAsync(CaseStatus)` → count for a single status.
+- `GetCaseStatusCountsAsync()` → counts for **all** statuses in one grouped query; statuses with no cases report zero. UI list/count screens must use this instead of per-status loops (see PL-8.6).
+- `GetCaseByIdAsync(Guid)` → the case with the given business id, or `null` when not found.
+- `GetAllowedTransitions(CaseStatus)` → the statuses reachable from the given status per the lifecycle map; UIs use this to offer only legal advance targets.
 
 ### `CaseStatus` (`SentinelCore.Contracts.CaseFlow.CaseStatus`)
 
@@ -211,9 +225,9 @@ public DbSet<PatternMemoryEntity> PatternMemories { get; set; }
 public DbSet<ResolutionEntity> Resolutions { get; set; }
 ```
 
-* SQL Server provider (`UseSqlServer`)
-* `SqlVector<float>` for `SignalEmbedding` / `SummaryEmbedding` on `PatternMemoryEntity` (vector similarity search)
-* FK relationships: `CaseEntity` 1→N `EvidenceEntity`, `SignalEntity`, `InvestigationPlanEntity`, `PatternMemoryEntity`, `ResolutionEntity`
+- SQL Server provider (`UseSqlServer`)
+- `SqlVector<float>` for `SignalEmbedding` / `SummaryEmbedding` on `PatternMemoryEntity` (vector similarity search)
+- FK relationships: `CaseEntity` 1→N `EvidenceEntity`, `SignalEntity`, `InvestigationPlanEntity`, `PatternMemoryEntity`, `ResolutionEntity`
 
 ### Entity Mappings (all in `SentinelCore.CaseFlowEngine.Persistence`)
 
@@ -282,16 +296,15 @@ public class CaseFlowEngine : ICaseFlowEngine
 ```
 
 **Current implementation status:**
-* ✅ `CreateCaseAsync` — fully implemented with atomic `Signal`+`Case` persistence
-* ❌ `AdvanceCaseAsync` — **throws `NotImplementedException`** (transition validation + safety gating TODO)
+
+- The real case-flow service implements creation and transition behavior when the host opts in with `AddCaseFlowEngine`.
+- The exact API shape and persistence mapping must be checked against the current source; the historical code sample below should not be used for implementation.
 
 ---
 
-## 7. Safety Integration
+## 7. Safety Integration Status
 
-* `ISafetyMiddleware` (from `SentinelCore.Contracts.SafetyEngine`) is injected into `CaseFlowEngine`
-* **TODO:** Before any `AdvanceCaseAsync` transition, invoke `_safetyMiddleware.InvokeAsync(context, next)` with `SafetyContext` containing `CaseId`, `FromStatus`, `ToStatus`, `Actor`
-* `SafetyVerdict.Allow` → proceed; `SafetyVerdict.Deny` / `SafetyVerdict.Escalate` → throw / transition to `Escalated` / `Blocked`
+Current case advancement is not integrated with the removed `ISafetyMiddleware`/`SafetyVerdict` design. Safety evaluation occurs in `TheCoreWorkflow` through `SafetyExecutor`; any future coupling between safety verdicts and case transitions requires an explicit design decision and tests.
 
 ---
 
@@ -372,8 +385,8 @@ public class SentinelCoreSettings
 }
 ```
 
-* `SqlConnectionString` → `SentinelCoreDbContext` via `SentinelCoreBuilder`
-* `OrchestrationType` → selects `ISentinelWorkflow` implementation via `IOrchestrationFactory`
+- `SqlConnectionString` → `SentinelCoreDbContext` via `SentinelCoreBuilder`
+- `OrchestrationType` → selects `ISentinelWorkflow` implementation via `IOrchestrationFactory`
 
 ---
 
@@ -383,8 +396,8 @@ public class SentinelCoreSettings
 | ------ | ---------- | -------- |
 | `CaseStatusTransitionValidator` (transition matrix) | `CaseFlowEngine.AdvanceCaseAsync` | ❌ Not implemented |
 | `ISafetyMiddleware` integration in `AdvanceCaseAsync` | `CaseFlowEngine` | ❌ Not implemented |
-| `AdvanceCaseAsync` full implementation | `CaseFlowEngine.cs` | ❌ Throws `NotImplementedException` |
-| `IPatternMemoryStore.SearchAsync` vector similarity impl | `PatternMemoryStore` | ❌ Not implemented |
+| `AdvanceCaseAsync` exact source behavior | `CaseFlowEngine.cs` | Verify against source when changing lifecycle rules; the former `NotImplementedException` note is obsolete |
+| `IPatternMemoryStore` search/store completion | `PatternMemoryStore` | Partial; native vector or full store behavior must not be assumed from this historical table |
 | `ICaseRepository.ListAsync` pagination/filtering | `CaseRepository` | ❌ Not implemented |
 | Transition audit log (immutable history) | New entity/table | ❌ Not designed |
 
@@ -398,4 +411,10 @@ public class SentinelCoreSettings
 | `SafetyRailsComponent` | Provides `ISafetyMiddleware` for transition gating |
 | `MemoryLayerComponent` | Provides `IPatternMemoryStore` for pattern memory persistence/search |
 | `ToolingComponent` | Domain tools may add `Evidence` via `IEvidenceStore` during investigation |
-| `DomainAgentSurfaces` | Domain agents produce `Evidence`/`InvestigationPlanStep.Result` persisted via CFE repos |
+| `DomainAgentSurfaces` | Historical domain-agent design; current tools flow through MCP/local selection rather than a dedicated domain-agent factory |
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Added current optional-module, factory-context, transition, and safety-boundary guidance; retained older API examples as historical reference. |

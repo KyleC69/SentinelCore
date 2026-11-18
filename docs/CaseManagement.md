@@ -1,3 +1,13 @@
+# Case Management Data Model
+
+> Status: Proposed schema. The tables below are not implemented by the current `SentinelCore.CaseFlowEngine` EF model. Use [PersistenceComponent.md](./PersistenceComponent.md) for current persistence status.
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Classified the organizations/analysts schema as a proposal rather than an implemented persistence model. |
+
 ┌──────────────┐   ┌──────────────┐   ┌────────────────────┐
 │ organizations│   │   analysts   │   │   investigations   │
 └──────────────┘   └──────────────┘   └────────────────────┘
@@ -10,7 +20,7 @@
                          └─────────────┘         │
                                           ┌───────┼────────────┐
                                    ┌──────▼──┐ ┌──▼──────┐ ┌───▼──────────┐
-                                   │system_  │ │system_  │ │system_       │
+                                   │system_  │ │system_│ │system_       │
                                    │accounts│ │components│ │net_interfaces│
                                    └─────────┘ └─────────┘ └──────────────┘
                                                     │
@@ -20,7 +30,7 @@
                                                     │
                                        ┌────────────┼──────────────┐
                                 ┌──────▼────┐ ┌─────▼─────┐ ┌──────▼──────┐
-                                │artifact_  │ │ analyses  │ │baselines   │
+                                │artifact_│ │ analyses  │ │baselines   │
                                 │integrity  │ └─────┬─────┘ │_config     │
                                 │_log       │       │       └─────────────┘
                                 └───────────┘  ┌────▼─────┐

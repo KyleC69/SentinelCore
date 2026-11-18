@@ -8,11 +8,29 @@ version: v1.0
 
 # Orchestration Component
 
-## Overview
+This document describes the current orchestration implementation and retains older architecture notes as historical context.
 
-The **Orchestration Component** (`SentinelCore.Orchestrations`) is the middle layer of the SentinelCore three-layer architecture. It is responsible for **agent construction, orchestration strategy selection, workflow execution, and event publishing**. It depends **only** on `SentinelCore.Contracts` (zero dependencies on `SentinelCore.CaseFlowEngine` or host projects).
+## Current Implementation
+
+- `SentinelCore.Orchestrations` references both `SentinelCore.Contracts` and `SentinelCore.CaseFlowEngine`.
+- `OrchestrationFactory` resolves `TheCoreWorkflow` for supported and fallback orchestration values. Unsupported or historical strategy values do not select the legacy implementations; they fall back to the current workflow.
+- `OrchestrationControl` exposes `InitializeOrchestrationAsync(CancellationToken)` and `ExecuteStreamingAsync(ChatMessage, CancellationToken)`.
+- `TheCoreWorkflow` creates agents through `ISentinelAgentFactory`, composes the workflow executor graph, and embeds a Magentic investigation sub-workflow.
+- `SentinelWorkflowExecution` is not the active entry point used by `OrchestrationControl` in the current code.
+- Agent tools are selected through `AgentToolSelection`; the removed `ToolRegistry` and profile-builder pipeline are historical.
+
+Use this document when tracing the configured host entry point, workflow graph, executor dispatch, and agent-factory boundary.
+
+## Historical Reference
+
+The remainder of this file records an earlier orchestration design and must not be used as an API reference for new work.
+
+### Former Overview
+
+The historical orchestration component described a seven-strategy system and a Contracts-only dependency. That description no longer matches the current workflow and project references.
 
 **Architectural Position:**
+
 ```
 SentinelCore.Contracts (abstractions, DTOs, events)
         ↑ depends on
@@ -26,7 +44,7 @@ SentinelCore.CaseFlowEngine (case lifecycle, persistence)
 ## 1. Responsibilities
 
 | Responsibility | Description |
-|----------------|-------------|
+| ---------------- | ------------- |
 | **Agent Construction** | Two-stage pipeline: `IAgentSpecBuilder` → `AgentSpec` → `IAgentBuilder` → `AIAgent` with role-based defaults, logging, events, middleware |
 | **Orchestration Strategy Selection** | `IOrchestrationFactory` selects 1 of 7 `OrchestrationType` strategies at runtime via DI |
 | **Workflow Execution** | `ISentinelWorkflowExecution` provides universal streaming execution with event capture, logging, and structured results |
@@ -50,6 +68,7 @@ public interface ISentinelWorkflow
 **Purpose:** Single interface implemented by all orchestration strategies. Returns a built `Microsoft.Agents.AI.Workflows.Workflow` ready for execution.
 
 **Implementations:**
+
 - `MagneticCoopOrchestration` — Magnetic workflow (Manager + 2 Workers + Critic + Aggregator)
 - `TheCoreWorkflow` — Core agent + switch routing to Investigation/Analysis/Safety/DirectAnswer executors
 - `MagneticOrchestration` — Legacy magnetic interface (`IMagneticOrchestration`)
@@ -104,11 +123,13 @@ IAgentSpecBuilder.BuildAgentSpec(AgentRole, Persona)
 ### 3.2 `IAgentSpecBuilder` / `AgentSpecBuilder`
 
 **Responsibilities:**
+
 - Role-based model resolution (`ResolveModel(AgentRole)` → `ModelSettings` from `SentinelCoreSettings`)
 - Role-based default persona (`GetDefaultPersonaType(AgentRole)` → `PersonaType`)
 - Role-based agent naming (`GetAgentName(AgentRole)` → e.g., "SentinelCore-Core", "SentinelCore-Manager")
 
 **AgentRole Enum (6 roles):**
+
 ```csharp
 public enum AgentRole
 {
@@ -124,6 +145,7 @@ public enum AgentRole
 ### 3.3 `IAgentBuilder` / `AgentBuilder` (Single Shared Pipeline)
 
 **Pipeline (applied to ALL agents):**
+
 1. `OllamaApiClient` (from `ModelSettings`)
 2. `LoggingChatClient` (structured logging)
 3. `EventPublishingChatClient` (routes events by `AgentRole` to `ISentinelCoreEvents`)
@@ -148,6 +170,7 @@ public enum AgentRole
 ### 4.1 `MagneticCoopOrchestration` (OrchestrationType.Magnetic)
 
 **Workflow:** `MagenticWorkflowBuilder` with:
+
 - **Manager** (`AgentRole.Manager`, `PersonaType.TheManager`)
 - **Worker 1** (`AgentRole.Worker`, `PersonaType.TheWorker`)
 - **Worker 2** (`AgentRole.Worker`, `PersonaType.TheWorker`)
@@ -155,6 +178,7 @@ public enum AgentRole
 - **Aggregator** (`AgentRole.Aggregator`, `PersonaType.TheAggregator`)
 
 **Configuration:**
+
 - `RequirePlanSignoff = false`
 - `MaxRounds = 8`
 - `MaxResets = 3`
@@ -168,7 +192,7 @@ public enum AgentRole
 **Architecture:** Core agent classifies signal → `WorkflowBuilder.AddSwitch` routes to executor:
 
 | NextStep | Executor | Description |
-|----------|----------|-------------|
+| ---------- | ---------- | ------------- |
 | `Investigate` | `InvestigationExecutor` | Magentic sub-workflow (Manager + 2 Workers + Critic + Aggregator) |
 | `RedAlert` / `EscalateToHumanOperator` | `SafetyExecutor` | Safety agent (`PersonaType.TheEvaluator`) |
 | `CanAnswerDirectly` / `PatternMatch` / `IsNoise` / `MoreInformationRequired` | `DirectAnswerExecutor` | Direct answer from Core |
@@ -176,6 +200,7 @@ public enum AgentRole
 **Shared Message Type:** `CaseHypothesis` flows between steps.
 
 **Agents Built:**
+
 - Core (classification) → `PersonaType.TheCore`
 - Investigation Manager → `PersonaType.TheDecisionMaker`
 - Investigation Workers (2) → `PersonaType.TheCollaborator`
@@ -188,12 +213,14 @@ public enum AgentRole
 - Core Final → `PersonaType.TheCore`
 
 **Sub-workflows:**
+
 - Investigation: `MagenticWorkflowBuilder` (MaxRounds=6, MaxResets=2, MaxStalls=2)
 - Analysis: `AgentWorkflowBuilder.CreateConcurrentBuilderWith` (4 participants)
 
 ### 4.3 `GroupConcurrentOrchestration` (OrchestrationType.GroupConcurrent)
 
 **Workflow:** `AgentWorkflowBuilder.CreateConcurrentBuilderWith` with 4 agents:
+
 - **Planner** (`General`, `ConcurrentPlanner`) — MCP research tools
 - **CoopAgent_dotnet** (`General`) — .NET expert, MCP tools
 - **CoopAgent_Framework** (`General`) — Agent Framework expert, MCP tools
@@ -231,6 +258,7 @@ public interface ISentinelWorkflowExecution
 ```
 
 **Execution Flow:**
+
 1. `InProcessExecution.RunStreamingAsync(workflow, promptSignal)`
 2. `run.TrySendMessageAsync(new TurnToken(emitEvents: true))`
 3. `await foreach (WorkflowEvent evt in run.WatchStreamAsync())`
@@ -241,7 +269,7 @@ public interface ISentinelWorkflowExecution
 ### 5.2 Event Processing (`ProcessEvent`)
 
 | WorkflowEvent Type | SystemReporter | SentinelCoreEvents Channel | EventLog Entry |
-|--------------------|----------------|---------------------------|----------------|
+| -------------------- | ---------------- | --------------------------- | ---------------- |
 | `AgentResponseUpdateEvent` | `ReportInfo` | — | `WorkflowEventType.AgentResponse` |
 | `MagenticPlanCreatedEvent` | — | `RaiseOrchestrationEvent` | `WorkflowEventType.MagenticPlanCreated` |
 | `MagenticReplannedEvent` | — | `RaiseOrchestrationEvent` | `WorkflowEventType.MagenticReplanned` |
@@ -375,8 +403,9 @@ services.AddSingleton<ToolRegistry>();
 **Purpose:** Intercepts agent streaming updates and routes to typed `ISentinelCoreEvents` channels by `AgentRole`.
 
 **Routing Map:**
+
 | AgentRole | Event Channel |
-|-----------|---------------|
+| ----------- | --------------- |
 | `Core` | `RaiseTheCoreActivity(CoreActivityArgs)` |
 | `Manager` | `RaiseOrchestrationEvent(OrchestrationActivityArgs)` |
 | `Domain` | `RaiseDomainAgentActivity(DomainAgentActivityArgs)` |
@@ -397,7 +426,7 @@ services.AddSingleton<ToolRegistry>();
 **Key Personas by Role:**
 
 | PersonaType | Role | Used By |
-|-------------|------|---------|
+| ------------- | ------ | --------- |
 | `TheCore` | Core | CoreAgentFactory, TheCoreWorkflow |
 | `TheManager` | Manager | MagneticCoopOrchestration |
 | `TheDecisionMaker` | Manager | TheCoreWorkflow (Investigation/Analysis managers) |
@@ -417,18 +446,21 @@ services.AddSingleton<ToolRegistry>();
 ### 9.1 `ToolRegistry` (Static Resolution)
 
 **Methods:**
+
 - `GetToolByDomain(string domain)` → `List<AITool>` (30+ domain-specific tools)
 - `GetToolsByNames(IEnumerable<string> toolNames)` → `List<AITool>`
 - `GetToolsetByRole(AgentRole role)` → `List<AITool>` (role-based toolsets)
 - `GetAllTools()` → `List<AITool>`
 
 **Domain → Tools Mapping (`DomainToolNames` dictionary):**
+
 - `windows` → `GetWindowsVersionTool`, `GetInstalledSoftwareTool`, `GetRunningProcessesTool`, `GetSystemInfoTool`, `GetEventLogsTool`, `GetRegistryValueTool`, `GetScheduledTasksTool`, `GetServicesTool`, `GetDiskSpaceTool`, `GetNetworkConfigurationTool`, `GetEnvironmentVariablesTool`, `GetInstalledUpdatesTool`, `GetStartupProgramsTool`, `GetUserAccountsTool`, `GetWindowsFeaturesTool`, `GetPowerShellExecutionPolicyTool`, `GetWindowsDefenderStatusTool`, `GetBitLockerStatusTool`, `GetFirewallRulesTool`, `GetWindowsTimeServiceStatusTool`
 - `dotnet` → `GetDotNetSdkVersionsTool`, `GetDotNetRuntimeVersionsTool`, `GetNuGetPackageVersionsTool`, `GetProjectDependenciesTool`, `GetProjectFrameworkTool`, `GetProjectReferencesTool`, `GetProjectPackageReferencesTool`, `GetProjectSdkTool`, `GetProjectTargetFrameworksTool`, `GetProjectPropertyTool`, `GetProjectItemsTool`, `GetProjectBuildOutputTool`, `GetProjectAnalyzersTool`, `GetProjectNuGetConfigTool`, `GetProjectAssemblyAttributesTool`, `GetProjectLangVersionTool`, `GetProjectNullableContextTool`, `GetProjectImplicitUsingsTool`, `GetProjectTreatWarningsAsErrorsTool`, `GetProjectOutputTypeTool`
 - `agentframework` → `GetAgentFrameworkVersionTool`, `GetAgentFrameworkPackagesTool`, `GetAgentFrameworkSamplesTool`, `GetAgentFrameworkDocumentationTool`, `GetAgentFrameworkArchitectureTool`, `GetAgentFrameworkBestPracticesTool`, `GetAgentFrameworkSamplesByScenarioTool`, `GetAgentFrameworkNuGetPackagesTool`, `GetAgentFrameworkSourceCodeTool`, `GetAgentFrameworkReleaseNotesTool`
 - `mcp` → `MicrosoftDocsSearchTool`, `MicrosoftDocsFetchTool`, `MicrosoftCodeSampleSearchTool` (MCP-based, used by Core agent)
 
 **Role → Toolset Mapping (`RoleToolNames`):**
+
 - `Core` → `mcp` tools
 - `Manager` → (empty)
 - `Domain` → Resolved dynamically via `GetToolByDomain(domain)`
@@ -455,6 +487,7 @@ public class SentinelCoreSettings
 ```
 
 **ModelSettings per Role:**
+
 ```csharp
 public class ModelSettings
 {
@@ -501,7 +534,7 @@ WorkflowExecutionResult (OutputMessages + EventLog)
 ## 12. Contracts & Invariants
 
 | Invariant | Enforcement |
-|-----------|-------------|
+| ----------- | ------------- |
 | **Single orchestration interface** | All orchestrators implement `ISentinelWorkflow` |
 | **Unified execution** | All orchestrators delegate to `ISentinelWorkflowExecution` |
 | **Factory selects strategy** | `IOrchestrationFactory` is sole creator of `Workflow` instances |
@@ -516,7 +549,7 @@ WorkflowExecutionResult (OutputMessages + EventLog)
 ## 13. Implementation Status
 
 | OrchestrationType | Implementation | Status |
-|-------------------|----------------|--------|
+| ------------------- | ---------------- | -------- |
 | `TheCore` | `TheCoreWorkflow` | **Complete** — Complex switch-based routing with sub-workflows |
 | `Magnetic` | `MagneticCoopOrchestration` | **Complete** — Magentic workflow with 5 agents |
 | `GroupConcurrent` | `GroupConcurrentOrchestration` | **Complete** — Concurrent group with custom aggregation |
@@ -530,7 +563,7 @@ WorkflowExecutionResult (OutputMessages + EventLog)
 ## 14. Related Components
 
 | Component | Relationship |
-|-----------|--------------|
+| ----------- | -------------- |
 | `SentinelCore.Contracts` | Defines `ISentinelWorkflow`, `IOrchestrationControl`, `OrchestrationType`, `AgentRole`, `ISentinelCoreEvents`, `SentinelCoreSettings` |
 | `SentinelCore.CaseFlowEngine` | Consumed by host; orchestration receives `ChatMessage` from CFE via host |
 | `SentinelCoreHost` | Configures `OrchestrationType` in `SentinelCoreSettings`, calls `IOrchestrationControl` |
@@ -543,7 +576,7 @@ WorkflowExecutionResult (OutputMessages + EventLog)
 ## 15. TODOs / Known Gaps
 
 | Item | Description |
-|------|-------------|
+| ------ | ------------- |
 | `GroupTurnBasedOrchestration` | Implement turn-based group workflow |
 | `SequentialOrchestration` | Implement sequential workflow |
 | `Investigative` orchestration | Uncomment and wire in factory (currently maps to TheCore) |
@@ -558,7 +591,7 @@ WorkflowExecutionResult (OutputMessages + EventLog)
 ## 16. File Reference
 
 | File | Purpose |
-|------|---------|
+| ------ | --------- |
 | `Abstractions/ISentinelWorkflow.cs` | Unified orchestration interface |
 | `Abstractions/IOrchestrationControl.cs` | Host entry point interface |
 | `Application/OrchestrationControl.cs` | Host entry point implementation |
@@ -581,3 +614,9 @@ WorkflowExecutionResult (OutputMessages + EventLog)
 | `Personas/PersonaFactory.cs` | 35-persona registry |
 | `Infrastructure/DI/SentinelCoreServiceExtensions.cs` | DI registration |
 | `Infrastructure/DI/SentinelCoreBuilder.cs` | DI builder with validation |
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Added the verified current orchestration summary and explicitly classified the former strategy/builder design as historical. |

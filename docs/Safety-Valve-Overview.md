@@ -1,14 +1,25 @@
+# Safety Valve Overview
+
+> Status: Target design overview. This document explains the intended safety role around diagnosis and remediation; the active implementation is described in [SafetyEngineComponent.md](./SafetyEngineComponent.md), and some stages below are not wired end to end.
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Classified the safety-valve placement and remediation behavior as target design. |
 
 ---
 
-### Sentinel core’s risk profile
+## Sentinel Core Risk Profile
 
 **Domain:**
+
 - **System issues** (availability, outages)
 - **Security** (breaches, misconfigurations)
 - **Performance** (degradation, bottlenecks)
 
 **Catastrophic failure:**
+
 - **Misdiagnosis** of root cause
 - **Bad remediation steps** that:
   - cripple a machine or service
@@ -39,6 +50,7 @@ TheCore should *never* move to “final diagnosis + steps” without passing the
 ### What the safety valve must check
 
 #### 1. Evidence strength vs hypothesis
+
 - **Question:** Does the collected evidence *strongly* support TheCore’s initial summation and cause?
 - **If:**
   - weak correlation
@@ -47,6 +59,7 @@ TheCore should *never* move to “final diagnosis + steps” without passing the
 - **Then:** block diagnosis, request more investigation or escalate.
 
 #### 2. Consistency across sources
+
 - **Question:** Do logs, metrics, traces, security events, and worker outputs agree?
 - **If:**
   - workers disagree on cause
@@ -54,6 +67,7 @@ TheCore should *never* move to “final diagnosis + steps” without passing the
 - **Then:** mark as high-risk, require human review or deeper investigation.
 
 #### 3. Completeness for high-risk actions
+
 - **Question:** Is all *critical* data present for the type of action being recommended?
 - Examples:
   - before suggesting “reboot node,” ensure no critical transaction is in-flight
@@ -61,6 +75,7 @@ TheCore should *never* move to “final diagnosis + steps” without passing the
 - **If:** critical context is missing → block remediation suggestions.
 
 #### 4. Remediation risk level
+
 Each recommended step should carry a **risk tag**:
 
 - **Low risk:** safe, reversible (e.g., “increase logging,” “add alert”)
@@ -68,6 +83,7 @@ Each recommended step should carry a **risk tag**:
 - **High risk:** could cripple machines or affect customer data (e.g., “wipe cache,” “rotate DB schema,” “disable security control”)
 
 For **high-risk steps**, require:
+
 - higher confidence threshold
 - stronger evidence
 - possibly human approval
@@ -125,6 +141,7 @@ Safety status:
 ```
 
 So the operator sees:
+
 - **how sure Sentinel Core is**
 - **what’s low-risk vs high-risk**
 - **where human judgment is required**
@@ -142,6 +159,7 @@ So the operator sees:
 ---
 
 If you want, next we can design:
+
 - a concrete JSON schema for the Aggregator → Safety Valve → TheCore handoff
 - a risk taxonomy for remediation steps
 - example prompts/logic for how Sentinel Core evaluates “is this safe to recommend?”

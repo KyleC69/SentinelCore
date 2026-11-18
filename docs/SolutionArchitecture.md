@@ -2,7 +2,7 @@
 
 ## Overview
 
-SentinelCore is a multi-agent investigation platform that learns from every case to accelerate future resolutions. The system adapts to the user's environment, using local or cloud models without special configuration. It distinguishes itself through **pattern memory** and **magnetic orchestration** — dividing responsibilities among agents to avoid overloading any single agent.
+SentinelCore is a multi-agent investigation platform built around MAF workflows, MCP tools, deterministic case-flow services, and a WPF composition root. Pattern-memory storage and matching surfaces exist, but automatic learning and context injection are not complete end-to-end features.
 
 ## Solution Structure
 
@@ -10,31 +10,34 @@ The solution is organized into a clear, layered architecture with strict depende
 
 ### Solution Folders
 
-
-Solution-Root/
-├── docs/                  # Documentation (this folder)
-├── projects/              # Source code projects
-│   ├── SentinelCore.Contracts/        # Shared abstractions, DTOs, settings, events
-│   ├── SentinelCore.CaseFlowEngine/   # Case lifecycle, persistence, pattern memory
-│   ├── SentinelCore.Orchestrations/   # Agents, workflows, tools, safety engine, DI
-│   ├── SentinelCore.UI/               # WPF host application (composition root)
-│   └── SentinelCoreAdmin/             # Legacy admin host (being deprecated)
-└── SentinelCore.slnx                 # Solution file
-
+```text
+SentinelCore.slnx
+SentinelCore/
+├── architecture/                         # Authoritative pattern lock
+├── docs/                                 # Documentation and ADRs
+└── projects/
+    ├── SentinelCore.Contracts/           # Shared abstractions and contracts
+    ├── SentinelCore.CaseFlowEngine/      # Case lifecycle and EF Core persistence
+    ├── SentinelCore.Orchestrations/      # Agents, workflows, safety, MCP, and DI
+    ├── SentinelCore.UI/                  # Active WPF composition root
+    ├── SentinelCore.Tests/               # Unit and architecture tests
+    └── SentinelCoreService/              # Windows service scaffold
+```
 
 ### Projects and Their Responsibilities
 
-| Project | Role | Dependencies |
+| Project | Role | Project dependencies |
 | --------- | ------ | -------------- |
-| `SentinelCore.Contracts` | Shared abstractions, DTOs, settings, events — zero project dependencies | None (only NuGet packages) |
-| `SentinelCore.CaseFlowEngine` | Case lifecycle, persistence, pattern memory | `SentinelCore.Contracts` |
-| `SentinelCore.Orchestrations` | Agents, workflows, tools, safety engine, DI wiring | `SentinelCore.Contracts`, `SentinelCore.CaseFlowEngine` |
-| `SentinelCore.UI` | WPF host application — composition root, DI wiring, chat UI | All three core projects |
-| `SentinelCoreAdmin` | Legacy admin host (being deprecated) | All three core projects |
+| `SentinelCore.Contracts` | Shared contracts, settings, events, MCP definitions, and abstractions | None |
+| `SentinelCore.CaseFlowEngine` | Optional EF Core-backed case lifecycle and persistence | `SentinelCore.Contracts` |
+| `SentinelCore.Orchestrations` | Agent factory, workflows, executors, safety rules, MCP, RAG, and DI registration | `SentinelCore.Contracts`, `SentinelCore.CaseFlowEngine` |
+| `SentinelCore.UI` | Active WPF host and composition root | All three library projects |
+| `SentinelCore.Tests` | Unit and architecture validation | Solution libraries |
+| `SentinelCoreService` | Windows service host scaffold; excluded from normal solution build | Solution libraries |
 
 ### Dependency Graph
 
-```
+```text
 ┌──────────────────────┐
 │  SentinelCore.UI      │  ← WPF host (composition root)
 └──────┬───────┬───────┘
@@ -56,7 +59,7 @@ Solution-Root/
 
 ### Layer Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  SentinelCore.UI                                            │
 │  WPF application — composition root, bootstraps DI, chat UI │
@@ -69,20 +72,20 @@ Solution-Root/
 │   selected via IOrchestrationFactory)                        │
 ├─────────────────────────────────────────────────────────────┤
 │  Agents & Safety                                             │
-│  (AgentProfile, SentinelAgentFactory, SafetyEngineAgent,    │
-│   PatternMemoryInjector, EventPublishingChatClient,          │
-│   ModelNoiseSafety)                                          │
+│  (SentinelAgentFactory, AgentPresetDefinition,              │
+│   ModelResolver, AgentToolSelection, SafetyRuleEngine)       │
 ├─────────────────────────────────────────────────────────────┤
 │  Executors                                                   │
-│  (TheCoreExec, InvestigationExecutor, SafetyExecutor,         │
-│   NewCaseExecutor, AggregationExecutor, PatternCheck, etc.) │
+│  (SafetyExecutor, SafetyReviewExecutor, PatternCheck,         │
+│   WhiteList, TheCoreSwitch, SignalClassifier, NewCase,        │
+│   DirectAnswer, TerminateWorkflow, SubWorkflow)               │
 ├─────────────────────────────────────────────────────────────┤
 │  CaseFlow                                                    │
 │  (ICaseFlowEngine, CaseFlowEngine)                           │
 ├─────────────────────────────────────────────────────────────┤
 │  Contracts / Abstractions                                    │
 │  (ISystemReporter, ICaseFlowEngine, IEvidenceStore,          │
-│   ISignalRepository, IPatternMemoryStore, ICaseGenerator,    │
+│   ISignalRepository, IPatternMemoryStore, IMcpServerRegistry, │
 │   ISentinelCoreEvents, SentinelCoreSettings,                 │
 │   CaseStatus, Signal, Case, Evidence, etc.)                  │
 └─────────────────────────────────────────────────────────────┘
@@ -95,7 +98,7 @@ Solution-Root/
 | **Contracts is zero-dependency** | `SentinelCore.Contracts` contains only pure DTOs, settings, abstractions, and events. No project references — only NuGet packages. |
 | **CaseFlowEngine depends on Contracts only** | `SentinelCore.CaseFlowEngine` references `SentinelCore.Contracts` for abstractions and DTOs. |
 | **Orchestrations depends on Contracts + CaseFlowEngine** | `SentinelCore.Orchestrations` references both projects. It needs `ICaseFlowEngine` for case operations in workflow executors. |
-| **Orchestration abstractions live in Orchestrations** | `IOrchestration`, `IOrchestrationFactory`, `IAgentPersona`, `IAgentProfileBuilder`, `ISentinelAgentFactory`, `ICaseGenerator` are in `SentinelCore.Orchestrations.Abstractions`. |
+| **Orchestration abstractions live in Orchestrations** | Current orchestration, agent-factory, and tool-selection interfaces are defined in `SentinelCore.Orchestrations.Abstractions`. |
 | **Safety types live in Orchestrations** | `ISafetyRule`, `SafetyEngineAgent`, `SafetyEvaluationContext`, `SafetyRuleResult`, `SafetyAction`, `SafetySeverity` are in `SentinelCore.Orchestrations.SafetyEngine`. |
 
 ### Forbidden Dependency Directions
@@ -119,57 +122,55 @@ Key namespace mappings:
 
 ### Key Architectural Patterns
 
-1. **Pattern Memory and Learning** — The system stores vector embeddings of past signals and resolutions, enabling case-based reasoning for new investigations.
-2. **Workflow-Based Orchestration** — Uses `Microsoft.Agents.AI.Workflows` for composing multi-step investigation flows with switch-based routing, sub-workflows, and executor composition.
-3. **Magnetic Orchestration** — Magentic sub-workflows (Manager + Workers) for evidence collection, integrated as sub-workflows within the main TheCoreWorkflow.
-4. **Safety Engine** — Composable rule-based safety pipeline that evaluates agent messages before they reach the model, with Block/Warn/Allow actions.
-5. **Layered Architecture** — Strict layering prevents architectural drift and maintains clear separation of concerns.
-6. **Dependency Inversion** — Abstractions defined in Contracts, implementations in CaseFlowEngine and Orchestrations.
-7. **Agent Middleware Pipeline** — Configurable pipeline flags (logging, events, safety, pattern memory, null safety) applied per agent role via `AgentMiddlewarePipeline`.
+1. **Workflow-based orchestration** - `TheCoreWorkflow` composes a safety gate, pattern check, whitelist gate, routing switch, and a Magentic investigation sub-workflow.
+2. **Preset-based agent construction** - `SentinelAgentFactory` resolves an `AgentPreset`, model tier, instructions, and explicit tool selection before constructing the MAF agent.
+3. **Optional persistence** - library registration installs null-object case-flow services; a host opts into EF Core with `AddCaseFlowEngine` and registers `DbContext` factories itself.
+4. **Factory-managed persistence lifetimes** - persistence consumers use `IDbContextFactory<TContext>` and create one short-lived context per operation.
+5. **Rule-based safety executor** - the active workflow evaluates input through `SafetyExecutor` and `SafetyRuleEngine`. Middleware-based safety agent types remain separate surfaces and are not the active workflow gate.
+6. **Live MCP tool selection** - MCP and local tools are merged at agent creation and filtered through `AgentToolSelection` domain or name rules.
+7. **Host-owned logging and telemetry** - library services publish through `ISystemReporter` and the host owns logging and OpenTelemetry configuration.
 
 ### Key Components
 
-- **Contracts** — All shared abstractions, DTOs, enums, events, and configuration. Foundation layer with zero project dependencies.
-- **CaseFlowEngine** — Case lifecycle management (CaseFlowEngine), EF Core persistence (SentinelCoreDbContext), and pattern memory storage/search (PatternMemoryStore).
-- **Orchestrations** — Agent construction (AgentProfileBuilder → SentinelAgentFactory), workflow composition (TheCoreWorkflow with executors), tool registry (30+ Windows domain tools), safety engine (ISafetyRule implementations), DI wiring (SentinelCoreServiceExtensions).
-- **Agents** — Individual AI agents with specific roles (Core, Manager, Domain, Utility), built using `AgentProfileBuilder` and `SentinelAgentFactory`.
-- **Safety Engine** — Rule-based safety evaluation pipeline (`ISafetyRule` implementations) applied via `SafetyEngineAgent` as agent middleware.
-- **Workflows** — `TheCoreWorkflow` (primary production workflow) with switch-based routing through executors, and `CustomGroupWorkflow` for testing.
-- **Events System** — Unified event model via `ISentinelCoreEvents` with `SentinelOutputEventArgs` and `ActivityType` discriminator.
-- **Host** — WPF application providing UI, DI composition root, and application lifecycle management.
+- **Contracts** - Shared interfaces, models, configuration, events, and MCP contracts; no solution project dependencies.
+- **CaseFlowEngine** - Optional case lifecycle and EF Core persistence, registered by a composition root when required.
+- **Orchestrations** - Agent construction, model resolution, workflow and executor composition, safety rules, MCP integration, RAG services, and DI extensions.
+- **Agents** - Core, manager, classifier, safety, worker, utility, and aggregator presets created through `ISentinelAgentFactory`.
+- **Safety** - Thirteen default `ISafetyRule` implementations in the workflow safety executor, plus the separate safety-agent rule engine surface.
+- **Workflows** - `TheCoreWorkflow` is the configured production orchestration; `CustomGroupWorkflow` remains an additional group-workflow implementation.
+- **Events** - `ISystemReporter` distributes diagnostics to available reporters and `ISentinelCoreEvents` carries application-facing activity.
+- **Host** - `SentinelCore.UI` owns host startup, model configuration, EF registration, MCP initialization, navigation, and shutdown.
 
 ### Projects in Detail
 
 #### SentinelCore.Contracts
 
-- Contains all shared contracts: DTOs (`Case`, `Signal`, `Evidence`, `InvestigationPlan`, `Resolution`), enums (`CaseStatus`, `OrchestrationType`, `ActivityType`), events (`ISentinelCoreEvents`, `SentinelOutputEventArgs`), abstractions (`ICaseFlowEngine`, `IEvidenceStore`, `ISignalRepository`, `IPatternMemoryStore`, `ISystemReporter`, `ICaseGenerator`), settings (`SentinelCoreSettings`, `ModelProfile`), and DI (`ISentinelCoreBuilder`).
-- Has no dependencies on other solution projects (only NuGet packages).
-- Serves as the foundation for all other projects.
+- Defines the shared configuration, event, MCP, persistence, reporting, and case abstractions consumed by the other projects.
+- Has no project references. Package dependencies do not change its architectural role as the foundation layer.
 
 #### SentinelCore.Orchestrations
 
-- Contains agent profiles (`AgentProfile`, `AgentProfileBuilder`), agent factory (`SentinelAgentFactory`), chat client factory (`SentinelChatClientFactory`), middleware (`EventPublishingChatClient`, `ModelNoiseSafety`, `PatternMemoryInjector`), workflow definitions (`TheCoreWorkflow`, `CustomGroupWorkflow`), executors (TheCoreExec, InvestigationExecutor, SafetyExecutor, NewCaseExecutor, etc.), tool registry (30+ domain tools), safety engine (`SafetyEngineAgent`, `ISafetyRule` implementations), persona registry, and DI wiring.
-- Depends on `SentinelCore.Contracts` and `SentinelCore.CaseFlowEngine`.
-- Defines orchestration abstractions (`IOrchestration`, `IOrchestrationFactory`, `IAgentPersona`, `IAgentProfileBuilder`, `ISentinelAgentFactory`, `ICaseGenerator`).
+- Contains `SentinelAgentFactory`, `SentinelChatClientFactory`, model-tier resolution, `TheCoreWorkflow`, workflow executors, MCP lifecycle management, RAG services, safety rules, and service registration.
+- References both `SentinelCore.Contracts` and `SentinelCore.CaseFlowEngine`.
 
 #### SentinelCore.CaseFlowEngine
 
-- Implements case lifecycle management (`CaseFlowEngine`), persistence (`SentinelCoreDbContext` with EF Core + SQL Server), and pattern memory (`PatternMemoryStore` with vector similarity search).
-- Depends only on `SentinelCore.Contracts`.
-- Provides `ICaseFlowEngine` implementation and repository classes (`EvidenceStore`, `SignalRepository`, `PatternMemoryStore`).
+- Contains the EF Core implementation of `ICaseFlowEngine` and the case-related persistence stores.
+- References only `SentinelCore.Contracts`.
+- The module is optional at library level and is enabled explicitly by the composition root.
 
 #### SentinelCore.UI
 
-- WPF host application serving as the composition root for dependency injection.
-- References all three core projects (`Contracts`, `CaseFlowEngine`, `Orchestrations`).
-- Contains the chat UI (`CoreChatViewModel`, `CoreChatPage`), dispatcher service, converters, and styles.
-- Uses CommunityToolkit.Mvvm for MVVM pattern with source-generated observables and commands.
-- Decouples ViewModels from WPF dispatcher via `IDispatcherService` abstraction for testability.
+- Active WPF host and composition root.
+- References all three library projects and owns host configuration, model persistence, MCP startup, UI navigation, and shutdown.
 
-#### SentinelCoreAdmin (Legacy)
+#### SentinelCore.Tests
 
-- Previous WPF host application with MahApps.Metro shell, Template Studio scaffolding, and navigation framework.
-- Being deprecated in favor of `SentinelCore.UI`. Features will migrate incrementally.
+- Unit, component, and architecture tests for the current solution. It is excluded from the normal solution build in the solution file.
+
+#### SentinelCoreService
+
+- A .NET Framework 4.8 Windows service scaffold with build dependencies on the library projects. It is excluded from the normal Debug solution build.
 
 ### Related Documents
 
@@ -179,176 +180,47 @@ Key namespace mappings:
 - [SafetyRailsComponent.md](./SafetyRailsComponent.md) - Safety engine details
 - [DynamicAgentsComponent.md](./DynamicAgentsComponent.md) - Agent construction details
 - [DomainAgentSurfaces.md](./DomainAgentSurfaces.md) - Domain agent and tool details
-- [ToolingComponent.md](./ToolingComponent.md) - Tool registry details
-- [MemoryLayerComponent.md](./MemoryLayerComponent.md) - Pattern memory details
-- [PersistenceComponent.md](./PersistenceComponent.md) - Persistence layer details
-- [DomainAgentSurfaces.md](./DomainAgentSurfaces.md) - Details about agent domains and surfaces
-- [DomainToolChart.md](./DomainToolChart.md) - Chart of available tools and their domains
-- [DynamicAgentsComponent.md](./DynamicAgentsComponent.md) - Details about dynamic agent creation
-- [Engine-Rules.md](./Engine-Rules.md) - Rules governing the engine behavior
-- [MemoryLayerComponent.md](./MemoryLayerComponent.md) - Details about the memory and pattern storage layer
-- [OrchestrationComponent.md](./OrchestrationComponent.md) - Details about orchestration components
-- [PersistenceComponent.md](./PersistenceComponent.md) - Details about persistence mechanisms
-- [SafetyRailsComponent.md](./SafetyRailsComponent.md) - Details about safety mechanisms
-- [Engine-Rules.md](./Engine-Rules.md) - Engine-specific rules and constraints
-- [ProjectTerminology.md](./ProjectTerminology.md) - Glossary of terms used in the project
+- [ToolingComponent.md](./ToolingComponent.md) - Current tool-domain and selection design
+- [MemoryLayerComponent.md](./MemoryLayerComponent.md) - Pattern-memory implementation status
+- [PersistenceComponent.md](./PersistenceComponent.md) - Persistence and DbContext factory rules
+- [DomainAgentSurfaces.md](./DomainAgentSurfaces.md) - Agent domain reference
+- [DomainToolChart.md](./DomainToolChart.md) - Proposed domain capability map
+- [ProjectTerminology.md](./ProjectTerminology.md) - Canonical terminology
 
-## Overview
+## Current Host and Registration Flow
 
-SentinelCore is a state-of-the-art multi-agent investigation platform that learns from every case and interaction to speed up future case resolutions. The system learns from the environment and user needs to adapt and improve over time.
+The WPF host is the active composition root. It calls `AddSentinelCore`, opts into persistence with `AddCaseFlowEngine`, registers `AddDbContextFactory<SentinelCoreDBContext>`, and registers its UI services through `AddSentinelCoreUi`. The library registration alone uses null-object implementations for optional case-flow persistence; hosts decide whether the EF Core-backed module is enabled.
 
-## Solution Structure
-
-The solution is organized into a clear layered architecture with strict dependency rules to maintain separation of concerns and prevent architectural drift.
-
-### Projects
-
-The solution consists of the following projects:
-
-| Project | Role | Dependencies |
-| --------- | ------ | -------------- |
-| `SentinelCore.Contracts` | Shared abstractions, DTOs, settings, events, safety engine — zero project dependencies | Only NuGet packages |
-| `SentinelCore.Orchestrations` | Agent construction, orchestration, tools, DI wiring — depends on Contracts only | `SentinelCore.Contracts` |
-| `SentinelCore.CaseFlowEngine` | Case lifecycle, persistence, pattern memory — depends on Contracts only | `SentinelCore.Contracts` |
-| `SentinelCoreHost` | Host application (console host) | References all three projects |
-| `SentinelCore.Tests` | Test project | References all three projects |
-
-### Layer Architecture
-
-The solution follows a strict layered architecture with one-way dependency flow. Dependencies point **upward only** — a lower layer never references a higher layer.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  SentinelCore.Orchestrations / Infrastructure / DI          │  ← wiring layer (knows everything)
-│  SentinelCore.CaseFlowEngine / Infrastructure / Persistence  │
-├─────────────────────────────────────────────────────────────┤
-│  Orchestration                                              │  ← top-level runtime
-│  (ISentinelWorkflow implementations: TheCoreOrchestration, │
-│   MagneticOrchestration, MagneticCoopOrchestration,         │
-│   SingleAgent, GroupConcurrentOrchestration,                │
-│   SequentialOrchestration;                                  │
-│   selected via IOrchestrationFactory)                        │
-├─────────────────────────────────────────────────────────────┤
-│  Agents                                                     │  ← agent construction
-│  (AgentBuilder, AgentSpecBuilder, Factories, Middleware)    │
-├─────────────────────────────────────────────────────────────┤
-│  CaseFlow                                                   │  ← case lifecycle
-│  (ICaseFlowEngine, CaseFlowEngine)                          │
-├─────────────────────────────────────────────────────────────┤
-│  Application / Abstractions                                 │  ← orchestration abstractions & tooling
-│  (IOrchestrationControl, ToolRegistry)                      │
-├─────────────────────────────────────────────────────────────┤
-│  Contracts / Abstractions                                   │  ← shared abstractions
-│  (ISystemReporter, ICaseRepository, IEvidenceStore,          │
-│   IPatternMemoryStore, ISentinelCoreEvents)                 │
-├─────────────────────────────────────────────────────────────┤
-│  Contracts / SafetyEngine                                   │  ← safety abstractions
-│  (ISafetyMiddleware, ISafetyRule, SafetyContext,             │
-│   SafetyResult, SafetyVerdict)                              │
-├─────────────────────────────────────────────────────────────┤
-│  Contracts / CaseFlow                                       │  ← case flow DTOs & interface
-│  (Case, CaseStatus, Evidence, Signal, InvestigationPlan,    │
-│   InvestigationPlanStep, Resolution, ICaseFlowEngine)       │
-├─────────────────────────────────────────────────────────────┤
-│  Contracts / Contracts                                      │  ← pure DTOs & settings
-│  (SentinelCoreSettings, ModelSettings, OrchestrationType)    │
-├─────────────────────────────────────────────────────────────┤
-│  Contracts / Events                                         │  ← event types & hub
-│  (ISentinelCoreEvents, SentinelCoreEvents, CoreActivityArgs,│
-│   MagneticActivityArgs, OrchestrationActivityArgs)          │
-├─────────────────────────────────────────────────────────────┤
-│  Contracts / DependencyInjection                            │  ← builder interface
-│  (ISentinelCoreBuilder)                                     │
-└─────────────────────────────────────────────────────────────┘
+```text
+SentinelCore.UI
+    |
+    +-- AddSentinelCore
+    |       +-- orchestration and agent factory
+    |       +-- workflow and executor registrations
+    |       +-- MCP registry and in-process tools
+    |       +-- null case-flow defaults
+    |
+    +-- AddCaseFlowEngine
+    |       +-- EF Core-backed case lifecycle services
+    |
+    +-- AddDbContextFactory<SentinelCoreDBContext>
+            +-- per-operation context creation
 ```
 
-### Dependency Rules (Immutable)
+## Authoritative References
 
-| Rule | Description |
-| ------ | ------------- |
-| **Contracts is zero-dependency** | `SentinelCore.Contracts` contains only pure DTOs, settings, abstractions, events, and safety types. It has no project references — only NuGet packages. |
-| **Orchestrations depends on Contracts only** | `SentinelCore.Orchestrations` references `SentinelCore.Contracts` for abstractions, events, and settings. It does not reference `SentinelCore.CaseFlowEngine`. |
-| **CaseFlowEngine depends on Contracts only** | `SentinelCore.CaseFlowEngine` references `SentinelCore.Contracts` for abstractions and DTOs. It does **not** depend on `SentinelCore.Orchestrations`. |
-| **Orchestration abstractions live in Orchestrations** | `ISentinelWorkflow`, `IOrchestrationFactory`, `IOrchestrationControl`, and `IAgentPersona` are defined in `SentinelCore.Orchestrations.Abstractions` — not in Contracts. |
-| **Safety abstractions live in Contracts** | `ISafetyMiddleware`, `ISafetyRule`, `SafetyContext`, `SafetyResult`, `SafetyVerdict` are defined in `SentinelCore.Contracts.SafetyEngine`. |
-| **CaseFlow depends on Contracts only** | `CaseFlowEngine` implementation depends on `SentinelCore.Contracts.Abstractions` (repositories, safety) and `SentinelCore.Contracts.CaseFlow` (DTOs). It does **not** depend on `Orchestrations`. |
-| **Agents depends on Contracts + Orchestrations.Abstractions** | Agent factories use `IAgentBuilder`, `IAgentSpecBuilder`, `AgentSpec`, `AgentRole` (Orchestrations) and `SentinelCoreSettings`, `ModelSettings` (Contracts). Agents never depend on concrete orchestrations. |
-| **Orchestration depends on Agents + Contracts** | The top-level runtime layer. May reference agent factories, abstractions, and Contracts types. |
-| **Infrastructure/DI depends on all layers** | The wiring layer. Registers everything. May reference all projects. |
+- [Pattern Lock](../architecture/pattern-lock.md) - Authoritative architectural constraints
+- [Documentation Manifest](./Documentation-Manifest.md) - Document inventory, status, and classification
+- [Project Terminology](./ProjectTerminology.md) - Canonical domain and system terms
+- [Orchestration Component](./OrchestrationComponent.md) - Current workflow and execution surfaces
+- [Tooling Component](./ToolingComponent.md) - Tool domains and agent tool selection
+- [Persistence Component](./PersistenceComponent.md) - EF Core storage and lifetime rules
+- [Safety Engine Component](./SafetyEngineComponent.md) - Current safety rules and execution status
 
-### Forbidden Dependency Directions
+Use this document when evaluating the current solution boundaries, selecting an integration point, or reviewing a proposed architectural change.
 
-- Contracts → Orchestrations ❌ (Contracts must be pure)
-- Contracts → CaseFlowEngine ❌ (Contracts must be pure)
-- CaseFlowEngine → Orchestrations ❌ (CaseFlow must not depend on orchestration)
-- Orchestrations → CaseFlowEngine ❌ (Orchestrations must not depend on case flow implementation)
+## Change Table
 
-### Namespace Convention
-
-All namespaces use the `SentinelCore.*` root. The namespace **must** match the folder path relative to the project root.
-
-### Key Architectural Patterns
-
-1. **Pattern Memory and Learning**: The system learns from every case and interaction to improve future investigations.
-2. **Agent Swarms**: Uses agent swarms to interrogate targets and solve tasks, dividing responsibility between agents to avoid overload.
-3. **Layered Architecture**: Strict layering prevents architectural drift and maintains clear separation of concerns.
-4. **Dependency Inversion**: Abstractions are defined in contracts, allowing implementations to vary without affecting contracts.
-5. **Safety Engine**: Built-in safety mechanisms to prevent harmful or unsafe agent behaviors.
-
-### Key Components
-
-- **Orchestrations**: Responsible for agent construction, orchestration logic, tool management, and dependency injection.
-- **CaseFlowEngine**: Manages case lifecycle, persistence, and pattern memory storage.
-- **Agents**: Individual AI agents with specific roles and capabilities, built using agent builders and spec builders.
-- **Safety Engine**: Provides middleware and rules to ensure agent actions remain safe and within bounds.
-- **Events System**: Publishes and subscribes to core activities for monitoring and extensibility.
-- **Dependency Injection**: Uses a builder pattern (`ISentinelCoreBuilder`) for configuring and composing the system.
-
-### Projects in Detail
-
-#### SentinelCore.Contracts
-
-- Contains all shared contracts: DTOs, interfaces, settings, events, and safety types.
-- Has no dependencies on other solution projects (only NuGet packages).
-- Serves as the foundation for all other projects.
-
-#### SentinelCore.Orchestrations
-
-- Contains agent builders, orchestration factories, tool registries, and middleware.
-- Depends only on `SentinelCore.Contracts`.
-- Defines orchestration abstractions (`ISentinelWorkflow`, `IOrchestrationFactory`, etc.).
-
-#### SentinelCore.CaseFlowEngine
-
-- Implements case lifecycle management, persistence, and pattern memory.
-- Depends only on `SentinelCore.Contracts`.
-- Provides `ICaseFlowEngine` and `CaseFlowEngine` implementations.
-
-#### SentinelCoreHost
-
-- The console host application that wires up the entire system.
-- References all three core projects to compose the final application.
-
-#### SentinelCore.Tests
-
-- Contains unit and integration tests for the solution.
-- References all three core projects to test their interactions.
-
-### Documentation Manifest
-
-See [Documentation-Manifest.md](./Documentation-Manifest.md) for a complete list of architectural documents and their purposes.
-
-### Related Documents
-
-- [Pattern Lock](./architecture/pattern-lock.md) - Detailed architectural patterns and rules
-- [ComponentList.md](./ComponentList.md) - List of all components and their responsibilities
-- [DomainAgentSurfaces.md](./DomainAgentSurfaces.md) - Details about agent domains and surfaces
-- [DomainToolChart.md](./DomainToolChart.md) - Chart of available tools and their domains
-- [DynamicAgentsComponent.md](./DynamicAgentsComponent.md) - Details about dynamic agent creation
-- [Engine-Rules.md](./Engine-Rules.md) - Rules governing the engine behavior
-- [MemoryLayerComponent.md](./MemoryLayerComponent.md) - Details about the memory and pattern storage layer
-- [OrchestrationComponent.md](./OrchestrationComponent.md) - Details about orchestration components
-- [PersistenceComponent.md](./PersistenceComponent.md) - Details about persistence mechanisms
-- [SafetyRailsComponent.md](./SafetyRailsComponent.md) - Details about safety mechanisms
-- [Engine-Rules.md](./Engine-Rules.md) - Engine-specific rules and constraints
-- [ProjectTerminology.md](./ProjectTerminology.md) - Glossary of terms used in the project
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Removed duplicated and contradictory architecture descriptions; aligned project membership, dependencies, host registration, and authoritative links with the current codebase. |

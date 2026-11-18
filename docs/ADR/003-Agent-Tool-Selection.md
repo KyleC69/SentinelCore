@@ -33,7 +33,7 @@ problems followed from that:
 
 The goal was therefore: let the call site choose the toolset, from the union of MCP-server tools and
 local in-process `AIFunction` tools, without weakening the architecture rules in
-`architecture/pattern-lock.md`.
+[../../architecture/pattern-lock.md](../../architecture/pattern-lock.md).
 
 ### 2. Decision
 
@@ -99,9 +99,9 @@ Local tools are contributed through DI as `AITool` services and injected into th
 | Tool | Source |
 | ---- | ------ |
 | `MsDocsMcpServerTool` | existing `AIFunction` implementation |
-| `create_case` | `AIFunctionFactory.Create` over `CaseEngineTools.CreateCase` |
-| `insert_report` | `AIFunctionFactory.Create` over `CaseEngineTools.InsertReport` |
-| `insert_pattern_summaries` | `AIFunctionFactory.Create` over `CaseEngineTools.InsertPatternSummaries` |
+| `local_case_create` | `AIFunctionFactory.Create` over `CaseEngineTools.CreateCase` |
+| `local_case_insert_report` | `AIFunctionFactory.Create` over `CaseEngineTools.InsertReport` |
+| `local_case_insert_pattern_summaries` | `AIFunctionFactory.Create` over `CaseEngineTools.InsertPatternSummaries` |
 
 Adding a local tool is therefore a one-line DI registration with no change to the factory. Note
 that `RagSearchTool`, `MicrosoftDocsSearchTool`, `MicrosoftDocsFetchTool` and

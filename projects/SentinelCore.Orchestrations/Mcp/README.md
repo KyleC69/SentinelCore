@@ -9,17 +9,17 @@ MCP (Model Context Protocol) is an open standard that allows AI applications to 
 ## Key Features
 
 | Feature | Description |
-|---------|-------------|
+| --- | --- |
 | **Dual Transport Support** | Connect to MCP servers via `stdio` (local subprocess) or `HTTP` (remote/network) transports. |
 | **OAuth Authentication** | Full OAuth 2.0 support for protected HTTP MCP endpoints, including automatic token caching via DPAPI on Windows. |
 | **Persistent Registry** | Server definitions are stored in a JSON file and reloaded on startup. |
 | **Tool Discovery & Caching** | Automatically discovers tools from connected servers and caches them for low-latency agent access. |
-| **Timeout & Fault Tolerance** | Every tool invocation is wrapped with a configurable timeout; failures return structured `ToolResult` objects instead of throwing. |
+| **Timeout and failure behavior** | MCP tools are wrapped in `McpToolTimeoutFunction`; timeouts and non-cancellation failures become structured `ToolResult` failures, while caller cancellation propagates. |
 | **Observable Events** | `ServersChanged` and `ToolCacheChanged` events enable UI or orchestration layers to react to registry mutations. |
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    SentinelCore Agent                           │
 │  (invokes tools via Microsoft.Extensions.AI AITool interface)  │
@@ -60,8 +60,8 @@ MCP (Model Context Protocol) is an open standard that allows AI applications to 
 All public contracts live in **`SentinelCore.Contracts.Mcp`** and have no implementation dependencies.
 
 | Type | Purpose |
-|------|---------|
-| `McpServerDefinition` | Immutable configuration for one MCP server (ID, display name, transport, command/endpoint, args, env vars, OAuth, agent allow-list). |
+| --- | --- |
+| `McpServerDefinition` | Immutable configuration for one MCP server (ID, display name, transport, command/endpoint, args, env vars, and OAuth settings). It carries no agent assignment. |
 | `McpServerInfo` | Runtime view: definition + current status + discovered tool names + last error. |
 | `McpServerStatus` | `Stopped`, `Starting`, `Connected`, `Error`. |
 | `McpServerTransportType` | `Stdio` or `Http`. |
@@ -74,15 +74,13 @@ All public contracts live in **`SentinelCore.Contracts.Mcp`** and have no implem
 
 ### 1. Register Services (DI)
 
-```csharp
-services.AddSingleton<IMcpServerRegistryStore>(sp =>
-    new JsonFileMcpServerRegistryStore(
-        Path.Combine(appDataPath, "mcp-servers.json"),
-        sp.GetRequiredService<ILogger<JsonFileMcpServerRegistryStore>>()));
+Call the library registration entry point. It configures the registry, JSON store, token cache, and connection factory together:
 
-services.AddSingleton<IMcpConnectionFactory, McpConnectionFactory>();
-services.AddSingleton<IMcpServerRegistry, McpServerRegistry>();
+```csharp
+services.AddSentinelCore(settings);
 ```
+
+The default registry file is `%APPDATA%\SentinelCore\mcp-servers.json`; set `SENTINEL_MCP_REGISTRY_PATH` to override it. Manual registrations should be used only when replacing one of those implementations.
 
 > **Note**: `McpConnectionFactory` accepts an optional `ITokenCache` for OAuth token persistence. The provided `DpapiTokenCache` uses Windows DPAPI for secure storage.
 
@@ -168,10 +166,10 @@ registry.ToolCacheChanged += () => RefreshAgentToolCatalog();
 
 Every MCP tool is wrapped in `McpToolTimeoutFunction` which ensures:
 
-- **Timeout**: Default 30 seconds per invocation (configurable per-tool).
-- **No Exceptions**: Failures (timeout, transport error, server error) return `ToolResult.Fail(message)`.
-- **Success**: Returns `ToolResult.Ok(jsonString)` with the server result serialized to JSON.
-- **Cancellation Propagation**: Caller's `CancellationToken` is respected and propagated as `OperationCanceledException`.
+- MCP connection initialization is cancellation-aware and uses the configured timeout path.
+- Each discovered MCP tool is wrapped in `McpToolTimeoutFunction`; a timeout or non-cancellation invocation failure returns `ToolResult.Fail` instead of escaping.
+- Caller cancellation propagates as `OperationCanceledException` rather than being converted to a timeout result.
+- Workflow initialization and event streaming apply their own timeout/cancellation boundaries.
 
 ## Persistence
 
@@ -182,12 +180,12 @@ Every MCP tool is wrapped in `McpToolTimeoutFunction` which ensures:
 
 ## OAuth Token Cache (Windows)
 
-`DpapiTokenCache` implements `Microsoft.Extensions.AI.ITokenCache` using Windows Data Protection API (DPAPI). Tokens are encrypted per-user and stored in `%LOCALAPPDATA%\SentinelCore\mcp-tokens.dat`.
+`DpapiTokenCache` implements `Microsoft.Extensions.AI.ITokenCache` using Windows Data Protection API (DPAPI). The active DI registration stores tokens in `mcp-tokens.bin` beside the registry file, normally under `%APPDATA%\SentinelCore`.
 
 ## Extensibility
 
 | Extension Point | How |
-|----------------|-----|
+| --- | --- |
 | Custom Persistence | Implement `IMcpServerRegistryStore` and register in DI. |
 | Custom Transport | Implement `IMcpConnectionFactory` (rare; stdio/HTTP cover most cases). |
 | Per-Tool Timeout | Wrap `McpToolTimeoutFunction` with a different `timeout` value at registration time. |
@@ -200,6 +198,12 @@ Every MCP tool is wrapped in `McpToolTimeoutFunction` which ensures:
 
 ## Related Components
 
-- `SentinelCore.Contracts.Mcp` — Public contracts only (no implementation dependencies).
-- `SentinelCore.Orchestrations.Agents` — Agent factory that consumes `IMcpServerRegistry.GetAllToolsAsync()`.
-- `SentinelCore.Host` — Host application wiring (DI, startup sequence, UI hooks).
+- `SentinelCore.Contracts.Mcp` - Public contracts only (no implementation dependencies).
+- `SentinelCore.Orchestrations.Agents` - Agent factory that consumes the cached MCP tool catalog through `IMcpServerRegistry`.
+- `SentinelCore.UI` - Active host wiring for DI, startup loading, management UI, and shutdown.
+
+## Change Table
+
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Corrected DI registration, timeout guarantees, cached-tool consumption, host name, and usage examples to match current MCP code. |

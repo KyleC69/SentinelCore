@@ -5,25 +5,35 @@ component: Glossary
 last_updated: 2026-07-10
 ---
 
-### SentinelCore technical flow (integrated with canonical terminology)
+# Project Terminology
+
+This glossary defines current project terms and distinguishes implemented roles from proposed dynamic-agent concepts.
+
+## Canonical Terms
+
+- **SentinelCore:** A Windows-oriented, multi-agent investigation and case-management platform built on Microsoft Agent Framework and .NET 10.
+- **AIAgent / Agent:** A model-backed MAF agent created through `ISentinelAgentFactory` from an `AgentPreset`.
+- **AgentPreset:** The enum value that selects a role definition. `AgentPresetDefinition` supplies identity, instructions, model tier, and feature flags.
+- **ModelTier:** The configuration category used by `IModelResolver` to select a `ModelProfile` from `SentinelCoreSettings.TierModels`.
+- **AITool:** An invocable deterministic tool exposed to an agent. Tools may come from MCP servers or in-process `AIFunction` registrations.
+- **The Core:** The persistent conversational agent and primary reasoning surface used for direct responses and case-oriented interpretation.
+- **Manager Agent:** The tool-free Magentic workflow coordinator. It coordinates investigation participants and is subject to pattern lock PL-3.
+- **Classifier Agent:** A short-lived, tool-free agent used by the workflow to classify an incoming signal before investigation dispatch.
+- **Safety Agent and Safety Executor:** Safety-related surfaces are distinct. The active workflow gate is `SafetyExecutor`; `SafetyEngineAgent` is a separate rule-engine adapter and is not the same execution path.
+- **Worker Agent:** A preset used to create named Magentic participants such as evidence collector, adversarial analyst, and researcher, with role-derived or explicit tools.
+- **Aggregator Agent:** A preset used for the final report writer that receives the investigation-team output.
+- **Core Worker:** A proposed reusable core-assistant concept; it should not be confused with the `WorkerAgent` presets created in the active Magentic sub-workflow.
+- **Magentic Workflow:** MAF's manager-and-participants workflow used as the evidence-gathering sub-workflow inside `TheCoreWorkflow`.
+- **Domain Agent / Dynamic Agent:** Historical or proposed concepts. Current tool specialization is selected through `AgentToolSelection` on preset-based agents rather than through the removed `DomainAgentFactory` design.
+- **Pattern Memory:** Persistence and matching concepts for prior case patterns. The storage and matcher surfaces exist, but automatic injection is disabled pending stabilization.
+- **Optional Persistence:** `AddSentinelCore` installs null case-flow defaults; the host opts into EF persistence with `AddCaseFlowEngine` and a registered `IDbContextFactory`.
+
+Use this document when resolving unfamiliar project terms or deciding which implementation concept a legacy document is describing.
 
 ---
 
-### 1. Canonical terminology (short form)
+## Change Table
 
-- **OllamaApiClient:** Chat client or base client provider used for all AIAgents (from OllamaSharp 5+).
-- **AIAgent / Agent:** Model‑backed AI agent (Agent Framework 1.10+), using `OllamaApiClient`. Can reason, call AITools, and follow instructions. No hardcoded logic.
-- **AITool:** Deterministic function (Agent Framework 1.14+). Non‑AI, C# function performs system operations (read registry, query WMI, etc.). Only callable by an AIAgent.
-- **The Core or core agent:** A dedicated `AIAgent` responsible for generating investigation plans, interpreting results, updating hypotheses, and driving the investigative loop. The Core is the only reasoning entity in SentinelCore. It runs its own LLM model and configuration settings, distinct from the Manager.
-- **Manager (Magnetic Orchestration Managing Agent):** A separate, dedicated `AIAgent` that receives the investigation plan from the Core and executes it as a magnetic orchestration workflow. It schedules tasks, dispatches Domain Agents as workflow participants, monitors progress, enforces ordering, and returns structured results back to the Core. It does not reason, modify the plan, or generate new tasks. The Manager uses its own LLM model and configuration settings, distinct from the Core.
-- **Domain Agent:** A predefined, reusable `AIAgent` definition. The Manager hands it a bounded task and a skill (tools + instructions) for a single workflow step. Domain Agents are participants in the Manager's orchestration workflow.
-- **Composite / Dynamic Agent:** A special `AIAgent` created by the Manager when a task in the Core's plan requires combined cross-domain skills. These agents may perform _local micro‑reasoning_ (comparison, summarization, cross‑domain correlation), but they do not perform global investigative reasoning. They are always short‑lived and plan‑bound.
-- **Session model:**
-  - **Core Agent:** Maintains its own isolated session state, enriched by middleware, RAG, pattern memory, and case context.
-
-  - **Manager:** Maintains a workflow session shared with its subagents. No RAG, no enrichment, no reasoning.
-
-  - **Domain / Composite Agents:** Stateless. No persistent session. Receive only the skill, task, and toolbelt for the current invocation.
-- **Pattern Memory:** Pattern Memory stores vectorized signals, case metadata, anomaly signatures, and resolution summaries. It is queried only by the Core Agent. It is updated only when a case closes.
-
----
+| Version | Date | Author | Change summary |
+| --- | --- | --- | --- |
+| 2.0.0 | unknown | unknown | Replaced obsolete builder, role, provider, and dynamic-agent terminology with current preset, tier, workflow, and optional-persistence definitions. |
