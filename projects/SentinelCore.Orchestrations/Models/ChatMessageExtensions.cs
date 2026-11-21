@@ -166,4 +166,60 @@ public static class ChatMessageExtensions
         return message;
     }
 
+
+
+
+
+
+    /// <summary>
+    /// The key used in <see cref="ChatMessage.AdditionalProperties"/> to store the chat mode a message was sent under.
+    /// </summary>
+    public const string ChatModeKey = "ChatMode";
+
+
+
+
+
+    /// <summary>
+    /// Gets the chat mode the provided <see cref="ChatMessage"/> was sent under.
+    /// </summary>
+    /// <param name="message">The <see cref="ChatMessage"/> to read the chat mode from.</param>
+    /// <returns>A <see cref="string"/> value with the chat mode stamped by <see cref="WithChatMode"/>. Defaults to an empty
+    /// string if the message carries no chat mode.</returns>
+    public static string GetChatMode(this ChatMessage message)
+    {
+        return message.GetMetaTagByKey(ChatModeKey);
+    }
+
+
+
+
+
+    /// <summary>
+    /// Stamps the provided message with the chat mode it was sent under, stored in the
+    /// <see cref="ChatMessage.AdditionalProperties"/> under the <see cref="ChatModeKey"/> key.
+    /// </summary>
+    /// <param name="message">The message to stamp. Must not be <see langword="null"/>.</param>
+    /// <param name="chatMode">The chat mode name, e.g. <c>Chat</c> for environment questions or <c>Investigation</c> for opening an investigation case. Must not be empty.</param>
+    /// <returns>The stamped message.</returns>
+    /// <remarks>
+    /// The message is stamped in place rather than cloned: the sender stamps a message it owns
+    /// before adding it to the conversation, mirroring how the safety engine stamps <c>SafetyScore</c>.
+    /// </remarks>
+    /// <exception cref="System.ArgumentNullException">
+    /// Thrown if <paramref name="message"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="System.ArgumentException">
+    /// Thrown if <paramref name="chatMode"/> is null or whitespace.
+    /// </exception>
+    public static ChatMessage WithChatMode(this ChatMessage message, string chatMode)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        Throw.IfNullOrWhitespace(chatMode);
+
+        message.AdditionalProperties ??= new();
+        message.AdditionalProperties[ChatModeKey] = chatMode;
+        return message;
+    }
+
 }

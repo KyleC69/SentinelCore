@@ -410,8 +410,7 @@ public class SentinelCoreSettings
 | `OrchestrationComponent` | `TheCoreOrchestration` calls `ICaseFlowEngine.AdvanceCaseAsync` at each phase transition |
 | `SafetyRailsComponent` | Provides `ISafetyMiddleware` for transition gating |
 | `MemoryLayerComponent` | Provides `IPatternMemoryStore` for pattern memory persistence/search |
-| `ToolingComponent` | Domain tools may add `Evidence` via `IEvidenceStore` during investigation |
-| `DomainAgentSurfaces` | Historical domain-agent design; current tools flow through MCP/local selection rather than a dedicated domain-agent factory |
+| `ToolingComponent` | Investigation tools may add `Evidence` via `IEvidenceStore` during investigation |
 
 ## Change Table
 

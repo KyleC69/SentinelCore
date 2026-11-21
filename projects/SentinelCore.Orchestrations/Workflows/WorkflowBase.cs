@@ -1,4 +1,4 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowBase.cs
 // Author: Kyle L. Crowder

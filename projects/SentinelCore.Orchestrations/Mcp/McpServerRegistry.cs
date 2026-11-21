@@ -39,6 +39,11 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
     private readonly SemaphoreSlim _toolCacheLock = new(1, 1);
 
     /// <summary>
+    ///     Tracks whether the MCP tool manifest was already logged this process; manifest logging happens once.
+    /// </summary>
+    private bool _manifestLogged;
+
+    /// <summary>
     ///     Maximum time allowed for listing tools on a single connected server.
     /// </summary>
     private static readonly TimeSpan ListToolsTimeout = TimeSpan.FromSeconds(30);
@@ -380,7 +385,16 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
 
             await RefreshToolCacheAsync(cancellationToken).ConfigureAwait(false);
 
-            _logger.LogInformation("MCP server {ServerId} connected with {ToolCount} tool(s).", id, entry.ToolNames.Count);
+            _logger.LogInformation(
+                    "MCP server {ServerId} ({DisplayName}) connected with {ToolCount} tool(s) from {CommandOrEndpoint} {Arguments} (working directory {WorkingDirectory}).",
+                    id,
+                    entry.Definition.DisplayName,
+                    entry.ToolNames.Count,
+                    entry.Definition.CommandOrEndpoint,
+                    entry.Definition.Arguments is { Count: > 0 } ? string.Join(" ", entry.Definition.Arguments) : "(none)",
+                    string.IsNullOrWhiteSpace(entry.Definition.WorkingDirectory) ? "(none)" : entry.Definition.WorkingDirectory);
+
+            await LogManifestToolOnceAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -611,6 +625,57 @@ public sealed class McpServerRegistry : IMcpServerRegistry, IDisposable, IAsyncD
         if (_disposed)
         {
             throw new ObjectDisposedException(nameof(McpServerRegistry));
+        }
+    }
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Invokes the MCP tool manifest tool once per process, after the first successful server start, so the
+    ///     tool manifest is available in the logs for troubleshooting.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the invocation.</param>
+    /// <remarks>
+    ///     The flag is set before the attempt so exactly one attempt is made per process, regardless of outcome.
+    ///     Cancellation during the invocation is logged rather than propagated: the server start already succeeded,
+    ///     and a cancelled diagnostic must not fail the start.
+    /// </remarks>
+    private async Task LogManifestToolOnceAsync(CancellationToken cancellationToken)
+    {
+        if (_manifestLogged)
+        {
+            return;
+        }
+
+        _manifestLogged = true;
+
+        AIFunction? manifestTool = _aiToolCache
+                .Select(static tool => tool as AIFunction)
+                .FirstOrDefault(tool => tool is not null && tool.Name.Contains("manifest", StringComparison.OrdinalIgnoreCase));
+
+        if (manifestTool is null)
+        {
+            _logger.LogWarning("No MCP tool whose name contains 'manifest' is available; the tool manifest could not be logged.");
+
+            return;
+        }
+
+        try
+        {
+            object? result = await manifestTool.InvokeAsync(new AIFunctionArguments(), cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation("MCP tool manifest: {Manifest}", result?.ToString() ?? "(empty)");
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("The MCP tool manifest invocation was cancelled before it completed; the tool manifest is not available in the logs.");
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Invoking the MCP tool manifest '{ToolName}' failed; the tool manifest is not available in the logs.", manifestTool.Name);
         }
     }
 

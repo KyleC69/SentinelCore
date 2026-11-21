@@ -2,8 +2,8 @@
 title: "Orchestration Component"
 status: Active
 component: Orchestration
-last_updated: 2026-07-19
-version: v1.0
+last_updated: 2026-11-18
+version: v1.1
 ---
 
 # Orchestration Component
@@ -441,32 +441,22 @@ services.AddSingleton<ToolRegistry>();
 
 ---
 
-## 9. Tool Registry
+## 9. Tool Resolution
 
-### 9.1 `ToolRegistry` (Static Resolution)
+Tools are no longer resolved from a static registry. `ToolRegistry` and its `DomainToolNames` /
+`RoleToolNames` tables were removed; a static table of names loses tools whenever a name changes.
 
-**Methods:**
+Tool resolution now lives in `SentinelAgentFactory` and is driven by the tool-name convention.
 
-- `GetToolByDomain(string domain)` → `List<AITool>` (30+ domain-specific tools)
-- `GetToolsByNames(IEnumerable<string> toolNames)` → `List<AITool>`
-- `GetToolsetByRole(AgentRole role)` → `List<AITool>` (role-based toolsets)
-- `GetAllTools()` → `List<AITool>`
+| Concern | Owner |
+| --- | --- |
+| Group names and the single `sc_<groupprefix>_` prefix each owns | `AgentToolGroupCatalog` |
+| Default tool groups for an agent | `AgentPresetDefinition.ToolGroups` |
+| Optional call-site override | `AgentToolSelection` (`None`, `All`, `Named`, `Groups`) |
+| Tool discovery and the live catalogue | `McpServerRegistry` (`ToolCacheChanged`) |
+| Tools whose names match no registered prefix | `Uncategorized` — excluded from `All` |
 
-**Domain → Tools Mapping (`DomainToolNames` dictionary):**
-
-- `windows` → `GetWindowsVersionTool`, `GetInstalledSoftwareTool`, `GetRunningProcessesTool`, `GetSystemInfoTool`, `GetEventLogsTool`, `GetRegistryValueTool`, `GetScheduledTasksTool`, `GetServicesTool`, `GetDiskSpaceTool`, `GetNetworkConfigurationTool`, `GetEnvironmentVariablesTool`, `GetInstalledUpdatesTool`, `GetStartupProgramsTool`, `GetUserAccountsTool`, `GetWindowsFeaturesTool`, `GetPowerShellExecutionPolicyTool`, `GetWindowsDefenderStatusTool`, `GetBitLockerStatusTool`, `GetFirewallRulesTool`, `GetWindowsTimeServiceStatusTool`
-- `dotnet` → `GetDotNetSdkVersionsTool`, `GetDotNetRuntimeVersionsTool`, `GetNuGetPackageVersionsTool`, `GetProjectDependenciesTool`, `GetProjectFrameworkTool`, `GetProjectReferencesTool`, `GetProjectPackageReferencesTool`, `GetProjectSdkTool`, `GetProjectTargetFrameworksTool`, `GetProjectPropertyTool`, `GetProjectItemsTool`, `GetProjectBuildOutputTool`, `GetProjectAnalyzersTool`, `GetProjectNuGetConfigTool`, `GetProjectAssemblyAttributesTool`, `GetProjectLangVersionTool`, `GetProjectNullableContextTool`, `GetProjectImplicitUsingsTool`, `GetProjectTreatWarningsAsErrorsTool`, `GetProjectOutputTypeTool`
-- `agentframework` → `GetAgentFrameworkVersionTool`, `GetAgentFrameworkPackagesTool`, `GetAgentFrameworkSamplesTool`, `GetAgentFrameworkDocumentationTool`, `GetAgentFrameworkArchitectureTool`, `GetAgentFrameworkBestPracticesTool`, `GetAgentFrameworkSamplesByScenarioTool`, `GetAgentFrameworkNuGetPackagesTool`, `GetAgentFrameworkSourceCodeTool`, `GetAgentFrameworkReleaseNotesTool`
-- `mcp` → `MicrosoftDocsSearchTool`, `MicrosoftDocsFetchTool`, `MicrosoftCodeSampleSearchTool` (MCP-based, used by Core agent)
-
-**Role → Toolset Mapping (`RoleToolNames`):**
-
-- `Core` → `mcp` tools
-- `Manager` → (empty)
-- `Domain` → Resolved dynamically via `GetToolByDomain(domain)`
-- `Worker` → (empty)
-- `General` → (empty)
-- `Aggregator` → (empty)
+See [ToolingComponent.md](./ToolingComponent.md) and [ADR-006](./ADR/006-Tool-Group-Prefix-Scheme.md).
 
 ---
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net10.0-windows</TargetFramework>
@@ -19,6 +19,7 @@
 		<PackageReference Include="ErikEJ.EntityFrameworkCore.DgmlBuilder" />
 		<PackageReference Include="Newtonsoft.Json" />
 		<PackageReference Include="OpenTelemetry.Exporter.Console" />
+		<ProjectReference Include="..\..\..\..\SentinelCoreSecurity\SentinelCore.Security.csproj" />
 		<ProjectReference Include="..\SentinelCore.CaseFlowEngine\SentinelCore.CaseFlowEngine.csproj" />
 		<ProjectReference Include="..\SentinelCore.Contracts\SentinelCore.Contracts.csproj" />
 		<PackageReference Include="Microsoft.Agents.AI" />

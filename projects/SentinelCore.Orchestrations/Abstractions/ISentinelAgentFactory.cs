@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ISentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  111816
 
 
 
@@ -18,153 +18,130 @@ namespace SentinelCore.Orchestrations.Abstractions;
 
 
 /// <summary>
-///     Defines the contract for building <see cref="AIAgent" /> instances from agent presets.
+///     Creates Sentinel Core agents from reusable presets, binding toolsets from the live tool catalogue at
+///     construction time.
 /// </summary>
+/// <remarks>
+///     <para>
+///         Every agent must be constructed through this factory. <c>ChatClientAgent</c> is never constructed
+///         directly by call sites.
+///     </para>
+///     <para>
+///         A preset declares the default tool groups for the agent role it represents. An
+///         <see cref="AgentToolSelection" /> supplied at the call site is an override: it replaces the preset's
+///         groups rather than unioning with them, so a call site can reduce an agent's toolset.
+///     </para>
+/// </remarks>
 public interface ISentinelAgentFactory
 {
-
-
-
     /// <summary>
-    ///     Asynchronously creates an instance of <see cref="AIAgent" /> based on the specified preset name.
-    ///     The agent is constructed with persistent infrastructure (chat client, wrappers, context providers, tools).
-    ///     Instructions and response format are per-call concerns handled by the executor at invocation time,
-    ///     not baked into the agent at construction time.
+    ///     Creates an agent from the preset's default configuration: default name, description and preset tool groups.
     /// </summary>
-    /// <param name="presetName">
-    ///     The name of the preset to use for creating the agent (e.g., "Classifier", "TheCore").
-    /// </param>
-    /// <param name="cancellationToken">
-    ///     A token to observe while waiting for the task to complete, enabling cancellation of the operation.
-    /// </param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result is a fully configured
-    ///     <see cref="AIAgent" /> instance.
-    /// </returns>
-    /// <exception cref="ArgumentException">
-    ///     Thrown if the specified <paramref name="presetName" /> does not correspond to any registered preset.
-    /// </exception>
+    /// <param name="presetName">The preset that supplies the agent's role, instructions and default tool groups.</param>
+    /// <param name="cancellationToken">A token to cancel the construction.</param>
+    /// <returns>The constructed agent.</returns>
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, CancellationToken cancellationToken = default);
 
 
+    /// <summary>
+    ///     Creates an agent from the preset's default configuration, appending task-specific instructions.
+    /// </summary>
+    /// <param name="presetName">The preset that supplies the agent's role, instructions and default tool groups.</param>
+    /// <param name="taskInstructions">Task-specific instructions appended to the preset instructions; may be <c>null</c>.</param>
+    /// <param name="cancellationToken">A token to cancel the construction.</param>
+    /// <returns>The constructed agent.</returns>
+    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string? taskInstructions, CancellationToken cancellationToken = default);
 
 
+    /// <summary>
+    ///     Creates an agent from the preset's default configuration, appending task-specific instructions and
+    ///     constraining responses to a JSON schema.
+    /// </summary>
+    /// <param name="presetName">The preset that supplies the agent's role, instructions and default tool groups.</param>
+    /// <param name="taskInstructions">Task-specific instructions appended to the preset instructions; may be <c>null</c>.</param>
+    /// <param name="forJsonSchema">The JSON response format to enforce; may be <c>null</c> for free-form text.</param>
+    /// <param name="token">A token to cancel the construction.</param>
+    /// <returns>The constructed agent.</returns>
+    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string? taskInstructions, ChatResponseFormatJson? forJsonSchema, CancellationToken token);
 
 
-
-
-    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string taskInstructions, CancellationToken cancellationToken = default);
-
-
-
-    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string taskInstructions, ChatResponseFormatJson forJsonSchema, CancellationToken none);
-
-
+    /// <summary>
+    ///     Creates an agent from the preset's default configuration with an explicit name and description, appending
+    ///     task-specific instructions.
+    /// </summary>
+    /// <param name="presetName">The preset that supplies the agent's role and default tool groups.</param>
+    /// <param name="agentName">The display name to give the agent instance, overriding the preset default.</param>
+    /// <param name="agentDescription">The description to give the agent instance, overriding the preset default.</param>
+    /// <param name="taskInstructions">Task-specific instructions appended to the preset instructions.</param>
+    /// <returns>The constructed agent.</returns>
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, string taskInstructions);
 
 
+    /// <summary>
+    ///     Creates an agent from the preset's default configuration with an explicit name and description.
+    /// </summary>
+    /// <param name="presetName">The preset that supplies the agent's role and default tool groups.</param>
+    /// <param name="agentName">The display name to give the agent instance, overriding the preset default.</param>
+    /// <param name="agentDescription">The description to give the agent instance, overriding the preset default.</param>
+    /// <returns>The constructed agent.</returns>
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription);
 
 
     /// <summary>
-    ///     Asynchronously creates an instance of <see cref="AIAgent" /> with an explicit tool selection.
-    ///     Use this overload to choose the agent's toolset from the call site instead of relying on the
-    ///     preset default.
+    ///     Creates an agent from the preset with an explicit tool selection overriding the preset's tool groups.
     /// </summary>
-    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
-    /// <param name="toolSelection">
-    ///     The tools to bind to the agent. May reference MCP-server tools, local in-process tools, or both.
-    /// </param>
-    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result is a fully configured
-    ///     <see cref="AIAgent" /> instance.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when a named tool cannot be resolved, when a local tool name collides with another tool,
-    ///     or when the Manager preset is given a non-empty toolset.
-    /// </exception>
+    /// <param name="presetName">The preset that supplies the agent's role and instructions.</param>
+    /// <param name="toolSelection">The toolset to bind, replacing the preset's tool groups.</param>
+    /// <param name="cancellationToken">A token to cancel the construction.</param>
+    /// <returns>The constructed agent.</returns>
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, AgentToolSelection toolSelection, CancellationToken cancellationToken = default);
 
 
     /// <summary>
-    ///     Asynchronously creates an instance of <see cref="AIAgent" /> with an explicit tool selection.
+    ///     Creates an agent from the preset with an explicit tool selection, appending task-specific instructions and
+    ///     optionally constraining responses to a JSON schema.
     /// </summary>
-    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
-    /// <param name="toolSelection">The tools to bind to the agent.</param>
-    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
-    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result is a fully configured
-    ///     <see cref="AIAgent" /> instance.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when a named tool cannot be resolved, when a local tool name collides with another tool,
-    ///     or when the Manager preset is given a non-empty toolset.
-    /// </exception>
-    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, AgentToolSelection toolSelection, string? taskInstructions, CancellationToken cancellationToken = default);
+    /// <param name="presetName">The preset that supplies the agent's role and instructions.</param>
+    /// <param name="toolSelection">The toolset to bind, replacing the preset's tool groups.</param>
+    /// <param name="taskInstructions">Task-specific instructions appended to the preset instructions; may be <c>null</c>.</param>
+    /// <param name="forJsonSchema">The JSON response format to enforce; may be <c>null</c> for free-form text.</param>
+    /// <param name="cancellationToken">A token to cancel the construction.</param>
+    /// <returns>The constructed agent.</returns>
+    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, AgentToolSelection toolSelection, string? taskInstructions, ChatResponseFormat? forJsonSchema = null, CancellationToken cancellationToken = default);
 
 
     /// <summary>
-    ///     Asynchronously creates an instance of <see cref="AIAgent" /> with an explicit tool selection that
-    ///     must answer with JSON conforming to the supplied schema.
+    ///     Creates an agent from the preset with an explicit name, description and tool selection.
     /// </summary>
-    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
-    /// <param name="toolSelection">The tools to bind to the agent.</param>
-    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
-    /// <param name="forJsonSchema">When supplied, the agent must answer with JSON matching this schema.</param>
-    /// <param name="token">A token to observe while waiting for the task to complete.</param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result is a fully configured
-    ///     <see cref="AIAgent" /> instance.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when a named tool cannot be resolved, when a local tool name collides with another tool,
-    ///     or when the Manager preset is given a non-empty toolset.
-    /// </exception>
-    Task<AIAgent> CreateAgentAsync(AgentPreset presetName, AgentToolSelection toolSelection, string? taskInstructions, ChatResponseFormatJson? forJsonSchema, CancellationToken token);
-
-
-    /// <summary>
-    ///     Asynchronously creates a named <see cref="AIAgent" /> with an explicit tool selection, overriding
-    ///     the preset's name and description.
-    /// </summary>
-    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
-    /// <param name="agentName">The name assigned to this agent instance.</param>
-    /// <param name="agentDescription">The description assigned to this agent instance.</param>
-    /// <param name="toolSelection">The tools to bind to the agent.</param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result is a fully configured
-    ///     <see cref="AIAgent" /> instance.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when a named tool cannot be resolved, when a local tool name collides with another tool,
-    ///     or when the Manager preset is given a non-empty toolset.
-    /// </exception>
+    /// <param name="presetName">The preset that supplies the agent's role and instructions.</param>
+    /// <param name="agentName">The display name to give the agent instance, overriding the preset default.</param>
+    /// <param name="agentDescription">The description to give the agent instance, overriding the preset default.</param>
+    /// <param name="toolSelection">The toolset to bind, replacing the preset's tool groups.</param>
+    /// <returns>The constructed agent.</returns>
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, AgentToolSelection toolSelection);
 
 
     /// <summary>
-    ///     Asynchronously creates a named <see cref="AIAgent" /> with an explicit tool selection, overriding
-    ///     the preset's name and description.
+    ///     Creates an agent from the preset with an explicit name, description, tool selection and task instructions.
     /// </summary>
-    /// <param name="presetName">The preset that selects the agent's role and default capabilities.</param>
-    /// <param name="agentName">The name assigned to this agent instance.</param>
-    /// <param name="agentDescription">The description assigned to this agent instance.</param>
-    /// <param name="taskInstructions">Optional call-site instructions for this agent instance.</param>
-    /// <param name="toolSelection">The tools to bind to the agent.</param>
-    /// <returns>
-    ///     A task that represents the asynchronous operation. The task result is a fully configured
-    ///     <see cref="AIAgent" /> instance.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolSelection" /> is <c>null</c>.</exception>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when a named tool cannot be resolved, when a local tool name collides with another tool,
-    ///     or when the Manager preset is given a non-empty toolset.
-    /// </exception>
+    /// <param name="presetName">The preset that supplies the agent's role and instructions.</param>
+    /// <param name="agentName">The display name to give the agent instance, overriding the preset default.</param>
+    /// <param name="agentDescription">The description to give the agent instance, overriding the preset default.</param>
+    /// <param name="taskInstructions">Task-specific instructions appended to the preset instructions; may be <c>null</c>.</param>
+    /// <param name="toolSelection">The toolset to bind, replacing the preset's tool groups.</param>
+    /// <returns>The constructed agent.</returns>
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, string? taskInstructions, AgentToolSelection toolSelection);
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Refreshes the tool cache by querying the MCP server registry for the latest tools.
+    ///     This should be called when the MCP server registry changes (e.g., after servers are started).
+    /// </summary>
+    void RefreshToolCache();
 }

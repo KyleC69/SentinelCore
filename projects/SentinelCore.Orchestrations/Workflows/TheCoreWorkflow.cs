@@ -307,7 +307,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// <seealso cref="WorkflowBase" />
     /// <seealso cref="IOrchestration" />
     [Experimental("MAAI001")]
-    private async Task<Workflow> BuildWorkflow()
+    private async Task<Workflow> BuildWorkflow(CancellationToken cancellationToken)
     {
         Throw.IfNull(_theCoreAgent);
         Throw.IfNull(_classifierAgent);
@@ -333,19 +333,25 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
         // ── Compose the switch-based routing graph ─────────────────────────────────────────
-        // First stop Safety gate
-        WorkflowBuilder builder = new(executors.SafetyExecutor);
+        // First stop: provenance gate (fail-closed), then the Safety gate. Rejected
+        // messages yield a user-visible notice and end here — they never reach a model.
+        WorkflowBuilder builder = new(executors.ProvenanceGateExecutor);
 
+        builder.AddEdge<ChatMessage>(executors.ProvenanceGateExecutor, executors.SafetyExecutor, ProvenanceGatePassed); // only validated messages continue
         builder.AddEdge(executors.SafetyExecutor, executors.SafetyReviewExecutor, GetCondition(true)); //safety triggers review
         builder.AddEdge(executors.SafetyExecutor, executors.PatternCheckExecutor, GetCondition(false)); //Pass safety to next step
-
+        builder.AddEdge(executors.SafetyReviewExecutor, executors.EscalatedExecutor);
         builder.AddEdge(executors.PatternCheckExecutor, executors.WhiteListExecutor); // Check whitelist for pattern - Operator created list to ignore
 
         builder.AddEdge(executors.WhiteListExecutor, executors.TheCoreSwitchExec);
 
-        // -- ------- DirectAnswer Branch -------------------------
+        /* -- ------- DirectAnswer Branch -------------------------
+         *
+         * This is a direct answer branch that allows the core agent to provide immediate responses to certain queries.
+         * The Core agent has ability to spawn a preconfigured agent with system tools to interrogate the system directly
+         * without a need for a case or investigation. 
+        */
         builder.AddEdge(executors.TheCoreSwitchExec, directAnswerAgentExec, GetCondition(true)); // TheCore DirectAnswer
-        builder.AddEdge(directAnswerAgentExec, executors.TerminateWorkflow);  //Direct Answer Termination
 
 
         // -- ------- Investigate Branch -------------------------
@@ -353,7 +359,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         builder.AddEdge(executors.TheCoreSwitchExec, executors.SignalClassifierExecutor, GetCondition(false)); // Investigation Branch
         builder.AddEdge(executors.SignalClassifierExecutor, executors.NewCaseExecutor) // TheCore generate the initial hypothesis objective
                 .AddEdge(executors.NewCaseExecutor, subWorkflowExecutor) // NewCase creates a new case and sends objective to the sub-workflow for evidence gathering
-                .AddEdge(subWorkflowExecutor, executors.TerminateWorkflow); // Sub-workflow evidence gathering Magnetic orchestration
+                .AddEdge(subWorkflowExecutor, executors.PersistEvidenceExecutor); // Sub-workflow evidence gathering Magnetic orchestration
 
 
 
@@ -386,12 +392,12 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // ── Register output sources ─────────────────────────────────────────────────────────
         // MAF only surfaces yielded values from executors registered via WithOutputFrom;
         // without this registration no executor output ever reaches the WorkflowOutputEvent stream.
-        builder.WithOutputFrom(directAnswerAgentExec);
+        builder.WithOutputFrom(directAnswerAgentExec, executors.ProvenanceGateExecutor);
 
         Workflow flow = builder.Build();
 
         // For debug purposes
-        await VisualizeWorkflowAsync(flow, CancellationToken.None).ConfigureAwait(false);
+        await VisualizeWorkflowAsync(flow, cancellationToken).ConfigureAwait(false);
 
         return flow;
 
@@ -411,11 +417,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
         // ── Build main workflow agents ─────────────────────────────────────────────────────────
 
-        _theCoreAgent = await _agentFactory.CreateAgentAsync(AgentPreset.CoreAgent, AgentToolSelection.FromRole(AgentPreset.CoreAgent), token);
+        _theCoreAgent = await _agentFactory.CreateAgentAsync(AgentPreset.CoreAgent, token);
 
         _classifierAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ClassifierAgent, AgentToolSelection.None, token);
 
-        _safetyAgent = await _agentFactory.CreateAgentAsync(AgentPreset.SafetyAgent, AgentToolSelection.FromRole(AgentPreset.SafetyAgent), token);
+        _safetyAgent = await _agentFactory.CreateAgentAsync(AgentPreset.SafetyAgent, token);
 
         _theCoreSession = await _theCoreAgent.CreateSessionAsync(token);
 
@@ -423,10 +429,10 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
         _managerAgent = await _agentFactory.CreateAgentAsync(AgentPreset.ManagerAgent, "ManagerCoordinator", "Coordinates the investigation team and monitors progress", AgentToolSelection.None);
-        _evidenceCollectorAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS, AgentToolSelection.FromRole(AgentPreset.WorkerAgent));
-        _adversarialAnalystAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "AdversarialAnalyst", "The challenger of the collected evidence", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS, AgentToolSelection.FromRole(AgentPreset.WorkerAgent));
-        _researcherAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS, AgentToolSelection.FromRole(AgentPreset.WorkerAgent));
-        _finalReportWriterAgent = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", AgentInstructionConstants.AGGREGATOR_INSTRUCTIONS, AgentToolSelection.FromRole(AgentPreset.AggregatorAgent));
+        _evidenceCollectorAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "EvidenceCollector", "Collects evidence for the investigation", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS);
+        _adversarialAnalystAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "AdversarialAnalyst", "The challenger of the collected evidence", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS);
+        _researcherAgent = await _agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, "Researcher", "Conducts research related to the investigation and fact checker.", AgentInstructionConstants.TEAM_MEMBER_INSTRUCTIONS);
+        _finalReportWriterAgent = await _agentFactory.CreateAgentAsync(AgentPreset.AggregatorAgent, "CaseReportAuthor", "Aggregates the results from all workers and generates the final case report.", AgentInstructionConstants.AGGREGATOR_INSTRUCTIONS);
 
         //Participants must be verified and created before the sub-workflow is built. The sub-workflow is built here, but it is not executed directly. Instead, it is added to the parent workflow as a sub-workflow executor. This allows the parent workflow to manage the execution of the sub-workflow and handle its outputs appropriately.
         Throw.IfNull(_managerAgent);
@@ -438,7 +444,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
         _reporter.ReportInfo("Agent profiles constructed.");
-        _theCoreWorkflow = await BuildWorkflow();
+        _theCoreWorkflow = await BuildWorkflow(token);
         Throw.IfNull(_theCoreAgent);
         Throw.IfNull(_classifierAgent);
         _isInitialized = true;
@@ -521,6 +527,15 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         return detectionResult => detectionResult is DetectionBoolResult result && result.IsTrue == expectedResult;
     }
 
+    /// <summary>
+    ///     Condition for the provenance gate edge. The gate returns the validated message
+    ///     and null when a message fails provenance validation, so only non-null output
+    ///     continues to the Safety gate; rejected messages end at the gate.
+    /// </summary>
+    /// <param name="output">The output produced by the provenance gate executor.</param>
+    /// <returns><c>true</c> when the message was validated and may proceed.</returns>
+    private static bool ProvenanceGatePassed(object? output) => output is not null;
+
 
 
 
@@ -587,12 +602,14 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     /// </summary>
     /// <param name="workflow">The workflow to visualize.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken" /> to observe while waiting for the task to complete.</param>
+    [Temporary("This method is temporary and should be removed before release.")]
     private async Task VisualizeWorkflowAsync(Workflow workflow, CancellationToken cancellationToken)
     {
         string flow = workflow.ToDotString();
         try
         {
-            await File.WriteAllTextAsync("workflow.dot", flow, cancellationToken).ConfigureAwait(false);
+            var path = "f:\\Solutions\\SentinelCore\\SentinelCore\\projects\\SentinelCore.Orchestrations\\Workflows\\workflow.dot";
+            await File.WriteAllTextAsync(path, flow, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

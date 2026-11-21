@@ -63,13 +63,14 @@ public interface IModelConfigGate
     IReadOnlyList<string> UnhealthyMcpServers => [];
 
     /// <summary>
-    ///     Returns the non-blocking readiness warnings, currently the catalogue tools that no tool domain
-    ///     claims.
+    ///     Returns the non-blocking readiness warnings, currently the catalogue tools that do not conform to the
+    ///     tool group naming scheme.
     /// </summary>
     /// <remarks>
-    ///     These are surfaced in the banner but never disable an action. An unclaimed tool is still reachable
-    ///     through <see cref="AgentToolSelection.All" /> and by explicit name, so losing it is impossible; the
-    ///     warning exists so the vocabulary gets extended instead of silently drifting.
+    ///     Uncategorized tools (foreign to the naming convention) are a warning and stay reachable by explicit
+    ///     name; they are excluded from every grouping, including <see cref="AgentToolSelection.All" />. Suspect
+    ///     tools (they carry the <c>sc_</c> root but no registered group claims them) are an error and are
+    ///     unreachable: they are excluded from every grouping and from resolution by name.
     /// </remarks>
     /// <returns>The warning messages, or an empty list when there is nothing to report.</returns>
     IReadOnlyList<string> GetReadinessWarnings() => [];
@@ -181,17 +182,28 @@ public sealed class ModelConfigGate : IModelConfigGate
             return [];
         }
 
-        IReadOnlyList<string> unclassified = AgentToolDomainCatalog.Unclassified(_mcpServerRegistry.GetToolsFromCache().Select(tool => tool.Name));
+        List<string> toolNames = [.. _mcpServerRegistry.GetToolsFromCache().Select(tool => tool.Name)];
+        IReadOnlyList<string> uncategorized = AgentToolGroupCatalog.Uncategorized(toolNames);
+        IReadOnlyList<string> suspect = AgentToolGroupCatalog.Suspect(toolNames);
 
-        if (unclassified.Count == 0)
+        if (uncategorized.Count == 0 && suspect.Count == 0)
         {
             return [];
         }
 
-        return
-        [
-                $"{unclassified.Count} MCP tool(s) are not claimed by any tool domain and can only be reached by name or through the All selection: {string.Join(", ", unclassified)}."
-        ];
+        List<string> warnings = [];
+
+        if (uncategorized.Count > 0)
+        {
+            warnings.Add($"{uncategorized.Count} MCP tool(s) are uncategorized because they do not start with a registered sc_<group>_ prefix. They are excluded from every grouping and can only be reached by explicit name: {string.Join(", ", uncategorized)}.");
+        }
+
+        if (suspect.Count > 0)
+        {
+            warnings.Add($"{suspect.Count} MCP tool(s) are suspect because they carry the sc_ root but no registered tool group claims them. They may be misnamed on the MCP server or malicious, and they are unreachable — excluded from every grouping and from resolution by name: {string.Join(", ", suspect)}.");
+        }
+
+        return warnings;
     }
 
 

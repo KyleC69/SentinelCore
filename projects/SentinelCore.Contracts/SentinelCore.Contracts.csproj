@@ -15,5 +15,9 @@
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DependencyInjection\" />
+  </ItemGroup>
+
 
 </Project>

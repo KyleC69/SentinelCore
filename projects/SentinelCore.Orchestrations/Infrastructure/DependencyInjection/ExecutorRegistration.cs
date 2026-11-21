@@ -36,6 +36,7 @@ public static class ExecutorRegistrations
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection RegisterExecutors(this IServiceCollection services)
     {
+        services.AddTransient<ProvenanceGateExecutor>();
         services.AddTransient<NewCaseExecutor>();
         services.AddTransient<MoreInformationExecutor>();
         services.AddTransient<EscalatedExecutor>();

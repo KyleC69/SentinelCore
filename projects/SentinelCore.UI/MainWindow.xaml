@@ -55,7 +55,6 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Top navigation bar -->
@@ -99,25 +98,5 @@
                NavigationUIVisibility="Hidden"
                Margin="0" />
 
-        <!-- Bottom mode selector -->
-        <Border Grid.Row="2"
-                Background="{DynamicResource ChatSurface}"
-                BorderBrush="{DynamicResource ChatBorder}"
-                BorderThickness="0,1,0,0"
-                Padding="16,8">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <TextBlock Text="Mode:"
-                           VerticalAlignment="Center"
-                           Margin="0,0,8,0"
-                           Style="{StaticResource BodyText}" />
-                <ComboBox x:Name="ModeComboBox"
-                          Width="160"
-                          Style="{StaticResource FormComboBoxStyle}"
-                          SelectionChanged="ModeComboBox_SelectionChanged">
-                    <ComboBoxItem Content="Investigate" />
-                    <ComboBoxItem Content="Chat" />
-                </ComboBox>
-            </StackPanel>
-        </Border>
     </Grid>
 </Window>

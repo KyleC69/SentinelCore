@@ -26,6 +26,8 @@ using SentinelCore.Orchestrations.Mcp;
 using SentinelCore.Orchestrations.Rag;
 using SentinelCore.Orchestrations.Workflows;
 
+using SentinelCore.Security.Infrastructure.DependencyInjection;
+
 
 
 
@@ -149,6 +151,11 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<IOrchestrationFactory, OrchestrationFactory>();
         services.RegisterExecutors();
 
+        // -- Message provenance security --
+        // Signs messages stamped by approved entry points and quarantines anything that
+        // fails validation. Registered for every host that uses AddSentinelCore.
+        services.AddSentinelSecurity();
+
         // -- MCP server registry --
         // Stores server definitions in %APPDATA%\SentinelCore\mcp-servers.json unless
         // the SENTINEL_MCP_REGISTRY_PATH environment variable overrides it.
@@ -187,14 +194,50 @@ public static class SentinelCoreServiceExtensions
     /// </remarks>
     private static IServiceCollection RegisterLocalAgentTools(IServiceCollection services)
     {
-        services.AddSingleton<AITool>(_ => new MsDocsMcpServerTool());
+        services.AddSingleton<MsLearnMcpTools>();
+        services.AddSingleton<AITool>(sp =>
+        {
+            MsLearnMcpTools learnTools = sp.GetRequiredService<MsLearnMcpTools>();
+            return AIFunctionFactory.Create(
+                learnTools.SearchDocs,
+                name: "sc_knowledge_search_docs",
+                description: "Performs semantic search against Microsoft official technical documentation.");
+        });
+
+        services.AddSingleton<AITool>(sp =>
+        {
+            MsLearnMcpTools learnTools = sp.GetRequiredService<MsLearnMcpTools>();
+            return AIFunctionFactory.Create(
+                learnTools.FetchDocs,
+                name: "sc_knowledge_fetch_docs",
+                description: "Fetches a Microsoft documentation page and converts it into markdown format.");
+        });
+
+        services.AddSingleton<AITool>(sp =>
+        {
+            MsLearnMcpTools learnTools = sp.GetRequiredService<MsLearnMcpTools>();
+            return AIFunctionFactory.Create(
+                learnTools.SearchCodeSamples,
+                name: "sc_knowledge_search_code_samples",
+                description: "Searches for official Microsoft and Azure code snippets and examples.");
+        });
+
+        services.AddSingleton<AgentSpawnTools>();
+        services.AddSingleton<AITool>(sp =>
+        {
+            AgentSpawnTools spawnTools = sp.GetRequiredService<AgentSpawnTools>();
+            return AIFunctionFactory.Create(
+                spawnTools.SpawnAgent,
+                name: "sc_internal_spawn_agent",
+                description: "Spawns a one-shot utility agent with the requested tool groups, runs the supplied task and returns the agent's answer.");
+        });
 
         services.AddSingleton<AITool>(sp =>
         {
             CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
             return AIFunctionFactory.Create(
                 caseEngineTools.CreateCase,
-                name: "local_case_create",
+                name: "sc_internal_case_create",
                 description: "Creates a new investigative case for the Sentinel Core platform from a natural-language signal description.");
         });
 
@@ -203,7 +246,7 @@ public static class SentinelCoreServiceExtensions
             CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
             return AIFunctionFactory.Create(
                 caseEngineTools.InsertReport,
-                name: "local_case_insert_report",
+                name: "sc_internal_case_insert_report",
                 description: "Inserts the final investigation report for a case.");
         });
 
@@ -212,7 +255,7 @@ public static class SentinelCoreServiceExtensions
             CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
             return AIFunctionFactory.Create(
                 caseEngineTools.InsertPatternSummaries,
-                name: "local_case_insert_pattern_summaries",
+                name: "sc_internal_case_insert_pattern_summaries",
                 description: "Inserts the summaries extracted from the final investigation report.");
         });
 

@@ -88,14 +88,9 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
 
             // Implement sliding window to prevent unbounded growth
             while (state.Messages.Count > _maxHistorySize)
-                // Remove the oldest message (index 0)
-                // Note: ChatMessages needs a RemoveAt method or we must handle it via the underlying list
-                // Since ChatMessages is a custom wrapper, we assume it supports basic list operations or we'll need to update it.
-                // For now, we'll use a safer approach if ChatMessages allows.
                 try
                 {
-                    // This is a placeholder for the pruning logic.
-                    // If ChatMessages doesn't support RemoveAt, we'll need to update ChatMessages.cs
+                    // Pruning is intentionally not implemented yet — placeholder loop, tracked separately.
                     break;
                 }
                 catch
@@ -140,6 +135,6 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
     {
         public readonly object SyncRoot = new();
 
-        [JsonPropertyName("messages")] public ChatMessages Messages { get; set; } = new();
+        [JsonPropertyName("messages")] public List<ChatMessage> Messages { get; set; } = [];
     }
 }

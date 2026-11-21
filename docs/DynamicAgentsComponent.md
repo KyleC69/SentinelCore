@@ -2,8 +2,8 @@
 title: "Dynamic Agents Component"
 status: Active
 component: DynamicAgents
-last_updated: 2026-07-19
-version: v1.0
+last_updated: 2026-11-18
+version: v1.1
 ---
 
 # SentinelCore Dynamic Agents Component
@@ -16,7 +16,7 @@ This document describes the current preset-based agent construction pipeline and
 - `AgentPresetDefinition.FromName(AgentPreset)` supplies each preset's identity, instructions, model tier, middleware-related flags, and default context behavior.
 - `ModelResolver.ResolveByTier(ModelTier)` resolves the `ModelProfile` from `SentinelCoreSettings.TierModels`.
 - `SentinelChatClientFactory` constructs the active Ollama `IChatClient`; other declared provider values are not active in the default factory switch.
-- `AgentToolSelection` chooses tools at the call site by `None`, `All`, named tools, or domain rules. `AgentToolRoleToolsets` supplies role defaults when a selection is requested from a role.
+- `AgentToolSelection` overrides tools at the call site by `None`, `All`, named tools, or group names. When no selection is supplied, `SentinelAgentFactory` resolves the preset's own `ToolGroups`.
 - The Manager preset must remain tool-free under pattern lock PL-3.
 - Pattern-memory context injection is currently commented out in `AddPresetContextProviders`.
 - `SentinelAgentFactory` sets preset instructions, identity, model parameters, tools, response format, and concurrency options on the MAF `ChatClientAgent`.
@@ -600,7 +600,7 @@ public sealed class ModelSettings
 | Dynamic agent creation (composite agents) | `MagneticCoopOrchestration` | ⚠️ Referenced as 'dynamic_agent' tool |
 | Persona customization via configuration | `SentinelCoreSettings` | ❌ Not supported |
 | Agent spec validation | `AgentSpecBuilder` | ⚠️ Basic null checks only |
-| Toolset for Worker/General/Aggregator roles | `ToolRegistry.RoleToolNames` | ⚠️ Minimal defaults |
+| Toolset for Worker/Aggregator roles | `AgentPresetDefinition.ToolGroups` | ✅ Preset-owned; `CustomGroupWorkflow` workers override with `AgentToolSelection.All` |
 
 ---
 
@@ -609,8 +609,7 @@ public sealed class ModelSettings
 | Document | Description |
 | ---------- | ------------- |
 | `OrchestrationComponent.md` | Agent construction pipeline, orchestration strategies |
-| `DomainAgentSurfaces.md` | Tool registry, domain agent factory, 30+ tools |
-| `ToolingComponent.md` | Complete tool registry API |
+| `ToolingComponent.md` | Tool groups, preset assignments, and selection kinds |
 | `ContractsComponent.md` | `AgentRole`, `AgentSpec`, `ModelSettings`, `SentinelCoreSettings` |
 | `MemoryLayerComponent.md` | Pattern memory integration with Core agent |
 | `SafetyRailsComponent.md` | Safety middleware applied in AgentBuilder |

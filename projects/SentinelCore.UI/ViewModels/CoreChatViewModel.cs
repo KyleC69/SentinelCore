@@ -24,6 +24,8 @@ using SentinelCore.Contracts.Events;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Models;
 using SentinelCore.Orchestrations.Services;
+using SentinelCore.Security;
+using SentinelCore.Security.Identity;
 using SentinelCore.UI.Services;
 
 
@@ -64,6 +66,13 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     private readonly ICaseFlowEngine _caseFlowEngine;
 
+    /// <summary>
+    ///     Backing field for <see cref="ChatType" />: the mode the chat page operates
+    ///     in. Two-way bound to the Mode combo box on the chat page.
+    /// </summary>
+    [ObservableProperty]
+    private ChatType _chatType = ChatType.Chat;
+
     private readonly IClipboardService _clipboardService;
 
     private readonly IDispatcherService _dispatcher;
@@ -96,6 +105,12 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     [ObservableProperty] private int _openCount;
 
     private readonly IOrchestrationControl _orchestrationControl;
+
+    /// <summary>
+    ///     Stamps outgoing messages with provenance so the receiving workflow can
+    ///     validate message origin before any model sees them.
+    /// </summary>
+    private readonly ISentinelProvenanceService _provenanceService;
 
     private readonly ISystemReporter _reporter;
 
@@ -141,13 +156,16 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     /// <param name="modelConfigGate">
     ///     The gate that determines whether agent models are properly configured.
     /// </param>
+    /// <param name="provenanceService">
+    ///     The provenance service used to sign outgoing messages with their origin identity.
+    /// </param>
     /// <param name="appShutdownToken">
     ///     A cancellation token that is triggered when the application begins shutting down.
     /// </param>
     /// <exception cref="ArgumentNullException">
     ///     Thrown if any of the required parameters are <c>null</c>.
     /// </exception>
-    public CoreChatViewModel(IWorkflowEventProcessor workflowEventProcessor, IOrchestrationControl orchestrationControl, ISystemReporter reporter, ICaseFlowEngine caseFlowEngine, ILogger<CoreChatViewModel> logger, IDispatcherService dispatcher, IClipboardService clipboardService, ISentinelCoreEvents events, IModelConfigGate modelConfigGate, CancellationToken appShutdownToken)
+    public CoreChatViewModel(IWorkflowEventProcessor workflowEventProcessor, IOrchestrationControl orchestrationControl, ISystemReporter reporter, ICaseFlowEngine caseFlowEngine, ILogger<CoreChatViewModel> logger, IDispatcherService dispatcher, IClipboardService clipboardService, ISentinelCoreEvents events, IModelConfigGate modelConfigGate, ISentinelProvenanceService provenanceService, CancellationToken appShutdownToken)
     {
         //  _orchestrationControl = orchestrationControl ?? throw new ArgumentNullException(nameof(orchestrationControl));
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
@@ -157,6 +175,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         _clipboardService = clipboardService ?? throw new ArgumentNullException(nameof(clipboardService));
         _modelConfigGate = modelConfigGate ?? throw new ArgumentNullException(nameof(modelConfigGate));
+        _provenanceService = provenanceService ?? throw new ArgumentNullException(nameof(provenanceService));
         _appShutdownToken = appShutdownToken;
         _orchestrationControl = orchestrationControl;
 
@@ -209,7 +228,22 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
+    /// <summary>
+    ///     Gets the selectable modes for the Mode combo box, in display order.
+    /// </summary>
+    public IReadOnlyList<ChatType> ChatModes { get; } = [ChatType.Chat, ChatType.Investigation];
 
+
+
+    /// <summary>
+    ///     Called when the Mode combo box selection changes <see cref="ChatType" />.
+    ///     Logged so chat-mode transitions are visible in diagnostics.
+    /// </summary>
+    /// <param name="value">The newly selected chat mode.</param>
+    partial void OnChatTypeChanged(ChatType value)
+    {
+        _logger.LogInformation("Chat mode changed to {ChatMode}.", value);
+    }
 
 
 
@@ -552,6 +586,11 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
             ChatMessage msg = new(ChatRole.User, InputText);
 
             msg.WithMessageSource(MessageSourceType.SentinelCoreUi);
+            msg.WithChatMode(ChatType.ToString());
+
+            // Stamp provenance so the receiving workflow can prove message origin
+            // and validate the signature before any model sees the content.
+            _provenanceService.Stamp(msg, SentinelIdentities.CoreUi);
             AddToMessages(msg);
             InputText = string.Empty;
             IAsyncEnumerable<WorkflowEvent> result = await _orchestrationControl.ExecuteStreamingAsync(msg, _linkedCts.Token);
@@ -596,4 +635,14 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         // An orchestration may have created or advanced cases — refresh the telemetry panel.
         RequestCaseCountsRefresh();
     }
+}
+
+
+
+
+
+public enum ChatType
+{
+    Chat,
+    Investigation
 }

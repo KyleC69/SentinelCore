@@ -308,8 +308,8 @@ await registry.StartAsync("windows-toolkit", cancellationToken);
 ```
 
 A server definition carries no per-agent assignment. Which agent receives a server's tools is decided at
-agent creation time through `AgentToolSelection` and the tool-domain vocabulary — see
-[docs/ToolingComponent.md](docs/ToolingComponent.md). The WPF host exposes server management through the
+agent creation time by the preset's declared tool groups, optionally overridden at the call site through
+`AgentToolSelection` — see [docs/ToolingComponent.md](docs/ToolingComponent.md). The WPF host exposes server management through the
 **MCP Servers** page.
 
 ---
@@ -347,7 +347,7 @@ projects/
 │   │                                # ModelResolver, tools, middleware, context providers
 │   │   ├── AgentPresets/            # Core, classifier, safety, manager, worker,
 │   │   │                            # utility, aggregator presets and model tiers
-│   │   ├── Core/Tools/              # MsDocsMcpServerTool, SimpleMcpClientTool
+│   │   ├── Core/Tools/              # CaseEngineTools, MsLearnMcpTools, AgentSpawnTools, ToolResult
 │   │   ├── Middleware/              # PatternMemoryInjector, SemanticPatternMatcher,
 │   │   │                            # DiagnosticMiddleware, ExceptionHandlingMiddleware
 │   │   └── Models/                  # Ledger, CoreDirective, InvestigationStep, EvidenceItem
@@ -500,11 +500,11 @@ separation of ideas and an actual group discussion that can produced inventive a
 Send it logs overnight and come in the next day with a list of remediation steps
 to fix what it found. Tools are exploratory only, operator applies fixes.
 
-The Windows diagnostic tools are no longer part of this repository and are expected from a separately deployed MCP server. This library registers local case functions through `CaseEngineTools` and a documentation MCP-client tool, then merges them with cached server tools. `SentinelAgentFactory` narrows the merged catalog through `AgentToolSelection` at construction time (see [docs/ToolingComponent.md](docs/ToolingComponent.md)).
+The Windows diagnostic tools are no longer part of this repository and are expected from a separately deployed MCP server. This library registers local tools through `CaseEngineTools` (case lifecycle), `MsLearnMcpTools` (Microsoft Learn documentation search, the temporary Knowledge-group implementation per ADR-007) and `AgentSpawnTools` (transient one-shot agent spawn), then merges them with cached server tools. `SentinelAgentFactory` narrows the merged catalog through `AgentToolSelection` at construction time (see [docs/ToolingComponent.md](docs/ToolingComponent.md)).
 
-The domain surface map below describes the Windows configuration domains the toolkit covers (see [docs/DomainToolChart.md](docs/DomainToolChart.md) for the authoritative list):
+The capability map below is a coarse summary of the Windows configuration areas the toolkit covers. The authoritative tool inventory is the group table in [docs/ToolingComponent.md](docs/ToolingComponent.md):
 
-| Domain   | Tools                                                                              |
+| Area     | Tools                                                                              |
 | -------- | ---------------------------------------------------------------------------------- |
 | System   | Registry, WMI, Environment Variables, Processes, Services, Drivers, Boot Config    |
 | Security | Defender, Firewall, AppLocker, BitLocker, UAC, Credentials, Certificates, Auditing |
@@ -513,7 +513,7 @@ The domain surface map below describes the Windows configuration domains the too
 | Software | Installed Apps, Browser Config, Fonts, Search Indexing, Scheduled Tasks            |
 | User     | Local Accounts, Group Policy, Notifications, Accessibility, Shell Explorer         |
 
-See [docs/DomainToolChart.md](docs/DomainToolChart.md) for the full domain → API mapping.
+Tool names, group prefixes, and per-preset assignments are defined in [docs/ToolingComponent.md](docs/ToolingComponent.md).
 
 ---
 
@@ -591,7 +591,7 @@ The test project uses MSTest 4.3.3 with Moq 4.20.72 and includes architecture te
 | [docs/McpServerRegistryComponent.md](docs/McpServerRegistryComponent.md) | MCP server registry details                   |
 | [docs/PersistenceComponent.md](docs/PersistenceComponent.md)         | Persistence layer details                         |
 | [docs/MemoryLayerComponent.md](docs/MemoryLayerComponent.md)         | Pattern memory details                            |
-| [docs/DomainToolChart.md](docs/DomainToolChart.md)                   | Domain → API mapping chart                        |
+| [docs/ToolingComponent.md](docs/ToolingComponent.md)                 | Tool groups, selection, and preset assignments   |
 | [architecture/pattern-lock.md](architecture/pattern-lock.md)         | Authoritative architectural patterns and rules    |
 | [docs/ProjectTerminology.md](docs/ProjectTerminology.md)             | Canonical terminology                             |
 
@@ -602,6 +602,7 @@ The test project uses MSTest 4.3.3 with Moq 4.20.72 and includes architecture te
 | Version | Date | Author | Change summary |
 | --- | --- | --- | --- |
 | 2.0.0 | unknown | unknown | Aligned setup, DI registration, model tiers, provider status, safety execution, workflow routing, optional persistence, and component descriptions with the current codebase. |
+| 3.0.0 | 2026-11-18 | Kyle | Replaced the domain-surface and domain-tool-chart references with the prefix-based tool-group model in docs/ToolingComponent.md. |
 
 ---
 

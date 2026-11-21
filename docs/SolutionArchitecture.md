@@ -22,6 +22,7 @@ SentinelCore/
     ├── SentinelCore.UI/                  # Active WPF composition root
     ├── SentinelCore.Tests/               # Unit and architecture tests
     └── SentinelCoreService/              # Windows service scaffold
+SentinelCoreSecurity/                     # Message-provenance security module; sibling of SentinelCore/, solution member
 ```
 
 ### Projects and Their Responsibilities
@@ -30,8 +31,9 @@ SentinelCore/
 | --------- | ------ | -------------- |
 | `SentinelCore.Contracts` | Shared contracts, settings, events, MCP definitions, and abstractions | None |
 | `SentinelCore.CaseFlowEngine` | Optional EF Core-backed case lifecycle and persistence | `SentinelCore.Contracts` |
-| `SentinelCore.Orchestrations` | Agent factory, workflows, executors, safety rules, MCP, RAG, and DI registration | `SentinelCore.Contracts`, `SentinelCore.CaseFlowEngine` |
-| `SentinelCore.UI` | Active WPF host and composition root | All three library projects |
+| `SentinelCore.Orchestrations` | Agent factory, workflows, executors, safety rules, MCP, RAG, and DI registration | `SentinelCore.Contracts`, `SentinelCore.CaseFlowEngine`, `SentinelCoreSecurity` |
+| `SentinelCore.Security` (project `SentinelCoreSecurity`) | Message provenance: HMAC-SHA256 signing, identity registry, fail-closed validation, quarantine | `SentinelCore.Contracts` |
+| `SentinelCore.UI` | Active WPF host and composition root | All library projects (`SentinelCore.Contracts`, `SentinelCore.CaseFlowEngine`, `SentinelCore.Orchestrations`, `SentinelCoreSecurity`) |
 | `SentinelCore.Tests` | Unit and architecture validation | Solution libraries |
 | `SentinelCoreService` | Windows service host scaffold; excluded from normal solution build | Solution libraries |
 
@@ -100,12 +102,16 @@ SentinelCore/
 | **Orchestrations depends on Contracts + CaseFlowEngine** | `SentinelCore.Orchestrations` references both projects. It needs `ICaseFlowEngine` for case operations in workflow executors. |
 | **Orchestration abstractions live in Orchestrations** | Current orchestration, agent-factory, and tool-selection interfaces are defined in `SentinelCore.Orchestrations.Abstractions`. |
 | **Safety types live in Orchestrations** | `ISafetyRule`, `SafetyEngineAgent`, `SafetyEvaluationContext`, `SafetyRuleResult`, `SafetyAction`, `SafetySeverity` are in `SentinelCore.Orchestrations.SafetyEngine`. |
+| **Security depends on Contracts only** | `SentinelCoreSecurity` references `SentinelCore.Contracts` (plus AI/DI abstraction packages). Orchestrations, UI, and Tests may reference it; it must never reference a higher layer. |
 
 ### Forbidden Dependency Directions
 
 - Contracts → Orchestrations ❌ (Contracts must be pure)
 - Contracts → CaseFlowEngine ❌ (Contracts must be pure)
 - CaseFlowEngine → Orchestrations ❌ (CaseFlow must not depend on orchestration)
+- SentinelCoreSecurity → Orchestrations ❌ (the security module stays at the contract boundary)
+- SentinelCoreSecurity → CaseFlowEngine ❌
+- SentinelCoreSecurity → UI/Hosts ❌
 
 ### Namespace Convention
 
@@ -118,6 +124,7 @@ Key namespace mappings:
 | Contracts | `SentinelCore.Abstractions`, `SentinelCore.CaseFlow`, `SentinelCore.CaseEngine`, `SentinelCore.Contracts`, `SentinelCore.Events`, `SentinelCore.DependencyInjection` |
 | CaseFlowEngine | `SentinelCore.CaseFlowEngine.CaseFlow`, `SentinelCore.CaseFlowEngine.Infrastructure.Persistence`, `SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection` |
 | Orchestrations | `SentinelCore.Agents`, `SentinelCore.Application`, `SentinelCore.Orchestrations`, `SentinelCore.SafetyEngine`, `SentinelCore.Tools`, `SentinelCore.Workflows`, `SentinelCore.Workflows.Executors`, `SentinelCore.Personas`, `SentinelCore.Infrastructure.DependencyInjection` |
+| SentinelCoreSecurity | `SentinelCore.Security`, `SentinelCore.Security.Cryptography`, `SentinelCore.Security.Identity`, `SentinelCore.Security.Quarantine`, `SentinelCore.Security.Infrastructure.DependencyInjection` |
 | Host (UI) | `SentinelCore.UI`, `SentinelCore.UI.ViewModels`, `SentinelCore.UI.Views`, `SentinelCore.UI.Services`, `SentinelCore.UI.Converters`, `SentinelCore.UI.Models` |
 
 ### Key Architectural Patterns
@@ -129,6 +136,7 @@ Key namespace mappings:
 5. **Rule-based safety executor** - the active workflow evaluates input through `SafetyExecutor` and `SafetyRuleEngine`. Middleware-based safety agent types remain separate surfaces and are not the active workflow gate.
 6. **Live MCP tool selection** - MCP and local tools are merged at agent creation and filtered through `AgentToolSelection` domain or name rules.
 7. **Host-owned logging and telemetry** - library services publish through `ISystemReporter` and the host owns logging and OpenTelemetry configuration.
+8. **Fail-closed message provenance** - every message entering The Core workflow is HMAC-signed at the UI entry point, validated at the workflow entry gate (nonce-consuming), and re-checked at the model boundary; rejected messages are quarantined unchanged and never reach a model. See [SecurityComponent.md](./SecurityComponent.md).
 
 ### Key Components
 
@@ -159,6 +167,12 @@ Key namespace mappings:
 - References only `SentinelCore.Contracts`.
 - The module is optional at library level and is enabled explicitly by the composition root.
 
+#### SentinelCore.Security (SentinelCoreSecurity)
+
+- Message-provenance security module: HMAC-SHA256 stamping of `ChatMessage` via `AdditionalProperties`, fail-closed validation, an in-memory identity registry (stub), and a bounded in-memory quarantine store. See [SecurityComponent.md](./SecurityComponent.md) and [ADR-008](./ADR/008-Message-Provenance-Security-Module.md).
+- References only `SentinelCore.Contracts`. Consumed by `SentinelCore.Orchestrations` (workflow entry gate and model-boundary re-check), `SentinelCore.UI` (entry-point stamping), and `SentinelCore.Tests`.
+- Source lives in the sibling solution folder `SentinelCoreSecurity/`, outside the repository root.
+
 #### SentinelCore.UI
 
 - Active WPF host and composition root.
@@ -179,12 +193,9 @@ Key namespace mappings:
 - [CaseFlowEngineComponent.md](./CaseFlowEngineComponent.md) - Case flow engine details
 - [SafetyRailsComponent.md](./SafetyRailsComponent.md) - Safety engine details
 - [DynamicAgentsComponent.md](./DynamicAgentsComponent.md) - Agent construction details
-- [DomainAgentSurfaces.md](./DomainAgentSurfaces.md) - Domain agent and tool details
-- [ToolingComponent.md](./ToolingComponent.md) - Current tool-domain and selection design
+- [ToolingComponent.md](./ToolingComponent.md) - Current tool-group and selection design
 - [MemoryLayerComponent.md](./MemoryLayerComponent.md) - Pattern-memory implementation status
 - [PersistenceComponent.md](./PersistenceComponent.md) - Persistence and DbContext factory rules
-- [DomainAgentSurfaces.md](./DomainAgentSurfaces.md) - Agent domain reference
-- [DomainToolChart.md](./DomainToolChart.md) - Proposed domain capability map
 - [ProjectTerminology.md](./ProjectTerminology.md) - Canonical terminology
 
 ## Current Host and Registration Flow
@@ -224,3 +235,4 @@ Use this document when evaluating the current solution boundaries, selecting an 
 | Version | Date | Author | Change summary |
 | --- | --- | --- | --- |
 | 2.0.0 | unknown | unknown | Removed duplicated and contradictory architecture descriptions; aligned project membership, dependencies, host registration, and authoritative links with the current codebase. |
+| 2.1.0 | 2026-11-20 | Copilot | Added the SentinelCoreSecurity message-provenance module: folder tree, project table, dependency rules, forbidden directions, namespaces, project details, and the fail-closed provenance pattern. |

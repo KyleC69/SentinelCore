@@ -71,6 +71,7 @@ internal sealed class ExecutorFactory
     {
         return new()
         {
+            ProvenanceGateExecutor = Create<ProvenanceGateExecutor>(),
             SafetyExecutor = Create<SafetyExecutor>(),
             EscalatedExecutor = Create<EscalatedExecutor>(),
             PatternCheckExecutor = Create<PatternCheckExecutor>(),
@@ -106,6 +107,7 @@ internal sealed class ExecutorCollection
     public required NewCaseExecutor NewCaseExecutor { get; init; }
     public required PatternCheckExecutor PatternCheckExecutor { get; init; }
     public required PersistEvidence PersistEvidenceExecutor { get; init; }
+    public required ProvenanceGateExecutor ProvenanceGateExecutor { get; init; }
     public required SafetyExecutor SafetyExecutor { get; init; }
     public required SafetyReviewExecutor SafetyReviewExecutor { get; init; }
     public required SignalClassifierExecutor SignalClassifierExecutor { get; init; }

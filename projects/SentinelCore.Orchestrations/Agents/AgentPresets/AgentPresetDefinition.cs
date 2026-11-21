@@ -7,7 +7,6 @@
 
 
 using SentinelCore.Contracts.Contracts;
-using SentinelCore.Orchestrations.Models;
 
 
 
@@ -26,7 +25,7 @@ namespace SentinelCore.Orchestrations.Agents.AgentPresets;
 ///     <para>
 ///         Presets are the single source of truth for an agent's default configuration.
 ///         Executors may override instructions and response format at invocation time
-///         via <see cref="ChatMessages" /> and <see cref="AgentRunOptions" />.
+///         via <see cref="IEnumerable{ChatMessage}" /> and <see cref="AgentRunOptions" />.
 ///     </para>
 /// </summary>
 public sealed record AgentPresetDefinition
@@ -100,6 +99,21 @@ public sealed record AgentPresetDefinition
 
 
 
+    /// <summary>
+    ///     Gets the tool groups whose prefixes supply this agent's default toolset.
+    /// </summary>
+    /// <remarks>
+    ///     Group names are resolved against <see cref="Abstractions.AgentToolGroupCatalog" /> when the agent is
+    ///     built. An unknown name is a preset defect and throws. An empty list is legal and binds no tools; the
+    ///     Manager relies on this because PL-3 forbids tools on it. A call-site
+    ///     <see cref="Abstractions.AgentToolSelection" /> replaces this default entirely rather than adding to it.
+    /// </remarks>
+    public IReadOnlyList<string> ToolGroups { get; init; } = [];
+
+
+
+
+
 
 
 
@@ -115,6 +129,7 @@ public sealed record AgentPresetDefinition
             AgentId = "AggregatorAgent",
             AgentName = "AggregatorAgent",
             Description = "Utility agent responsible for collecting and collating information while performing auxiliary tasks and supporting core workflow operations.",
+            ToolGroups = ["Internal", "Utilities"],
             RoleInstructions = AgentInstructionConstants.AGGREGATOR_INSTRUCTIONS,
             Tier = ModelTier.Utility,
             UseLogging = true,
@@ -139,6 +154,7 @@ public sealed record AgentPresetDefinition
             AgentId = id ?? "ClassifierAgent",
             AgentName = name ?? "ClassifierAgent",
             Description = "Agent responsible for classifying inputs. Primary usage is in complex workflow switching.",
+            ToolGroups = ["Utilities"],
             Tier = ModelTier.Utility,
             UseLogging = true,
             UsePatternMemory = false,
@@ -167,6 +183,7 @@ public sealed record AgentPresetDefinition
             AgentName = name ?? "TheCore",
             AgentId = id ?? "TheCore",
             Description = "Core reasoning agent responsible for advanced analytical tasks and operator support.",
+            ToolGroups = ["Internal", "Knowledge", "Utilities"],
             Tier = ModelTier.Core,
             UsePatternMemory = true,
             UseLogging = true,
@@ -220,6 +237,7 @@ public sealed record AgentPresetDefinition
             AgentName = name ?? "GroupManagerAgent",
             AgentId = id ?? "GroupManagerAgent",
             Description = "Manager/orchestrator agent responsible for coordinating Magentic Group Orchestration workflows.",
+            ToolGroups = [],
             Tier = ModelTier.Manager,
             UseLogging = true,
             UsePatternMemory = false,
@@ -244,6 +262,7 @@ public sealed record AgentPresetDefinition
             AgentId = id ?? "ReportExtractorAgent",
             AgentName = name ?? "ReportExtractorAgent",
             Description = "Agent responsible for extracting structured data from unstructured reports.",
+            ToolGroups = ["Internal", "Utilities"],
             RoleInstructions = null,
             Tier = ModelTier.Utility,
             UseLogging = true,
@@ -269,6 +288,7 @@ public sealed record AgentPresetDefinition
             AgentName = name ?? "SafetyAgent",
             ModelProfile = null,
             Description = "Safety geared agent to operate within the system safties.",
+            ToolGroups = ["Hardening", "Identity", "Configuration", "Utilities"],
             Tier = ModelTier.Utility,
             UseLogging = true,
             UsePatternMemory = false,
@@ -297,6 +317,7 @@ public sealed record AgentPresetDefinition
             AgentId = id ?? "UtilityAgent",
             AgentName = name ?? "UtilityAgent",
             Description = "Utility agent responsible for performing auxiliary tasks and supporting core workflow operations.",
+            ToolGroups = ["Utilities"],
             Tier = ModelTier.Utility,
             UseLogging = true,
             UsePatternMemory = false,
@@ -321,6 +342,7 @@ public sealed record AgentPresetDefinition
             AgentId = id ?? "GenericWorkerAgent",
             AgentName = name ?? "GenericWorkerAgent",
             Description = "All purpose expert Windows Forensic Investigator. " + "This agent is responsible for performing investigative tasks and supporting core workflow operations.",
+            ToolGroups = ["Forensics", "Persistence", "Execution", "MemoryInspection", "Identity", "NetworkAccess", "Cryptography", "Utilities"],
             RoleInstructions = null,
             Tier = ModelTier.Worker,
             UseLogging = true,

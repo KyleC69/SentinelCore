@@ -10,7 +10,6 @@ using System.Diagnostics.CodeAnalysis;
 
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Agents;
-using SentinelCore.Orchestrations.Models;
 
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 using InvestigationObjective = SentinelCore.Orchestrations.Infrastructure.InvestigationObjective;
@@ -147,10 +146,16 @@ internal sealed partial class TheCoreExec : Executor
         // Construct the full instruction set for the agent.
         // We include the platform domain, the general Sentinel Core instructions, and the task-specific instructions.
         // If there's a specific prompt from the workflow state (or the current message if none in state), it's added as a user message.
-        ChatMessages cms = new ChatMessages().AddSystemMessage(AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S);
-        cms.AddUserMessage(AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS);
-        cms.AddUserMessage(taskinstruct);
-        cms.Add(prompt);
+        List<ChatMessage> cms =
+        [
+            new(ChatRole.System, AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S),
+            new(ChatRole.User, AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS),
+            new(ChatRole.User, taskinstruct),
+        ];
+        if (prompt is not null)
+        {
+            cms.Add(prompt);
+        }
 
         // Delegate execution to the internal executor implementation
         AgentRunOptions aro = new();

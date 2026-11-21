@@ -10,7 +10,6 @@ using System.Diagnostics;
 
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Agents;
-using SentinelCore.Orchestrations.Models;
 
 
 
@@ -98,6 +97,10 @@ public sealed partial class DirectAnswerExecutor : Executor
     {
         _reporter.ReportInfo($"[{Name}] Starting execution. Input type: {typeof(ChatMessage).Name}");
 
+        /*
+         * Need to change prompts and logic for spawning of tech agents.
+         * 
+         */
         try
         {
             if (input is null)
@@ -108,13 +111,7 @@ public sealed partial class DirectAnswerExecutor : Executor
                 return fallback;
             }
 
-            if (_agent.Name is not "TheCore")
-            {
-                _reporter.ReportError($"[{Name}] Agent is null.");
-                ChatMessage fallback = new(ChatRole.Assistant, "An internal error prevented me from providing a response.");
-                await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
-                return fallback;
-            }
+
 
             string prompt = ""!;
             if (string.IsNullOrWhiteSpace(prompt))
@@ -132,10 +129,12 @@ public sealed partial class DirectAnswerExecutor : Executor
                 return fallback;
             }
 
-            ChatMessages instructions = new();
-            instructions.AddSystemMessage(AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S);
-            instructions.AddSystemMessage("Using the mcp tools in your toolbelt answer the questions ask of you. Do not fabricate answers.");
-            instructions.AddUserMessage(prompt);
+            List<ChatMessage> instructions =
+            [
+                new(ChatRole.System, AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S),
+                new(ChatRole.System, "Using the mcp tools in your toolbelt answer the questions ask of you. Do not fabricate answers."),
+                new(ChatRole.User, prompt),
+            ];
 
 
             AgentResponse agResponse = await _agent.RunAsync(instructions, _session, null, cancellationToken).ConfigureAwait(false);

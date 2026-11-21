@@ -75,7 +75,7 @@ public sealed class McpConnectionFactory : IMcpConnectionFactory
             _ => throw new InvalidOperationException($"Unsupported MCP transport type: {definition.TransportType}.")
         };
         // TODO: Remove this hardcoded client options once dynamic configuration is implemented.
-        McpClientOptions clientOptions = new() { ClientInfo = new() { Name = "SentinelCore-MCP", Version = "1.0.3" }, InitializationTimeout = InitializationTimeout };
+        McpClientOptions clientOptions = new() { ClientInfo = new() { Name = "SentinelCore-MCP", Version = "1.0.12" }, InitializationTimeout = InitializationTimeout };
 
         McpClient client = await McpClient.CreateAsync(transport, clientOptions, _loggerFactory, cancellationToken).ConfigureAwait(false);
 

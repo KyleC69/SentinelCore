@@ -34,7 +34,6 @@ public sealed partial class ClassifierAgentExec : Executor
 {
     private readonly AIAgent _agent;
 
-    private ChatMessages _chatMessages = new();
     private readonly ISystemReporter _reporter;
 
 
@@ -156,10 +155,6 @@ public sealed partial class ClassifierAgentExec : Executor
 
         try
         {
-
-            ChatMessages msg = new();
-
-
 
             AgentResponse<InvestigationObjective> response = await _agent.RunAsync<InvestigationObjective>(messages, cancellationToken: cancellationToken).ConfigureAwait(false);
 

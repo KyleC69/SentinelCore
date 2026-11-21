@@ -252,32 +252,49 @@
                                VerticalAlignment="Center" />
                 </StackPanel>
 
-                <!-- Busy indicator in header -->
+                <!-- Mode selector + busy indicator -->
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Visibility="{Binding IsBusy,
-                                         Converter={StaticResource BoolToVisibility}}">
-                    <Ellipse Width="7" Height="7" Fill="{DynamicResource ChatAccent}" Margin="0,0,6,0">
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Style.Triggers>
-                                    <EventTrigger RoutedEvent="Loaded">
-                                        <BeginStoryboard>
-                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                 From="1" To="0.2" Duration="0:0:0.8" />
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </EventTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
-                    <TextBlock Text="Generating…"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Mode:"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"
                                Foreground="{DynamicResource ChatTextMuted}"
-                               FontSize="14"
-                               VerticalAlignment="Center" />
+                               FontSize="12" />
+                    <ComboBox x:Name="ModeComboBox"
+                              Width="180"
+                              Style="{StaticResource FormComboBoxStyle}"
+                              ItemsSource="{Binding ChatModes}"
+                              SelectedItem="{Binding ChatType, Mode=TwoWay}"
+                              AutomationProperties.Name="Mode" />
+
+                    <!-- Busy indicator in header -->
+                    <StackPanel Orientation="Horizontal"
+                                Margin="16,0,0,0"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsBusy,
+                                             Converter={StaticResource BoolToVisibility}}">
+                        <Ellipse Width="7" Height="7" Fill="{DynamicResource ChatAccent}" Margin="0,0,6,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Style.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="1" To="0.2" Duration="0:0:0.8" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="Generating…"
+                                   Foreground="{DynamicResource ChatTextMuted}"
+                                   FontSize="14"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>

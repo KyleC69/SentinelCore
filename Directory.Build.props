@@ -1,5 +1,11 @@
 <Project>
 
+	<!-- Solution-wide assembly version. Single source of truth for every SDK-style
+		 project: InformationalVersion, FileVersion and AssemblyVersion derive from it. -->
+	<PropertyGroup>
+		<Version>1.0.12</Version>
+	</PropertyGroup>
+
 	<!--<PropertyGroup>
 		<ArtifactsPath>F:\\Artifacts\\$(MSBuildProjectName)</ArtifactsPath>
 		<UseArtifactsOutput>true</UseArtifactsOutput>

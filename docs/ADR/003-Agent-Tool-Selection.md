@@ -65,20 +65,21 @@ selection fails at the call site rather than silently binding fewer tools than i
 #### 2.3 Backwards compatibility
 
 Every new overload takes `AgentToolSelection` in addition to the existing parameters; the five
-original overloads are unchanged. A `null` selection means **role default**: the factory binds the
-preset's role toolset from `AgentToolRoleToolsets`. (ADR-005 replaced the original "preset alone
-decides" rule, which depended on a `preset.UseTools` flag that no longer exists.) Existing call
-sites therefore keep their exact previous semantics for every preset whose role owns the same
-domains.
+original overloads are unchanged. A `null` selection means **preset default**: the factory binds the
+tool groups the preset declares in `AgentPresetDefinition.ToolGroups`. (ADR-005 replaced the original
+"preset alone decides" rule, which depended on a `preset.UseTools` flag that no longer exists, and
+ADR-006 then replaced ADR-005's role toolset with preset-declared groups.) Existing call sites
+therefore keep their exact previous semantics for every preset whose groups cover the same tools.
 
 #### 2.4 Resolution rules
 
 `ResolveTools` implements the following precedence:
 
-* `null` → the preset's role toolset (see ADR-005); empty when the role is tool-free.
+* `null` → the preset's declared tool groups (see ADR-006); empty when the preset declares none.
 * `None` → empty toolset.
-* `All` → the merged catalog.
-* `Named` → the resolved subset, in the requested order.
+* `All` → every tool carrying a registered `sc_<group>_` prefix; uncategorized tools are excluded.
+* `Named` → the resolved subset, in the requested order; unknown names are logged and skipped.
+* `Groups` → the union of tools claimed by the supplied groups' prefixes; an unknown group throws.
 
 The merged catalog (`BuildToolCatalog`) applies an asymmetric collision policy:
 
@@ -99,9 +100,9 @@ Local tools are contributed through DI as `AITool` services and injected into th
 | Tool | Source |
 | ---- | ------ |
 | `MsDocsMcpServerTool` | existing `AIFunction` implementation |
-| `local_case_create` | `AIFunctionFactory.Create` over `CaseEngineTools.CreateCase` |
-| `local_case_insert_report` | `AIFunctionFactory.Create` over `CaseEngineTools.InsertReport` |
-| `local_case_insert_pattern_summaries` | `AIFunctionFactory.Create` over `CaseEngineTools.InsertPatternSummaries` |
+| `sc_internal_case_create` | `AIFunctionFactory.Create` over `CaseEngineTools.CreateCase` |
+| `sc_internal_case_insert_report` | `AIFunctionFactory.Create` over `CaseEngineTools.InsertReport` |
+| `sc_internal_case_insert_pattern_summaries` | `AIFunctionFactory.Create` over `CaseEngineTools.InsertPatternSummaries` |
 
 Adding a local tool is therefore a one-line DI registration with no change to the factory. Note
 that `RagSearchTool`, `MicrosoftDocsSearchTool`, `MicrosoftDocsFetchTool` and
@@ -188,16 +189,19 @@ hole in place would have made the new API misleading.
 
 * `SentinelCore.Tests/AgentFactoryToolTests.cs` asserts observable behaviour through the
   `FakeChatClient`'s recorded `ChatOptions`, not through factory internals:
-  * a `null` selection binds the preset's role toolset and never the whole catalogue;
+  * a `null` selection binds the preset's declared tool groups and never the whole catalogue;
   * `None` binds zero tools;
-  * `All` binds both an MCP tool and a local tool;
+  * `All` binds every tool carrying a registered prefix and excludes uncategorized tools;
   * `FromNames` binds exactly one tool and resolves the name case-insensitively;
-  * an unknown name throws and names the missing tool;
+  * an unknown name logs a warning, is skipped, and construction still succeeds;
+  * an unknown group name throws and names the missing group;
+  * a group that claims no live tool yields an empty toolset without failing;
   * `ManagerAgent` with a non-empty toolset throws;
   * construction succeeds with an empty MCP catalog;
   * a call-site name and description reach the constructed agent;
-  * `FromNames` collapses duplicate names case-insensitively.
+  * `FromNames` and `FromGroups` collapse duplicates case-insensitively.
 * `dotnet build SentinelCore.slnx` must report zero errors.
-* Every workflow call site in `TheCoreWorkflow`, `CustomGroupWorkflow`, `ConcurrentGroupTeam`,
-  `TheCoreSwitchExec` and `SignalClassifierExecutor` states its toolset explicitly, so a future
-  reader can see which agent gets which tools without reading the factory.
+* Workflow call sites in `TheCoreWorkflow`, `CustomGroupWorkflow`, `ConcurrentGroupTeam`,
+  `TheCoreSwitchExec` and `SignalClassifierExecutor` pass an `AgentToolSelection` only where the
+  preset default is wrong for that agent. Everywhere else the preset's declared `ToolGroups` is the
+  statement of intent, so the assignment lives in one place rather than being repeated per call site.

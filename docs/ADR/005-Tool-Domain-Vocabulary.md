@@ -1,6 +1,6 @@
 ## Architecture Decision Record: Rule-Based Tool-Domain Vocabulary (ADR-005)
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-006](006-Tool-Group-Prefix-Scheme.md)
 **Date:** 2026-02-20
 **Architects:** [Agent/Copilot]
 **Impacted Components:** `SentinelCore.Orchestrations` (`Abstractions/`, `Agents/`, `Workflows/`, `Infrastructure/DI/`), `SentinelCore.UI` (`Services/`), `SentinelCore.Tests`

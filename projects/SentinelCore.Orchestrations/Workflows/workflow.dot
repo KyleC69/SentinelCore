@@ -1,0 +1,27 @@
+digraph Workflow {
+  rankdir=TD;
+  node [shape=box, style=filled, fillcolor=lightblue];
+  edge [color=black, arrowhead=vee];
+
+  "SafetyExecutor" [fillcolor=lightgreen, label="SafetyExecutor\n(Start)"];
+  "SafetyReviewExecutor" [label="SafetyReviewExecutor"];
+  "PatternCheckExecutor" [label="PatternCheckExecutor"];
+  "EscalatedExecutor" [label="EscalatedExecutor"];
+  "WhitelistExecutor" [label="WhitelistExecutor"];
+  "TheCoreSwitchExec" [label="TheCoreSwitchExec"];
+  "DirectAnswer" [label="DirectAnswer"];
+  "SignalClassifierExecutor" [label="SignalClassifierExecutor"];
+  "CreateNewCase" [label="CreateNewCase"];
+  "SubWorkflowExecutor" [label="SubWorkflowExecutor"];
+  "PersistEvidence" [label="PersistEvidence"];
+  "SafetyExecutor" -> "SafetyReviewExecutor" [style=dashed, label="conditional"];
+  "SafetyExecutor" -> "PatternCheckExecutor" [style=dashed, label="conditional"];
+  "SafetyReviewExecutor" -> "EscalatedExecutor";
+  "PatternCheckExecutor" -> "WhitelistExecutor";
+  "WhitelistExecutor" -> "TheCoreSwitchExec";
+  "TheCoreSwitchExec" -> "DirectAnswer" [style=dashed, label="conditional"];
+  "TheCoreSwitchExec" -> "SignalClassifierExecutor" [style=dashed, label="conditional"];
+  "SignalClassifierExecutor" -> "CreateNewCase";
+  "CreateNewCase" -> "SubWorkflowExecutor";
+  "SubWorkflowExecutor" -> "PersistEvidence";
+}

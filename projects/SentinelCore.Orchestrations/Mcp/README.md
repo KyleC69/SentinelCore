@@ -139,21 +139,25 @@ AIAgent agent = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, Age
 ### 5. Tool Assignment
 
 A server definition carries no per-agent assignment. Which agent receives a server's tools is decided at
-agent creation time through `AgentToolSelection` and the tool-domain vocabulary:
+agent creation time by the preset's declared tool groups, optionally overridden at the call site:
 
 ```csharp
-// Role toolset: the agent gets the domains its role owns.
-var worker = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, AgentToolSelection.FromRole(AgentPreset.WorkerAgent));
+// Preset default: the agent gets the tool groups its preset declares.
+var worker = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent);
 
-// Explicit domains: the agent gets only tools claimed by these rules.
-var narrow = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, AgentToolSelection.FromDomains(AgentToolDomainCatalog.Registry));
+// Group override: the agent gets only tools whose names carry this group's prefix.
+var narrow = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, AgentToolSelection.FromGroups(AgentToolGroupCatalog.Forensics.Name));
 
-// Debug catch-all: every tool from every loaded MCP server plus the local catalog.
+// Debug catch-all: every tool carrying a registered sc_<group>_ prefix. Uncategorized tools are excluded.
 var debug = await agentFactory.CreateAgentAsync(AgentPreset.WorkerAgent, AgentToolSelection.All);
 ```
 
-See [docs/ToolingComponent.md](../../../docs/ToolingComponent.md) for the domain vocabulary and
-[ADR-005](../../../docs/ADR/005-Tool-Domain-Vocabulary.md) for the rationale.
+Group membership is decided purely by the tool's name prefix (`sc_<groupprefix>_`), so a tool added or
+renamed on a server is picked up without an application change. A tool whose name matches no registered
+prefix is reported as uncategorized and is reachable only by explicit name.
+
+See [docs/ToolingComponent.md](../../../docs/ToolingComponent.md) for the group catalog and
+[ADR-006](../../../docs/ADR/006-Tool-Group-Prefix-Scheme.md) for the rationale.
 
 ### 6. React to Changes (UI / Orchestration)
 

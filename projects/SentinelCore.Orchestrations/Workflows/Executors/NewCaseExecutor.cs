@@ -12,7 +12,6 @@ using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.CaseFlow;
-using SentinelCore.Orchestrations.Models;
 
 
 
@@ -34,7 +33,6 @@ public sealed partial class NewCaseExecutor : Executor
 {
     private readonly ICaseFlowEngine _caseEng;
 
-    private ChatMessages _chatMessages = new();
     private readonly ISystemReporter _reporter;
 
 
@@ -121,7 +119,6 @@ public sealed partial class NewCaseExecutor : Executor
             string fallback = $"⚠️ An internal error occurred in {Name}: {ex.Message}";
             await context.YieldOutputAsync(fallback, cancellationToken).ConfigureAwait(false);
             _reporter.ReportInfo($"[{Name}] {fallback} due to error.");
-            _chatMessages.AddAssistantMessage(fallback);
         }
 
         return message;

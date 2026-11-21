@@ -1,8 +1,8 @@
-﻿---
+---
 title: "Pattern Lock"
 status: Active
 component: Architecture
-last_updated: 2026-09-10
+last_updated: 2026-11-20
 ---
 
 # SentinelCore Pattern Lock
@@ -29,6 +29,7 @@ Dependencies point **upward only**. A lower layer must never reference a higher 
 | `Agents/` | `Application` + `Contracts` + `Agents` subfolders |
 | `Orchestration/` | `Agents` + `Application` + `Infrastructure` |
 | `Infrastructure/DI/` | All layers (wiring) |
+| `Security/` | `Contracts/` only (module boundary; never references Orchestrations, UI/hosts, or persistence) |
 
 Forbidden `using` directives:
 
@@ -41,6 +42,9 @@ Domain → Orchestration           ❌
 CaseFlow → Agents                ❌
 CaseFlow → Orchestration        ❌
 Agents → Orchestration           ❌
+Security → CaseFlow             ❌
+Security → Orchestration        ❌
+Security → UI/Hosts             ❌
 ```
 
 ## PL-2: Namespace Convention
@@ -373,3 +377,39 @@ public sealed partial class MyExecutor : Executor
 // ❌ Drift: primary constructor
 public sealed partial class MyExecutor(ISystemReporter reporter) : Executor<ChatMessage, SignalHypothesis>("MyExecutor")
 ```
+
+## PL-10: Message Provenance & Quarantine
+
+**Status:** Locked · **Date:** 2026-11-20 · **Enforced by:** review + `SentinelCore.Tests/Security/`
+
+Every message that enters The Core through an approved pathway carries a provenance
+stamp (`MessageProvenance`) stored on `ChatMessage.AdditionalProperties` under the key
+`"provenance"` — the same stamping mechanism as ChatMode. See `docs/SecurityComponent.md`
+and ADR-008.
+
+### Rules
+
+1. **Sign at approved entry points only.** Stamping goes through
+   `ISentinelProvenanceService.Stamp(message, identifier)` with an identifier registered
+   in `ISentinelIdentityRegistry`. Ad-hoc signature construction outside the module is drift.
+2. **Validate before any model contact — at more than one point.** The workflow entry gate
+   (`ProvenanceGateExecutor`) runs the consuming `Validate` (consumes the nonce; detects
+   replay). Downstream points (`TheCoreSwitchExec` before the first agent call) run the
+   non-consuming `VerifyIntegrity`.
+3. **Fail closed.** Missing stamps, unknown identities, unavailable keys, expired
+   timestamps, invalid signatures, replayed nonces, and validation exceptions all reject
+   the message. A rejecting executor returns `null`, yields a user-visible rejection
+   notice, and its outgoing conditional edge filters `null`
+   (`AddEdge<T>(source, target, condition)`), so rejected messages dead-end and never
+   reach a downstream executor or a model.
+4. **Quarantine as-is, logged once.** Rejected messages go to
+   `IQuarantineStore.Quarantine` unchanged (no sanitization). The store is the single
+   source of quarantine logging (`ISystemReporter.ReportWarning`, message content
+   excluded) and raises `RecordQuarantined`; executors must NOT duplicate the quarantine
+   report.
+5. **Keys come from the process boundary.** The signing key is supplied by
+   `ISentinelKeyProvider` (default: the `SENTINEL_KEY` environment variable, read per
+   request). Never log key material; never cache it in static state.
+6. **Security module boundary.** `SentinelCoreSecurity` depends on `SentinelCore.Contracts`
+   only. Orchestrations, UI, and Tests may reference it; it must never reference
+   Orchestrations, UI/hosts, CaseFlowEngine, or persistence.

@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UnsupportedOSPlatform>linux;osx;</UnsupportedOSPlatform>
+		<SupportedOSPlatform>windows</SupportedOSPlatform>
+
+		<!-- Set up the NuGet package to be an MCP server -->
+		<PackAsTool>true</PackAsTool>
+		<PackageType>McpServer</PackageType>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+
+		<!-- Set up the MCP server to be a self-contained application that does not rely on a shared framework -->
+		<SelfContained>true</SelfContained>
+		<PublishSelfContained>true</PublishSelfContained>
+
+		<!-- Set up the MCP server to be a single file executable -->
+		<PublishSingleFile>true</PublishSingleFile>
+
+		<!-- Set recommended package metadata -->
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<AssemblyName>SentinelCoreMCP</AssemblyName>
+		<RootNamespace>SentinelCoreMCP</RootNamespace>
+		<PackageId>SentinelCoreMCP</PackageId>
+		<PackageVersion>1.0.12</PackageVersion>
+		<Version>1.0.12</Version>
+		<AssemblyVersion>1.0.12.0</AssemblyVersion>
+		<FileVersion>1.0.12.0</FileVersion>
+		<PackageTags>AI; MCP; server; stdio</PackageTags>
+		<Description>SentinelCoreMCP is a Windows security and configuration reconnaissance server implementing the Model Context Protocol (MCP). It must be used with Sentinel Core Platform</Description>
+		<Platforms>AnyCPU;x64</Platforms>
+		<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	</PropertyGroup>
+
+	<!-- Include additional files for browsing the MCP server. -->
+	<ItemGroup>
+		<None Include=".mcp\server.json" Pack="true" PackagePath="/.mcp/" />
+		<None Include="README.md" Pack="true" PackagePath="/" />
+	</ItemGroup>
+	<ItemGroup>
+	  <PackageReference Include="JetBrains.Annotations" />
+	  <PackageReference Include="Microsoft.Extensions.Hosting" />
+	  <PackageReference Include="ModelContextProtocol" />
+	  <PackageReference Include="System.Diagnostics.PerformanceCounter" />
+	  <PackageReference Include="System.DirectoryServices" />
+	  <PackageReference Include="System.DirectoryServices.AccountManagement" />
+	  <PackageReference Include="System.Management.Automation" />
+	  <PackageReference Include="System.Security.Cryptography.Pkcs" />
+	  <PackageReference Include="System.ServiceProcess.ServiceController" />
+	  <PackageReference Include="TaskScheduler" />
+	</ItemGroup>
+
+	
+
+
+	<Target Name="CopyBuildOutput" AfterTargets="Publish">
+		<Message Text="Copying build output..." Importance="High" />
+		<Copy SourceFiles="$(TargetDir)\SentinelCoreMCP.exe" DestinationFolder="F:\\Released" SkipUnchangedFiles="false" />
+		<Message Text="Copied files to F:\\Released" Importance="High" />
+
+	</Target>
+
+</Project>

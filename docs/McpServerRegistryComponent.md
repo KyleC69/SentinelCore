@@ -19,7 +19,7 @@ version: v1.0
 
 The MCP Server Registry lets end users register external **Model Context Protocol (MCP)** servers whose tools become available to Sentinel agents. Servers are managed from a WPF admin page (add/remove, start/stop, status monitoring).
 
-A server definition carries **no per-agent assignment**. Which tools an agent receives is decided at agent creation time through `AgentToolSelection` and the tool-domain vocabulary (see `ToolingComponent.md` and ADR-005). The registry's only job is to publish the tools; the factory decides who gets them.
+A server definition carries **no per-agent assignment**. Which tools an agent receives is decided at agent creation time by the preset's declared tool groups, optionally overridden through `AgentToolSelection` (see `ToolingComponent.md` and ADR-006). The registry's only job is to publish the tools; the factory decides who gets them.
 
 **Key Principle:** MCP tools flow through the same `AITool` pipeline as local domain tools. `McpClientTool` is wrapped as `McpToolTimeoutFunction` before registry publication so invocation timeout and structured failure behavior are consistent.
 
@@ -82,7 +82,7 @@ A server definition carries **no per-agent assignment**. Which tools an agent re
 | `McpServerTransportType` | `Stdio` or `Http` |
 | `McpOAuthSettings` | Client id, authorization/token endpoints, scopes |
 
-**Selection semantics:** the registry never filters tools by agent. `GetToolsFromCache()` returns every wrapped tool from every connected server, and `SentinelAgentFactory` narrows that set using the `AgentToolSelection` supplied at the call site — `None`, `All`, `Named` from `FromNames(...)`, or `Domains` from `FromDomains(...)`. `All` applies no filter at all, so any server loaded at startup contributes to it.
+**Selection semantics:** the registry never filters tools by agent. `GetToolsFromCache()` returns every wrapped tool from every connected server, and `SentinelAgentFactory` narrows that set using the preset's `ToolGroups` or the `AgentToolSelection` supplied at the call site — `None`, `All`, `Named` from `FromNames(...)`, or `Groups` from `FromGroups(...)`. `All` applies no group filter, so every server loaded at startup contributes to it, but tools whose names carry no registered `sc_<group>_` prefix are excluded.
 
 ---
 
@@ -117,17 +117,17 @@ foreach (AITool tool in _builtToolCache) catalog[tool.Name] = tool;
 foreach (AITool tool in _localTools) catalog[tool.Name] = tool;
 ```
 
-`ResolveTools(presetKind, toolSelection)` then narrows that catalog:
+`ResolveTools(preset, toolSelection)` then narrows that catalog:
 
 | Selection | Tools bound |
 | --------- | ----------- |
-| `null` | The role toolset for `presetKind` (`AgentToolRoleToolsets.For`), or none for a tool-free role |
+| `null` | The preset's own `ToolGroups`, resolved through `AgentToolGroupCatalog`; empty for a tool-free preset |
 | `None` | None |
-| `All` | The entire catalog — every MCP server loaded at startup plus every local tool, unfiltered |
-| `Named` (`FromNames(...)`) | Exactly the named tools; an unknown name throws `InvalidOperationException` (feature block) |
-| `Domains` (`FromDomains(...)`) | The union of tools claimed by the supplied domains' match rules |
+| `All` | Every tool whose name carries a registered `sc_<group>_` prefix, from every MCP server loaded at startup plus every local tool. Uncategorized tools are excluded |
+| `Named` (`FromNames(...)`) | Exactly the named tools; an unknown name logs a warning and is skipped so the agent still builds |
+| `Groups` (`FromGroups(...)`) | The union of tools claimed by the supplied groups' prefixes; an unknown group name throws `InvalidOperationException` |
 
-Because resolution is centralized in the factory, **every** agent built through `ISentinelAgentFactory` receives its toolset from the same vocabulary. Adding a tool to an MCP server requires no code change: domain rules match names by prefix and token, so new tools are claimed automatically. Anything unclaimed is logged by the factory; complete UI warning surfacing should not be assumed.
+Because resolution is centralized in the factory, **every** agent built through `ISentinelAgentFactory` receives its toolset from the same group catalog. Adding a tool to an MCP server requires no code change: membership is decided by the tool's `sc_<group>_` name prefix, so a new tool is claimed automatically. Anything unclaimed is logged by the factory and reported by the readiness gate; complete UI warning surfacing should not be assumed.
 
 ---
 
@@ -197,9 +197,9 @@ UI owns the lifecycle and nothing is auto-started behind the user's back.
 
 | Document | Description |
 | ---------- | ------------- |
-| `ToolingComponent.md` | Rule-based tool-domain vocabulary and role-based toolsets |
+| `ToolingComponent.md` | Prefix-based tool groups and preset-owned tool assignments |
 | `ADR/003-Agent-Tool-Selection.md` | Call-site toolset selection |
-| `ADR/005-Tool-Domain-Vocabulary.md` | Domains as match rules; readiness gate |
+| `ADR/006-Tool-Group-Prefix-Scheme.md` | Tool groups as name prefixes; readiness gate |
 | `OrchestrationComponent.md` | Agent construction pipeline |
 | `ContractsComponent.md` | Shared abstractions |
 | `user/ConfigurationAndCustomization.md` | Environment variable overrides |
