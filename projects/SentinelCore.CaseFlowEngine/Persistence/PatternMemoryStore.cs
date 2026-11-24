@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         PatternMemoryStore.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -208,12 +208,12 @@ public sealed class PatternMemoryStore : IPatternMemoryStore
     {
         return new()
         {
-            CaseId = e.CaseId,
-            PatternId = e.PatternMemoryId,
-            Summary = e.Summary!,
-            SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
-            SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
-            Timestamp = e.Timestamp
+                CaseId = e.CaseId,
+                PatternId = e.PatternMemoryId,
+                Summary = e.Summary!,
+                SignalEmbedding = e.SignalEmbedding?.Memory.ToArray(),
+                SummaryEmbedding = e.SummaryEmbedding?.Memory.ToArray(),
+                Timestamp = e.Timestamp
         };
     }
 }

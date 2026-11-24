@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         DirectAnswerExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -99,7 +99,7 @@ public sealed partial class DirectAnswerExecutor : Executor
 
         /*
          * Need to change prompts and logic for spawning of tech agents.
-         * 
+         *
          */
         try
         {
@@ -131,9 +131,9 @@ public sealed partial class DirectAnswerExecutor : Executor
 
             List<ChatMessage> instructions =
             [
-                new(ChatRole.System, AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S),
-                new(ChatRole.System, "Using the mcp tools in your toolbelt answer the questions ask of you. Do not fabricate answers."),
-                new(ChatRole.User, prompt),
+                    new(ChatRole.System, AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S),
+                    new(ChatRole.System, "Using the mcp tools in your toolbelt answer the questions ask of you. Do not fabricate answers."),
+                    new(ChatRole.User, prompt)
             ];
 
 

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         App.xaml.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -13,7 +13,6 @@ using System.Windows;
 using System.Windows.Threading;
 
 using Microsoft.Agents.AI;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -24,7 +23,6 @@ using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Trace;
 
-using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.CaseFlowEngine.Infrastructure.DependencyInjection;
 using SentinelCore.Contracts.Contracts;
@@ -61,6 +59,11 @@ public sealed partial class App
     private bool _hostStarted;
 
     /// <summary>
+    ///     Runtime SentinelCore settings used by host-level logging and tracing configuration.
+    /// </summary>
+    private SentinelCoreSettings _sentinelSettings = new();
+
+    /// <summary>
     ///     Shared cancellation token source that is cancelled when the application
     ///     begins shutting down (normal exit, unhandled exception, or OS session ending).
     ///     Services can observe <see cref="ShutdownToken" /> to cooperatively cancel work.
@@ -78,11 +81,6 @@ public sealed partial class App
     ///     Created during startup and disposed during shutdown.
     /// </summary>
     private TracerProvider? _tracerProvider;
-
-    /// <summary>
-    ///     Runtime SentinelCore settings used by host-level logging and tracing configuration.
-    /// </summary>
-    private SentinelCoreSettings _sentinelSettings = new();
 
     public IServiceProvider Services
     {
@@ -114,13 +112,13 @@ public sealed partial class App
         // without configuration are gated at the factory.
         SentinelCoreSettings sentinelSettings = new()
         {
-            SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
-            TraceEnabled = true,
-            ChatClientLoggingEnabled = false,
-            OpenTelemetryTracingEnabled = true,
-            OpenTelemetryLoggingEnabled = false,
-            TraceLogLevel = LogLevel.Trace,
-            OrchestrationType = OrchestrationType.TheCore
+                SqlConnectionString = Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty,
+                TraceEnabled = true,
+                ChatClientLoggingEnabled = false,
+                OpenTelemetryTracingEnabled = true,
+                OpenTelemetryLoggingEnabled = false,
+                TraceLogLevel = LogLevel.Trace,
+                OrchestrationType = OrchestrationType.TheCore
         };
 
         // Seed Model profile cards from persisted configuration document so the
@@ -142,9 +140,9 @@ public sealed partial class App
 
 
         // Case Flow Engine — optional module (PL-4/PL-5). The UI host opts in to the
-        // real EF Core-backed engine, overriding the null-object defaults registered
-        // by AddSentinelCore. Requires the DbContext factory registration below (PL-7).
-        services.AddCaseFlowEngine();
+        // real EF Core-backed engine; this overload also registers the DbContext factory
+        // it requires, so the host never references EF entity or context types.
+        services.AddCaseFlowEngine(Environment.GetEnvironmentVariable("SENTINEL_CORE") ?? string.Empty);
 
         // UI layer — services, ViewModels, Views, and navigation
         services.AddSentinelCoreUi();
@@ -158,15 +156,6 @@ public sealed partial class App
         // Configuration
         services.Configure<AppConfig>(context.Configuration.GetSection(nameof(AppConfig)));
 
-        // AddDbContextFactory registers BOTH IDbContextFactory<SentinelCoreDBContext> (singleton,
-        // required by CaseFlowEngine) and the DbContext itself (scoped, required by
-        // EvidenceStore/PatternMemoryStore/SignalRepository). AddDbContext alone would leave the
-        // factory unresolvable.
-        services.AddDbContextFactory<SentinelCoreDBContext>(options => { options.UseSqlServer(Environment.GetEnvironmentVariable("SENTINEL_CORE")); });
-        //   services.AddDbContextFactory<SentinelRAGDBContext>(options => { options.UseSqlServer(Environment.GetEnvironmentVariable("REMOTEKB")); });
-
-
-
     }
 
 
@@ -177,26 +166,23 @@ public sealed partial class App
 
 
     /// <summary>
-    /// Creates a <see cref="TracerProvider" /> for the application, enabling OpenTelemetry tracing.
+    ///     Creates a <see cref="TracerProvider" /> for the application, enabling OpenTelemetry tracing.
     /// </summary>
     /// <returns>
-    /// A configured <see cref="TracerProvider" /> instance that exports telemetry data.
+    ///     A configured <see cref="TracerProvider" /> instance that exports telemetry data.
     /// </returns>
     /// <remarks>
-    /// This method sets up tracing for the application by subscribing to the <see cref="SentinelCoreDiagnostics.ActivitySourceName" />
-    /// and <see cref="OpenTelemetryAgent.DefaultSourceName" />. These subscriptions ensure that spans generated by the agent,
-    /// workflows, and other components are captured and exported. The tracer provider also includes a console exporter for
-    /// telemetry visualization.
+    ///     This method sets up tracing for the application by subscribing to the
+    ///     <see cref="SentinelCoreDiagnostics.ActivitySourceName" />
+    ///     and <see cref="OpenTelemetryAgent.DefaultSourceName" />. These subscriptions ensure that spans generated by the
+    ///     agent,
+    ///     workflows, and other components are captured and exported. The tracer provider also includes a console exporter for
+    ///     telemetry visualization.
     /// </remarks>
 #pragma warning disable MAAI001 // OpenTelemetryAgent.DefaultSourceName is experimental but is the only public accessor for the name.
     private static TracerProvider CreateTracerProvider()
     {
-        return Sdk.CreateTracerProviderBuilder()
-                .SetResourceBuilder(SentinelCoreDiagnostics.CreateResourceBuilder())
-                .AddSource(SentinelCoreDiagnostics.ActivitySourceName)
-                .AddSource(OpenTelemetryAgent.DefaultSourceName)
-                .AddConsoleExporter()
-                .Build();
+        return Sdk.CreateTracerProviderBuilder().SetResourceBuilder(SentinelCoreDiagnostics.CreateResourceBuilder()).AddSource(SentinelCoreDiagnostics.ActivitySourceName).AddSource(OpenTelemetryAgent.DefaultSourceName).AddConsoleExporter().Build();
     }
 #pragma warning restore MAAI001
 

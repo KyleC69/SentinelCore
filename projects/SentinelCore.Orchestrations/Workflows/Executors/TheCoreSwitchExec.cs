@@ -1,19 +1,24 @@
+// Solution: SentinelCore
+// Project:   SentinelCore.Orchestrations
+// File:         TheCoreSwitchExec.cs
+// Author: Kyle L. Crowder
+// Build Num:  112101
+
+
+
 using System.Text.Json;
 
+using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 using SentinelCore.Orchestrations.Models;
+using SentinelCore.Security;
+using SentinelCore.Security.Quarantine;
 
 
 
 
 namespace SentinelCore.Orchestrations.Workflows.Executors;
-
-using SentinelCore.Contracts.Abstractions;
-
-using SentinelCore.Security;
-
-using SentinelCore.Security.Quarantine;
 
 
 
@@ -22,11 +27,26 @@ using SentinelCore.Security.Quarantine;
 [YieldsOutput(typeof(ChatMessage))] // ← MANDATORY: declare output type for compile-time validation
 public sealed partial class TheCoreSwitchExec : Executor
 {
-    private readonly ISystemReporter _reporter;
-    private AIAgent _switchAgent;
     private readonly ISentinelAgentFactory _factory;
     private readonly ISentinelProvenanceService _provenanceService;
     private readonly IQuarantineStore _quarantineStore;
+    private readonly ISystemReporter _reporter;
+    private AIAgent _switchAgent;
+
+
+
+    private const string SWITCH_INSTRUCTIONS = """
+                                               You are a highly skilled linguist and you are operating in Sentinel Core Forensic Investigation Platform.
+                                               Your job is to classify the input signal you will receive and decide if it is general chat conversation does not require investigation.
+                                               You will respond with true, it is general chat conversation - OR - false, it is not chat and requires investigation.
+                                               Apply the following rules when making your decision:
+
+                                               Investigation inputs:
+                                               Log entries from any source.
+                                               Input resembling a system alert or error message.
+                                               Any input from a user that suggests an investigation or analysis is needed.
+                                               Input requesting any information from the 
+                                               """;
 
 
 
@@ -62,6 +82,21 @@ public sealed partial class TheCoreSwitchExec : Executor
     ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
     /// </summary>
     public string Name { get; } = "TheCoreSwitchExec";
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a condition for routing messages based on the expected spam detection result.
+    /// </summary>
+    /// <param name="expectedResult">The expected spam detection result</param>
+    /// <returns>A function that evaluates whether a message meets the expected result</returns>
+    private static Func<object?, bool> GetCondition(bool expectedResult) =>
+            detectionResult => detectionResult is CoreSwitchDecision result && result.IsDirect == expectedResult;
 
 
 
@@ -121,7 +156,7 @@ public sealed partial class TheCoreSwitchExec : Executor
                 await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message);
 
 
-                var response = await this._switchAgent.RunAsync<CoreSwitchDecision>(message, null, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var response = await _switchAgent.RunAsync<CoreSwitchDecision>(message, cancellationToken: cancellationToken).ConfigureAwait(false);
                 CoreSwitchDecision? detectionResult = JsonSerializer.Deserialize<CoreSwitchDecision>(response.Text);
 
 
@@ -159,6 +194,33 @@ public sealed partial class TheCoreSwitchExec : Executor
         return new CoreSwitchDecision(false, false);
     }
 
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Core processing logic for the executor.
+    ///     Replace this method with your actual domain logic.
+    /// </summary>
+    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
+    {
+        // Example placeholder logic:
+        await Task.Delay(10, cancellationToken).ConfigureAwait(false);
+
+        // Always return a valid result instance.
+        return message;
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Defense-in-depth integrity re-check performed immediately before the switch
     ///     agent (the first model contact) runs. Quarantines the message unchanged when
@@ -190,74 +252,4 @@ public sealed partial class TheCoreSwitchExec : Executor
         _reporter.ReportError($"[{Name}] Message quarantined at model boundary. Reason: {integrity.Failure}. Detail: {integrity.Detail}");
         return false;
     }
-
-
-
-
-
-
-
-
-    private const string SWITCH_INSTRUCTIONS = """
-                                               You are a highly skilled linguist and you are operating in Sentinel Core Forensic Investigation Platform.
-                                               Your job is to classify the input signal you will receive and decide if it is general chat conversation does not require investigation.
-                                               You will respond with true, it is general chat conversation - OR - false, it is not chat and requires investigation.
-                                               Apply the following rules when making your decision:
-                                               
-                                               Investigation inputs:
-                                               Log entries from any source.
-                                               Input resembling a system alert or error message.
-                                               Any input from a user that suggests an investigation or analysis is needed.
-                                               Input requesting any information from the 
-                                               """;
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Core processing logic for the executor.
-    ///     Replace this method with your actual domain logic.
-    /// </summary>
-    private async ValueTask<ChatMessage> ProcessMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
-    {
-        // Example placeholder logic:
-        await Task.Delay(10, cancellationToken).ConfigureAwait(false);
-
-        // Always return a valid result instance.
-        return message;
-    }
-
-
-
-
-
-
-
-
-
-
-    /// <summary>
-    /// Creates a condition for routing messages based on the expected spam detection result.
-    /// </summary>
-    /// <param name="expectedResult">The expected spam detection result</param>
-    /// <returns>A function that evaluates whether a message meets the expected result</returns>
-    private static Func<object?, bool> GetCondition(bool expectedResult) =>
-            detectionResult => detectionResult is CoreSwitchDecision result && result.IsDirect == expectedResult;
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

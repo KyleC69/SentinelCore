@@ -2,14 +2,13 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CaseEngineTools.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
 using System.ComponentModel;
 
 using SentinelCore.CaseFlowEngine.CaseFlow;
-using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.CaseFlow;
 
 
@@ -62,7 +61,7 @@ public class CaseEngineTools
 
         try
         {
-            int caseId = _engine.CreateCase(rawSignal.ToEntity());
+            int caseId = _engine.CreateCase(rawSignal);
 
 
             return ToolResult.Ok(caseId.ToString());

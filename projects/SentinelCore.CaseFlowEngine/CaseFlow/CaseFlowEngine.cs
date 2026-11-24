@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseFlowEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.CaseFlowEngine.Infrastructure;
+using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Contracts.Cfe;
 
@@ -41,7 +42,13 @@ public interface ICaseFlowEngine
 
 
 
-    int CreateCase(SignalEntity signalEntity, CancellationToken cancellationToken = default);
+    /// <summary>
+    ///     Creates an open case for the supplied signal contract object.
+    /// </summary>
+    /// <param name="signal">The signal that triggered the case.</param>
+    /// <param name="cancellationToken">A token intended to cancel the operation; it is not observed.</param>
+    /// <returns>The identifier of the created case.</returns>
+    int CreateCase(Signal signal, CancellationToken cancellationToken = default);
 
 
 
@@ -56,7 +63,7 @@ public interface ICaseFlowEngine
     /// <param name="signal">The signal that triggered the case.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created case identifier.</returns>
-    Task<int> CreateCaseAsync(SignalEntity signal, CancellationToken cancellationToken = default);
+    Task<int> CreateCaseAsync(Signal signal, CancellationToken cancellationToken = default);
 
 
 
@@ -79,7 +86,13 @@ public interface ICaseFlowEngine
 
 
 
-    Task<CaseEntity?> GetCaseByIdAsync(int caseId, CancellationToken cancellationToken = default);
+    /// <summary>
+    ///     Retrieves a case by its unique identifier.
+    /// </summary>
+    /// <param name="caseId">The case identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The matching case contract object, or <c>null</c> if not found.</returns>
+    Task<Case?> GetCaseByIdAsync(int caseId, CancellationToken cancellationToken = default);
 
 
 
@@ -135,9 +148,9 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     private static readonly Dictionary<int, HashSet<int>> AllowedTransitions = new()
     {
-        [(int)CaseStatus.Open] = new() { (int)CaseStatus.Analysis, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Analysis] = new() { (int)CaseStatus.Investigation, (int)CaseStatus.AwaitingInput, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Investigation] = new()
+            [(int)CaseStatus.Open] = new() { (int)CaseStatus.Analysis, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Analysis] = new() { (int)CaseStatus.Investigation, (int)CaseStatus.AwaitingInput, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Investigation] = new()
             {
                     (int)CaseStatus.Review,
                     (int)CaseStatus.AwaitingInput,
@@ -146,7 +159,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
                     (int)CaseStatus.Alerted,
                     (int)CaseStatus.Cancelled
             },
-        [(int)CaseStatus.Review] = new()
+            [(int)CaseStatus.Review] = new()
             {
                     (int)CaseStatus.Complete,
                     (int)CaseStatus.Investigation,
@@ -154,8 +167,8 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
                     (int)CaseStatus.Escalated,
                     (int)CaseStatus.Cancelled
             },
-        [(int)CaseStatus.AwaitingInput] = new() { (int)CaseStatus.Investigation, (int)CaseStatus.Escalated, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Escalated] = new()
+            [(int)CaseStatus.AwaitingInput] = new() { (int)CaseStatus.Investigation, (int)CaseStatus.Escalated, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Escalated] = new()
             {
                     (int)CaseStatus.Investigation,
                     (int)CaseStatus.AwaitingInput,
@@ -163,11 +176,11 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
                     (int)CaseStatus.Alerted,
                     (int)CaseStatus.Cancelled
             },
-        [(int)CaseStatus.Alerted] = new() { (int)CaseStatus.Escalated, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Blocked] = new() { (int)CaseStatus.AwaitingInput, (int)CaseStatus.Escalated, (int)CaseStatus.Alerted, (int)CaseStatus.Cancelled },
-        [(int)CaseStatus.Complete] = new() { (int)CaseStatus.Closed },
-        [(int)CaseStatus.Cancelled] = new() { (int)CaseStatus.Closed },
-        [(int)CaseStatus.Closed] = new()
+            [(int)CaseStatus.Alerted] = new() { (int)CaseStatus.Escalated, (int)CaseStatus.Blocked, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Blocked] = new() { (int)CaseStatus.AwaitingInput, (int)CaseStatus.Escalated, (int)CaseStatus.Alerted, (int)CaseStatus.Cancelled },
+            [(int)CaseStatus.Complete] = new() { (int)CaseStatus.Closed },
+            [(int)CaseStatus.Cancelled] = new() { (int)CaseStatus.Closed },
+            [(int)CaseStatus.Closed] = new()
     };
 
 
@@ -257,26 +270,29 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// <summary>
     ///     Creates an open case for the specified signal and returns the case identifier.
     /// </summary>
-    /// <param name="signalEntity">The signal to associate with the new case.</param>
+    /// <param name="signal">The signal contract object to associate with the new case.</param>
     /// <param name="cancellationToken">A token intended to cancel the operation; it is not observed.</param>
     /// <returns>The identifier of the created case.</returns>
     /// <exception cref="CaseFlowException">The case could not be created.</exception>
-    public int CreateCase(SignalEntity signalEntity, CancellationToken cancellationToken = default)
+    public int CreateCase(Signal signal, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(signalEntity);
+        ArgumentNullException.ThrowIfNull(signal);
 
         try
         {
+            // Boundary conversion: the contract DTO is mapped to its EF entity here so no
+            // persistence type ever crosses the module boundary.
+            SignalEntity signalEntity = signal.ToEntity();
+
             using SentinelCoreDBContext db = _dbContextFactory.CreateDbContext();
             using IDbContextTransaction transaction = db.Database.BeginTransaction();
 
             //Save the signal first so we can grab this records identifier and use it in the case.
-            SignalEntity ent = signalEntity;
-            db.SignalEntities!.Add(ent);
+            db.SignalEntities!.Add(signalEntity);
             db.SaveChanges();
 
             //Now the case.
-            CaseEntity caseent = new() { SignalEntity = ent, CaseStatus = CaseStatus.Open };
+            CaseEntity caseent = new() { SignalEntity = signalEntity, CaseStatus = CaseStatus.Open };
             db.CaseEntities!.Add(caseent);
             db.SaveChanges();
 
@@ -312,14 +328,17 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// <exception cref="ArgumentNullException">
     ///     Thrown when the <paramref name="signal" /> is <c>null</c>.
     /// </exception>
-    public async Task<int> CreateCaseAsync(SignalEntity signal, CancellationToken cancellationToken = default)
+    public async Task<int> CreateCaseAsync(Signal signal, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(signal);
 
         try
         {
+            // Boundary conversion: map the contract DTO to its EF entity before persistence.
+            SignalEntity signalEntity = signal.ToEntity();
+
             // Single atomic SaveChanges: signal + case + FK link, all in one round-trip
-            return await CreateCaseWithSignalAsync(signal, cancellationToken).ConfigureAwait(false);
+            return await CreateCaseWithSignalAsync(signalEntity, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -360,8 +379,8 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     /// </summary>
     /// <param name="caseId">The case identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The matching case, or <c>null</c> if not found.</returns>
-    public async Task<CaseEntity?> GetCaseByIdAsync(int caseId, CancellationToken cancellationToken = default)
+    /// <returns>The matching case contract object, or <c>null</c> if not found.</returns>
+    public async Task<Case?> GetCaseByIdAsync(int caseId, CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(caseId);
 
@@ -370,7 +389,8 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
             await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
             CaseEntity? entity = await db.CaseEntities!.FirstOrDefaultAsync(c => c.Id == caseId, cancellationToken).ConfigureAwait(false);
 
-            return entity;
+            // Boundary conversion: the EF entity never leaves this project.
+            return entity?.ToContract();
         }
         catch (OperationCanceledException)
         {
@@ -455,20 +475,17 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
     ///     Creates a new case record associated with the provided signal and saves it to the database.
     /// </summary>
     /// <param name="signal">
-    ///     The signal associated with the case. This parameter must not be <c>null</c>.
-    /// </param>
-    /// <param name="caseRecord">
-    ///     The case record to be created. This parameter must not be <c>null</c>.
+    ///     The signal entity associated with the case. This parameter must not be <c>null</c>.
     /// </param>
     /// <param name="cancellationToken">
     ///     A token to monitor for cancellation requests. The default value is <see cref="CancellationToken.None" />.
     /// </param>
     /// <returns>
     ///     A <see cref="Task{TResult}" /> representing the asynchronous operation, with the result being the unique identifier
-    ///     (<see cref="Guid" />) of the created case.
+    ///     of the created case.
     /// </returns>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown if <paramref name="signal" /> or <paramref name="caseRecord" /> is <c>null</c>.
+    ///     Thrown if <paramref name="signal" /> is <c>null</c>.
     /// </exception>
     /// <remarks>
     ///     This method ensures that the signal and case records are saved atomically within a single database transaction.
@@ -491,7 +508,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
 
             db.Attach(parent);
             //TEST
-            // Save the parent with the child attached 
+            // Save the parent with the child attached
             db.CaseEntities!.Add(parent);
 
 
@@ -505,47 +522,6 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
         catch (Exception ex)
         {
             throw new CaseFlowException("Failed to create case with signal.", ex);
-        }
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Retrieves the oldest case from the queue.
-    /// </summary>
-    /// <param name="cancellationToken">The token to monitor for cancellation.</param>
-    /// <returns>The oldest case in the queue.</returns>
-    /// <exception cref="KeyNotFoundException"></exception>
-    /// <exception cref="CaseFlowException">
-    ///     The case could not be retrieved. A <see cref="KeyNotFoundException" /> is wrapped as the inner exception when the
-    ///     queue contains no cases.
-    /// </exception>
-    private async Task<CaseEntity> PullNewCase(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-            CaseEntity? entity = await db.CaseEntities!.OrderBy(c => c.CreatedAt).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
-
-            if (entity is null)
-            {
-                throw new KeyNotFoundException("No cases available to pull from the queue.");
-            }
-
-            return entity;
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            throw new CaseFlowException("Failed to pull a new case from the queue.", ex);
         }
     }
 

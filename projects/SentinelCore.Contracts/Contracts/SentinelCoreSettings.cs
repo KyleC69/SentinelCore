@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         SentinelCoreSettings.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -23,6 +23,21 @@ namespace SentinelCore.Contracts.Contracts;
 /// </summary>
 public sealed class SentinelCoreSettings
 {
+
+    /// <summary>
+    ///     Enables the diagnostic <see cref="IChatClient" /> logging wrapper in <c>SentinelAgentFactory</c>.
+    /// </summary>
+    public bool ChatClientLoggingEnabled { get; set; } = true;
+
+    /// <summary>
+    ///     Enables OpenTelemetry log export in the host logging pipeline.
+    /// </summary>
+    public bool OpenTelemetryLoggingEnabled { get; set; } = true;
+
+    /// <summary>
+    ///     Enables OpenTelemetry tracing on agents through <c>UseOpenTelemetry</c>.
+    /// </summary>
+    public bool OpenTelemetryTracingEnabled { get; set; } = true;
 
 
 
@@ -54,21 +69,6 @@ public sealed class SentinelCoreSettings
     public string? SqlConnectionString { get; set; }
 
     public IDictionary<ModelTier, ModelProfile> TierModels { get; set; } = new Dictionary<ModelTier, ModelProfile>();
-
-    /// <summary>
-    ///     Enables the diagnostic <see cref="IChatClient" /> logging wrapper in <c>SentinelAgentFactory</c>.
-    /// </summary>
-    public bool ChatClientLoggingEnabled { get; set; } = true;
-
-    /// <summary>
-    ///     Enables OpenTelemetry tracing on agents through <c>UseOpenTelemetry</c>.
-    /// </summary>
-    public bool OpenTelemetryTracingEnabled { get; set; } = true;
-
-    /// <summary>
-    ///     Enables OpenTelemetry log export in the host logging pipeline.
-    /// </summary>
-    public bool OpenTelemetryLoggingEnabled { get; set; } = true;
 
     /// <summary>
     ///     Legacy flag preserved for compatibility. Maps to <see cref="ChatClientLoggingEnabled" />.

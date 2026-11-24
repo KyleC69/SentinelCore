@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentToolGroupCatalog.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -31,74 +31,6 @@ namespace SentinelCore.Orchestrations.Abstractions;
 /// </remarks>
 public static class AgentToolGroupCatalog
 {
-    /// <summary>Gets the group for case lifecycle and workflow surfaces owned by the Sentinel Core MCP server.</summary>
-    public static AgentToolGroup CaseWork { get; } = new("CaseWork", "Case lifecycle, evidence intake and workflow surfaces owned by the Sentinel Core MCP server.");
-
-    /// <summary>Gets the group for command and script execution surfaces.</summary>
-    public static AgentToolGroup Execution { get; } = new("Execution", "Execution surfaces, interpreters and scripting hosts.");
-
-    /// <summary>Gets the group for autostart and persistence mechanisms.</summary>
-    public static AgentToolGroup Persistence { get; } = new("Persistence", "Autostart locations, scheduled tasks, services and other persistence mechanisms.");
-
-    /// <summary>Gets the group for core forensic evidence surfaces.</summary>
-    public static AgentToolGroup Forensics { get; } = new("Forensics", "Files, registry, event logs, processes and services that carry primary evidence.");
-
-    /// <summary>Gets the group for memory, module and inter-process inspection.</summary>
-    public static AgentToolGroup MemoryInspection { get; } = new("MemoryInspection", "Memory, loaded modules and inter-process channels.");
-
-    /// <summary>Gets the group for accounts, logons, sessions and tokens.</summary>
-    public static AgentToolGroup Identity { get; } = new("Identity", "Accounts, logons, sessions, access tokens and elevation state.");
-
-    /// <summary>Gets the group for network state and perimeter configuration.</summary>
-    public static AgentToolGroup NetworkAccess { get; } = new("NetworkAccess", "Connections, name resolution and perimeter configuration.");
-
-    /// <summary>Gets the group for certificates, signatures and volume encryption.</summary>
-    public static AgentToolGroup Cryptography { get; } = new("Cryptography", "Certificates, signature verification and volume encryption.");
-
-    /// <summary>Gets the group for protective controls and their effectiveness.</summary>
-    public static AgentToolGroup Hardening { get; } = new("Hardening", "Defensive controls, security policy and permission enforcement.");
-
-    /// <summary>Gets the group for policy, auditing and machine configuration.</summary>
-    public static AgentToolGroup Configuration { get; } = new("Configuration", "Group policy, auditing, instrumentation and machine configuration.");
-
-    /// <summary>Gets the group for devices, drivers, volumes and installed packages.</summary>
-    public static AgentToolGroup Hardware { get; } = new("Hardware", "Devices, drivers, volumes and installed packages.");
-
-    /// <summary>Gets the group for general machine state and diagnostics.</summary>
-    public static AgentToolGroup Utilities { get; } = new("Utilities", "General machine state, search index and installed software inventory.");
-
-    /// <summary>Gets the group for external web research.</summary>
-    public static AgentToolGroup WebResearch { get; } = new("WebResearch", "Web search and page retrieval used to obtain external context.");
-
-    /// <summary>Gets the group for Microsoft Learn documentation search and retrieval.</summary>
-    public static AgentToolGroup Knowledge { get; } = new("Knowledge", "Microsoft Learn documentation search and retrieval.");
-
-    /// <summary>Gets the group for in-process Sentinel Core tools that are not hosted by an MCP server.</summary>
-    public static AgentToolGroup Internal { get; } = new("Internal", "In-process Sentinel Core tools hosted by this application rather than an MCP server.");
-
-
-
-
-
-    /// <summary>
-    ///     Gets every tool group known to the platform, in declaration order.
-    /// </summary>
-    public static IReadOnlyList<AgentToolGroup> All { get; } =
-    [
-            CaseWork, Execution, Persistence, Forensics, MemoryInspection, Identity, NetworkAccess,
-            Cryptography, Hardening, Configuration, Hardware, Utilities, WebResearch, Knowledge, Internal
-    ];
-
-
-
-
-
-    /// <summary>
-    ///     Gets the names of every registered tool group.
-    /// </summary>
-    public static IReadOnlyList<string> Names { get; } = [.. All.Select(group => group.Name)];
-
-
 
 
 
@@ -132,6 +64,110 @@ public static class AgentToolGroupCatalog
         }
     }
 
+    // The groups are fields declared above 'All' and 'Names' because static initializers run in declaration
+    // order: an initializer reading a static member declared later in this type observes its default value
+    // (null), which crashed type initialization. The public properties below expose these instances and carry
+    // no initializers of their own, so their declaration order is irrelevant.
+    private static readonly AgentToolGroup _caseWork = new("CaseWork", "Case lifecycle, evidence intake and workflow surfaces owned by the Sentinel Core MCP server.");
+    private static readonly AgentToolGroup _execution = new("Execution", "Execution surfaces, interpreters and scripting hosts.");
+    private static readonly AgentToolGroup _persistence = new("Persistence", "Autostart locations, scheduled tasks, services and other persistence mechanisms.");
+    private static readonly AgentToolGroup _forensics = new("Forensics", "Files, registry, event logs, processes and services that carry primary evidence.");
+    private static readonly AgentToolGroup _memoryInspection = new("MemoryInspection", "Memory, loaded modules and inter-process channels.");
+    private static readonly AgentToolGroup _identity = new("Identity", "Accounts, logons, sessions, access tokens and elevation state.");
+    private static readonly AgentToolGroup _networkAccess = new("NetworkAccess", "Connections, name resolution and perimeter configuration.");
+    private static readonly AgentToolGroup _cryptography = new("Cryptography", "Certificates, signature verification and volume encryption.");
+    private static readonly AgentToolGroup _hardening = new("Hardening", "Defensive controls, security policy and permission enforcement.");
+    private static readonly AgentToolGroup _configuration = new("Configuration", "Group policy, auditing, instrumentation and machine configuration.");
+    private static readonly AgentToolGroup _hardware = new("Hardware", "Devices, drivers, volumes and installed packages.");
+    private static readonly AgentToolGroup _utilities = new("Utilities", "General machine state, search index and installed software inventory.");
+    private static readonly AgentToolGroup _webResearch = new("WebResearch", "Web search and page retrieval used to obtain external context.");
+    private static readonly AgentToolGroup _knowledge = new("Knowledge", "Microsoft Learn documentation search and retrieval.");
+    private static readonly AgentToolGroup _internal = new("Internal", "In-process Sentinel Core tools hosted by this application rather than an MCP server.");
+
+    /// <summary>
+    ///     Gets every tool group known to the platform, in declaration order.
+    /// </summary>
+    public static IReadOnlyList<AgentToolGroup> All { get; } =
+    [
+            _caseWork, _execution, _persistence, _forensics, _memoryInspection, _identity, _networkAccess,
+            _cryptography, _hardening, _configuration, _hardware, _utilities, _webResearch, _knowledge, _internal
+    ];
+
+    /// <summary>Gets the group for case lifecycle and workflow surfaces owned by the Sentinel Core MCP server.</summary>
+    public static AgentToolGroup CaseWork => _caseWork;
+
+    /// <summary>Gets the group for policy, auditing and machine configuration.</summary>
+    public static AgentToolGroup Configuration => _configuration;
+
+    /// <summary>Gets the group for certificates, signatures and volume encryption.</summary>
+    public static AgentToolGroup Cryptography => _cryptography;
+
+    /// <summary>Gets the group for command and script execution surfaces.</summary>
+    public static AgentToolGroup Execution => _execution;
+
+    /// <summary>Gets the group for core forensic evidence surfaces.</summary>
+    public static AgentToolGroup Forensics => _forensics;
+
+    /// <summary>Gets the group for protective controls and their effectiveness.</summary>
+    public static AgentToolGroup Hardening => _hardening;
+
+    /// <summary>Gets the group for devices, drivers, volumes and installed packages.</summary>
+    public static AgentToolGroup Hardware => _hardware;
+
+    /// <summary>Gets the group for accounts, logons, sessions and tokens.</summary>
+    public static AgentToolGroup Identity => _identity;
+
+    /// <summary>Gets the group for in-process Sentinel Core tools that are not hosted by an MCP server.</summary>
+    public static AgentToolGroup Internal => _internal;
+
+    /// <summary>Gets the group for Microsoft Learn documentation search and retrieval.</summary>
+    public static AgentToolGroup Knowledge => _knowledge;
+
+    /// <summary>Gets the group for memory, module and inter-process inspection.</summary>
+    public static AgentToolGroup MemoryInspection => _memoryInspection;
+
+
+
+    /// <summary>
+    ///     Gets the names of every registered tool group.
+    /// </summary>
+    public static IReadOnlyList<string> Names { get; } = [.. All.Select(group => group.Name)];
+
+    /// <summary>Gets the group for network state and perimeter configuration.</summary>
+    public static AgentToolGroup NetworkAccess => _networkAccess;
+
+    /// <summary>Gets the group for autostart and persistence mechanisms.</summary>
+    public static AgentToolGroup Persistence => _persistence;
+
+    /// <summary>Gets the group for general machine state and diagnostics.</summary>
+    public static AgentToolGroup Utilities => _utilities;
+
+    /// <summary>Gets the group for external web research.</summary>
+    public static AgentToolGroup WebResearch => _webResearch;
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Selects the tools that some registered group claims.
+    /// </summary>
+    /// <param name="toolNames">The live catalogue of tool names to filter.</param>
+    /// <returns>The claimed tool names in catalogue order.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolNames" /> is <c>null</c>.</exception>
+    public static IReadOnlyList<string> Claimed(IEnumerable<string> toolNames)
+    {
+        ArgumentNullException.ThrowIfNull(toolNames);
+
+        return [.. toolNames.Where(toolName => All.Any(group => group.Claims(toolName)))];
+    }
+
+
+
+
 
 
 
@@ -143,10 +179,11 @@ public static class AgentToolGroupCatalog
     /// <returns>The matching group, or <c>null</c> when no group carries that name.</returns>
     public static AgentToolGroup? Find(string? name)
     {
-        return string.IsNullOrWhiteSpace(name)
-                ? null
-                : All.FirstOrDefault(group => string.Equals(group.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+        return string.IsNullOrWhiteSpace(name) ? null : All.FirstOrDefault(group => string.Equals(group.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
     }
+
+
+
 
 
 
@@ -167,8 +204,7 @@ public static class AgentToolGroupCatalog
 
         if (group is null)
         {
-            throw new InvalidOperationException(
-                    $"The tool group '{name}' is not registered. Valid group names are: {string.Join(", ", Names)}.");
+            throw new InvalidOperationException($"The tool group '{name}' is not registered. Valid group names are: {string.Join(", ", Names)}.");
         }
 
         return group;
@@ -178,18 +214,48 @@ public static class AgentToolGroupCatalog
 
 
 
+
+
+
     /// <summary>
-    ///     Selects the tools that some registered group claims.
+    ///     Determines whether the supplied tool name is suspect: it starts with
+    ///     <see cref="AgentToolGroup.NamePrefixRoot" /> but no registered group claims it.
     /// </summary>
-    /// <param name="toolNames">The live catalogue of tool names to filter.</param>
-    /// <returns>The claimed tool names in catalogue order.</returns>
+    /// <param name="toolName">The tool name to test.</param>
+    /// <returns><c>true</c> when the name carries the root but matches no group; otherwise <c>false</c>.</returns>
+    public static bool IsSuspect(string? toolName)
+    {
+        return !string.IsNullOrWhiteSpace(toolName) && toolName.StartsWith(AgentToolGroup.NamePrefixRoot, StringComparison.OrdinalIgnoreCase) && !All.Any(group => group.Claims(toolName));
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Selects the tools that carry the <see cref="AgentToolGroup.NamePrefixRoot" /> root but that no registered
+    ///     group claims.
+    /// </summary>
+    /// <param name="toolNames">The live catalogue of tool names to test.</param>
+    /// <returns>The suspect tool names in catalogue order.</returns>
+    /// <remarks>
+    ///     A suspect tool looks like a Sentinel Core tool but matches no group, which is either a naming defect or a
+    ///     malicious tool added to the MCP server. Suspect tools are excluded from every grouping and from resolution
+    ///     by name, so they are unreachable; reporting is an error, not a warning.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolNames" /> is <c>null</c>.</exception>
-    public static IReadOnlyList<string> Claimed(IEnumerable<string> toolNames)
+    public static IReadOnlyList<string> Suspect(IEnumerable<string> toolNames)
     {
         ArgumentNullException.ThrowIfNull(toolNames);
 
-        return [.. toolNames.Where(toolName => All.Any(group => group.Claims(toolName)))];
+        return [.. toolNames.Where(IsSuspect)];
     }
+
+
+
 
 
 
@@ -219,43 +285,5 @@ public static class AgentToolGroupCatalog
         ArgumentNullException.ThrowIfNull(toolNames);
 
         return [.. toolNames.Where(toolName => !IsSuspect(toolName) && !All.Any(group => group.Claims(toolName)))];
-    }
-
-
-
-
-    /// <summary>
-    ///     Selects the tools that carry the <see cref="AgentToolGroup.NamePrefixRoot" /> root but that no registered
-    ///     group claims.
-    /// </summary>
-    /// <param name="toolNames">The live catalogue of tool names to test.</param>
-    /// <returns>The suspect tool names in catalogue order.</returns>
-    /// <remarks>
-    ///     A suspect tool looks like a Sentinel Core tool but matches no group, which is either a naming defect or a
-    ///     malicious tool added to the MCP server. Suspect tools are excluded from every grouping and from resolution
-    ///     by name, so they are unreachable; reporting is an error, not a warning.
-    /// </remarks>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolNames" /> is <c>null</c>.</exception>
-    public static IReadOnlyList<string> Suspect(IEnumerable<string> toolNames)
-    {
-        ArgumentNullException.ThrowIfNull(toolNames);
-
-        return [.. toolNames.Where(IsSuspect)];
-    }
-
-
-
-
-    /// <summary>
-    ///     Determines whether the supplied tool name is suspect: it starts with
-    ///     <see cref="AgentToolGroup.NamePrefixRoot" /> but no registered group claims it.
-    /// </summary>
-    /// <param name="toolName">The tool name to test.</param>
-    /// <returns><c>true</c> when the name carries the root but matches no group; otherwise <c>false</c>.</returns>
-    public static bool IsSuspect(string? toolName)
-    {
-        return !string.IsNullOrWhiteSpace(toolName)
-                && toolName.StartsWith(AgentToolGroup.NamePrefixRoot, StringComparison.OrdinalIgnoreCase)
-                && !All.Any(group => group.Claims(toolName));
     }
 }

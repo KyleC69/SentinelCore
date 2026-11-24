@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -13,10 +13,8 @@ using SentinelCore.Contracts.Contracts;
 using SentinelCore.Contracts.Mcp;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
-using SentinelCore.Orchestrations.Agents.Core.Tools;
 using SentinelCore.Orchestrations.Agents.Middleware;
 using SentinelCore.Orchestrations.Infrastructure.Diagnostics;
-using SentinelCore.Orchestrations.Models;
 
 
 
@@ -52,10 +50,10 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     private readonly Dictionary<string, string> _builtAgents = new(StringComparer.Ordinal);
     private readonly Lock _builtAgentsLock = new();
     private IReadOnlyList<AITool> _builtToolCache;
-    private readonly IReadOnlyList<AITool> _localTools;
     private readonly IChatClientFactory _chatClientFactory;
     private readonly bool _enableChatClientLogging;
     private readonly bool _enableOpenTelemetryTracing;
+    private readonly IReadOnlyList<AITool> _localTools;
     private readonly ILogger<SentinelAgentFactory> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -81,7 +79,10 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
     /// <param name="patternMatcher">The pattern matcher used by the Core agent's pattern-memory context provider.</param>
     /// <param name="loggerFactory">The logger factory used by client-level and pattern-memory logging.</param>
     /// <param name="registry">The MCP server registry for managing MCP server instances.</param>
-    /// <param name="localTools">The in-process tools registered in dependency injection that agents can bind alongside MCP-server tools.</param>
+    /// <param name="localTools">
+    ///     The in-process tools registered in dependency injection that agents can bind alongside
+    ///     MCP-server tools.
+    /// </param>
     /// <param name="settings">Runtime SentinelCore settings that control logging and telemetry switches.</param>
     /// <exception cref="ArgumentNullException">Thrown when any required dependency is <c>null</c>.</exception>
     public SentinelAgentFactory(IChatClientFactory chatClientFactory, IModelResolver modelResolver, IPatternMatcher patternMatcher, ILoggerFactory loggerFactory, IMcpServerRegistry registry, IEnumerable<AITool> localTools, SentinelCoreSettings settings)
@@ -227,6 +228,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+
     /// <summary>
     ///     Creates an agent from the preset with an explicit tool selection overriding the preset's tool groups.
     /// </summary>
@@ -240,6 +242,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         return await CreateAgentCoreAsync(presetName, preset, null, toolSelection, null, cancellationToken).ConfigureAwait(false);
     }
+
 
 
 
@@ -270,6 +273,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+
     /// <summary>
     ///     Creates an agent from the preset with an explicit name, description and tool selection.
     /// </summary>
@@ -293,6 +297,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
 
+
     /// <summary>
     ///     Creates an agent from the preset with an explicit name, description, tool selection and task instructions.
     /// </summary>
@@ -309,6 +314,30 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
         preset.Description = agentDescription;
 
         return await CreateAgentCoreAsync(presetName, preset, taskInstructions, toolSelection, null, CancellationToken.None).ConfigureAwait(false);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Refreshes the tool cache by querying the MCP server registry for the latest tools.
+    ///     This should be called when the MCP server registry changes (e.g., after servers are started).
+    /// </summary>
+    /// <remarks>
+    ///     The refresh logs the merged tool count and names, and reports uncategorized and suspect tools so that the
+    ///     naming-scheme conformance of the live catalogue is always visible after a change.
+    /// </remarks>
+    public void RefreshToolCache()
+    {
+        _builtToolCache = _registry.GetToolsFromCache();
+
+        List<string> catalogNames = [.. _builtToolCache.Select(tool => tool.Name), .. _localTools.Select(tool => tool.Name)];
+        _logger.LogInformation("Tool cache refreshed: {ToolCount} tool(s) available: {ToolNames}", catalogNames.Count, string.Join(", ", catalogNames));
+        ReportNonConformingTools(catalogNames);
     }
 
 
@@ -376,189 +405,39 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         ChatOptions chatOptions = new()
         {
-            ConversationId = Guid.NewGuid().ToString("N"),
-            Instructions = instructions,
-            Temperature = preset.ModelProfile?.Temperature,
-            MaxOutputTokens = preset.ModelProfile?.MaxOutputTokens ?? 45000,
-            TopP = preset.ModelProfile?.TopP ?? .10f,
-            TopK = preset.ModelProfile?.TopK ?? 30,
-            Seed = 69,
-            ModelId = preset.ModelProfile?.ModelId,
-            AllowMultipleToolCalls = true,
-            ToolMode = ChatToolMode.Auto,
-            Tools = [.. tools],
-            ResponseFormat = chatResponseFormat
+                ConversationId = Guid.NewGuid().ToString("N"),
+                Instructions = instructions,
+                Temperature = preset.ModelProfile?.Temperature,
+                MaxOutputTokens = preset.ModelProfile?.MaxOutputTokens ?? 45000,
+                TopP = preset.ModelProfile?.TopP ?? .10f,
+                TopK = preset.ModelProfile?.TopK ?? 30,
+                Seed = 69,
+                ModelId = preset.ModelProfile?.ModelId,
+                AllowMultipleToolCalls = true,
+                ToolMode = ChatToolMode.Auto,
+                Tools = [.. tools],
+                ResponseFormat = chatResponseFormat
         };
 
 
         return new(chatClient, new ChatClientAgentOptions
         {
-            Id = preset.AgentId,
-            Name = preset.AgentName,
-            Description = preset.Description,
-            ChatOptions = chatOptions,
-            AIContextProviders = preset.UseContextEnrichers ? contextProviders : null,
-            UseProvidedChatClientAsIs = false,
-            AllowConcurrentInvocation = false,
-            ClearOnChatHistoryProviderConflict = false,
-            WarnOnChatHistoryProviderConflict = false,
-            ThrowOnChatHistoryProviderConflict = false,
-            RequirePerServiceCallChatHistoryPersistence = false,
-            EnableMessageInjection = false,
-            DisableApprovalNotRequiredFunctionBypassing = false,
-            DisableApprovalResponseBinding = false,
-            ChatHistoryProvider = null
+                Id = preset.AgentId,
+                Name = preset.AgentName,
+                Description = preset.Description,
+                ChatOptions = chatOptions,
+                AIContextProviders = preset.UseContextEnrichers ? contextProviders : null,
+                UseProvidedChatClientAsIs = false,
+                AllowConcurrentInvocation = false,
+                ClearOnChatHistoryProviderConflict = false,
+                WarnOnChatHistoryProviderConflict = false,
+                ThrowOnChatHistoryProviderConflict = false,
+                RequirePerServiceCallChatHistoryPersistence = false,
+                EnableMessageInjection = false,
+                DisableApprovalNotRequiredFunctionBypassing = false,
+                DisableApprovalResponseBinding = false,
+                ChatHistoryProvider = null
         });
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Shared implementation for creating an <see cref="AIAgent" /> from a preset definition.
-    ///     Handles model resolution, chat client construction with logging, toolset resolution, and optional context providers.
-    /// </summary>
-    /// <param name="presetKind">The preset enum that identifies the agent's role, used for role invariants.</param>
-    /// <param name="preset">The preset definition resolved from <paramref name="presetKind" />; name and description may already be overridden by the call site.</param>
-    /// <param name="taskInstructions">Task-specific instructions appended to the preset instructions; may be <c>null</c>.</param>
-    /// <param name="toolSelection">The call-site tool selection, or <c>null</c> to bind the preset's default tool groups.</param>
-    /// <param name="forJsonSchema">The JSON response format to enforce, or <c>null</c> for free-form text.</param>
-    /// <param name="token">A token to cancel the construction.</param>
-    /// <returns>The constructed agent.</returns>
-    private async Task<AIAgent> CreateAgentCoreAsync(AgentPreset presetKind, AgentPresetDefinition preset, string? taskInstructions, AgentToolSelection? toolSelection, ChatResponseFormat? forJsonSchema, CancellationToken token = default)
-    {
-        ArgumentNullException.ThrowIfNull(preset);
-
-        // Resolve the appropriate model profile based on the preset's tier
-        ModelProfile? model = _modelResolver.ResolveByTier(preset.Tier);
-        preset.ModelProfile = model;
-        Throw.IfNull(model, $"Unable to resolve a model for preset '{preset.Tier}'.");
-
-
-
-        // Build the base chat client and wrap with logging middleware
-        IChatClient chatclient = _chatClientFactory.CreateChatClient(model);
-
-
-        // Prepare context providers when the preset requests any enrichers.
-        List<AIContextProvider?> providers = null!;
-        if (preset.UseContextEnrichers || preset.UsePatternMemory || preset.UseRagSearch)
-        {
-            providers = [];
-            AddPresetContextProviders(preset, providers);
-        }
-
-
-        _logger.LogInformation(
-                "Creating agent '{AgentName}' from preset {PresetKind} with tool selection {ToolSelection}.",
-                preset.AgentName,
-                presetKind,
-                toolSelection?.ToString() ?? "preset default");
-
-        AIAgent builtAgent;
-        if (_enableChatClientLogging)
-        {
-            // =====  USE ONLY FOR TESTING AGENT BEHAVIOR, NOT FOR PRODUCTION LOGGING =====
-            IChatClient loggingClient = chatclient.AsBuilder().UseLogging(_loggerFactory).Build();
-            // Build and cast to the public interface type.
-            builtAgent = BuildChatClientAgent(presetKind, preset, loggingClient, toolSelection, forJsonSchema, taskInstructions, providers);
-        }
-        else
-        {
-            // Build and cast to the public interface type.
-            builtAgent = BuildChatClientAgent(presetKind, preset, chatclient, toolSelection, forJsonSchema, taskInstructions, providers);
-        }
-
-
-
-        if (_enableOpenTelemetryTracing)
-        {
-            builtAgent = builtAgent.AsBuilder().UseOpenTelemetry(SentinelCoreDiagnostics.ActivitySourceName, cfg => cfg.EnableSensitiveData = SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled).Build();
-        }
-
-
-        _logger.LogInformation("Agent '{AgentName}' created successfully.", preset.AgentName);
-        return builtAgent;
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    private (string, string) RegisterUniqueWorkerAgent(string agentId, string agentName)
-    {
-        ArgumentNullException.ThrowIfNull(agentId);
-        ArgumentNullException.ThrowIfNull(agentName);
-
-        lock (_builtAgentsLock)
-        {
-            int suffix = 1;
-
-
-            do
-            {
-                agentId = $"{agentId}{suffix}";
-                agentName = $"{agentName}{suffix}";
-                suffix++;
-            } while (_builtAgents.ContainsKey(agentId) || _builtAgents.ContainsValue(agentName));
-
-            _builtAgents.Add(agentId, agentName);
-            return (agentId, agentName);
-        }
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Resolves the tools that are bound to an agent for the supplied preset and selection.
-    /// </summary>
-    /// <param name="presetKind">The preset enum that identifies the agent's role, used for role invariants.</param>
-    /// <param name="preset">The preset whose default tool groups apply when no selection is supplied.</param>
-    /// <param name="toolSelection">The call-site tool selection, or <c>null</c> to bind the preset's default tool groups.</param>
-    /// <returns>The tools to bind to the agent. Never <c>null</c>; possibly empty.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the selection kind is not supported.</exception>
-    private IReadOnlyList<AITool> ResolveTools(AgentPreset presetKind, AgentPresetDefinition preset, AgentToolSelection? toolSelection)
-    {
-        ArgumentNullException.ThrowIfNull(preset);
-
-        if (toolSelection is null)
-        {
-            // No selection passed: the preset decides the toolset. An empty group list binds nothing silently,
-            // which is how tool-free roles such as the Manager are expressed.
-            IReadOnlyList<string> presetGroups = preset.ToolGroups;
-
-            return presetGroups.Count == 0 ? [] : ResolveGroupTools(presetGroups);
-        }
-
-        return toolSelection.Kind switch
-        {
-            AgentToolSelectionKind.None => [],
-            AgentToolSelectionKind.All => ResolveAllTools(),
-            AgentToolSelectionKind.Named => ResolveNamedTools(toolSelection.ToolNames),
-            AgentToolSelectionKind.Groups => ResolveGroupTools(toolSelection.Groups),
-            _ => throw new InvalidOperationException($"Unsupported tool selection kind '{toolSelection.Kind}'.")
-        };
     }
 
 
@@ -609,53 +488,175 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
-    ///     Resolves an explicit list of tool names against the merged MCP and local tool catalog.
+    ///     Shared implementation for creating an <see cref="AIAgent" /> from a preset definition.
+    ///     Handles model resolution, chat client construction with logging, toolset resolution, and optional context
+    ///     providers.
     /// </summary>
-    /// <param name="toolNames">The case-insensitive tool names requested by the call site.</param>
-    /// <returns>The resolved tools in the requested order, skipping tools that cannot be bound.</returns>
-    /// <remarks>
-    ///     <para>
-    ///         An unknown name is logged as a warning and skipped rather than thrown: name-based resolution is a
-    ///         development convenience and a missing name must not abort agent construction.
-    ///     </para>
-    ///     <para>
-    ///         A suspect name — it carries the <c>sc_</c> root but no registered group claims it — is logged as an
-    ///         error with maximum detail and is never bound: it is either a naming defect or a malicious tool, and
-    ///         suspect tools are unreachable by design.
-    ///     </para>
-    ///     <para>
-    ///         An uncategorized name — foreign to the naming convention — is bound when explicitly requested so the
-    ///         call site decides whether to use it.
-    ///     </para>
-    /// </remarks>
-    private IReadOnlyList<AITool> ResolveNamedTools(IReadOnlyList<string> toolNames)
+    /// <param name="presetKind">The preset enum that identifies the agent's role, used for role invariants.</param>
+    /// <param name="preset">
+    ///     The preset definition resolved from <paramref name="presetKind" />; name and description may
+    ///     already be overridden by the call site.
+    /// </param>
+    /// <param name="taskInstructions">Task-specific instructions appended to the preset instructions; may be <c>null</c>.</param>
+    /// <param name="toolSelection">The call-site tool selection, or <c>null</c> to bind the preset's default tool groups.</param>
+    /// <param name="forJsonSchema">The JSON response format to enforce, or <c>null</c> for free-form text.</param>
+    /// <param name="token">A token to cancel the construction.</param>
+    /// <returns>The constructed agent.</returns>
+    private async Task<AIAgent> CreateAgentCoreAsync(AgentPreset presetKind, AgentPresetDefinition preset, string? taskInstructions, AgentToolSelection? toolSelection, ChatResponseFormat? forJsonSchema, CancellationToken token = default)
     {
-        Dictionary<string, AITool> catalog = BuildToolCatalog();
-        List<AITool> resolved = new(toolNames.Count);
+        ArgumentNullException.ThrowIfNull(preset);
 
-        foreach (string toolName in toolNames)
+        // Resolve the appropriate model profile based on the preset's tier
+        ModelProfile? model = _modelResolver.ResolveByTier(preset.Tier);
+        preset.ModelProfile = model;
+        Throw.IfNull(model, $"Unable to resolve a model for preset '{preset.Tier}'.");
+
+
+
+        // Build the base chat client and wrap with logging middleware
+        IChatClient chatclient = _chatClientFactory.CreateChatClient(model);
+
+
+        // Prepare context providers when the preset requests any enrichers.
+        List<AIContextProvider?> providers = null!;
+        if (preset.UseContextEnrichers || preset.UsePatternMemory || preset.UseRagSearch)
         {
-            if (!catalog.TryGetValue(toolName, out AITool? tool))
-            {
-                string available = string.Join(", ", catalog.Keys.Order(StringComparer.OrdinalIgnoreCase));
-                _logger.LogWarning("The requested tool '{ToolName}' is not registered in the MCP or local tool catalog and is skipped. Available tools: {AvailableTools}.", toolName, available);
-                continue;
-            }
-
-            if (AgentToolGroupCatalog.IsSuspect(tool.Name))
-            {
-                _logger.LogError(
-                        "Refusing to bind suspect tool '{ToolName}': the name carries the '{PrefixRoot}' root but no registered tool group claims it. The tool may be misnamed on the MCP server or malicious. Suspect tools are excluded from every grouping and from resolution by name, so they are unreachable. Registered groups: {RegisteredGroups}.",
-                        tool.Name,
-                        AgentToolGroup.NamePrefixRoot,
-                        string.Join(", ", AgentToolGroupCatalog.Names));
-                continue;
-            }
-
-            resolved.Add(tool);
+            providers = [];
+            AddPresetContextProviders(preset, providers);
         }
 
-        return resolved;
+
+        _logger.LogInformation("Creating agent '{AgentName}' from preset {PresetKind} with tool selection {ToolSelection}.", preset.AgentName, presetKind, toolSelection?.ToString() ?? "preset default");
+
+        AIAgent builtAgent;
+        if (_enableChatClientLogging)
+        {
+            // =====  USE ONLY FOR TESTING AGENT BEHAVIOR, NOT FOR PRODUCTION LOGGING =====
+            IChatClient loggingClient = chatclient.AsBuilder().UseLogging(_loggerFactory).Build();
+            // Build and cast to the public interface type.
+            builtAgent = BuildChatClientAgent(presetKind, preset, loggingClient, toolSelection, forJsonSchema, taskInstructions, providers);
+        }
+        else
+        {
+            // Build and cast to the public interface type.
+            builtAgent = BuildChatClientAgent(presetKind, preset, chatclient, toolSelection, forJsonSchema, taskInstructions, providers);
+        }
+
+
+
+        if (_enableOpenTelemetryTracing)
+        {
+            builtAgent = builtAgent.AsBuilder().UseOpenTelemetry(SentinelCoreDiagnostics.ActivitySourceName, cfg => cfg.EnableSensitiveData = SentinelCoreDiagnostics.IsSensitiveDataCaptureEnabled).Build();
+        }
+
+
+        _logger.LogInformation("Agent '{AgentName}' created successfully.", preset.AgentName);
+        return builtAgent;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Enforces PL-3: the Manager agent must never be given a toolset.
+    /// </summary>
+    /// <param name="presetKind">The preset enum that identifies the agent's role.</param>
+    /// <param name="tools">The tools that were resolved for the agent.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the Manager preset is given a non-empty toolset.</exception>
+    /// <remarks>
+    ///     The preset already declares no tool groups for the Manager; this guard catches a call site that overrides
+    ///     the preset with a non-empty selection. Enforced both by the preset and by this factory guard, per the
+    ///     tooling contract.
+    /// </remarks>
+    private static void EnsureManagerHasNoTools(AgentPreset presetKind, IReadOnlyList<AITool> tools)
+    {
+        if (presetKind == AgentPreset.ManagerAgent && tools.Count > 0)
+        {
+            throw new InvalidOperationException("PL-3 forbids tools on the Manager agent. The Manager only coordinates the magnetic orchestration workflow and must never reason or call tools.");
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Handles a change notification from the MCP server registry by refreshing the tool cache.
+    /// </summary>
+    private void OnToolCacheChanged()
+    {
+        RefreshToolCache();
+    }
+
+
+
+
+
+
+
+
+    private (string, string) RegisterUniqueWorkerAgent(string agentId, string agentName)
+    {
+        ArgumentNullException.ThrowIfNull(agentId);
+        ArgumentNullException.ThrowIfNull(agentName);
+
+        lock (_builtAgentsLock)
+        {
+            int suffix = 1;
+
+
+            do
+            {
+                agentId = $"{agentId}{suffix}";
+                agentName = $"{agentName}{suffix}";
+                suffix++;
+            } while (_builtAgents.ContainsKey(agentId) || _builtAgents.ContainsValue(agentName));
+
+            _builtAgents.Add(agentId, agentName);
+            return (agentId, agentName);
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Reports catalogue tools that do not conform to the tool group naming scheme so the condition is visible
+    ///     instead of silently changing reachability.
+    /// </summary>
+    /// <param name="toolNames">The live catalogue of tool names to test.</param>
+    /// <remarks>
+    ///     Uncategorized tools (foreign to the naming convention) are a warning and stay reachable by explicit name.
+    ///     Suspect tools (they carry the <c>sc_</c> root but no registered group claims them) are an error with as
+    ///     much detail as possible: the condition may be a typo, but it may also indicate a malicious tool added to
+    ///     the MCP server, and suspect tools are excluded from every grouping and from resolution by name.
+    /// </remarks>
+    private void ReportNonConformingTools(IEnumerable<string> toolNames)
+    {
+        IReadOnlyList<string> uncategorized = AgentToolGroupCatalog.Uncategorized(toolNames);
+
+        if (uncategorized.Count > 0)
+        {
+            _logger.LogWarning("{Count} tool(s) carry no registered tool group prefix: {Tools}. They are excluded from every grouping and remain reachable by explicit name only.", uncategorized.Count, string.Join(", ", uncategorized));
+        }
+
+        IReadOnlyList<string> suspect = AgentToolGroupCatalog.Suspect(toolNames);
+
+        if (suspect.Count > 0)
+        {
+            _logger.LogError("{Count} suspect tool(s) carry the '{PrefixRoot}' root but no registered tool group claims them: {Tools}. They may be misnamed on the MCP server or malicious. Suspect tools are excluded from every grouping and from resolution by name, so they are unreachable. Registered groups: {RegisteredGroups}.", suspect.Count, AgentToolGroup.NamePrefixRoot, string.Join(", ", suspect), string.Join(", ", AgentToolGroupCatalog.Names));
+        }
     }
 
 
@@ -687,6 +688,7 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
         return [.. claimed.Order(StringComparer.OrdinalIgnoreCase).Select(toolName => catalog[toolName])];
     }
+
 
 
 
@@ -748,36 +750,49 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
-    ///     Reports catalogue tools that do not conform to the tool group naming scheme so the condition is visible
-    ///     instead of silently changing reachability.
+    ///     Resolves an explicit list of tool names against the merged MCP and local tool catalog.
     /// </summary>
-    /// <param name="toolNames">The live catalogue of tool names to test.</param>
+    /// <param name="toolNames">The case-insensitive tool names requested by the call site.</param>
+    /// <returns>The resolved tools in the requested order, skipping tools that cannot be bound.</returns>
     /// <remarks>
-    ///     Uncategorized tools (foreign to the naming convention) are a warning and stay reachable by explicit name.
-    ///     Suspect tools (they carry the <c>sc_</c> root but no registered group claims them) are an error with as
-    ///     much detail as possible: the condition may be a typo, but it may also indicate a malicious tool added to
-    ///     the MCP server, and suspect tools are excluded from every grouping and from resolution by name.
+    ///     <para>
+    ///         An unknown name is logged as a warning and skipped rather than thrown: name-based resolution is a
+    ///         development convenience and a missing name must not abort agent construction.
+    ///     </para>
+    ///     <para>
+    ///         A suspect name — it carries the <c>sc_</c> root but no registered group claims it — is logged as an
+    ///         error with maximum detail and is never bound: it is either a naming defect or a malicious tool, and
+    ///         suspect tools are unreachable by design.
+    ///     </para>
+    ///     <para>
+    ///         An uncategorized name — foreign to the naming convention — is bound when explicitly requested so the
+    ///         call site decides whether to use it.
+    ///     </para>
     /// </remarks>
-    private void ReportNonConformingTools(IEnumerable<string> toolNames)
+    private IReadOnlyList<AITool> ResolveNamedTools(IReadOnlyList<string> toolNames)
     {
-        IReadOnlyList<string> uncategorized = AgentToolGroupCatalog.Uncategorized(toolNames);
+        Dictionary<string, AITool> catalog = BuildToolCatalog();
+        List<AITool> resolved = new(toolNames.Count);
 
-        if (uncategorized.Count > 0)
+        foreach (string toolName in toolNames)
         {
-            _logger.LogWarning("{Count} tool(s) carry no registered tool group prefix: {Tools}. They are excluded from every grouping and remain reachable by explicit name only.", uncategorized.Count, string.Join(", ", uncategorized));
+            if (!catalog.TryGetValue(toolName, out AITool? tool))
+            {
+                string available = string.Join(", ", catalog.Keys.Order(StringComparer.OrdinalIgnoreCase));
+                _logger.LogWarning("The requested tool '{ToolName}' is not registered in the MCP or local tool catalog and is skipped. Available tools: {AvailableTools}.", toolName, available);
+                continue;
+            }
+
+            if (AgentToolGroupCatalog.IsSuspect(tool.Name))
+            {
+                _logger.LogError("Refusing to bind suspect tool '{ToolName}': the name carries the '{PrefixRoot}' root but no registered tool group claims it. The tool may be misnamed on the MCP server or malicious. Suspect tools are excluded from every grouping and from resolution by name, so they are unreachable. Registered groups: {RegisteredGroups}.", tool.Name, AgentToolGroup.NamePrefixRoot, string.Join(", ", AgentToolGroupCatalog.Names));
+                continue;
+            }
+
+            resolved.Add(tool);
         }
 
-        IReadOnlyList<string> suspect = AgentToolGroupCatalog.Suspect(toolNames);
-
-        if (suspect.Count > 0)
-        {
-            _logger.LogError(
-                    "{Count} suspect tool(s) carry the '{PrefixRoot}' root but no registered tool group claims them: {Tools}. They may be misnamed on the MCP server or malicious. Suspect tools are excluded from every grouping and from resolution by name, so they are unreachable. Registered groups: {RegisteredGroups}.",
-                    suspect.Count,
-                    AgentToolGroup.NamePrefixRoot,
-                    string.Join(", ", suspect),
-                    string.Join(", ", AgentToolGroupCatalog.Names));
-        }
+        return resolved;
     }
 
 
@@ -788,68 +803,33 @@ public sealed class SentinelAgentFactory : ISentinelAgentFactory
 
 
     /// <summary>
-    ///     Enforces PL-3: the Manager agent must never be given a toolset.
+    ///     Resolves the tools that are bound to an agent for the supplied preset and selection.
     /// </summary>
-    /// <param name="presetKind">The preset enum that identifies the agent's role.</param>
-    /// <param name="tools">The tools that were resolved for the agent.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the Manager preset is given a non-empty toolset.</exception>
-    /// <remarks>
-    ///     The preset already declares no tool groups for the Manager; this guard catches a call site that overrides
-    ///     the preset with a non-empty selection. Enforced both by the preset and by this factory guard, per the
-    ///     tooling contract.
-    /// </remarks>
-    private static void EnsureManagerHasNoTools(AgentPreset presetKind, IReadOnlyList<AITool> tools)
+    /// <param name="presetKind">The preset enum that identifies the agent's role, used for role invariants.</param>
+    /// <param name="preset">The preset whose default tool groups apply when no selection is supplied.</param>
+    /// <param name="toolSelection">The call-site tool selection, or <c>null</c> to bind the preset's default tool groups.</param>
+    /// <returns>The tools to bind to the agent. Never <c>null</c>; possibly empty.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the selection kind is not supported.</exception>
+    private IReadOnlyList<AITool> ResolveTools(AgentPreset presetKind, AgentPresetDefinition preset, AgentToolSelection? toolSelection)
     {
-        if (presetKind == AgentPreset.ManagerAgent && tools.Count > 0)
+        ArgumentNullException.ThrowIfNull(preset);
+
+        if (toolSelection is null)
         {
-            throw new InvalidOperationException("PL-3 forbids tools on the Manager agent. The Manager only coordinates the magnetic orchestration workflow and must never reason or call tools.");
+            // No selection passed: the preset decides the toolset. An empty group list binds nothing silently,
+            // which is how tool-free roles such as the Manager are expressed.
+            IReadOnlyList<string> presetGroups = preset.ToolGroups;
+
+            return presetGroups.Count == 0 ? [] : ResolveGroupTools(presetGroups);
         }
+
+        return toolSelection.Kind switch
+        {
+                AgentToolSelectionKind.None => [],
+                AgentToolSelectionKind.All => ResolveAllTools(),
+                AgentToolSelectionKind.Named => ResolveNamedTools(toolSelection.ToolNames),
+                AgentToolSelectionKind.Groups => ResolveGroupTools(toolSelection.Groups),
+                _ => throw new InvalidOperationException($"Unsupported tool selection kind '{toolSelection.Kind}'.")
+        };
     }
-
-
-
-
-
-
-    /// <summary>
-    ///     Handles a change notification from the MCP server registry by refreshing the tool cache.
-    /// </summary>
-    private void OnToolCacheChanged()
-    {
-        RefreshToolCache();
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Refreshes the tool cache by querying the MCP server registry for the latest tools.
-    ///     This should be called when the MCP server registry changes (e.g., after servers are started).
-    /// </summary>
-    /// <remarks>
-    ///     The refresh logs the merged tool count and names, and reports uncategorized and suspect tools so that the
-    ///     naming-scheme conformance of the live catalogue is always visible after a change.
-    /// </remarks>
-    public void RefreshToolCache()
-    {
-        _builtToolCache = _registry.GetToolsFromCache();
-
-        List<string> catalogNames = [.. _builtToolCache.Select(tool => tool.Name), .. _localTools.Select(tool => tool.Name)];
-        _logger.LogInformation("Tool cache refreshed: {ToolCount} tool(s) available: {ToolNames}", catalogNames.Count, string.Join(", ", catalogNames));
-        ReportNonConformingTools(catalogNames);
-    }
-
-
-
-
-
-
-
-
-
-
 }

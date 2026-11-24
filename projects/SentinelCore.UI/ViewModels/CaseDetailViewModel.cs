@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CaseDetailViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -12,7 +12,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.CaseFlowEngine.CaseFlow;
-using SentinelCore.CaseFlowEngine.DBEntities;
+using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.Contracts.Cfe;
 using SentinelCore.UI.Services;
 
@@ -214,7 +214,7 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
 
         try
         {
-            CaseEntity? found = await _caseFlowEngine.GetCaseByIdAsync(caseId);
+            Case? found = await _caseFlowEngine.GetCaseByIdAsync(caseId);
 
             if (found is null)
             {
@@ -223,10 +223,10 @@ public sealed partial class CaseDetailViewModel : ObservableObject, INavigationA
                 return;
             }
 
-            StatusInfo = $"Case ID: {found.Id}{Environment.NewLine}Status: {found.CaseStatus}{Environment.NewLine}Created: {found.CreatedAt:g}{Environment.NewLine}Updated: {(found.UpdatedAt.HasValue ? found.UpdatedAt.Value.ToString("g") : "—")}";
+            StatusInfo = $"Case ID: {found.Id}{Environment.NewLine}Status: {found.Status}{Environment.NewLine}Created: {found.CreatedAt:g}{Environment.NewLine}Updated: {(found.UpdatedAt.HasValue ? found.UpdatedAt.Value.ToString("g") : "—")}";
 
             // Only offer the statuses the lifecycle actually allows from here.
-            AllowedTransitions = _caseFlowEngine.GetAllowedTransitions((int)found.CaseStatus);
+            AllowedTransitions = _caseFlowEngine.GetAllowedTransitions((int)found.Status);
         }
         catch (Exception ex)
         {

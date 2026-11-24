@@ -54,11 +54,9 @@ folder path relative to the project root.
 
 ## PL-3: Agent Construction
 
-
-**Under Review subject to change**
 Every agent must be constructed through `ISentinelAgentFactory`.
 Never construct `ChatClientAgent` directly in a factory.
-Agent instructions are added at the Agent callsite for flexibility and allow agents to be reused for different purposes
+Agent instructions, tools and `ChatResponseFormat` can be overridden at callsite via overloads to customize behavior. This ensures flexibility while maintaining consistent construction through the factory.
 
 - The Manager agent must not have tools.
 - Function invocation is handled by `ChatClientAgent` automatically — do not add
@@ -68,7 +66,7 @@ Agent instructions are added at the Agent callsite for flexibility and allow age
 
 - ❌ `services.BuildServiceProvider()` inside registration methods
 - ❌ `services.AddLogging()` inside the library — the host owns logging
-- ❌ Registering `ICaseFlowEngine` unconditionally (depends on optional persistence)
+- ❌ Registering `ICaseFlowEngine` persistance no longer is optional.
 
 ## PL-5: Null-Object Pattern
 
@@ -175,26 +173,13 @@ allowed drift that broke activation at runtime.
 
 Drift from this pattern fails the build in `SentinelCore.Tests`:
 
-- `Architecture/DbContextPatternLockTests.cs` — scans solution source for banned
-  registrations (`AddDbContext<`, `AddDbContextPool<`), direct context capture
-  (`private readonly SentinelCoreDBContext`, `(... SentinelCoreDBContext name ...)`
-  constructor parameters), and missing `AddDbContextFactory<TContext>` registrations.
-- `Architecture/PersistenceRegistrationTests.cs` — builds the DI container the way
-  the host does and asserts every persistence service resolves; fails when a
-  factory consumer lacks its `AddDbContextFactory` registration; verifies via
-  reflection and strict mocks that each persistence service constructs its context
-  from the factory.
+TESTING REMOVED FOR ALIGNMENT
 
 ## PL-8: WPF UI Layer Patterns
 
-**Status:** Locked · **Date:** 2026-09-10 · **Enforced by:** review + `SentinelCore.Tests` UI view-model tests
+no enforcement yet
 
-### PL-8.1: Style Triggers vs. Local Values (Dependency-Property Precedence)
 
-WPF dependency-property precedence puts **local values above style triggers**.
-Setting a property directly on an element (e.g. `Background="..."` on a `Border`)
-permanently defeats every `Setter` in `Style.Triggers` for that property — the
-trigger silently never applies.
 
 **Approved pattern:** all visual state for templated/styled elements lives in the
 `Style` (or `ControlTemplate.Triggers`); the element itself carries only
@@ -237,8 +222,7 @@ structure (margins, padding, layout).
 resolve **instance** properties only — `{Binding Role.User}` never works.
 The instance property is `ChatRole.Value` (a lowercase string: `"user"`,
 `"assistant"`, `"system"`, `"tool"`).
-*new* ChatMessages (List<Chatmessage>) with helpers AddUserMessage(string)
-*new* ChatMessage extension methods AddUserMessage(string) 
+*new* ChatMessage extension methods AddUserMessage(string)
 
 **Approved pattern:** bind `{Binding Role.Value}` and compare against the
 lowercase string in `DataTrigger Value="..."`.

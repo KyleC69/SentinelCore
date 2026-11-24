@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CustomGroupWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  111600
+// Build Num:  112101
 
 
 
@@ -367,7 +367,7 @@ public sealed class CustomGroupWorkflow : WorkflowBase, IOrchestration
         //------------------- PARENT Mixed workflow  -------------------
         Workflow classflow = new WorkflowBuilder(_classifierAgent) //Create New case
                 .AddEdge(_classifierAgent, _magWorkflowAgent) // Mag group executes and hands to final reporter
-                                                              //   .AddEdge(_magSubworkflow, _finalReportWriterAgent) // Consolodates and creates final report and sends to evaluation executor
+                //   .AddEdge(_magSubworkflow, _finalReportWriterAgent) // Consolodates and creates final report and sends to evaluation executor
                 .WithName("InvestigationWorkflow") //Final report is sent to the manager for review and approval
                 .WithDescription("Coordinates the investigation workflow by connecting the classifier, investigation group, and evaluation executor.")
                 .WithOpenTelemetry(activitySource: SentinelCoreDiagnostics.SharedActivitySource)

@@ -2,12 +2,13 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SentinelCoreServiceExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using ModelContextProtocol.Authentication;
 
@@ -25,7 +26,6 @@ using SentinelCore.Orchestrations.Application;
 using SentinelCore.Orchestrations.Mcp;
 using SentinelCore.Orchestrations.Rag;
 using SentinelCore.Orchestrations.Workflows;
-
 using SentinelCore.Security.Infrastructure.DependencyInjection;
 
 
@@ -92,14 +92,9 @@ public static class SentinelCoreServiceExtensions
                 });
 
         // -- Always-on core services --
-        // Safety middleware defaults to pass-through; host can override with real rules
 
-        // Case Flow Engine is an OPTIONAL module (PL-4/PL-5): register null-object
-        // defaults so the system runs without persistence. The host opts in to the
-        // real EF Core-backed engine by calling AddCaseFlowEngine() (CaseFlowEngine
-        // project), which overrides these defaults via RemoveAll<T>() + Add<T>().
-        services.AddSingleton<ICaseFlowEngine, NullCaseFlowEngine>();
-        services.AddSingleton<IPatternMemoryStore, NullPatternMemoryStore>();
+        services.AddSingleton<ICaseFlowEngine, CaseFlowEngine.CaseFlow.CaseFlowEngine>();
+        services.AddSingleton<IPatternMemoryStore, PatternMemoryStore>();
         services.AddTransient<IPatternMatcher, SemanticPatternMatcher>();
 
         // -- RAG Search Services --
@@ -144,7 +139,7 @@ public static class SentinelCoreServiceExtensions
             ILoggerFactory loggerFactory = sp.GetRequiredService<ILoggerFactory>();
             IMcpServerRegistry registry = sp.GetRequiredService<IMcpServerRegistry>();
             IEnumerable<AITool> localTools = sp.GetServices<AITool>();
-            SentinelCoreSettings runtimeSettings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<SentinelCoreSettings>>().Value;
+            SentinelCoreSettings runtimeSettings = sp.GetRequiredService<IOptions<SentinelCoreSettings>>().Value;
             return new SentinelAgentFactory(chatFactory, modelResolver, patternMatcher, loggerFactory, registry, localTools, runtimeSettings);
         });
 
@@ -198,65 +193,44 @@ public static class SentinelCoreServiceExtensions
         services.AddSingleton<AITool>(sp =>
         {
             MsLearnMcpTools learnTools = sp.GetRequiredService<MsLearnMcpTools>();
-            return AIFunctionFactory.Create(
-                learnTools.SearchDocs,
-                name: "sc_knowledge_search_docs",
-                description: "Performs semantic search against Microsoft official technical documentation.");
+            return AIFunctionFactory.Create(learnTools.SearchDocs, name: "sc_knowledge_search_docs", description: "Performs semantic search against Microsoft official technical documentation.");
         });
 
         services.AddSingleton<AITool>(sp =>
         {
             MsLearnMcpTools learnTools = sp.GetRequiredService<MsLearnMcpTools>();
-            return AIFunctionFactory.Create(
-                learnTools.FetchDocs,
-                name: "sc_knowledge_fetch_docs",
-                description: "Fetches a Microsoft documentation page and converts it into markdown format.");
+            return AIFunctionFactory.Create(learnTools.FetchDocs, name: "sc_knowledge_fetch_docs", description: "Fetches a Microsoft documentation page and converts it into markdown format.");
         });
 
         services.AddSingleton<AITool>(sp =>
         {
             MsLearnMcpTools learnTools = sp.GetRequiredService<MsLearnMcpTools>();
-            return AIFunctionFactory.Create(
-                learnTools.SearchCodeSamples,
-                name: "sc_knowledge_search_code_samples",
-                description: "Searches for official Microsoft and Azure code snippets and examples.");
+            return AIFunctionFactory.Create(learnTools.SearchCodeSamples, name: "sc_knowledge_search_code_samples", description: "Searches for official Microsoft and Azure code snippets and examples.");
         });
 
         services.AddSingleton<AgentSpawnTools>();
         services.AddSingleton<AITool>(sp =>
         {
             AgentSpawnTools spawnTools = sp.GetRequiredService<AgentSpawnTools>();
-            return AIFunctionFactory.Create(
-                spawnTools.SpawnAgent,
-                name: "sc_internal_spawn_agent",
-                description: "Spawns a one-shot utility agent with the requested tool groups, runs the supplied task and returns the agent's answer.");
+            return AIFunctionFactory.Create(spawnTools.SpawnAgent, name: "sc_internal_spawn_agent", description: "Spawns a one-shot utility agent with the requested tool groups, runs the supplied task and returns the agent's answer.");
         });
 
         services.AddSingleton<AITool>(sp =>
         {
             CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
-            return AIFunctionFactory.Create(
-                caseEngineTools.CreateCase,
-                name: "sc_internal_case_create",
-                description: "Creates a new investigative case for the Sentinel Core platform from a natural-language signal description.");
+            return AIFunctionFactory.Create(caseEngineTools.CreateCase, name: "sc_internal_case_create", description: "Creates a new investigative case for the Sentinel Core platform from a natural-language signal description.");
         });
 
         services.AddSingleton<AITool>(sp =>
         {
             CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
-            return AIFunctionFactory.Create(
-                caseEngineTools.InsertReport,
-                name: "sc_internal_case_insert_report",
-                description: "Inserts the final investigation report for a case.");
+            return AIFunctionFactory.Create(caseEngineTools.InsertReport, name: "sc_internal_case_insert_report", description: "Inserts the final investigation report for a case.");
         });
 
         services.AddSingleton<AITool>(sp =>
         {
             CaseEngineTools caseEngineTools = sp.GetRequiredService<CaseEngineTools>();
-            return AIFunctionFactory.Create(
-                caseEngineTools.InsertPatternSummaries,
-                name: "sc_internal_case_insert_pattern_summaries",
-                description: "Inserts the summaries extracted from the final investigation report.");
+            return AIFunctionFactory.Create(caseEngineTools.InsertPatternSummaries, name: "sc_internal_case_insert_pattern_summaries", description: "Inserts the summaries extracted from the final investigation report.");
         });
 
         return services;

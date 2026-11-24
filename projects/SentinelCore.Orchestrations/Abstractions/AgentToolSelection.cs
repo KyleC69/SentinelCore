@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentToolSelection.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -70,8 +70,14 @@ public sealed record AgentToolSelection
     ///     Initializes a new instance of the <see cref="AgentToolSelection" /> class.
     /// </summary>
     /// <param name="kind">The selection strategy.</param>
-    /// <param name="toolNames">The explicitly named tools; empty for every kind except <see cref="AgentToolSelectionKind.Named" />.</param>
-    /// <param name="groups">The requested group names; empty for every kind except <see cref="AgentToolSelectionKind.Groups" />.</param>
+    /// <param name="toolNames">
+    ///     The explicitly named tools; empty for every kind except
+    ///     <see cref="AgentToolSelectionKind.Named" />.
+    /// </param>
+    /// <param name="groups">
+    ///     The requested group names; empty for every kind except
+    ///     <see cref="AgentToolSelectionKind.Groups" />.
+    /// </param>
     private AgentToolSelection(AgentToolSelectionKind kind, IReadOnlyList<string> toolNames, IReadOnlyList<string> groups)
     {
         Kind = kind;
@@ -81,46 +87,6 @@ public sealed record AgentToolSelection
 
 
 
-
-
-    /// <summary>
-    ///     Gets the strategy that determines how the toolset is resolved.
-    /// </summary>
-    public AgentToolSelectionKind Kind { get; }
-
-
-
-
-
-    /// <summary>
-    ///     Gets the explicitly named tools requested by the call site. Empty unless <see cref="Kind" /> is
-    ///     <see cref="AgentToolSelectionKind.Named" />.
-    /// </summary>
-    public IReadOnlyList<string> ToolNames { get; }
-
-
-
-
-
-    /// <summary>
-    ///     Gets the group names requested by the call site. Empty unless <see cref="Kind" /> is
-    ///     <see cref="AgentToolSelectionKind.Groups" />.
-    /// </summary>
-    /// <remarks>
-    ///     Group names are resolved against <see cref="AgentToolGroupCatalog" /> when the agent is built, not when
-    ///     the selection is created. An unknown name therefore fails at construction, where the offending preset or
-    ///     call site is still identifiable.
-    /// </remarks>
-    public IReadOnlyList<string> Groups { get; }
-
-
-
-
-
-    /// <summary>
-    ///     Gets a selection that binds no tools to the agent.
-    /// </summary>
-    public static AgentToolSelection None { get; } = new(AgentToolSelectionKind.None, [], []);
 
 
 
@@ -137,64 +103,65 @@ public sealed record AgentToolSelection
 
 
 
-
-
     /// <summary>
-    ///     Creates a selection that binds only the named tools.
+    ///     Gets the group names requested by the call site. Empty unless <see cref="Kind" /> is
+    ///     <see cref="AgentToolSelectionKind.Groups" />.
     /// </summary>
-    /// <param name="toolNames">The case-insensitive tool names to bind. Duplicates are collapsed.</param>
-    /// <returns>A selection that binds the named tools.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolNames" /> is <c>null</c>.</exception>
-    /// <exception cref="ArgumentException">
-    ///     Thrown when <paramref name="toolNames" /> is empty or contains a null, empty, or whitespace name.
-    /// </exception>
-    public static AgentToolSelection FromNames(params string[] toolNames)
-    {
-        return FromNames((IEnumerable<string>)toolNames);
-    }
-
-
+    /// <remarks>
+    ///     Group names are resolved against <see cref="AgentToolGroupCatalog" /> when the agent is built, not when
+    ///     the selection is created. An unknown name therefore fails at construction, where the offending preset or
+    ///     call site is still identifiable.
+    /// </remarks>
+    public IReadOnlyList<string> Groups { get; }
 
 
 
     /// <summary>
-    ///     Creates a selection that binds only the named tools.
+    ///     Gets the strategy that determines how the toolset is resolved.
     /// </summary>
-    /// <param name="toolNames">The case-insensitive tool names to bind. Duplicates are collapsed.</param>
-    /// <returns>A selection that binds the named tools.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolNames" /> is <c>null</c>.</exception>
-    /// <exception cref="ArgumentException">
-    ///     Thrown when <paramref name="toolNames" /> is empty or contains a null, empty, or whitespace name.
-    /// </exception>
-    public static AgentToolSelection FromNames(IEnumerable<string> toolNames)
+    public AgentToolSelectionKind Kind { get; }
+
+
+
+    /// <summary>
+    ///     Gets a selection that binds no tools to the agent.
+    /// </summary>
+    public static AgentToolSelection None { get; } = new(AgentToolSelectionKind.None, [], []);
+
+
+
+    /// <summary>
+    ///     Gets the explicitly named tools requested by the call site. Empty unless <see cref="Kind" /> is
+    ///     <see cref="AgentToolSelectionKind.Named" />.
+    /// </summary>
+    public IReadOnlyList<string> ToolNames { get; }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Returns a diagnostic representation of this selection.
+    /// </summary>
+    /// <returns>
+    ///     The selection kind, plus the tool names when the selection is named or the group names when the
+    ///     selection is group based.
+    /// </returns>
+    public override string ToString()
     {
-        ArgumentNullException.ThrowIfNull(toolNames);
-
-        List<string> distinct = [];
-        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
-
-        foreach (string toolName in toolNames)
+        return Kind switch
         {
-            if (string.IsNullOrWhiteSpace(toolName))
-            {
-                throw new ArgumentException("Tool names must not be null, empty, or whitespace.", nameof(toolNames));
-            }
-
-            if (seen.Add(toolName))
-            {
-                distinct.Add(toolName);
-            }
-        }
-
-        if (distinct.Count == 0)
-        {
-            throw new ArgumentException(
-                    $"A named tool selection requires at least one tool name. Use {nameof(AgentToolSelection)}.{nameof(None)} to bind no tools.",
-                    nameof(toolNames));
-        }
-
-        return new AgentToolSelection(AgentToolSelectionKind.Named, distinct, []);
+                AgentToolSelectionKind.Named => $"{Kind}({string.Join(", ", ToolNames)})",
+                AgentToolSelectionKind.Groups => $"{Kind}({string.Join(", ", Groups)})",
+                _ => Kind.ToString()
+        };
     }
+
+
+
 
 
 
@@ -213,6 +180,9 @@ public sealed record AgentToolSelection
     {
         return FromGroups((IEnumerable<string>)groupNames);
     }
+
+
+
 
 
 
@@ -249,9 +219,7 @@ public sealed record AgentToolSelection
 
         if (distinct.Count == 0)
         {
-            throw new ArgumentException(
-                    $"A group tool selection requires at least one group name. Use {nameof(AgentToolSelection)}.{nameof(None)} to bind no tools.",
-                    nameof(groupNames));
+            throw new ArgumentException($"A group tool selection requires at least one group name. Use {nameof(AgentToolSelection)}.{nameof(None)} to bind no tools.", nameof(groupNames));
         }
 
         return new AgentToolSelection(AgentToolSelectionKind.Groups, [], distinct);
@@ -261,20 +229,64 @@ public sealed record AgentToolSelection
 
 
 
+
+
+
     /// <summary>
-    ///     Returns a diagnostic representation of this selection.
+    ///     Creates a selection that binds only the named tools.
     /// </summary>
-    /// <returns>
-    ///     The selection kind, plus the tool names when the selection is named or the group names when the
-    ///     selection is group based.
-    /// </returns>
-    public override string ToString()
+    /// <param name="toolNames">The case-insensitive tool names to bind. Duplicates are collapsed.</param>
+    /// <returns>A selection that binds the named tools.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolNames" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">
+    ///     Thrown when <paramref name="toolNames" /> is empty or contains a null, empty, or whitespace name.
+    /// </exception>
+    public static AgentToolSelection FromNames(params string[] toolNames)
     {
-        return Kind switch
+        return FromNames((IEnumerable<string>)toolNames);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Creates a selection that binds only the named tools.
+    /// </summary>
+    /// <param name="toolNames">The case-insensitive tool names to bind. Duplicates are collapsed.</param>
+    /// <returns>A selection that binds the named tools.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="toolNames" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">
+    ///     Thrown when <paramref name="toolNames" /> is empty or contains a null, empty, or whitespace name.
+    /// </exception>
+    public static AgentToolSelection FromNames(IEnumerable<string> toolNames)
+    {
+        ArgumentNullException.ThrowIfNull(toolNames);
+
+        List<string> distinct = [];
+        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string toolName in toolNames)
         {
-            AgentToolSelectionKind.Named => $"{Kind}({string.Join(", ", ToolNames)})",
-            AgentToolSelectionKind.Groups => $"{Kind}({string.Join(", ", Groups)})",
-            _ => Kind.ToString()
-        };
+            if (string.IsNullOrWhiteSpace(toolName))
+            {
+                throw new ArgumentException("Tool names must not be null, empty, or whitespace.", nameof(toolNames));
+            }
+
+            if (seen.Add(toolName))
+            {
+                distinct.Add(toolName);
+            }
+        }
+
+        if (distinct.Count == 0)
+        {
+            throw new ArgumentException($"A named tool selection requires at least one tool name. Use {nameof(AgentToolSelection)}.{nameof(None)} to bind no tools.", nameof(toolNames));
+        }
+
+        return new AgentToolSelection(AgentToolSelectionKind.Named, distinct, []);
     }
 }

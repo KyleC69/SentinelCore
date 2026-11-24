@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         EvidenceMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -38,18 +38,18 @@ public static class EvidenceMappingExtensions
         return new()
         {
 
-            // Example mapping:
-            Id = evidence.Id,
-            CollectorAgent = evidence.CollectorAgent,
-            SourcePath = evidence.SourcePath,
-            SourceType = evidence.SourceType,
-            Observation = evidence.Observation,
-            ObservedAt = evidence.ObservedAt,
-            CreatedAt = evidence.CreatedAt,
-            Confidence = evidence.Confidence,
-            CaseId = evidence.CaseId,
-            CaseEntity = evidence.Case.ToEntity()
-            // Other properties...
+                // Example mapping:
+                Id = evidence.Id,
+                CollectorAgent = evidence.CollectorAgent,
+                SourcePath = evidence.SourcePath,
+                SourceType = evidence.SourceType,
+                Observation = evidence.Observation,
+                ObservedAt = evidence.ObservedAt,
+                CreatedAt = evidence.CreatedAt,
+                Confidence = evidence.Confidence,
+                CaseId = evidence.CaseId,
+                CaseEntity = evidence.Case.ToEntity()
+                // Other properties...
         };
     }
 }

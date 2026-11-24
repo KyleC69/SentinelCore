@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CreateCaseViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -12,7 +12,6 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 
 using SentinelCore.CaseFlowEngine.CaseFlow;
-using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.CaseFlow;
 using SentinelCore.UI.Services;
 
@@ -116,7 +115,7 @@ public sealed partial class CreateCaseViewModel : ObservableObject, INavigationA
         {
             Signal signal = new(Description, SignalSource);
 
-            int caseId = await _caseFlowEngine.CreateCaseAsync(signal.ToEntity());
+            int caseId = await _caseFlowEngine.CreateCaseAsync(signal);
 
             ResultMessage = $"Case created successfully. Case ID: {caseId}";
             ShowResult = true;

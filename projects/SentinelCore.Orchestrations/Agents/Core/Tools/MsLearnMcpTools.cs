@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         MsLearnMcpTools.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -12,11 +12,7 @@ using System.Net.Http.Json;
 
 
 
-
 namespace SentinelCore.Orchestrations.Agents.Core.Tools;
-
-
-
 
 
 
@@ -41,6 +37,9 @@ namespace SentinelCore.Orchestrations.Agents.Core.Tools;
 /// </remarks>
 public sealed class MsLearnMcpTools
 {
+
+    private readonly string _endpoint;
+
     /// <summary>
     ///     The default public Microsoft Learn MCP endpoint.
     /// </summary>
@@ -52,8 +51,6 @@ public sealed class MsLearnMcpTools
     public const string EndpointEnvironmentVariable = "MSLEARN_MCP_ENDPOINT";
 
     private static readonly HttpClient HttpClient = new();
-
-    private readonly string _endpoint;
 
 
 
@@ -73,67 +70,6 @@ public sealed class MsLearnMcpTools
     public MsLearnMcpTools(string? endpoint = null)
     {
         _endpoint = ResolveEndpoint(endpoint);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Performs semantic search against Microsoft official technical documentation.
-    /// </summary>
-    /// <param name="query">The search query for retrieval.</param>
-    /// <returns>A result whose payload is the raw MCP endpoint response body, or a failure result.</returns>
-    [Description("Performs semantic search against Microsoft official technical documentation")]
-    public async Task<ToolResult> SearchDocs([Description("The search query for retrieval")] string query)
-    {
-        object payload = new { jsonrpc = "2.0", id = "docs-search", method = "tools/call", @params = new { name = "microsoft_docs_search", arguments = new { query } } };
-
-        return await CallLearnEndpoint(payload).ConfigureAwait(false);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Fetches a Microsoft documentation page and converts it into markdown format.
-    /// </summary>
-    /// <param name="docUrl">The URL of the documentation page to fetch.</param>
-    /// <returns>A result whose payload is the raw MCP endpoint response body, or a failure result.</returns>
-    [Description("Fetch and convert a Microsoft documentation page into markdown format")]
-    public async Task<ToolResult> FetchDocs([Description("The url of the doc you wish to fetch")] string docUrl)
-    {
-        object payload = new { jsonrpc = "2.0", id = "docs-fetch", method = "tools/call", @params = new { name = "microsoft_docs_fetch", arguments = new { url = docUrl } } };
-
-        return await CallLearnEndpoint(payload).ConfigureAwait(false);
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Searches for official Microsoft and Azure code snippets and examples.
-    /// </summary>
-    /// <param name="query">The search term to search for on Microsoft Learn documentation.</param>
-    /// <param name="language">Optional programming language filter; may be <c>null</c>.</param>
-    /// <returns>A result whose payload is the raw MCP endpoint response body, or a failure result.</returns>
-    [Description("Search for official Microsoft/Azure code snippets and examples")]
-    public async Task<ToolResult> SearchCodeSamples([Description("Search term to search for on MS Learn docs")] string query, [Description("Optional programming language filter")] string? language)
-    {
-        object payload = new { jsonrpc = "2.0", id = "code-search", method = "tools/call", @params = new { name = "microsoft_code_sample_search", arguments = new { query, language } } };
-
-        return await CallLearnEndpoint(payload).ConfigureAwait(false);
     }
 
 
@@ -172,6 +108,26 @@ public sealed class MsLearnMcpTools
 
 
     /// <summary>
+    ///     Fetches a Microsoft documentation page and converts it into markdown format.
+    /// </summary>
+    /// <param name="docUrl">The URL of the documentation page to fetch.</param>
+    /// <returns>A result whose payload is the raw MCP endpoint response body, or a failure result.</returns>
+    [Description("Fetch and convert a Microsoft documentation page into markdown format")]
+    public async Task<ToolResult> FetchDocs([Description("The url of the doc you wish to fetch")] string docUrl)
+    {
+        object payload = new { jsonrpc = "2.0", id = "docs-fetch", method = "tools/call", @params = new { name = "microsoft_docs_fetch", arguments = new { url = docUrl } } };
+
+        return await CallLearnEndpoint(payload).ConfigureAwait(false);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Resolves the endpoint to call from the explicit argument, the environment variable, or the default.
     /// </summary>
     /// <param name="endpoint">The explicitly supplied endpoint, or <c>null</c>.</param>
@@ -186,5 +142,46 @@ public sealed class MsLearnMcpTools
         string? fromEnvironment = Environment.GetEnvironmentVariable(EndpointEnvironmentVariable);
 
         return string.IsNullOrWhiteSpace(fromEnvironment) ? DefaultEndpoint : fromEnvironment;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Searches for official Microsoft and Azure code snippets and examples.
+    /// </summary>
+    /// <param name="query">The search term to search for on Microsoft Learn documentation.</param>
+    /// <param name="language">Optional programming language filter; may be <c>null</c>.</param>
+    /// <returns>A result whose payload is the raw MCP endpoint response body, or a failure result.</returns>
+    [Description("Search for official Microsoft/Azure code snippets and examples")]
+    public async Task<ToolResult> SearchCodeSamples([Description("Search term to search for on MS Learn docs")] string query, [Description("Optional programming language filter")] string? language)
+    {
+        object payload = new { jsonrpc = "2.0", id = "code-search", method = "tools/call", @params = new { name = "microsoft_code_sample_search", arguments = new { query, language } } };
+
+        return await CallLearnEndpoint(payload).ConfigureAwait(false);
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Performs semantic search against Microsoft official technical documentation.
+    /// </summary>
+    /// <param name="query">The search query for retrieval.</param>
+    /// <returns>A result whose payload is the raw MCP endpoint response body, or a failure result.</returns>
+    [Description("Performs semantic search against Microsoft official technical documentation")]
+    public async Task<ToolResult> SearchDocs([Description("The search query for retrieval")] string query)
+    {
+        object payload = new { jsonrpc = "2.0", id = "docs-search", method = "tools/call", @params = new { name = "microsoft_docs_search", arguments = new { query } } };
+
+        return await CallLearnEndpoint(payload).ConfigureAwait(false);
     }
 }

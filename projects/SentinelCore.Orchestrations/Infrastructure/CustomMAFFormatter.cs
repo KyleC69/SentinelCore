@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         CustomMAFFormatter.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -194,14 +194,14 @@ public sealed class CustomMAFFormatter
     {
         return level switch
         {
-            LogLevel.Information => "INFO",
-            LogLevel.Critical => "CRIT",
-            LogLevel.Debug => "DBUG",
-            LogLevel.Error => "EROR",
-            LogLevel.Trace => "TRCE",
-            LogLevel.Warning => "WARN",
-            LogLevel.None => "NONE",
-            _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
+                LogLevel.Information => "INFO",
+                LogLevel.Critical => "CRIT",
+                LogLevel.Debug => "DBUG",
+                LogLevel.Error => "EROR",
+                LogLevel.Trace => "TRCE",
+                LogLevel.Warning => "WARN",
+                LogLevel.None => "NONE",
+                _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
         };
     }
 

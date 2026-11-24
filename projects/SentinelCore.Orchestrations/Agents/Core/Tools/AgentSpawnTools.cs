@@ -2,23 +2,21 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentSpawnTools.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
 using System.ComponentModel;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
 
 
 
 
-
 namespace SentinelCore.Orchestrations.Agents.Core.Tools;
-
-
-
 
 
 
@@ -48,13 +46,13 @@ namespace SentinelCore.Orchestrations.Agents.Core.Tools;
 /// </remarks>
 public sealed class AgentSpawnTools
 {
+
+    private readonly IServiceProvider _services;
+
     /// <summary>
     ///     Instructions appended to the spawned agent's preset instructions that scope it to its one-shot task.
     /// </summary>
-    private const string CurationInstructions =
-            "You are a transient utility agent spawned for exactly one task. Complete the task and return a concise, self-contained answer that the requesting agent can use directly. You will not be retained after this task; do not ask follow-up questions.";
-
-    private readonly IServiceProvider _services;
+    private const string CurationInstructions = "You are a transient utility agent spawned for exactly one task. Complete the task and return a concise, self-contained answer that the requesting agent can use directly. You will not be retained after this task; do not ask follow-up questions.";
 
 
 
@@ -93,10 +91,7 @@ public sealed class AgentSpawnTools
     ///     <see cref="ToolResult" /> as mandated by the tooling contract.
     /// </remarks>
     [Description("Spawns a one-shot utility agent with the requested tool groups, runs the supplied task and returns the agent's answer. Group names must be registered Sentinel Core tool group names.")]
-    public async Task<ToolResult> SpawnAgent(
-            [Description("The task for the spawned agent to perform")] string task,
-            [Description("The tool group names the spawned agent may use")] string[] groups,
-            CancellationToken cancellationToken)
+    public async Task<ToolResult> SpawnAgent([Description("The task for the spawned agent to perform")] string task, [Description("The tool group names the spawned agent may use")] string[] groups, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(task))
         {
@@ -113,12 +108,7 @@ public sealed class AgentSpawnTools
             ISentinelAgentFactory factory = _services.GetRequiredService<ISentinelAgentFactory>();
             string agentName = $"UtilityAgent-{Guid.NewGuid().ToString("N")[..8]}";
 
-            AIAgent worker = await factory.CreateAgentAsync(
-                    AgentPreset.UtilityAgent,
-                    agentName,
-                    "Transient utility agent spawned for a single ad-hoc task; not retained after the task completes.",
-                    CurationInstructions,
-                    AgentToolSelection.FromGroups(groups)).ConfigureAwait(false);
+            AIAgent worker = await factory.CreateAgentAsync(AgentPreset.UtilityAgent, agentName, "Transient utility agent spawned for a single ad-hoc task; not retained after the task completes.", CurationInstructions, AgentToolSelection.FromGroups(groups)).ConfigureAwait(false);
 
             AgentResponse response = await worker.RunAsync(task, cancellationToken: cancellationToken).ConfigureAwait(false);
 

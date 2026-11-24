@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         IMcpServerRegistry.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -58,10 +58,14 @@ public interface IMcpServerRegistry
 
 
     /// <summary>
-    ///     Gets a read-only snapshot of the current tool cache.
+    ///     Gets a synchronous snapshot of the registered servers and their connection state.
     /// </summary>
-    /// <returns>A read-only list of available AITool instances from the cache.</returns>
-    IReadOnlyList<AITool> GetToolsFromCache();
+    /// <remarks>
+    ///     This exists so readiness checks can run from a synchronous property without blocking on
+    ///     <see cref="ListAsync" />. The returned list is a point-in-time snapshot.
+    /// </remarks>
+    /// <returns>A read-only list of the current server states.</returns>
+    IReadOnlyList<McpServerInfo> GetServersSnapshot();
 
 
 
@@ -71,14 +75,10 @@ public interface IMcpServerRegistry
 
 
     /// <summary>
-    ///     Gets a synchronous snapshot of the registered servers and their connection state.
+    ///     Gets a read-only snapshot of the current tool cache.
     /// </summary>
-    /// <remarks>
-    ///     This exists so readiness checks can run from a synchronous property without blocking on
-    ///     <see cref="ListAsync" />. The returned list is a point-in-time snapshot.
-    /// </remarks>
-    /// <returns>A read-only list of the current server states.</returns>
-    IReadOnlyList<McpServerInfo> GetServersSnapshot();
+    /// <returns>A read-only list of available AITool instances from the cache.</returns>
+    IReadOnlyList<AITool> GetToolsFromCache();
 
 
 
@@ -163,8 +163,4 @@ public interface IMcpServerRegistry
     ///     Occurs when the tool cache has been updated.
     /// </summary>
     event Action? ToolCacheChanged;
-
-
-
-
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowBase.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -125,62 +125,62 @@ public abstract class WorkflowBase
             switch (content)
             {
                 case TextContent text:
+                {
+                    if (!string.IsNullOrWhiteSpace(text.Text))
                     {
-                        if (!string.IsNullOrWhiteSpace(text.Text))
-                        {
-                            Console.WriteLine($"[{agent}]");
-                            Console.WriteLine(text.Text);
-                            Console.WriteLine("");
-                        }
-
-                        break;
+                        Console.WriteLine($"[{agent}]");
+                        Console.WriteLine(text.Text);
+                        Console.WriteLine("");
                     }
+
+                    break;
+                }
 
                 case FunctionCallContent functionCall:
-                    {
-                        Console.WriteLine($"[{agent}] [tool-call] " + $"{functionCall.Name}({functionCall.Arguments})");
+                {
+                    Console.WriteLine($"[{agent}] [tool-call] " + $"{functionCall.Name}({functionCall.Arguments})");
 
-                        Console.WriteLine("");
-                        break;
-                    }
+                    Console.WriteLine("");
+                    break;
+                }
 
                 case FunctionResultContent functionResult:
-                    {
-                        Console.WriteLine($"[{agent}] [tool-result] " + $"{functionResult.CallId} -> {functionResult.Result}");
+                {
+                    Console.WriteLine($"[{agent}] [tool-result] " + $"{functionResult.CallId} -> {functionResult.Result}");
 
-                        Console.WriteLine("");
-                        break;
-                    }
+                    Console.WriteLine("");
+                    break;
+                }
 
                 case UsageContent usage:
-                    {
-                        Console.WriteLine($"[{agent}] [usage] " + $"Input={usage.Details?.InputTokenCount ?? 0}, " + $"Output={usage.Details?.OutputTokenCount ?? 0}");
+                {
+                    Console.WriteLine($"[{agent}] [usage] " + $"Input={usage.Details?.InputTokenCount ?? 0}, " + $"Output={usage.Details?.OutputTokenCount ?? 0}");
 
-                        break;
-                    }
+                    break;
+                }
 
                 case DataContent data:
-                    {
-                        Console.WriteLine($"[{agent}] [data] {data.MediaType}");
+                {
+                    Console.WriteLine($"[{agent}] [data] {data.MediaType}");
 
-                        break;
-                    }
+                    break;
+                }
 
                 case UriContent uri:
-                    {
-                        Console.WriteLine($"[{agent}] [uri] {uri.Uri}");
+                {
+                    Console.WriteLine($"[{agent}] [uri] {uri.Uri}");
 
-                        break;
-                    }
+                    break;
+                }
 
                 default:
-                    {
-                        Console.WriteLine($"[{agent}] [content:{content.GetType().Name}]");
+                {
+                    Console.WriteLine($"[{agent}] [content:{content.GetType().Name}]");
 
-                        Console.WriteLine(content.ToString());
+                    Console.WriteLine(content.ToString());
 
-                        break;
-                    }
+                    break;
+                }
             }
         }
     }
@@ -403,33 +403,8 @@ public abstract class WorkflowBase
                 // COLLECTION OF CHAT MESSAGES
                 //------------------------------------------------------------------
                 case ICollection<ChatMessage> messages:
-                    {
-                        foreach (ChatMessage message in messages)
-                        {
-                            string speaker = GetSpeaker(message);
-
-                            string text = !string.IsNullOrWhiteSpace(message.Text) ? message.Text : ExtractTextFromContents(message.Contents);
-
-                            if (ShowAgentMessages && !string.IsNullOrWhiteSpace(text))
-                            {
-                                Console.WriteLine($"[{speaker}]");
-                                Console.WriteLine(text);
-                                Console.WriteLine("");
-                            }
-
-                            if (ShowToolCalls || ShowToolResults)
-                            {
-                                LogAIContents(speaker, message.Contents);
-                            }
-                        }
-
-                        break;
-                    }
-
-                //------------------------------------------------------------------
-                // SINGLE CHAT MESSAGE
-                //------------------------------------------------------------------
-                case ChatMessage message:
+                {
+                    foreach (ChatMessage message in messages)
                     {
                         string speaker = GetSpeaker(message);
 
@@ -446,73 +421,98 @@ public abstract class WorkflowBase
                         {
                             LogAIContents(speaker, message.Contents);
                         }
-
-                        break;
                     }
+
+                    break;
+                }
+
+                //------------------------------------------------------------------
+                // SINGLE CHAT MESSAGE
+                //------------------------------------------------------------------
+                case ChatMessage message:
+                {
+                    string speaker = GetSpeaker(message);
+
+                    string text = !string.IsNullOrWhiteSpace(message.Text) ? message.Text : ExtractTextFromContents(message.Contents);
+
+                    if (ShowAgentMessages && !string.IsNullOrWhiteSpace(text))
+                    {
+                        Console.WriteLine($"[{speaker}]");
+                        Console.WriteLine(text);
+                        Console.WriteLine("");
+                    }
+
+                    if (ShowToolCalls || ShowToolResults)
+                    {
+                        LogAIContents(speaker, message.Contents);
+                    }
+
+                    break;
+                }
 
                 //------------------------------------------------------------------
                 // RESPONSE UPDATES
                 //------------------------------------------------------------------
                 case AgentResponseUpdate update:
+                {
+                    string responseId = update.ResponseId ?? update.MessageId ?? Guid.NewGuid().ToString();
+
+                    string agent = GetAgentName(update.AgentId);
+
+                    string updateText = !string.IsNullOrWhiteSpace(update.Text) ? update.Text : ExtractTextFromContents(update.Contents);
+
+                    AppendUpdateText(responseId, agent, updateText);
+
+                    if (ShowToolCalls || ShowToolResults)
                     {
-                        string responseId = update.ResponseId ?? update.MessageId ?? Guid.NewGuid().ToString();
-
-                        string agent = GetAgentName(update.AgentId);
-
-                        string updateText = !string.IsNullOrWhiteSpace(update.Text) ? update.Text : ExtractTextFromContents(update.Contents);
-
-                        AppendUpdateText(responseId, agent, updateText);
-
-                        if (ShowToolCalls || ShowToolResults)
-                        {
-                            LogAIContents(agent, update.Contents);
-                        }
-
-                        break;
+                        LogAIContents(agent, update.Contents);
                     }
+
+                    break;
+                }
 
                 //------------------------------------------------------------------
                 // FINAL AGENT RESPONSE
                 //------------------------------------------------------------------
                 case AgentResponse response:
+                {
+                    string agent = GetAgentName(response.AgentId);
+
+                    string text = !string.IsNullOrWhiteSpace(response.Text) ? response.Text : string.Join(Environment.NewLine, response.Messages?.SelectMany(m => m.Contents).OfType<TextContent>().Select(t => t.Text) ?? Enumerable.Empty<string>());
+
+                    if (ShowAgentMessages && !string.IsNullOrWhiteSpace(text))
                     {
-                        string agent = GetAgentName(response.AgentId);
-
-                        string text = !string.IsNullOrWhiteSpace(response.Text) ? response.Text : string.Join(Environment.NewLine, response.Messages?.SelectMany(m => m.Contents).OfType<TextContent>().Select(t => t.Text) ?? Enumerable.Empty<string>());
-
-                        if (ShowAgentMessages && !string.IsNullOrWhiteSpace(text))
-                        {
-                            Console.WriteLine("");
-                            Console.WriteLine("============================================================");
-                            Console.WriteLine($"FINAL RESPONSE : {agent}");
-                            Console.WriteLine("============================================================");
-                            Console.WriteLine(text);
-                            Console.WriteLine("");
-                        }
-
-                        if (response.Messages is not null)
-                        {
-                            foreach (ChatMessage msg in response.Messages)
-                            {
-                                LogAIContents(GetSpeaker(msg), msg.Contents);
-                            }
-                        }
-
-                        break;
+                        Console.WriteLine("");
+                        Console.WriteLine("============================================================");
+                        Console.WriteLine($"FINAL RESPONSE : {agent}");
+                        Console.WriteLine("============================================================");
+                        Console.WriteLine(text);
+                        Console.WriteLine("");
                     }
+
+                    if (response.Messages is not null)
+                    {
+                        foreach (ChatMessage msg in response.Messages)
+                        {
+                            LogAIContents(GetSpeaker(msg), msg.Contents);
+                        }
+                    }
+
+                    break;
+                }
 
                 //------------------------------------------------------------------
                 // UNKNOWN
                 //------------------------------------------------------------------
                 default:
+                {
+                    if (ShowUnknownEvents)
                     {
-                        if (ShowUnknownEvents)
-                        {
-                            Console.WriteLine($"[UNHANDLED] {evt.Data?.GetType().FullName ?? "<null>"}");
-                        }
-
-                        break;
+                        Console.WriteLine($"[UNHANDLED] {evt.Data?.GetType().FullName ?? "<null>"}");
                     }
+
+                    break;
+                }
             }
         }
 

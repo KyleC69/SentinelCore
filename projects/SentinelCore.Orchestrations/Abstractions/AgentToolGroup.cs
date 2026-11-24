@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentToolGroup.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -49,6 +49,9 @@ public sealed record AgentToolGroup
 
 
 
+
+
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="AgentToolGroup" /> class.
     /// </summary>
@@ -69,9 +72,7 @@ public sealed record AgentToolGroup
 
         if (trimmed.Contains('_'))
         {
-            throw new ArgumentException(
-                    $"The group name '{name}' must be a single name segment without '_'. The prefix is derived from the name as '{NamePrefixRoot}' + name + '_', so an underscore in the name would break the naming convention.",
-                    nameof(name));
+            throw new ArgumentException($"The group name '{name}' must be a single name segment without '_'. The prefix is derived from the name as '{NamePrefixRoot}' + name + '_', so an underscore in the name would break the naming convention.", nameof(name));
         }
 
         Name = trimmed;
@@ -83,12 +84,6 @@ public sealed record AgentToolGroup
 
 
 
-    /// <summary>
-    ///     Gets the stable group name used by presets, call sites and diagnostics.
-    /// </summary>
-    public string Name { get; }
-
-
 
 
 
@@ -98,6 +93,11 @@ public sealed record AgentToolGroup
     public string Description { get; }
 
 
+
+    /// <summary>
+    ///     Gets the stable group name used by presets, call sites and diagnostics.
+    /// </summary>
+    public string Name { get; }
 
 
 
@@ -115,6 +115,25 @@ public sealed record AgentToolGroup
 
 
 
+
+
+
+    /// <summary>
+    ///     Returns a diagnostic representation of this group.
+    /// </summary>
+    /// <returns>The group name followed by the owned prefix.</returns>
+    public override string ToString()
+    {
+        return $"{Name}({Prefix})";
+    }
+
+
+
+
+
+
+
+
     /// <summary>
     ///     Determines whether the supplied tool name belongs to this group.
     /// </summary>
@@ -126,18 +145,5 @@ public sealed record AgentToolGroup
     public bool Claims(string? toolName)
     {
         return !string.IsNullOrWhiteSpace(toolName) && toolName.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase);
-    }
-
-
-
-
-
-    /// <summary>
-    ///     Returns a diagnostic representation of this group.
-    /// </summary>
-    /// <returns>The group name followed by the owned prefix.</returns>
-    public override string ToString()
-    {
-        return $"{Name}({Prefix})";
     }
 }

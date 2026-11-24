@@ -1,19 +1,35 @@
-//Intentionally in root namespace for availability across the project without needing to add using statements in every file.
+// Solution: SentinelCore
+// Project:   SentinelCore.Orchestrations
+// File:         Attributes.cs
+// Author: Kyle L. Crowder
+// Build Num:  112101
+
+
+
 namespace SentinelCore;
 
 
+
+
+
 /// <summary>
-/// Attribute indicates member must not exist in production
+///     Attribute indicates member must not exist in production
 /// </summary>
-[AttributeUsage(AttributeTargets.Method |
-                AttributeTargets.Class |
-                AttributeTargets.Property)]
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Property)]
 public sealed class TemporaryAttribute : Attribute
 {
-    public string Reason { get; }
 
     public TemporaryAttribute(string reason)
     {
         Reason = reason;
     }
+
+
+
+
+
+
+
+
+    public string Reason { get; }
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         IModelConfigGate.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -29,21 +29,6 @@ namespace SentinelCore.UI.Services;
 /// </summary>
 public interface IModelConfigGate
 {
-    /// <summary>
-    ///     Gets a value indicating whether every catalog agent resolves a model
-    ///     profile (per-agent entry or role tier).
-    /// </summary>
-    bool IsConfigurationComplete { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether the Ollama service is reachable and responding.
-    /// </summary>
-    bool IsOllamaAvailable { get; }
-
-
-
-
-
 
 
 
@@ -55,12 +40,50 @@ public interface IModelConfigGate
     ///     same way an unreachable Ollama service does. It is never terminal: repairing the server clears
     ///     the gate on the next evaluation.
     /// </remarks>
-    bool AreMcpServersHealthy => true;
+    bool AreMcpServersHealthy
+    {
+        get => true;
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether every catalog agent resolves a model
+    ///     profile (per-agent entry or role tier).
+    /// </summary>
+    bool IsConfigurationComplete { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether the Ollama service is reachable and responding.
+    /// </summary>
+    bool IsOllamaAvailable { get; }
 
     /// <summary>
     ///     Gets the display names of the MCP servers that are not connected.
     /// </summary>
-    IReadOnlyList<string> UnhealthyMcpServers => [];
+    IReadOnlyList<string> UnhealthyMcpServers
+    {
+        get => [];
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Builds a user-facing message describing the missing configuration,
+    ///     or an empty string when configuration is complete.
+    /// </summary>
+    /// <returns>A message listing the unconfigured agents, or empty when complete.</returns>
+    string BuildGateMessage();
+
+
+
+
+
+
+
 
     /// <summary>
     ///     Returns the non-blocking readiness warnings, currently the catalogue tools that do not conform to the
@@ -74,13 +97,6 @@ public interface IModelConfigGate
     /// </remarks>
     /// <returns>The warning messages, or an empty list when there is nothing to report.</returns>
     IReadOnlyList<string> GetReadinessWarnings() => [];
-
-    /// <summary>
-    ///     Builds a user-facing message describing the missing configuration,
-    ///     or an empty string when configuration is complete.
-    /// </summary>
-    /// <returns>A message listing the unconfigured agents, or empty when complete.</returns>
-    string BuildGateMessage();
 }
 
 
@@ -93,9 +109,9 @@ public interface IModelConfigGate
 /// </summary>
 public sealed class ModelConfigGate : IModelConfigGate
 {
+    private readonly IMcpServerRegistry? _mcpServerRegistry;
 
     private readonly IModelResolver _modelResolver;
-    private readonly IMcpServerRegistry? _mcpServerRegistry;
 
     // Removed unused settings field as it was never referenced.
 
@@ -129,24 +145,18 @@ public sealed class ModelConfigGate : IModelConfigGate
 
 
     /// <summary>
-    ///     Gets the display names of the MCP servers that are not connected.
+    ///     Gets the names of the catalog agents that have no model configuration.
     /// </summary>
-    public IReadOnlyList<string> UnhealthyMcpServers
-    {
-        get
-        {
-            if (_mcpServerRegistry is null)
-            {
-                return [];
-            }
+    public IReadOnlyList<string>? UnconfiguredAgents { get; }
 
-            return
-            [
-                    .. _mcpServerRegistry.GetServersSnapshot()
-                            .Where(server => server.Status is not McpServerStatus.Connected)
-                            .Select(server => server.Definition.DisplayName)
-            ];
-        }
+
+
+    /// <summary>
+    ///     Gets a value indicating whether every registered MCP server is connected.
+    /// </summary>
+    public bool AreMcpServersHealthy
+    {
+        get => UnhealthyMcpServers.Count == 0;
     }
 
 
@@ -157,11 +167,33 @@ public sealed class ModelConfigGate : IModelConfigGate
 
 
     /// <summary>
-    ///     Gets a value indicating whether every registered MCP server is connected.
+    ///     Builds the blocking banner message: the Ollama failure first, then the disconnected MCP servers,
+    ///     then incomplete model configuration.
     /// </summary>
-    public bool AreMcpServersHealthy
+    /// <returns>The message to display, or an empty string when every blocking condition is satisfied.</returns>
+    public string BuildGateMessage()
     {
-        get => UnhealthyMcpServers.Count == 0;
+        if (!IsOllamaAvailable)
+        {
+            return "Ollama service is not available. Please ensure Ollama is running and accessible at the configured endpoint.";
+        }
+
+        IReadOnlyList<string> unhealthy = UnhealthyMcpServers;
+
+        if (unhealthy.Count > 0)
+        {
+            return "These MCP servers are not connected, so the agent toolsets are incomplete: " + $"{string.Join(", ", unhealthy)}. Start or repair them and retry; no agent action can run until they are reachable.";
+        }
+
+        IReadOnlyList<string> missing = new List<string>();
+        missing = UnconfiguredAgents ?? new List<string>();
+
+        if (missing.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return "Model configuration is incomplete. Open the Model Configuration page and set a " + $"provider, model, and endpoint for: {string.Join(", ", missing)}.";
     }
 
 
@@ -214,55 +246,6 @@ public sealed class ModelConfigGate : IModelConfigGate
 
 
     /// <summary>
-    ///     Gets the names of the catalog agents that have no model configuration.
-    /// </summary>
-    public IReadOnlyList<string>? UnconfiguredAgents { get; }
-
-
-
-
-
-
-
-
-    /// <summary>
-    ///     Builds the blocking banner message: the Ollama failure first, then the disconnected MCP servers,
-    ///     then incomplete model configuration.
-    /// </summary>
-    /// <returns>The message to display, or an empty string when every blocking condition is satisfied.</returns>
-    public string BuildGateMessage()
-    {
-        if (!IsOllamaAvailable)
-        {
-            return "Ollama service is not available. Please ensure Ollama is running and accessible at the configured endpoint.";
-        }
-
-        IReadOnlyList<string> unhealthy = UnhealthyMcpServers;
-
-        if (unhealthy.Count > 0)
-        {
-            return "These MCP servers are not connected, so the agent toolsets are incomplete: " + $"{string.Join(", ", unhealthy)}. Start or repair them and retry; no agent action can run until they are reachable.";
-        }
-
-        IReadOnlyList<string> missing = new List<string>();
-        missing = UnconfiguredAgents ?? new List<string>();
-
-        if (missing.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        return "Model configuration is incomplete. Open the Model Configuration page and set a " + $"provider, model, and endpoint for: {string.Join(", ", missing)}.";
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
     ///     Gets a value indicating whether agent execution may proceed: the model service is reachable and
     ///     every registered MCP server is connected.
     /// </summary>
@@ -291,6 +274,27 @@ public sealed class ModelConfigGate : IModelConfigGate
             {
                 return false;
             }
+        }
+    }
+
+
+
+    /// <summary>
+    ///     Gets the display names of the MCP servers that are not connected.
+    /// </summary>
+    public IReadOnlyList<string> UnhealthyMcpServers
+    {
+        get
+        {
+            if (_mcpServerRegistry is null)
+            {
+                return [];
+            }
+
+            return
+            [
+                    .. _mcpServerRegistry.GetServersSnapshot().Where(server => server.Status is not McpServerStatus.Connected).Select(server => server.Definition.DisplayName)
+            ];
         }
     }
 }

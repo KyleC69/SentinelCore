@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CoreChatViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -70,8 +70,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     ///     Backing field for <see cref="ChatType" />: the mode the chat page operates
     ///     in. Two-way bound to the Mode combo box on the chat page.
     /// </summary>
-    [ObservableProperty]
-    private ChatType _chatType = ChatType.Chat;
+    [ObservableProperty] private ChatType _chatType = ChatType.Chat;
 
     private readonly IClipboardService _clipboardService;
 
@@ -202,6 +201,13 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
     /// <summary>
+    ///     Gets the selectable modes for the Mode combo box, in display order.
+    /// </summary>
+    public IReadOnlyList<ChatType> ChatModes { get; } = [ChatType.Chat, ChatType.Investigation];
+
+
+
+    /// <summary>
     ///     Gets the message describing incomplete model configuration, or an empty
     ///     string when every agent is configured. Bound to the warning banner.
     /// </summary>
@@ -228,22 +234,7 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
 
-    /// <summary>
-    ///     Gets the selectable modes for the Mode combo box, in display order.
-    /// </summary>
-    public IReadOnlyList<ChatType> ChatModes { get; } = [ChatType.Chat, ChatType.Investigation];
 
-
-
-    /// <summary>
-    ///     Called when the Mode combo box selection changes <see cref="ChatType" />.
-    ///     Logged so chat-mode transitions are visible in diagnostics.
-    /// </summary>
-    /// <param name="value">The newly selected chat mode.</param>
-    partial void OnChatTypeChanged(ChatType value)
-    {
-        _logger.LogInformation("Chat mode changed to {ChatMode}.", value);
-    }
 
 
 
@@ -413,6 +404,23 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         {
             _clipboardService.SetText(text);
         }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Called when the Mode combo box selection changes <see cref="ChatType" />.
+    ///     Logged so chat-mode transitions are visible in diagnostics.
+    /// </summary>
+    /// <param name="value">The newly selected chat mode.</param>
+    partial void OnChatTypeChanged(ChatType value)
+    {
+        _logger.LogInformation("Chat mode changed to {ChatMode}.", value);
     }
 
 
@@ -643,6 +651,5 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 public enum ChatType
 {
-    Chat,
-    Investigation
+    Chat, Investigation
 }

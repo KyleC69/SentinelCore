@@ -2,14 +2,12 @@
 // Project:   SentinelCore.Orchestrations
 // File:         NewCaseExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
 using SentinelCore.CaseFlowEngine.CaseFlow;
-using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.CaseFlowEngine.Infrastructure;
-using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
 using SentinelCore.Contracts.CaseFlow;
 
@@ -85,7 +83,7 @@ public sealed partial class NewCaseExecutor : Executor
     [MessageHandler]
     public async ValueTask<ChatMessage> HandleChatMessageAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        ExecutorEnvelope envelope = new() { SignalText = message.Text };
+
 
         Throw.IfNull(message);
 
@@ -93,15 +91,15 @@ public sealed partial class NewCaseExecutor : Executor
         _reporter.ReportInfo($"[{Name}] Starting execution.");
 
         // --- Save Envelope to state ---
-        await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, envelope, "SharedState", cancellationToken).ConfigureAwait(false);
-        _reporter.ReportDebug($"[{Name}] Saved envelope to state: {envelope}");
+       // await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, envelope, "SharedState", cancellationToken).ConfigureAwait(false);
+       // _reporter.ReportDebug($"[{Name}] Saved envelope to state: {envelope}");
 
         try
         {
-            CaseEntity? result = await ProcessCaseAsync(message, context, cancellationToken).ConfigureAwait(false);
+            Case? result = await ProcessCaseAsync(message, context, cancellationToken).ConfigureAwait(false);
             if (!ReferenceEquals(result, null))
             {
-                envelope.Case = result;
+         //       envelope.Case = result;
             }
 
             //   await context.SendMessageAsync(message, cancellationToken);
@@ -134,7 +132,7 @@ public sealed partial class NewCaseExecutor : Executor
     /// <summary>
     ///     Core processing logic: creates a new case and publishes the CaseId to context.
     /// </summary>
-    private async ValueTask<CaseEntity?> ProcessCaseAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
+    private async ValueTask<Case?> ProcessCaseAsync(ChatMessage message, IWorkflowContext context, CancellationToken cancellationToken)
     {
         try
         {
@@ -146,12 +144,12 @@ public sealed partial class NewCaseExecutor : Executor
 
 
                 // Create a new case using the prompt text as the initial signal. Set the source to "UIPrompt" to indicate it originated from the user interface instead of an automated system
-                int caseId = await _caseEng.CreateCaseAsync(sig.ToEntity(), cancellationToken).ConfigureAwait(false);
+                int caseId = await _caseEng.CreateCaseAsync(sig, cancellationToken).ConfigureAwait(false);
 
                 // Starts new case, saves caseid to context.
                 // Log action and publish to UI.
                 _reporter.ReportInfo($"Case created with ID: {caseId}.");
-                CaseEntity? caseFile = await _caseEng.GetCaseByIdAsync(caseId, cancellationToken).ConfigureAwait(false);
+                Case? caseFile = await _caseEng.GetCaseByIdAsync(caseId, cancellationToken).ConfigureAwait(false);
 
 
 

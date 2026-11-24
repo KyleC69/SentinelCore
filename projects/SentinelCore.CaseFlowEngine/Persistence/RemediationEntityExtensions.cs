@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         RemediationEntityExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -28,22 +28,22 @@ public static class RemediationEntityExtensions
     {
         return new()
         {
-            Id = dto.Id,
-            CaseId = dto.CaseID,
-            Case = new()
-            {
-                Id = dto.Case.Id,
-                CaseStatus = dto.Case.Status,
-                CreatedAt = dto.Case.CreatedAt,
-                UpdatedAt = dto.Case.UpdatedAt,
-                CaseTranscript = dto.Case.CaseTranscript,
-                Notes = dto.Case.CaseTranscript // Assuming Notes maps to CaseTranscript
-            },
-            Summary = dto.Summary,
-            Command = dto.Command,
-            Confidence = dto.Confidence,
-            Impact = dto.Impact,
-            Notes = dto.Notes
+                Id = dto.Id,
+                CaseId = dto.CaseID,
+                Case = new()
+                {
+                        Id = dto.Case.Id,
+                        CaseStatus = dto.Case.Status,
+                        CreatedAt = dto.Case.CreatedAt,
+                        UpdatedAt = dto.Case.UpdatedAt,
+                        CaseTranscript = dto.Case.CaseTranscript,
+                        Notes = dto.Case.CaseTranscript // Assuming Notes maps to CaseTranscript
+                },
+                Summary = dto.Summary,
+                Command = dto.Command,
+                Confidence = dto.Confidence,
+                Impact = dto.Impact,
+                Notes = dto.Notes
         };
     }
 }

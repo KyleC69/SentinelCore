@@ -2,14 +2,16 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseFlowEngineBuilderExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using SentinelCore.CaseFlowEngine.CaseFlow;
+using SentinelCore.CaseFlowEngine.DBEntities;
 using SentinelCore.CaseFlowEngine.Persistence;
 using SentinelCore.Contracts.Abstractions;
 
@@ -69,5 +71,41 @@ public static class CaseFlowEngineBuilderExtensions
         services.AddTransient<ISignalRepository, SignalRepository>();
 
         return services;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Opts the host in to the EF Core-backed Case Flow Engine and registers the
+    ///     <see cref="SentinelCoreDBContext" /> factory it requires (pattern-lock PL-7),
+    ///     in a single call.
+    /// </summary>
+    /// <param name="services">The service collection to register into.</param>
+    /// <param name="connectionString">
+    ///     The SQL Server connection string for the case-flow database.
+    /// </param>
+    /// <returns>The updated service collection.</returns>
+    /// <remarks>
+    ///     This overload exists so hosts never have to reference the persistence
+    ///     project's DbContext type or EF entity namespaces. <c>AddDbContextFactory</c>
+    ///     registers both <c>IDbContextFactory&lt;SentinelCoreDBContext&gt;</c>
+    ///     (singleton) and the scoped context required by the stores.
+    /// </remarks>
+    public static IServiceCollection AddCaseFlowEngine(this IServiceCollection services, string connectionString)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+
+        services.AddDbContextFactory<SentinelCoreDBContext>(options =>
+        {
+            options.UseSqlServer(connectionString);
+        });
+
+        return services.AddCaseFlowEngine();
     }
 }

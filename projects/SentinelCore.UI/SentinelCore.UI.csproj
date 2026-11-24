@@ -2,13 +2,19 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- Windows 10 (build 17763) and above is the ONLY supported platform.
+         TargetPlatformVersion selects the Windows SDK used to build (22621, matching the
+         Tests project and the pinned Microsoft.Windows.SDK.* packages);
+         SupportedOSPlatformVersion declares the actual runtime floor, emitting
+         [SupportedOSPlatform("windows10.0.17763")] rather than the misleading windows7.0. -->
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <RootNamespace>SentinelCore.UI</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-   
+
   </PropertyGroup>
 
   <ItemGroup>

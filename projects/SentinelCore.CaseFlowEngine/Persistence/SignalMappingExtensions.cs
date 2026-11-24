@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         SignalMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -35,12 +35,40 @@ public static class SignalMappingExtensions
 
         return new()
         {
-            Id = signal.Id,
-            CaseId = 0, // or map if the contract exposes CaseId
-            SignalText = signal.SignalText,
-            Source = signal.Source,
-            FirstSeen = signal.Timestamp,
-            Notes = signal.Notes
+                Id = signal.Id,
+                CaseId = 0, // or map if the contract exposes CaseId
+                SignalText = signal.SignalText,
+                Source = signal.Source,
+                FirstSeen = signal.Timestamp,
+                Notes = signal.Notes
+        };
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Maps a <see cref="SignalEntity" /> persistence object back to its <see cref="Signal" />
+    ///     contract representation. Persistence types never leave this project.
+    /// </summary>
+    /// <param name="entity">The persistence entity to map from.</param>
+    /// <returns>A new <see cref="Signal" /> populated from <paramref name="entity" />.</returns>
+    public static Signal ToContract(this SignalEntity entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        return new()
+        {
+                Id = entity.Id,
+                SignalId = entity.SignalId,
+                SignalText = entity.SignalText ?? string.Empty,
+                Source = entity.Source ?? string.Empty,
+                Notes = entity.Notes ?? string.Empty,
+                Timestamp = entity.FirstSeen
         };
     }
 }

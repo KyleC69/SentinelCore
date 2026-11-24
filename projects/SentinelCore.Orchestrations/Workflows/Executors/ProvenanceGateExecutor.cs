@@ -1,11 +1,17 @@
 // Solution: SentinelCore
 // Project:   SentinelCore.Orchestrations
-// File:         Workflows\Executors\ProvenanceGateExecutor.cs
+// File:         ProvenanceGateExecutor.cs
+// Author: Kyle L. Crowder
+// Build Num:  112101
+
+
 
 using SentinelCore.Contracts.Abstractions;
-
 using SentinelCore.Security;
 using SentinelCore.Security.Quarantine;
+
+
+
 
 namespace SentinelCore.Orchestrations.Workflows.Executors;
 
@@ -23,9 +29,12 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 [YieldsOutput(typeof(ChatMessage))] // ← MANDATORY: declare output type for compile-time validation
 public sealed partial class ProvenanceGateExecutor : Executor
 {
-    private readonly ISystemReporter _reporter;
     private readonly ISentinelProvenanceService _provenanceService;
     private readonly IQuarantineStore _quarantineStore;
+    private readonly ISystemReporter _reporter;
+
+
+
 
 
 
@@ -52,10 +61,12 @@ public sealed partial class ProvenanceGateExecutor : Executor
 
 
 
+
     /// <summary>
     ///     Gets the human-readable name of this executor, used in log messages and diagnostics.
     /// </summary>
     public string Name { get; }
+
 
 
 
@@ -123,6 +134,7 @@ public sealed partial class ProvenanceGateExecutor : Executor
 
 
 
+
     /// <summary>
     ///     Domain logic: validates provenance and quarantines rejected messages.
     ///     Validation itself throwing is treated as a failure — the message is quarantined
@@ -155,5 +167,4 @@ public sealed partial class ProvenanceGateExecutor : Executor
         _quarantineStore.Quarantine(message, result.Failure, result.Detail);
         return null;
     }
-
 }

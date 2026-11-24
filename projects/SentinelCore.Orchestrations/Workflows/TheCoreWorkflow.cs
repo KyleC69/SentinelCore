@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -70,9 +70,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     private AIAgent? _theCoreAgent;
     private AgentSession? _theCoreSession;
     private Workflow? _theCoreWorkflow;
-
-
-
 
 
 
@@ -349,8 +346,8 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
          *
          * This is a direct answer branch that allows the core agent to provide immediate responses to certain queries.
          * The Core agent has ability to spawn a preconfigured agent with system tools to interrogate the system directly
-         * without a need for a case or investigation. 
-        */
+         * without a need for a case or investigation.
+         */
         builder.AddEdge(executors.TheCoreSwitchExec, directAnswerAgentExec, GetCondition(true)); // TheCore DirectAnswer
 
 
@@ -527,15 +524,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         return detectionResult => detectionResult is DetectionBoolResult result && result.IsTrue == expectedResult;
     }
 
-    /// <summary>
-    ///     Condition for the provenance gate edge. The gate returns the validated message
-    ///     and null when a message fails provenance validation, so only non-null output
-    ///     continues to the Safety gate; rejected messages end at the gate.
-    /// </summary>
-    /// <param name="output">The output produced by the provenance gate executor.</param>
-    /// <returns><c>true</c> when the message was validated and may proceed.</returns>
-    private static bool ProvenanceGatePassed(object? output) => output is not null;
-
 
 
 
@@ -578,6 +566,22 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
     /// <summary>
+    ///     Condition for the provenance gate edge. The gate returns the validated message
+    ///     and null when a message fails provenance validation, so only non-null output
+    ///     continues to the Safety gate; rejected messages end at the gate.
+    /// </summary>
+    /// <param name="output">The output produced by the provenance gate executor.</param>
+    /// <returns><c>true</c> when the message was validated and may proceed.</returns>
+    private static bool ProvenanceGatePassed(object? output) => output is not null;
+
+
+
+
+
+
+
+
+    /// <summary>
     ///     Validates that the provided workflow instance is not null.
     /// </summary>
     /// <param name="workflow">The Workflow to validate.</param>
@@ -608,7 +612,7 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         string flow = workflow.ToDotString();
         try
         {
-            var path = "f:\\Solutions\\SentinelCore\\SentinelCore\\projects\\SentinelCore.Orchestrations\\Workflows\\workflow.dot";
+            string path = "f:\\Solutions\\SentinelCore\\SentinelCore\\projects\\SentinelCore.Orchestrations\\Workflows\\workflow.dot";
             await File.WriteAllTextAsync(path, flow, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

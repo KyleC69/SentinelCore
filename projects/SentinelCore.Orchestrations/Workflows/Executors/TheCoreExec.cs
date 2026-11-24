@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreExec.cs
 // Author: Kyle L. Crowder
-// Build Num:  111504
+// Build Num:  112101
 
 
 
@@ -148,9 +148,9 @@ internal sealed partial class TheCoreExec : Executor
         // If there's a specific prompt from the workflow state (or the current message if none in state), it's added as a user message.
         List<ChatMessage> cms =
         [
-            new(ChatRole.System, AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S),
-            new(ChatRole.User, AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS),
-            new(ChatRole.User, taskinstruct),
+                new(ChatRole.System, AgentInstructionConstants.CURRENT_PLATFORM_DOMAIN_S),
+                new(ChatRole.User, AgentInstructionConstants.SENTINEL_CORE_INSTRUCTIONS),
+                new(ChatRole.User, taskinstruct)
         ];
         if (prompt is not null)
         {

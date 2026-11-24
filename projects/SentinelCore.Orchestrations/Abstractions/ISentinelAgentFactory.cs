@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ISentinelAgentFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  111816
+// Build Num:  112101
 
 
 
@@ -43,6 +43,12 @@ public interface ISentinelAgentFactory
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, CancellationToken cancellationToken = default);
 
 
+
+
+
+
+
+
     /// <summary>
     ///     Creates an agent from the preset's default configuration, appending task-specific instructions.
     /// </summary>
@@ -51,6 +57,12 @@ public interface ISentinelAgentFactory
     /// <param name="cancellationToken">A token to cancel the construction.</param>
     /// <returns>The constructed agent.</returns>
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string? taskInstructions, CancellationToken cancellationToken = default);
+
+
+
+
+
+
 
 
     /// <summary>
@@ -65,6 +77,12 @@ public interface ISentinelAgentFactory
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string? taskInstructions, ChatResponseFormatJson? forJsonSchema, CancellationToken token);
 
 
+
+
+
+
+
+
     /// <summary>
     ///     Creates an agent from the preset's default configuration with an explicit name and description, appending
     ///     task-specific instructions.
@@ -77,6 +95,12 @@ public interface ISentinelAgentFactory
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, string taskInstructions);
 
 
+
+
+
+
+
+
     /// <summary>
     ///     Creates an agent from the preset's default configuration with an explicit name and description.
     /// </summary>
@@ -87,6 +111,12 @@ public interface ISentinelAgentFactory
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription);
 
 
+
+
+
+
+
+
     /// <summary>
     ///     Creates an agent from the preset with an explicit tool selection overriding the preset's tool groups.
     /// </summary>
@@ -95,6 +125,12 @@ public interface ISentinelAgentFactory
     /// <param name="cancellationToken">A token to cancel the construction.</param>
     /// <returns>The constructed agent.</returns>
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, AgentToolSelection toolSelection, CancellationToken cancellationToken = default);
+
+
+
+
+
+
 
 
     /// <summary>
@@ -110,6 +146,12 @@ public interface ISentinelAgentFactory
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, AgentToolSelection toolSelection, string? taskInstructions, ChatResponseFormat? forJsonSchema = null, CancellationToken cancellationToken = default);
 
 
+
+
+
+
+
+
     /// <summary>
     ///     Creates an agent from the preset with an explicit name, description and tool selection.
     /// </summary>
@@ -119,6 +161,12 @@ public interface ISentinelAgentFactory
     /// <param name="toolSelection">The toolset to bind, replacing the preset's tool groups.</param>
     /// <returns>The constructed agent.</returns>
     Task<AIAgent> CreateAgentAsync(AgentPreset presetName, string agentName, string agentDescription, AgentToolSelection toolSelection);
+
+
+
+
+
+
 
 
     /// <summary>
