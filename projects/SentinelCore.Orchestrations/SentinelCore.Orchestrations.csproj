@@ -11,7 +11,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="Orchestrations\MagenticDefaultPrompts.cs" />
+		<Compile Remove="Orchestrations\MagenticDefaultPrompts.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -19,10 +19,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Anthropic.SDK" />
 		<PackageReference Include="ErikEJ.EntityFrameworkCore.DgmlBuilder" />
 		<PackageReference Include="Newtonsoft.Json" />
 		<PackageReference Include="OpenTelemetry.Exporter.Console" />
-		<ProjectReference Include="..\..\..\..\SentinelCoreSecurity\SentinelCore.Security.csproj" />
+		<ProjectReference Include="..\SentinelCore.Security\SentinelCore.Security.csproj" />
 		<ProjectReference Include="..\SentinelCore.CaseFlowEngine\SentinelCore.CaseFlowEngine.csproj" />
 		<ProjectReference Include="..\SentinelCore.Contracts\SentinelCore.Contracts.csproj" />
 		<PackageReference Include="Microsoft.Agents.AI" />
@@ -35,8 +36,11 @@
 		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.AI" />
 		<PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+		<PackageReference Include="Azure.AI.Inference" />
 		<PackageReference Include="Azure.AI.OpenAI" />
+		<PackageReference Include="Microsoft.Extensions.AI.AzureAIInference" />
 		<PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
+		<PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI.Managed" />
 		<PackageReference Include="OpenAI" />
 		<PackageReference Include="Jetbrains.Annotations" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
@@ -55,11 +59,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Providers\" />
+		<Folder Include="Providers\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="Orchestrations\MagenticDefaultPrompts.cs" />
+		<None Include="Orchestrations\MagenticDefaultPrompts.cs" />
 	</ItemGroup>
 	<Target Name="CopyBuildOutput" AfterTargets="Build">
 		<Message Text="Copying build output..." Importance="High" />

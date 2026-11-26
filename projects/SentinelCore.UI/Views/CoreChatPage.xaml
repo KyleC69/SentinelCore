@@ -264,7 +264,7 @@
                     <ComboBox x:Name="ModeComboBox"
                               Width="180"
                               Style="{StaticResource FormComboBoxStyle}"
-                              ItemsSource="{Binding ChatModes}"
+                              ItemsSource="{Binding ChatTypes}"
                               SelectedItem="{Binding ChatType, Mode=TwoWay}"
                               AutomationProperties.Name="Mode" />
 

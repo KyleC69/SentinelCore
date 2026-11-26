@@ -10,6 +10,16 @@
 	  <RootNamespace>SentinelCore.CaseFlowEngine</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Migrations\**" />
+    <EmbeddedResource Remove="Migrations\**" />
+    <None Remove="Migrations\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="migration.sql" />
+  </ItemGroup>
+
 
 
 

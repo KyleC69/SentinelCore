@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         NewCaseExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -27,6 +27,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     Each step is focused, clean, and deliberate — clear separation enforced.
 /// </summary>
 [YieldsOutput(typeof(ChatMessage))]
+[YieldsOutput(typeof(string))]
 public sealed partial class NewCaseExecutor : Executor
 {
     private readonly ICaseFlowEngine _caseEng;
@@ -45,7 +46,7 @@ public sealed partial class NewCaseExecutor : Executor
     /// </summary>
     /// <param name="caseEng">The case flow engine for case lifecycle operations.</param>
     /// <param name="reporter">The system reporter for logging.</param>
-    public NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter reporter) : base("CreateNewCase")
+    public NewCaseExecutor(ICaseFlowEngine caseEng, ISystemReporter reporter) : base("CreateNewCase", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         _caseEng = caseEng ?? throw new ArgumentNullException(nameof(caseEng));
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
@@ -91,15 +92,15 @@ public sealed partial class NewCaseExecutor : Executor
         _reporter.ReportInfo($"[{Name}] Starting execution.");
 
         // --- Save Envelope to state ---
-       // await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, envelope, "SharedState", cancellationToken).ConfigureAwait(false);
-       // _reporter.ReportDebug($"[{Name}] Saved envelope to state: {envelope}");
+        // await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, envelope, "SharedState", cancellationToken).ConfigureAwait(false);
+        // _reporter.ReportDebug($"[{Name}] Saved envelope to state: {envelope}");
 
         try
         {
             Case? result = await ProcessCaseAsync(message, context, cancellationToken).ConfigureAwait(false);
             if (!ReferenceEquals(result, null))
             {
-         //       envelope.Case = result;
+                //       envelope.Case = result;
             }
 
             //   await context.SendMessageAsync(message, cancellationToken);

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         ArtifactEntity.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 

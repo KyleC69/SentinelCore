@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         TheCoreWorkflow.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 using SentinelCore.CaseFlowEngine.Infrastructure;
 using SentinelCore.Contracts.Abstractions;
+using SentinelCore.Contracts.Contracts;
 using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Agents;
 using SentinelCore.Orchestrations.Agents.AgentPresets;
@@ -151,29 +152,23 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
     {
         Throw.IfNull(input);
 
-        using CancellationTokenSource executionCts = CancellationTokenSource.CreateLinkedTokenSource(token);
-        CancellationToken executionToken = executionCts.Token;
-
-
+        CancellationTokenSource executionCts = CancellationTokenSource.CreateLinkedTokenSource(token);
 
         try
         {
-            StreamingRun run = await InProcessExecution.RunStreamingAsync(_theCoreWorkflow, input, cancellationToken: executionToken).AsTask().WaitAsync(RunStartupTimeout, executionToken).ConfigureAwait(false);
-            bool turnAccepted = await run.TrySendMessageAsync(new TurnToken(true)).AsTask().WaitAsync(RunStartupTimeout, executionToken).ConfigureAwait(false);
-            if (!turnAccepted)
-            {
-                this.ReportExecutionFailure("The magnetic group workflow rejected the turn token, so no work was scheduled.");
-                return null;
-            }
+            StreamingRun run = await InProcessExecution.RunStreamingAsync(_theCoreWorkflow, input, cancellationToken: executionCts.Token).AsTask().WaitAsync(RunStartupTimeout, executionCts.Token).ConfigureAwait(false);
 
-            // Return the async-enumerable directly (do not await it)
-            return run.WatchStreamAsync(false, executionToken);
+            // The workflow's executors receive the input directly from RunStreamingAsync; no executor
+            // here accepts a TurnToken (agents are invoked inside handler bodies), so a TurnToken send
+            // always reports false and previously aborted the run before any output reached the UI.
 
-
-
+            // Return a stream that disposes the run (and the linked CTS) when enumeration ends, because
+            // MAF keeps exclusive ownership of the cached workflow instance until the run is disposed.
+            return WatchWorkflowStreamAsync(run, executionCts);
         }
         catch (Exception ex)
         {
+            executionCts.Dispose();
             throw new SentinelCoreExecutionException("Failed to execute the workflow.", ex);
         }
     }
@@ -340,33 +335,25 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         builder.AddEdge(executors.SafetyReviewExecutor, executors.EscalatedExecutor);
         builder.AddEdge(executors.PatternCheckExecutor, executors.WhiteListExecutor); // Check whitelist for pattern - Operator created list to ignore
 
-        builder.AddEdge(executors.WhiteListExecutor, executors.TheCoreSwitchExec);
+        builder.AddEdge(executors.WhiteListExecutor, executors.SecurityGate);
 
-        /* -- ------- DirectAnswer Branch -------------------------
+        /* -- ------- Chat-type routing -------------------------
          *
-         * This is a direct answer branch that allows the core agent to provide immediate responses to certain queries.
-         * The Core agent has ability to spawn a preconfigured agent with system tools to interrogate the system directly
-         * without a need for a case or investigation.
+         * TheCoreSwitchExec has re-validated provenance at the model boundary. ChatTypeRouterExecutor
+         * selects the branch deterministically from the host-stamped chat type (no model contact), so a
+         * non-investigation message can never fall into case creation and an investigation request can
+         * never be silently answered from memory. A null return (missing/unrecognised type) dead-ends.
          */
-        builder.AddEdge(executors.TheCoreSwitchExec, directAnswerAgentExec, GetCondition(true)); // TheCore DirectAnswer
-
+        builder.AddEdge<ChatMessage>(executors.SecurityGate, executors.ChatTypeRouterExecutor, ProvenanceGatePassed); // message passed the model-boundary integrity re-check; null (quarantined) dead-ends
+        builder.AddEdge<ChatMessage>(executors.ChatTypeRouterExecutor, directAnswerAgentExec, ChatTypeRouterExecutor.RoutesTo(nameof(ChatType.Chat))); // TheCore direct answer branch
+        builder.AddEdge<ChatMessage>(executors.ChatTypeRouterExecutor, executors.SignalClassifierExecutor, ChatTypeRouterExecutor.RoutesTo(nameof(ChatType.Investigation))); // Investigation branch
 
         // -- ------- Investigate Branch -------------------------
         //Open case send to TheCore
-        builder.AddEdge(executors.TheCoreSwitchExec, executors.SignalClassifierExecutor, GetCondition(false)); // Investigation Branch
         builder.AddEdge(executors.SignalClassifierExecutor, executors.NewCaseExecutor) // TheCore generate the initial hypothesis objective
                 .AddEdge(executors.NewCaseExecutor, subWorkflowExecutor) // NewCase creates a new case and sends objective to the sub-workflow for evidence gathering
                 .AddEdge(subWorkflowExecutor, executors.PersistEvidenceExecutor); // Sub-workflow evidence gathering Magnetic orchestration
 
-
-
-        // ------- RedAlert Branch -------------------------
-        // Alert UI to critical error and mark case urgent
-        //  builder.AddEdge(executors.CriticalAlert, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
-
-        // -- ------- MoreInformation Branch -------------------------
-        //Mark case needs more info and alert operator
-        //    builder.AddEdge(executors.MoreInformationExecutor, executors.HumanOperatorExecutor).AddEdge(executors.HumanOperatorExecutor, executors.TerminateWorkflow);
 
 
 
@@ -389,7 +376,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         // ── Register output sources ─────────────────────────────────────────────────────────
         // MAF only surfaces yielded values from executors registered via WithOutputFrom;
         // without this registration no executor output ever reaches the WorkflowOutputEvent stream.
-        builder.WithOutputFrom(directAnswerAgentExec, executors.ProvenanceGateExecutor);
+        // Every executor step in the graph is registered. Only explicitly yielded messages reach
+        // the UI: each executor suppresses MAF's handler-return auto-yield via
+        // ExecutorOutputPolicy.CreateExplicitYieldsOnly, so handler returns stay in-graph plumbing
+        // while YieldOutputAsync calls (fallback, status, error, and report messages) surface.
+        builder.WithOutputFrom(executors.ProvenanceGateExecutor, executors.SafetyExecutor, executors.SafetyReviewExecutor, executors.EscalatedExecutor, executors.PatternCheckExecutor, executors.WhiteListExecutor, executors.SecurityGate, executors.ChatTypeRouterExecutor, executors.SignalClassifierExecutor, executors.NewCaseExecutor, subWorkflowExecutor, executors.PersistEvidenceExecutor, directAnswerAgentExec);
 
         Workflow flow = builder.Build();
 
@@ -532,24 +523,6 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
     /// <summary>
-    ///     Creates a condition function that evaluates whether the provided detection result
-    ///     matches the expected next step decision.
-    /// </summary>
-    /// <param name="expectedDecision">The expected next step decision.</param>
-    /// <returns>A function that evaluates whether output meets the expected result.</returns>
-    private static Func<object?, bool> GetCondition(NextStep expectedDecision)
-    {
-        return detectionResult => detectionResult is NextStep result && result == expectedDecision;
-    }
-
-
-
-
-
-
-
-
-    /// <summary>
     ///     Reports a workflow execution exception through the system reporter.
     /// </summary>
     /// <param name="ex">The exception that occurred during execution.</param>
@@ -566,11 +539,11 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
 
 
     /// <summary>
-    ///     Condition for the provenance gate edge. The gate returns the validated message
-    ///     and null when a message fails provenance validation, so only non-null output
-    ///     continues to the Safety gate; rejected messages end at the gate.
+    ///     Condition for the provenance edges (the entry gate and the model-boundary integrity re-check). Both
+    ///     executors return the message when validation passes and <see langword="null" /> when the message was
+    ///     rejected and quarantined, so only non-null output continues; rejected messages dead-end.
     /// </summary>
-    /// <param name="output">The output produced by the provenance gate executor.</param>
+    /// <param name="output">The output produced by a provenance-validating executor.</param>
     /// <returns><c>true</c> when the message was validated and may proceed.</returns>
     private static bool ProvenanceGatePassed(object? output) => output is not null;
 
@@ -618,6 +591,36 @@ public sealed class TheCoreWorkflow : WorkflowBase, IOrchestration
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Debug.WriteLine($"Failed to write workflow.dot: {ex.Message}");
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Wraps the run's event stream so the <see cref="StreamingRun" /> and its cancellation source are
+    ///     disposed when the caller finishes enumerating, releasing the workflow for subsequent runs.
+    /// </summary>
+    /// <param name="run">The streaming run to watch.</param>
+    /// <param name="executionCts">The linked cancellation source backing the run's token.</param>
+    /// <returns>The workflow event stream.</returns>
+    private static async IAsyncEnumerable<WorkflowEvent> WatchWorkflowStreamAsync(StreamingRun run, CancellationTokenSource executionCts)
+    {
+        try
+        {
+            await foreach (WorkflowEvent evt in run.WatchStreamAsync(false, executionCts.Token).ConfigureAwait(false))
+            {
+                yield return evt;
+            }
+        }
+        finally
+        {
+            await run.DisposeAsync().ConfigureAwait(false);
+            executionCts.Dispose();
         }
     }
 }

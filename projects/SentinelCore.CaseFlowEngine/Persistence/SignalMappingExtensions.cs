@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         SignalMappingExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -24,30 +24,6 @@ namespace SentinelCore.CaseFlowEngine.Persistence;
 /// </summary>
 public static class SignalMappingExtensions
 {
-    /// <summary>
-    ///     Maps a <see cref="Signal" /> DTO to a new <see cref="SignalEntity" />.
-    /// </summary>
-    /// <param name="signal">The source signal DTO to map from.</param>
-    /// <returns>A new <see cref="SignalEntity" /> populated with values from <paramref name="signal" />.</returns>
-    public static SignalEntity ToEntity(this Signal signal)
-    {
-        ArgumentNullException.ThrowIfNull(signal);
-
-        return new()
-        {
-                Id = signal.Id,
-                CaseId = 0, // or map if the contract exposes CaseId
-                SignalText = signal.SignalText,
-                Source = signal.Source,
-                FirstSeen = signal.Timestamp,
-                Notes = signal.Notes
-        };
-    }
-
-
-
-
-
 
 
 
@@ -69,6 +45,33 @@ public static class SignalMappingExtensions
                 Source = entity.Source ?? string.Empty,
                 Notes = entity.Notes ?? string.Empty,
                 Timestamp = entity.FirstSeen
+        };
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Maps a <see cref="Signal" /> DTO to a new <see cref="SignalEntity" />.
+    /// </summary>
+    /// <param name="signal">The source signal DTO to map from.</param>
+    /// <returns>A new <see cref="SignalEntity" /> populated with values from <paramref name="signal" />.</returns>
+    public static SignalEntity ToEntity(this Signal signal)
+    {
+        ArgumentNullException.ThrowIfNull(signal);
+
+        return new()
+        {
+                Id = signal.Id,
+                CaseId = 0, // or map if the contract exposes CaseId
+                SignalText = signal.SignalText,
+                Source = signal.Source,
+                FirstSeen = signal.Timestamp,
+                Notes = signal.Notes
         };
     }
 }

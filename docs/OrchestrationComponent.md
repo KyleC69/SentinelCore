@@ -189,13 +189,23 @@ public enum AgentRole
 
 ### 4.2 `TheCoreWorkflow` (OrchestrationType.TheCore / Investigative)
 
-**Architecture:** Core agent classifies signal → `WorkflowBuilder.AddSwitch` routes to executor:
+**Architecture:** Provenance gate → Safety → Pattern/Whitelist filters → model-boundary integrity re-check → **deterministic chat-type routing**:
 
-| NextStep | Executor | Description |
+```text
+WhiteListExecutor
+  -> TheCoreSwitchExec                (VerifyIntegrity, non-consumptive)
+      -> ChatTypeRouterExecutor     (reads ChatType metadata, no model contact)
+          -> DirectAnswerExecutor      when ChatType = Chat
+          -> SignalClassifierExecutor  when ChatType = Investigation
+```
+
+| ChatType | Executor | Description |
 | ---------- | ---------- | ------------- |
-| `Investigate` | `InvestigationExecutor` | Magentic sub-workflow (Manager + 2 Workers + Critic + Aggregator) |
-| `RedAlert` / `EscalateToHumanOperator` | `SafetyExecutor` | Safety agent (`PersonaType.TheEvaluator`) |
-| `CanAnswerDirectly` / `PatternMatch` / `IsNoise` / `MoreInformationRequired` | `DirectAnswerExecutor` | Direct answer from Core |
+| `Chat` | `DirectAnswerExecutor` | Core agent answers from the environment without opening a case |
+| `Investigation` | `SignalClassifierExecutor` → `NewCaseExecutor` → evidence sub-workflow | Opens a case and runs the Magentic investigation sub-workflow |
+| *missing / unrecognised* | none | Router yields a rejection notice and returns `null`; the message dead-ends (fail-closed) |
+
+Routing is never delegated to a model. `ChatTypeRouterExecutor` is the single owner of the branch decision; it reads and validates the host-stamped chat type against the `ChatType` enum. The outgoing edges use `ChatTypeRouterExecutor.RoutesTo(...)`. `CoreSwitchDecision` remains in the model folder but is no longer used for routing.
 
 **Shared Message Type:** `CaseHypothesis` flows between steps.
 

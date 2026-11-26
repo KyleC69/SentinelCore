@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ProvenanceGateExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -47,7 +47,7 @@ public sealed partial class ProvenanceGateExecutor : Executor
     /// <param name="provenanceService">The provenance service performing entry-point validation.</param>
     /// <param name="quarantineStore">The store receiving rejected messages, unchanged.</param>
     /// <exception cref="ArgumentNullException">Thrown when any parameter is <c>null</c>.</exception>
-    public ProvenanceGateExecutor(ISystemReporter reporter, ISentinelProvenanceService provenanceService, IQuarantineStore quarantineStore) : base("ProvenanceGateExecutor")
+    public ProvenanceGateExecutor(ISystemReporter reporter, ISentinelProvenanceService provenanceService, IQuarantineStore quarantineStore) : base("ProvenanceGateExecutor", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         _provenanceService = provenanceService ?? throw new ArgumentNullException(nameof(provenanceService));

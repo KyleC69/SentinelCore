@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AdvancedInMemoryChatHistoryProvider.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -76,7 +76,7 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
             return;
         }
 
-        IEnumerable<ChatMessage> filteredRequestMessages = context.RequestMessages.Where(m => m.GetMessageSourceType() != MessageSourceType.ChatHistory);
+        IEnumerable<ChatMessage> filteredRequestMessages = context.RequestMessages.Where(m => !m.IsChatHistoryMarked());
 
         State state = _sessionState.GetOrInitializeState(context.Session);
 
@@ -119,7 +119,7 @@ public sealed class AdvancedInMemoryChatHistoryProvider : ChatHistoryProvider
             historySnapshot = state.Messages.ToList();
         }
 
-        IEnumerable<ChatMessage> stampedChatHistory = historySnapshot.Select(message => message.WithMessageSource(MessageSourceType.ChatHistory, this.GetType().FullName!));
+        IEnumerable<ChatMessage> stampedChatHistory = historySnapshot.Select(message => message.WithChatHistoryMarker());
 
         return stampedChatHistory.Concat(context.RequestMessages);
     }

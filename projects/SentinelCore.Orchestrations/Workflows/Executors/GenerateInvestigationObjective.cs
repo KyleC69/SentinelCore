@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         GenerateInvestigationObjective.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -28,7 +28,6 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     <see cref="NextStep" /> and <see cref="ChatMessage" />.
 /// </remarks>
 [SendsMessage(typeof(ChatMessage))]
-[YieldsOutput(typeof(NextStep))]
 [YieldsOutput(typeof(ChatMessage))]
 public sealed partial class ClassifierAgentExec : Executor
 {
@@ -79,7 +78,7 @@ public sealed partial class ClassifierAgentExec : Executor
         // --- Null validation ---
         if (message is null)
         {
-            string msg = $"[{Name}] Input message was null. Returning fallback {nameof(NextStep)}.";
+            string msg = $"[{Name}] Input message was null. ";
             _reporter.ReportError(msg);
             await context.YieldOutputAsync(msg, cancellationToken).ConfigureAwait(false);
             message?.AddAssistantMessage(msg);
@@ -101,7 +100,7 @@ public sealed partial class ClassifierAgentExec : Executor
             //   await context.SendMessageAsync(message!, cancellationToken);
 
             // --- Status: Final output ---
-            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type: {nameof(NextStep)}.. Value of {message}");
+            _reporter.ReportInfo($"[{Name}] Completed successfully. Output type:.. Value of {message}");
 
             //Yield results to execution runner
             //  await context.YieldOutputAsync(messages, cancellationToken);

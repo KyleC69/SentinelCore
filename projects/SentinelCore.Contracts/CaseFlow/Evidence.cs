@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         Evidence.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -17,21 +17,21 @@ public sealed class Evidence
 {
 
     // One-to-Many relationship: A Case can have many Evidence items
-    public Case Case { get; set; }
+    public Case Case { get; set; } = null!;
     public int CaseId { get; set; } = 0;
 
-    public string CaseTranscript { get; set; }
-    public string CollectorAgent { get; set; }
+    public string CaseTranscript { get; set; } = null!;
+    public string CollectorAgent { get; set; } = null!;
     public double Confidence { get; set; }
 
     public string ContentJson { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
 
     public int Id { get; set; }
-    public string Observation { get; set; }
+    public string Observation { get; set; } = null!;
     public DateTime ObservedAt { get; set; }
-    public string SourcePath { get; set; }
-    public string SourceType { get; set; }
+    public string SourcePath { get; set; } = null!;
+    public string SourceType { get; set; } = null!;
 
 
 

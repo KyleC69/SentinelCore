@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseFlowEngine.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -230,7 +230,7 @@ public sealed class CaseFlowEngine : ICaseFlowEngine
             await using SentinelCoreDBContext db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
             // 1. Retrieve the current case
-            CaseEntity entity = await db.CaseEntities.FindAsync(new object[] { caseId }, cancellationToken);
+            CaseEntity? entity = await db.CaseEntities.FindAsync(new object[] { caseId }, cancellationToken);
 
             if (entity is null)
             {

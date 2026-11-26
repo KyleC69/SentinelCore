@@ -2,7 +2,7 @@
 // Project:   SentinelCore.UI
 // File:         CoreChatViewModel.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -25,8 +25,10 @@ using SentinelCore.Orchestrations.Abstractions;
 using SentinelCore.Orchestrations.Models;
 using SentinelCore.Orchestrations.Services;
 using SentinelCore.Security;
-using SentinelCore.Security.Identity;
+using SentinelCore.Security.Sources;
 using SentinelCore.UI.Services;
+// Alias the canonical Contracts chat type; a drifted local duplicate previously shadowed it.
+using ChatType = SentinelCore.Contracts.Contracts.ChatType;
 
 
 
@@ -67,10 +69,12 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
     private readonly ICaseFlowEngine _caseFlowEngine;
 
     /// <summary>
-    ///     Backing field for <see cref="ChatType" />: the mode the chat page operates
+    ///     Backing field for <see cref="ChatType" />: the chat type the chat page operates
     ///     in. Two-way bound to the Mode combo box on the chat page.
     /// </summary>
     [ObservableProperty] private ChatType _chatType = ChatType.Chat;
+
+
 
     private readonly IClipboardService _clipboardService;
 
@@ -201,9 +205,10 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
 
     /// <summary>
-    ///     Gets the selectable modes for the Mode combo box, in display order.
+    ///     Chat modes offered in the Mode combo box. The chat page binds this as the combo's
+    ///     ItemsSource; <see cref="ChatType" /> is the two-way bound selection.
     /// </summary>
-    public IReadOnlyList<ChatType> ChatModes { get; } = [ChatType.Chat, ChatType.Investigation];
+    public IReadOnlyList<ChatType> ChatTypes { get; } = [ChatType.Chat, ChatType.Investigation];
 
 
 
@@ -415,12 +420,12 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
     /// <summary>
     ///     Called when the Mode combo box selection changes <see cref="ChatType" />.
-    ///     Logged so chat-mode transitions are visible in diagnostics.
+    ///     Logged so chat-type transitions are visible in diagnostics.
     /// </summary>
-    /// <param name="value">The newly selected chat mode.</param>
+    /// <param name="value">The newly selected chat type.</param>
     partial void OnChatTypeChanged(ChatType value)
     {
-        _logger.LogInformation("Chat mode changed to {ChatMode}.", value);
+        _logger.LogInformation("Chat type changed to {ChatType}.", value);
     }
 
 
@@ -591,15 +596,16 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
 
         try
         {
+            // Stamp the outgoing message with its origin and signature so the receiving workflow can validate it before any model sees it.
+            // Also stamp the message with the chat type so the workflow can branch on it.
             ChatMessage msg = new(ChatRole.User, InputText);
-
-            msg.WithMessageSource(MessageSourceType.SentinelCoreUi);
-            msg.WithChatMode(ChatType.ToString());
-
-            // Stamp provenance so the receiving workflow can prove message origin
-            // and validate the signature before any model sees the content.
-            _provenanceService.Stamp(msg, SentinelIdentities.CoreUi);
+            msg.WithMessageSource(SentinelSources.CoreUi);
+            msg.WithChatType(ChatType.ToString());
+            _provenanceService.Stamp(msg);
+            // Add the user message to the conversation UI before sending so the user sees it immediately.
             AddToMessages(msg);
+
+
             InputText = string.Empty;
             IAsyncEnumerable<WorkflowEvent> result = await _orchestrationControl.ExecuteStreamingAsync(msg, _linkedCts.Token);
 
@@ -643,13 +649,4 @@ public sealed partial class CoreChatViewModel : ObservableObject, IDisposable, I
         // An orchestration may have created or advanced cases — refresh the telemetry panel.
         RequestCaseCountsRefresh();
     }
-}
-
-
-
-
-
-public enum ChatType
-{
-    Chat, Investigation
 }

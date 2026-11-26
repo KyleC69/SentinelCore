@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         AgentToolSelection.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -217,12 +217,8 @@ public sealed record AgentToolSelection
             }
         }
 
-        if (distinct.Count == 0)
-        {
-            throw new ArgumentException($"A group tool selection requires at least one group name. Use {nameof(AgentToolSelection)}.{nameof(None)} to bind no tools.", nameof(groupNames));
-        }
+        return distinct.Count == 0 ? throw new ArgumentException($"A group tool selection requires at least one group name. Use {nameof(AgentToolSelection)}.{nameof(None)} to bind no tools.", nameof(groupNames)) : new AgentToolSelection(AgentToolSelectionKind.Groups, [], distinct);
 
-        return new AgentToolSelection(AgentToolSelectionKind.Groups, [], distinct);
     }
 
 
@@ -282,11 +278,7 @@ public sealed record AgentToolSelection
             }
         }
 
-        if (distinct.Count == 0)
-        {
-            throw new ArgumentException($"A named tool selection requires at least one tool name. Use {nameof(AgentToolSelection)}.{nameof(None)} to bind no tools.", nameof(toolNames));
-        }
+        return distinct.Count == 0 ? throw new ArgumentException($"A named tool selection requires at least one tool name. Use {nameof(AgentToolSelection)}.{nameof(None)} to bind no tools.", nameof(toolNames)) : new AgentToolSelection(AgentToolSelectionKind.Named, distinct, []);
 
-        return new AgentToolSelection(AgentToolSelectionKind.Named, distinct, []);
     }
 }

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         EscalatedExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -43,7 +43,7 @@ internal sealed partial class EscalatedExecutor : Executor
     /// </summary>
     /// <param name="caseFlowEngine">The case flow engine used to advance the case lifecycle.</param>
     /// <param name="reporter">The system reporter for logging.</param>
-    public EscalatedExecutor(ICaseFlowEngine caseFlowEngine, ISystemReporter reporter) : base("EscalatedExecutor")
+    public EscalatedExecutor(ICaseFlowEngine caseFlowEngine, ISystemReporter reporter) : base("EscalatedExecutor", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         _caseFlowEngine = caseFlowEngine ?? throw new ArgumentNullException(nameof(caseFlowEngine));
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));

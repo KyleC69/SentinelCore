@@ -2,11 +2,13 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ChatMessageExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
 using SentinelCore.CaseFlowEngine.Infrastructure;
+using SentinelCore.Security;
+using SentinelCore.Security.Sources;
 
 
 
@@ -20,12 +22,24 @@ namespace SentinelCore.Orchestrations.Models;
 public static class ChatMessageExtensions
 {
 
+    /// <summary>
+    ///     The key used in <see cref="ChatMessage.AdditionalProperties" /> to mark a message as chat history injected by a
+    ///     history provider. This is an in-process routing marker, not provenance: it is never signed and never replaces
+    ///     the provenance stamp written by <see cref="WithMessageSource" />.
+    /// </summary>
+    public const string ChatHistoryKey = "ChatHistory";
+
 
 
     /// <summary>
-    ///     The key used in <see cref="ChatMessage.AdditionalProperties" /> to store the chat mode a message was sent under.
+    ///     The key used in <see cref="ChatMessage.AdditionalProperties" /> to store the chat type a message was sent under.
     /// </summary>
-    public const string ChatModeKey = "ChatMode";
+    public const string ChatTypeKey = "ChatType";
+
+    /// <summary>
+    ///     The key used in <see cref="ChatMessage.AdditionalProperties" /> to store the safety action stamped for a turn.
+    /// </summary>
+    public const string SafetyResultKey = "SafetyResult";
 
 
 
@@ -52,7 +66,7 @@ public static class ChatMessageExtensions
     public static ChatMessage AddAssistantMessage(this ChatMessage message, string content)
     {
         Throw.IfNullOrEmpty(content);
-        return new ChatMessage(ChatRole.Assistant, content).WithAgentRequestMessageSource(new("Origin"), "SystemGenerated");
+        return new ChatMessage(ChatRole.Assistant, content);
     }
 
 
@@ -76,16 +90,16 @@ public static class ChatMessageExtensions
 
 
     /// <summary>
-    ///     Gets the chat mode the provided <see cref="ChatMessage" /> was sent under.
+    ///     Gets the chat type the provided <see cref="ChatMessage" /> was sent under.
     /// </summary>
-    /// <param name="message">The <see cref="ChatMessage" /> to read the chat mode from.</param>
+    /// <param name="message">The <see cref="ChatMessage" /> to read the chat type from.</param>
     /// <returns>
-    ///     A <see cref="string" /> value with the chat mode stamped by <see cref="WithChatMode" />. Defaults to an empty
-    ///     string if the message carries no chat mode.
+    ///     A <see cref="string" /> value with the chat type stamped by <see cref="WithChatType" />. Defaults to an empty
+    ///     string if the message carries no chat type.
     /// </returns>
-    public static string GetChatMode(this ChatMessage message)
+    public static string GetChatType(this ChatMessage message)
     {
-        return message.GetMetaTagByKey(ChatModeKey);
+        return message.GetMetaTagByKey(ChatTypeKey);
     }
 
 
@@ -96,22 +110,19 @@ public static class ChatMessageExtensions
 
 
     /// <summary>
-    ///     Gets the source id of the provided <see cref="ChatMessage" /> in the context of messages passed into an agent run.
+    ///     Gets the registered source identifier stamped on the provided <see cref="ChatMessage" /> by
+    ///     <see cref="WithMessageSource" />.
     /// </summary>
-    /// <param name="message">The <see cref="ChatMessage" /> for which we need the source id.</param>
+    /// <param name="message">The <see cref="ChatMessage" /> for which we need the source identifier.</param>
     /// <returns>
-    ///     An <see cref="string" /> value indicating the source id of the <see cref="ChatMessage" />. Defaults to
-    ///     <see langword="null" />
-    ///     if no explicit source id is defined.
+    ///     The <see cref="Guid" /> source identifier stamped on the message, or <see langword="null" /> when the message
+    ///     carries no provenance stamp.
     /// </returns>
-    public static string? GetMessageSourceId(this ChatMessage message)
+    public static Guid? GetMessageSourceId(this ChatMessage message)
     {
-        if (message.AdditionalProperties?.TryGetValue(AgentRequestMessageSourceAttribution.AdditionalPropertiesKey, out object? attribution) is true && attribution is AgentRequestMessageSourceAttribution typedAttribution)
-        {
-            return typedAttribution.SourceId;
-        }
+        ArgumentNullException.ThrowIfNull(message);
 
-        return null;
+        return message.GetProvenance()?.SourceId;
     }
 
 
@@ -122,24 +133,18 @@ public static class ChatMessageExtensions
 
 
     /// <summary>
-    ///     Gets the source type of the provided <see cref="ChatMessage" /> in the context of messages passed into an agent
-    ///     run.
+    ///     Gets the source type stamped on the provided <see cref="ChatMessage" /> by <see cref="WithMessageSource" />.
     /// </summary>
     /// <param name="message">The <see cref="ChatMessage" /> for which we need the source type.</param>
     /// <returns>
-    ///     An <see cref="MessageSourceType" /> value indicating the source type of the <see cref="ChatMessage" />. Defaults to
-    ///     <see
-    ///         cref="MessageSourceType.External" />
-    ///     if no explicit source is defined.
+    ///     A <see cref="SourceType" /> value indicating the source type of the <see cref="ChatMessage" />. Defaults to
+    ///     <see cref="SourceType.ExternalSource" /> when the message carries no provenance stamp.
     /// </returns>
-    public static MessageSourceType GetMessageSourceType(this ChatMessage message)
+    public static SourceType GetMessageSourceType(this ChatMessage message)
     {
-        if (message.AdditionalProperties?.TryGetValue(AgentRequestMessageSourceAttribution.AdditionalPropertiesKey, out object? attribution) is true && attribution is AgentRequestMessageSourceAttribution typedAttribution)
-        {
-            return typedAttribution.SourceType;
-        }
+        ArgumentNullException.ThrowIfNull(message);
 
-        return MessageSourceType.External;
+        return message.GetProvenance()?.SourceType ?? SourceType.ExternalSource;
     }
 
 
@@ -167,12 +172,60 @@ public static class ChatMessageExtensions
 
 
     /// <summary>
-    ///     Stamps the provided message with the chat mode it was sent under, stored in the
-    ///     <see cref="ChatMessage.AdditionalProperties" /> under the <see cref="ChatModeKey" /> key.
+    ///     Determines whether the provided message was marked as chat history by a history provider.
+    /// </summary>
+    /// <param name="message">The message to inspect.</param>
+    /// <returns><see langword="true" /> when the message carries the <see cref="ChatHistoryKey" /> marker.</returns>
+    public static bool IsChatHistoryMarked(this ChatMessage message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+
+        return message.AdditionalProperties?.ContainsKey(ChatHistoryKey) is true;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Marks the provided message as chat history injected by a history provider, in place, and returns the same
+    ///     instance.
+    /// </summary>
+    /// <param name="message">The message to mark. Must not be <see langword="null" />.</param>
+    /// <returns>The same message instance, now marked.</returns>
+    /// <remarks>
+    ///     This is a routing marker for the history provider only. It deliberately does not use
+    ///     <see cref="WithMessageSource" />: overwriting provenance on a signed message would invalidate its signature.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown if <paramref name="message" /> is <see langword="null" />.
+    /// </exception>
+    public static ChatMessage WithChatHistoryMarker(this ChatMessage message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+
+        message.AdditionalProperties ??= new();
+        message.AdditionalProperties[ChatHistoryKey] = true;
+        return message;
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    ///     Stamps the provided message with the chat type it was sent under, stored in the
+    ///     <see cref="ChatMessage.AdditionalProperties" /> under the <see cref="ChatTypeKey" /> key.
     /// </summary>
     /// <param name="message">The message to stamp. Must not be <see langword="null" />.</param>
-    /// <param name="chatMode">
-    ///     The chat mode name, e.g. <c>Chat</c> for environment questions or <c>Investigation</c> for
+    /// <param name="chatType">
+    ///     The chat type name, e.g. <c>Chat</c> for environment questions or <c>Investigation</c> for
     ///     opening an investigation case. Must not be empty.
     /// </param>
     /// <returns>The stamped message.</returns>
@@ -184,15 +237,15 @@ public static class ChatMessageExtensions
     ///     Thrown if <paramref name="message" /> is <see langword="null" />.
     /// </exception>
     /// <exception cref="System.ArgumentException">
-    ///     Thrown if <paramref name="chatMode" /> is null or whitespace.
+    ///     Thrown if <paramref name="chatType" /> is null or whitespace.
     /// </exception>
-    public static ChatMessage WithChatMode(this ChatMessage message, string chatMode)
+    public static ChatMessage WithChatType(this ChatMessage message, string chatType)
     {
         ArgumentNullException.ThrowIfNull(message);
-        Throw.IfNullOrWhitespace(chatMode);
+        Throw.IfNullOrWhitespace(chatType);
 
         message.AdditionalProperties ??= new();
-        message.AdditionalProperties[ChatModeKey] = chatMode;
+        message.AdditionalProperties[ChatTypeKey] = chatType;
         return message;
     }
 
@@ -204,30 +257,29 @@ public static class ChatMessageExtensions
 
 
     /// <summary>
-    ///     Ensure that the provided message is tagged with the provided source type and source id in the context of a specific
-    ///     agent run.
+    ///     Stamps the provided message with the provenance of the given registered <see cref="MessageSource" />, in place,
+    ///     and returns the same instance.
     /// </summary>
-    /// <param name="message">The message to tag.</param>
-    /// <param name="sourceType">The source type to tag the message with.</param>
-    /// <param name="sourceId">The source id to tag the message with.</param>
-    /// <returns>The tagged message.</returns>
+    /// <param name="message">The message to stamp. Must not be <see langword="null" />.</param>
+    /// <param name="source">
+    ///     A source from the fixed <see cref="SentinelSources" /> registry. The source pair cannot be supplied ad hoc.
+    /// </param>
+    /// <returns>The same message instance, now stamped.</returns>
     /// <remarks>
-    ///     If the message is already tagged with the provided source type and source id, it is returned as is.
-    ///     Otherwise, a cloned message is returned with the appropriate tagging in the AdditionalProperties.
+    ///     The stamp is the provenance stamp the security module signs and validates
+    ///     (<see cref="MessageProvenance" />, key <see cref="MessageProvenance.AdditionalPropertiesKey" />), so a single
+    ///     stamp serves both message-source attribution and signature validation. Stamping is in place, mirroring
+    ///     <see cref="WithChatType" /> and the security module's provenance extensions.
     /// </remarks>
-    public static ChatMessage WithMessageSource(this ChatMessage message, MessageSourceType sourceType, string? sourceId = null)
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown if <paramref name="message" /> or <paramref name="source" /> is <see langword="null" />.
+    /// </exception>
+    public static ChatMessage WithMessageSource(this ChatMessage message, MessageSource source)
     {
-        if (message.AdditionalProperties != null
-            // Check if the message was already tagged with the required source type and source id
-            && message.AdditionalProperties.TryGetValue(AgentRequestMessageSourceAttribution.AdditionalPropertiesKey, out object? messageSourceAttribution) && messageSourceAttribution is AgentRequestMessageSourceAttribution typedMessageSourceAttribution && typedMessageSourceAttribution.SourceType == sourceType && typedMessageSourceAttribution.SourceId == sourceId)
-        {
-            return message;
-        }
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(source);
 
-        message = message.Clone();
-        message.AdditionalProperties ??= new();
-        message.AdditionalProperties[AgentRequestMessageSourceAttribution.AdditionalPropertiesKey] = new AgentRequestMessageSourceAttribution(sourceType, sourceId);
-        return message;
+        return message.WithProvenance(new MessageProvenance(source.SourceId, source.SourceType));
     }
 
 
@@ -238,11 +290,21 @@ public static class ChatMessageExtensions
 
 
     /// <summary>
-    ///     Tags a prompt with the resulting safety action for the current turn.
+    ///     Tags a prompt with the resulting safety action for the current turn, stored in the
+    ///     <see cref="ChatMessage.AdditionalProperties" /> under the <see cref="SafetyResultKey" /> key.
     /// </summary>
+    /// <param name="message">The message to tag. Must not be <see langword="null" />.</param>
+    /// <param name="result">The safety action that applied to the turn.</param>
+    /// <returns>The same message instance, now tagged.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown if <paramref name="message" /> is <see langword="null" />.
+    /// </exception>
     public static ChatMessage WithSafetyResult(this ChatMessage message, string result)
     {
         ArgumentNullException.ThrowIfNull(message);
-        return message.WithAgentRequestMessageSource(new("SafetyResult"), result);
+
+        message.AdditionalProperties ??= new();
+        message.AdditionalProperties[SafetyResultKey] = result;
+        return message;
     }
 }

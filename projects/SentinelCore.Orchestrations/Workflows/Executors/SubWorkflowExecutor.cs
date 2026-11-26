@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SubWorkflowExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -33,7 +33,7 @@ public sealed partial class SubWorkflowExecutor : Executor
 
 
 
-    public SubWorkflowExecutor(Workflow evidenceGather, ISystemReporter reporter) : base("SubWorkflowExecutor")
+    public SubWorkflowExecutor(Workflow evidenceGather, ISystemReporter reporter) : base("SubWorkflowExecutor", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         Name = Id;
         _evidence = evidenceGather ?? Throw.IfNull(evidenceGather);
@@ -120,7 +120,9 @@ public sealed partial class SubWorkflowExecutor : Executor
         RunStatus status = await run.GetStatusAsync(cancellationToken).ConfigureAwait(false);
 
 
-        return new ChatMessage(ChatRole.User, finalOutput?.Data?.ToString() ?? string.Empty);
+        ChatMessage report = new(ChatRole.User, finalOutput?.Data?.ToString() ?? string.Empty);
+        await context.YieldOutputAsync(report, cancellationToken).ConfigureAwait(false);
+        return report;
 
     }
 }

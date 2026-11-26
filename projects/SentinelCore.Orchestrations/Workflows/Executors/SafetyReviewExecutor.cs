@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyReviewExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -34,7 +34,7 @@ public sealed partial class SafetyReviewExecutor : Executor
     /// </summary>
     /// <param name="reporter">The system reporter for logging and event publishing.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="reporter" /> is <c>null</c>.</exception>
-    public SafetyReviewExecutor(ISystemReporter reporter) : base("SafetyReviewExecutor")
+    public SafetyReviewExecutor(ISystemReporter reporter) : base("SafetyReviewExecutor", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;

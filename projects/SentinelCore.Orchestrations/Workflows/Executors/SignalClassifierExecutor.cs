@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SignalClassifierExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -51,7 +51,7 @@ public sealed partial class SignalClassifierExecutor : Executor
 
 
 
-    public SignalClassifierExecutor(ISentinelAgentFactory agentFactory, ISystemReporter reporter) : base("SignalClassifierExecutor")
+    public SignalClassifierExecutor(ISentinelAgentFactory agentFactory, ISystemReporter reporter) : base("SignalClassifierExecutor", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         _agentfactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));

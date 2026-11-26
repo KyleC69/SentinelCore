@@ -1,8 +1,8 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.CaseFlowEngine
 // File:         Throw.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -1030,7 +1030,7 @@ public static class Throw
         {
             ArgumentNullException(paramName);
         }
-        else if (!(argument is ICollection<T> collection))
+        else if (argument is not ICollection<T> collection)
         {
             if (argument is IReadOnlyCollection<T> readOnlyCollection)
             {

@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorFactory.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -71,20 +71,21 @@ internal sealed class ExecutorFactory
     {
         return new()
         {
-                ProvenanceGateExecutor = Create<ProvenanceGateExecutor>(),
-                SafetyExecutor = Create<SafetyExecutor>(),
-                EscalatedExecutor = Create<EscalatedExecutor>(),
-                PatternCheckExecutor = Create<PatternCheckExecutor>(),
-                HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
-                PersistEvidenceExecutor = Create<PersistEvidence>(),
-                NewCaseExecutor = Create<NewCaseExecutor>(),
-                TheCoreSwitchExec = Create<TheCoreSwitchExec>(),
-                MoreInformationExecutor = Create<MoreInformationExecutor>(),
-                CriticalAlert = Create<CriticalAlert>(),
-                TerminateWorkflow = Create<TerminateWorkflow>(),
-                SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
-                WhiteListExecutor = Create<WhiteListExecutor>(),
-                SignalClassifierExecutor = Create<SignalClassifierExecutor>()
+            ProvenanceGateExecutor = Create<ProvenanceGateExecutor>(),
+            SafetyExecutor = Create<SafetyExecutor>(),
+            PatternCheckExecutor = Create<PatternCheckExecutor>(),
+            EscalatedExecutor = Create<EscalatedExecutor>(),
+            HumanOperatorExecutor = Create<HumanOperatorExecutor>(),
+            PersistEvidenceExecutor = Create<PersistEvidence>(),
+            NewCaseExecutor = Create<NewCaseExecutor>(),
+            MoreInformationExecutor = Create<MoreInformationExecutor>(),
+            CriticalAlert = Create<CriticalAlert>(),
+            TerminateWorkflow = Create<TerminateWorkflow>(),
+            SafetyReviewExecutor = Create<SafetyReviewExecutor>(),
+            WhiteListExecutor = Create<WhiteListExecutor>(),
+            SignalClassifierExecutor = Create<SignalClassifierExecutor>(),
+            ChatTypeRouterExecutor = Create<ChatTypeRouterExecutor>(),
+            SecurityGate = Create<SecurityGate>()
         };
     }
 }
@@ -99,6 +100,7 @@ internal sealed class ExecutorFactory
 /// </summary>
 internal sealed class ExecutorCollection
 {
+    public required ChatTypeRouterExecutor ChatTypeRouterExecutor { get; init; }
     public required CriticalAlert CriticalAlert { get; init; }
     public required EscalatedExecutor EscalatedExecutor { get; init; }
     public required HumanOperatorExecutor HumanOperatorExecutor { get; init; }
@@ -111,6 +113,9 @@ internal sealed class ExecutorCollection
     public required SafetyReviewExecutor SafetyReviewExecutor { get; init; }
     public required SignalClassifierExecutor SignalClassifierExecutor { get; init; }
     public required TerminateWorkflow TerminateWorkflow { get; init; }
-    public required TheCoreSwitchExec TheCoreSwitchExec { get; init; }
+    public required SecurityGate SecurityGate { get; init; }
     public required WhiteListExecutor WhiteListExecutor { get; init; }
+
+
+
 }

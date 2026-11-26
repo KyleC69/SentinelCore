@@ -13,6 +13,7 @@ This manifest inventories current implementation references, historical design n
 
 | Document | Classification | Authority and current use |
 | --- | --- | --- |
+| [GettingStarted.md](./GettingStarted.md) | Current reference | Host integration: settings, DI registration, events, first investigation, custom safety rules, and MCP server registration. |
 | [SolutionArchitecture.md](./SolutionArchitecture.md) | Current reference | Solution membership, project dependencies, host composition, and registration flow. |
 | [ContractsComponent.md](./ContractsComponent.md) | Current status plus historical reference | Shared contract boundary; older model examples below the status banner are non-authoritative. |
 | [OrchestrationComponent.md](./OrchestrationComponent.md) | Current status plus historical reference | Current orchestration entry points and workflow; former seven-strategy design retained below the banner. |
@@ -52,7 +53,7 @@ This manifest inventories current implementation references, historical design n
 
 | Document | Classification | Current use |
 | --- | --- | --- |
-| [../README.md](../README.md) | Current overview and setup | Main repository entry point and integration examples. |
+| [../README.md](../README.md) | Current overview | Public and investor-facing entry point; integration detail lives in [GettingStarted.md](./GettingStarted.md). |
 | [../projects/SentinelCore.Orchestrations/Mcp/README.md](../projects/SentinelCore.Orchestrations/Mcp/README.md) | Current reference with caveats | MCP integration architecture and usage. |
 | [../projects/SentinelCore.Orchestrations/Agents/Core/Tools/README.md](../projects/SentinelCore.Orchestrations/Agents/Core/Tools/README.md) | Current component note | In-process case and documentation tools. |
 

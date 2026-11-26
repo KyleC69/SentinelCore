@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         OrchestrationControl.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -82,7 +82,7 @@ public sealed class OrchestrationControl : IOrchestrationControl
         }
 
 
-        return await _orchestration.ExecuteStreamingAsync(input, linkedCtsToken);
+        return (await _orchestration.ExecuteStreamingAsync(input, linkedCtsToken).ConfigureAwait(false))!;
     }
 
 

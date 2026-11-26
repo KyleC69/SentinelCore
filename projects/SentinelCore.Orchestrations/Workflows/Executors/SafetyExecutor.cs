@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         SafetyExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -31,6 +31,7 @@ namespace SentinelCore.Orchestrations.Workflows.Executors;
 ///     and leverages the agent factory to create safety-specific agents when needed.
 /// </summary>
 [YieldsOutput(typeof(DetectionBoolResult))]
+[YieldsOutput(typeof(ChatMessage))]
 public sealed partial class SafetyExecutor : Executor
 {
     private readonly ISentinelAgentFactory _agentFactory;
@@ -93,7 +94,7 @@ public sealed partial class SafetyExecutor : Executor
     /// <param name="reporter">The system reporter for logging safety events.</param>
     /// <param name="agentFactory">The agent factory for creating safety agents.</param>
     /// <param name="loggerFactory">The logger factory for creating safety engine loggers.</param>
-    public SafetyExecutor(ISystemReporter reporter, ISentinelAgentFactory agentFactory, ILoggerFactory loggerFactory, IEnumerable<ISafetyRule>? rules = null) : base("SafetyExecutor")
+    public SafetyExecutor(ISystemReporter reporter, ISentinelAgentFactory agentFactory, ILoggerFactory loggerFactory, IEnumerable<ISafetyRule>? rules = null) : base("SafetyExecutor", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
@@ -187,8 +188,6 @@ public sealed partial class SafetyExecutor : Executor
 
         try
         {
-
-            await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message.Text, "SharedState", cancellationToken);
             // --- Status: Begin processing ---
             _reporter.ReportInfo($"[{Name}] Processing message...");
 
@@ -255,6 +254,9 @@ public sealed partial class SafetyExecutor : Executor
         _reporter.ReportInfo($"[{Name}] DEBUG: SafetyRuleEngine result - IsAllowed: {result.IsAllowed}, Score: {result.TotalScore}, Summary: {result.Summary}");
 
         // ChatMessage taggedMessage = ApplySafetyTags(message, result); // <------ This line applies safety result to the additional properties of the message
+
+        // Single canonical write for WorkFlowStateKeys.PROMPT: the validated message is stored
+        // as a ChatMessage — the type every PROMPT consumer reads. Do not queue string variants.
         await context.QueueStateUpdateAsync(WorkFlowStateKeys.PROMPT, message, "SharedState", cancellationToken);
 
 

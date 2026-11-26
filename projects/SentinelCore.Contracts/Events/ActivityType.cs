@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         ActivityType.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 

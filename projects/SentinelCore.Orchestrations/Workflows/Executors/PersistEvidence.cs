@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PersistEvidence.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -38,7 +38,7 @@ public sealed partial class PersistEvidence : Executor
     ///     Initializes a new instance of the <see cref="PersistEvidence" /> class.
     /// </summary>
     /// <param name="reporter">The system reporter for logging.</param>
-    public PersistEvidence(ISystemReporter reporter) : base("PersistEvidence")
+    public PersistEvidence(ISystemReporter reporter) : base("PersistEvidence", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;

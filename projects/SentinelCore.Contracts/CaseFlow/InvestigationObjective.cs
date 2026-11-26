@@ -1,8 +1,8 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.Contracts
 // File:         InvestigationObjective.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -51,26 +51,26 @@ public sealed class InvestigationObjective
 
     [JsonPropertyName("severity")]
     [Description("The severity of the signal. This could be low, medium, high, or critical.")]
-    public string Severity { get; set; }
+    public string Severity { get; set; } = null!;
 
 
 
     [JsonPropertyName("signalSummary")]
     [Description("The initial impression of the signal and what it might be an indication of.")]
     [JsonRequired]
-    public string SignalSummary { get; set; }
+    public string SignalSummary { get; set; } = null!;
 
 
     [JsonPropertyName("source")]
     [Description("possible subsystem sending the signal.")]
     [JsonRequired]
-    public string Source { get; init; }
+    public string Source { get; init; } = null!;
 
 
     [Description("The type of source from which the signal originated. Event Log, Security Alert, Application Log, file log, Anomaly Detector etc.")]
     [JsonPropertyName("sourceType")]
     [JsonRequired]
-    public string SourceType { get; init; }
+    public string SourceType { get; init; } = null!;
 
 
 

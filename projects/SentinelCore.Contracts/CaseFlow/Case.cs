@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Contracts
 // File:         Case.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -57,7 +57,7 @@ public sealed class Case
     /// </summary>
     /// One-To-One
     // The signal that started the case must be supplied when the case is created.
-    public Signal Signal { get; set; }
+    public Signal Signal { get; set; } = null!;
 
     public CaseStatus Status { get; set; }
 

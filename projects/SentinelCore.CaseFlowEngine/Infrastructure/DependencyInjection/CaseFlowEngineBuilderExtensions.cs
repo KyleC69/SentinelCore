@@ -2,7 +2,7 @@
 // Project:   SentinelCore.CaseFlowEngine
 // File:         CaseFlowEngineBuilderExtensions.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -101,10 +101,7 @@ public static class CaseFlowEngineBuilderExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        services.AddDbContextFactory<SentinelCoreDBContext>(options =>
-        {
-            options.UseSqlServer(connectionString);
-        });
+        services.AddDbContextFactory<SentinelCoreDBContext>(options => { options.UseSqlServer(connectionString); });
 
         return services.AddCaseFlowEngine();
     }

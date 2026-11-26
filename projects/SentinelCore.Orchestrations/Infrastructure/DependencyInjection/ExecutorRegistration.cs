@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         ExecutorRegistration.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -39,14 +39,14 @@ public static class ExecutorRegistrations
         services.AddTransient<ProvenanceGateExecutor>();
         services.AddTransient<NewCaseExecutor>();
         services.AddTransient<MoreInformationExecutor>();
-        services.AddTransient<EscalatedExecutor>();
         services.AddTransient<PatternCheckExecutor>();
         services.AddTransient<SafetyExecutor>();
         services.AddTransient<HumanOperatorExecutor>();
-        //services.AddTransient<DirectAnswerExecutor>();
-        services.AddTransient<TheCoreSwitchExec>();
+        services.AddTransient<DirectAnswerExecutor>();
+        services.AddTransient<SecurityGate>();
         services.AddTransient<CriticalAlert>();
         services.AddTransient<SignalClassifierExecutor>();
+        services.AddTransient<ChatTypeRouterExecutor>();
         return services;
     }
 }

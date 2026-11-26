@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WhiteListExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -40,7 +40,7 @@ public sealed partial class WhiteListExecutor : Executor
     ///     Initializes a new instance of the <see cref="WhiteListExecutor" /> class.
     /// </summary>
     /// <param name="reporter">The system reporter for logging.</param>
-    public WhiteListExecutor(ISystemReporter reporter) : base("WhitelistExecutor")
+    public WhiteListExecutor(ISystemReporter reporter) : base("WhitelistExecutor", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;

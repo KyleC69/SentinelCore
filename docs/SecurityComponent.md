@@ -29,7 +29,7 @@ The module began as an unscoped proof of concept and has been formalized. The cu
 | Capability | Status |
 | --- | --- |
 | HMAC-SHA256 provenance service (`SentinelProvenanceService`) | Implemented |
-| Stamp on `ChatMessage.AdditionalProperties` (same mechanism as ChatMode) | Implemented |
+| Stamp on `ChatMessage.AdditionalProperties` (same mechanism as ChatType) | Implemented |
 | Identity registry (in-memory stub, first-party seeds) | Implemented as stub; durable registry planned |
 | Bounded in-memory quarantine store with event + warning logging | Implemented; durable persistence planned |
 | Workflow entry gate (`ProvenanceGateExecutor`) with fail-closed dead end | Implemented |
@@ -91,7 +91,7 @@ The stamp is a `MessageProvenance` sealed record:
 | `Nonce` | Base64 of 16 random bytes (`RandomNumberGenerator`), consumed at entry validation |
 | `Signature` | Base64 HMAC-SHA256 over the canonical payload |
 
-It is stored on `ChatMessage.AdditionalProperties` under the key `"provenance"` through the `WithProvenance` / `GetProvenance` extensions — **the same stamping mechanism used for ChatMode** (`WithChatMode`). Stamping is in place: the extension returns the same instance. The metadata is local to the process and is not serialized to AI providers.
+It is stored on `ChatMessage.AdditionalProperties` under the key `"provenance"` through the `WithProvenance` / `GetProvenance` extensions — **the same stamping mechanism used for ChatType** (`WithChatType`). Stamping is in place: the extension returns the same instance. The metadata is local to the process and is not serialized to AI providers.
 
 ## Canonical Payload and Signature
 
@@ -133,7 +133,7 @@ If validation itself throws, callers treat the message as `InternalError` and qu
 | --- | --- | --- | --- | --- | --- |
 | 1 | Operator UI entry | `CoreChatViewModel.SendAsync` | `Stamp(msg, SentinelIdentities.CoreUi)` | — | Stamp throws when the key is unavailable or the identity is unregistered; the send aborts |
 | 2 | Workflow entry gate | `ProvenanceGateExecutor` (first node of `TheCoreWorkflow`) | `Validate` | Yes | Quarantine + user-visible rejection notice + `null` return; conditional edge filters `null`, so the message dead-ends |
-| 3 | Model boundary re-check | `TheCoreSwitchExec`, before the first agent contact | `VerifyIntegrity` | No | Quarantine + rejection notice + `null` |
+| 3 | Model boundary re-check | `TheCoreSwitchExec`, before the routing decision and any agent contact | `VerifyIntegrity` | No | Quarantine + rejection notice + `null`; the outgoing `IntegrityGatePassed` edge filters `null`, so the message never reaches `ChatTypeRouterExecutor` |
 | 4 | SentinelCoreService input pathway | Not implemented | `Validate` | Yes | Planned — see below |
 
 ## Workflow Integration (MAF Semantics)

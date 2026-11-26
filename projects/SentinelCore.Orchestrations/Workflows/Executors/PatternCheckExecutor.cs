@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         PatternCheckExecutor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -38,7 +38,7 @@ public sealed partial class PatternCheckExecutor : Executor
     ///     Initializes a new instance of the <see cref="PatternCheckExecutor" /> class.
     /// </summary>
     /// <param name="reporter">The system reporter for logging.</param>
-    public PatternCheckExecutor(ISystemReporter reporter) : base("PatternCheckExecutor")
+    public PatternCheckExecutor(ISystemReporter reporter) : base("PatternCheckExecutor", ExecutorOutputPolicy.CreateExplicitYieldsOnly())
     {
         _reporter = reporter ?? throw new ArgumentNullException(nameof(reporter));
         Name = Id;

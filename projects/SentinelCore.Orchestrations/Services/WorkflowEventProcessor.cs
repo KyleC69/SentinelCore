@@ -2,7 +2,7 @@
 // Project:   SentinelCore.Orchestrations
 // File:         WorkflowEventProcessor.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -60,7 +60,12 @@ public sealed class WorkflowEventProcessor : IWorkflowEventProcessor
     ///     Processes a single workflow event, handling formatting and reporting.
     /// </summary>
     /// <param name="evt">The workflow event to process.</param>
-    /// <returns>A string containing the formatted event details, or an empty string if none.</returns>
+    /// <returns>
+    ///     A string containing the formatted details of an intentionally yielded workflow output
+    ///     event for UI display, or an empty string for all other events. Executor lifecycle and
+    ///     agent response events are reported to loggers only and are never surfaced as UI chat
+    ///     messages.
+    /// </returns>
     public string ProcessEvent(WorkflowEvent evt)
     {
         // Validate the event
@@ -94,8 +99,9 @@ public sealed class WorkflowEventProcessor : IWorkflowEventProcessor
             _reporter.ReportInfo(eventDetails);
         }
 
-        // Return the fully assembled message for display in the UI
-        if (evt is WorkflowOutputEvent or AgentResponseEvent or ExecutorCompletedEvent)
+        // Return formatted text for UI display ONLY for intentionally yielded workflow output.
+        // Agent response and executor lifecycle events stay on the log/reporting channel above.
+        if (evt is WorkflowOutputEvent)
         {
             return eventDetails;
         }

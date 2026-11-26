@@ -1,8 +1,8 @@
-﻿// Solution: SentinelCore
+// Solution: SentinelCore
 // Project:   SentinelCore.Contracts
 // File:         InvestigationOutcome.cs
 // Author: Kyle L. Crowder
-// Build Num:  112101
+// Build Num:  112518
 
 
 
@@ -25,7 +25,7 @@ public sealed class InvestigationOutcome
 
     [JsonPropertyName("case")]
     [Description("The investigation case that produced this outcome.")]
-    public Case Case { get; init; }
+    public Case Case { get; init; } = null!;
 
     [JsonPropertyName("confidence")]
     [Description("Confidence score (0.0 to 1.0) in the accuracy of the outcome.")]
@@ -42,21 +42,21 @@ public sealed class InvestigationOutcome
 
     [JsonPropertyName("impact")]
     [Description("The assessed impact of the root cause on the system.")]
-    public string Impact { get; init; }
+    public string Impact { get; init; } = null!;
 
     [JsonPropertyName("remediation")]
     [Description("Suggested remediation steps to prevent recurrence or to resolve.")]
-    public List<string> Remediation { get; set; }
+    public List<string> Remediation { get; set; } = null!;
 
     [JsonPropertyName("resolution")]
     [Description("The final resolution or conclusion of the investigation.")]
-    public string Resolution { get; set; }
+    public string Resolution { get; set; } = null!;
 
     [JsonPropertyName("rootCause")]
     [Description("The determined root cause of the signal.")]
-    public string RootCause { get; set; }
+    public string RootCause { get; set; } = null!;
 
     [JsonPropertyName("signal")]
     [Description("The original signal that was investigated.")]
-    public Signal Signal { get; set; }
+    public Signal Signal { get; set; } = null!;
 }
